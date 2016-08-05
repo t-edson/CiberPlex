@@ -1,0 +1,146 @@
+object Form1: TForm1
+  Left = 629
+  Height = 532
+  Top = 211
+  Width = 781
+  Caption = 'CiberPlex Admin'
+  ClientHeight = 512
+  ClientWidth = 781
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  LCLVersion = '1.6.0.4'
+  object Memo2: TMemo
+    Left = 0
+    Height = 512
+    Top = 0
+    Width = 288
+    Align = alLeft
+    Lines.Strings = (
+      'Memo2'
+    )
+    ScrollBars = ssHorizontal
+    TabOrder = 0
+    WordWrap = False
+  end
+  object ActionList1: TActionList
+    left = 96
+    top = 72
+    object acAccRefPan: TAction
+      Category = 'Acc'
+      Caption = 'Refresc.Pantalla'
+    end
+    object acAccVerPan: TAction
+      Category = 'Acc'
+      Caption = 'Ver &Pantalla'
+      OnExecute = acAccVerPanExecute
+    end
+    object acAccEnvCom: TAction
+      Category = 'Acc'
+      Caption = 'Enviar C&omando'
+      OnExecute = acAccEnvComExecute
+      ShortCut = 113
+    end
+    object acAccEnvMjeTit: TAction
+      Category = 'Acc'
+      Caption = 'Envía Mensaje de &Título'
+      OnExecute = acAccEnvMjeTitExecute
+    end
+    object acCabIniCta: TAction
+      Category = 'Cab'
+      Caption = '&Iniciar Cuenta'
+      OnExecute = acCabIniCtaExecute
+    end
+    object acCabModTpo: TAction
+      Category = 'Cab'
+      Caption = '&Modif. Tiempo'
+      OnExecute = acCabModTpoExecute
+    end
+    object acCabDetCta: TAction
+      Category = 'Cab'
+      Caption = '&Detener Cuenta'
+      OnExecute = acCabDetCtaExecute
+    end
+    object acAccRefObj: TAction
+      Category = 'Acc'
+      Caption = 'Refrescar &Objetos'
+      OnExecute = acAccRefObjExecute
+    end
+    object acCabPonMan: TAction
+      Category = 'Cab'
+      Caption = 'Poner en &Mantenimiento'
+      OnExecute = acCabPonManExecute
+    end
+    object acCabGraBol: TAction
+      Category = 'Cab'
+      Caption = 'Grabar &Boleta'
+      Hint = 'Graba la boleta'
+      OnExecute = acCabGraBolExecute
+    end
+    object acCabExplorArc: TAction
+      Category = 'Cab'
+      Caption = 'Ver E&xplorador de Archivos'
+      OnExecute = acCabExplorArcExecute
+    end
+  end
+  object MainMenu1: TMainMenu
+    left = 24
+    top = 72
+    object MenuItem2: TMenuItem
+      Caption = 'A&cciones'
+      object MenuItem14: TMenuItem
+        Action = acAccRefObj
+      end
+      object MenuItem3: TMenuItem
+        Action = acAccEnvCom
+      end
+      object MenuItem4: TMenuItem
+        Action = acAccEnvMjeTit
+      end
+      object MenuItem9: TMenuItem
+        Action = acCabGraBol
+      end
+    end
+    object MenuItem1: TMenuItem
+      Caption = '&Computadora'
+      object MenuItem12: TMenuItem
+        Action = acCabIniCta
+      end
+      object MenuItem5: TMenuItem
+        Action = acCabModTpo
+      end
+      object MenuItem7: TMenuItem
+        Action = acCabDetCta
+      end
+      object MenuItem13: TMenuItem
+        Action = acCabGraBol
+      end
+    end
+  end
+  object PopupMenu1: TPopupMenu
+    left = 168
+    top = 72
+    object MenuItem11: TMenuItem
+      Action = acCabIniCta
+    end
+    object MenuItem6: TMenuItem
+      Action = acCabModTpo
+    end
+    object MenuItem8: TMenuItem
+      Action = acCabDetCta
+    end
+    object MenuItem17: TMenuItem
+      Action = acCabPonMan
+    end
+    object MenuItem10: TMenuItem
+      Action = acCabGraBol
+    end
+    object MenuItem15: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem16: TMenuItem
+      Action = acCabExplorArc
+    end
+  end
+end
