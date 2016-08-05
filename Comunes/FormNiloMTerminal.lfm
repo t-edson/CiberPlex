@@ -1,0 +1,57 @@
+object frmNiloMTerminal: TfrmNiloMTerminal
+  Left = 305
+  Height = 460
+  Top = 147
+  Width = 323
+  Caption = 'frmNiloMTerminal'
+  ClientHeight = 460
+  ClientWidth = 323
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '1.6.0.4'
+  object Memo1: TMemo
+    Left = 0
+    Height = 416
+    Top = 0
+    Width = 323
+    Align = alClient
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -11
+    Font.Name = 'Arial'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Lines.Strings = (
+      ''
+    )
+    ParentFont = False
+    ScrollBars = ssAutoBoth
+    TabOrder = 0
+    WordWrap = False
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 44
+    Top = 416
+    Width = 323
+    Align = alBottom
+    ClientHeight = 44
+    ClientWidth = 323
+    TabOrder = 1
+    object btnEnviar: TButton
+      Left = 240
+      Height = 25
+      Top = 8
+      Width = 75
+      Caption = '&Enviar'
+      OnClick = btnEnviarClick
+      TabOrder = 0
+    end
+    object txtComando: TEdit
+      Left = 8
+      Height = 23
+      Top = 8
+      Width = 224
+      TabOrder = 1
+    end
+  end
+end
