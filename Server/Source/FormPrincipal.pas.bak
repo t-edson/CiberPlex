@@ -1,0 +1,613 @@
+unit FormPrincipal;
+{$mode objfpc}{$H+}
+interface
+uses
+  Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
+  ComCtrls, SynEdit, MisUtils, ogDefObjGraf, CPGrupoCabinas, frameVisCPlex,
+  ObjGraficos, FormFijTiempo, FormConfig, frameCfgUsuarios, FrameCfgVista,
+  Globales, FormAdminCabinas, FormAdminTarCab, FormExplorCab, FormVisorMsjRed,
+  FormBoleta, FormInicio, CPRegistros, CPCabinaTarifas, CPTramas, CPUtils,
+  CPBoletas;
+type
+  { TfrmPrincipal }
+  TfrmPrincipal = class(TForm)
+  published
+    acCabDetCta: TAction;
+    acCabGraBol: TAction;
+    acCabIniCta: TAction;
+    acCabModTpo: TAction;
+    acEnvCom: TAction;
+    acEnvMjeTit: TAction;
+    acRefPan: TAction;
+    acSisConfig: TAction;
+    acArcSalir: TAction;
+    acSisAdmCab: TAction;
+    acSisAdmTarCab: TAction;
+    acCabPonMan: TAction;
+    acCabPaus: TAction;
+    acCabExplorArc: TAction;
+    acCabMsjesRed: TAction;
+    acCabPropied: TAction;
+    acCabVerBol: TAction;
+    ActionList1: TActionList;
+    acVerPant: TAction;
+    ImageList32: TImageList;
+    ImageList16: TImageList;
+    MainMenu1: TMainMenu;
+    MenuItem1: TMenuItem;
+    MenuItem10: TMenuItem;
+    MenuItem11: TMenuItem;
+    MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
+    MenuItem16: TMenuItem;
+    MenuItem17: TMenuItem;
+    MenuItem18: TMenuItem;
+    MenuItem19: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem20: TMenuItem;
+    MenuItem21: TMenuItem;
+    MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
+    MenuItem9: TMenuItem;
+    panLLam: TPanel;
+    panBolet: TPanel;
+    PopupMenu1: TPopupMenu;
+    splPanLlam: TSplitter;
+    splPanBolet: TSplitter;
+    Timer1: TTimer;
+    ToolBar1: TToolBar;
+    ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
+    ToolButton3: TToolButton;
+    ToolButton4: TToolButton;
+    procedure acCabDetCtaExecute(Sender: TObject);
+    procedure acCabExplorArcExecute(Sender: TObject);
+    procedure acCabGraBolExecute(Sender: TObject);
+    procedure acCabIniCtaExecute(Sender: TObject);
+    procedure acCabModTpoExecute(Sender: TObject);
+    procedure acCabMsjesRedExecute(Sender: TObject);
+    procedure acCabPonManExecute(Sender: TObject);
+    procedure acCabVerBolExecute(Sender: TObject);
+    procedure acSisAdmCabExecute(Sender: TObject);
+    procedure acSisAdmTarCabExecute(Sender: TObject);
+    procedure acSisConfigExecute(Sender: TObject);
+    procedure ConfigfcVistaUpdateChanges;
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    function CadenaEstado: string;
+    procedure FormShow(Sender: TObject);
+    procedure VisorCabinas_ClickDer(xp, yp: integer);
+    procedure GrupoCabinas_CambiaPropied;
+    procedure GrupTarAlquilerCambia;
+    procedure Timer1Timer(Sender: TObject);
+  private
+    GrupoCabinas: TCPGrupoCabinas;  //Grupo de cabinas
+    VisorCabinas: TfraVisCPlex;     //Visor de cabinas
+    TramaTmp    : TCPTrama;    //Trama temporal
+    GrupTarAlquiler: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
+    fallasesion : boolean;  //indica si se cancela el inicio de sesión
+    tic : integer;
+    function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
+      ): TfrmExplorCab;
+    function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
+      ): TfrmVisorMsjRed;
+    procedure GrupoCabinas_LogIBol(cab: TCPCabina);
+    procedure GrupoCabinas_LogInfo(cab: TCPCabina; msj: string);
+    procedure GrupoCabinas_DetenConteo(cab: TCPCabina);
+    procedure GrupoCabinas_RegMensaje(NomCab: string; msj: string);
+    procedure GrupoCabinas_TramaLista(cabOrig: TCPCabina; tram: TCPTrama; tramaLocal: boolean);
+    procedure GuardarEstadoArchivo;
+    procedure LeerEstadoDeArchivo;
+    procedure PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+    procedure VisorCabinas_DblClick(Sender: TObject);
+  public
+    { public declarations }
+  end;
+
+var
+  frmPrincipal: TfrmPrincipal;
+
+implementation
+{$R *.lfm}
+
+procedure TfrmPrincipal.GrupTarAlquilerCambia;
+begin
+  Config.escribirArchivoIni;  //guarda cambios
+end;
+procedure TfrmPrincipal.GrupoCabinas_CambiaPropied;
+{Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
+begin
+  debugln('** Cambio de propiedades en cabinas: ');
+  Config.escribirArchivoIni;  //guarda cambios
+  VisorCabinas.ActualizarPropiedades(GrupoCabinas.ListaCabinas);
+end;
+procedure TfrmPrincipal.GrupoCabinas_TramaLista(cabOrig: TCPCabina; tram: TCPTrama;
+  tramaLocal: boolean);
+{Rutina de respuesta al mensaje OnTramaListade GrupoCabinas. También se usa para ejecutar
+comandos del visor local. Los parámetros son:
+"cabOrig" -> Es la cabina origen, de donde llega la trama. Para comandos locales es NIL
+"tram" -> Es la trama que contiene el comando que debe ejecutarse.}
+var
+  frm: TfrmVisorMsjRed;
+  arch: RawByteString;
+  HoraPC, tSolic: TDateTime;
+  NombrePC, Nombre: string;
+  bloqueado: boolean;
+  cabDest: TCPCabina;
+  tLibre, horGra: boolean;
+begin
+  //debugln(NomCab + ': Trama recibida: '+ tram.TipTraHex);
+  if not tramaLocal then begin  //Ignora los mensajes locales
+     frm := BuscarVisorMensajes(cabOrig.Nombre);  //Ve si hay un formulario de mensajes para esta cabina
+     {Aunque no se ha detectado consumo de CPU adicional, la búqsqueda regular con
+     BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando que
+     se hace para todos los mensjaes que llegan.
+     }
+     if frm<>nil then frm.PonerMsje('>>Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+  end;
+  case tram.tipTra of
+  M_ESTAD_CLI: begin  //Se recibió el estado remoto del clente
+      Decodificar_M_ESTAD_CLI(tram.traDat, NombrePC, HoraPC, bloqueado);
+      cabOrig.NombrePC:= NombrePC;
+      cabOrig.HoraPC  := HoraPC;
+      cabOrig.PantBloq:= bloqueado;
+    end;
+  C_SOL_T_PCS: begin  //Se solicita la lista de tiempos de las PC cliente
+      debugln(cabOrig.Nombre + ': Tiempos de PC solicitado.');
+      GrupoCabinas.TCP_envComando(cabOrig.Nombre, M_SOL_T_PCS, 0, 0, CadenaEstado);
+    end;
+  C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
+      GrupoCabinas.TCP_envComando(cabOrig.Nombre, M_SOL_ARINI, 0, 0, GrupoCabinas.GetPropiedCabinas);
+    end;
+  C_PAN_COMPL: begin  //se pide una captura de pantalla
+      debugln(cabOrig.Nombre+ ': Pantalla completa solicitada.');
+      if tram.posX = 0 then begin  //se pide de la PC local
+        arch := ExtractFilePath(Application.ExeName) + '~00.tmp';
+        PantallaAArchivo(arch);
+        GrupoCabinas.TCP_envComando(cabOrig.Nombre, M_PAN_COMP, 0, 0, StringFromFile(arch));
+      end else begin
+
+      end;
+    end;
+  C_INI_CTAPC: begin   //Se pide iniciar la cuenta de una PC
+      DecodActivCabina(tram.traDat, Nombre, tSolic, tLibre, horGra );
+      if Nombre='' then exit; //protección
+      cabDest := GrupoCAbinas.CabPorNombre(Nombre);
+      cabDest.InicConteo(tSolic, tLibre, horGra);
+    end;
+  C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
+      DecodActivCabina(tram.traDat, Nombre, tSolic, tLibre, horGra );
+      if Nombre='' then exit; //protección
+      cabDest := GrupoCAbinas.CabPorNombre(Nombre);
+      cabDest.ModifConteo(tSolic, tLibre, horGra);
+    end;
+  C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
+      cabDest := GrupoCabinas.CabPorNombre(tram.traDat);
+      if cabDest=nil then exit;
+      if tram.posX = 1 then begin  //Indica que se quiere poner en mantenimiento.
+        cabDest.PonerManten();
+      end else begin
+        cabDest.DetenConteo();
+      end;
+    end;
+  C_GRA_BOLPC: begin  //Se pide grabar la boleta de una PC
+      cabDest := GrupoCabinas.CabPorNombre(tram.traDat);
+      if cabDest=nil then exit;
+      cabDest.GrabarBoleta();
+    end;
+  else
+    if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
+  end;
+end;
+procedure TfrmPrincipal.GrupoCabinas_RegMensaje(NomCab: string; msj: string);
+var
+  frm: TfrmVisorMsjRed;
+begin
+  frm := BuscarVisorMensajes(NomCab);  //Ve si hay un formulario de mensajes para esta cabina
+  if frm<>nil then frm.PonerMsje(msj);  //Envía mensaje a su formaulario
+end;
+procedure TfrmPrincipal.GrupoCabinas_DetenConteo(cab: TCPCabina);
+{Se usa este evento para guardar información en el registro, y actualizar la boleta.
+Se hace desde fuera de CPGrupoCabinas, porque para estas acciones se requiere acceso a
+campos de configuración propios de esta aplicación, que no corresponden a CPGRupoCabinas
+que es usada también en el Ciberplex-Visor.}
+var
+  nser: Integer;
+  r: TCPItemBoleta;
+begin
+  //Registra la venta en el archivo de registro
+  if cab.horGra Then
+    nser := PLogIntD(cab.RegVenta, cab.Costo)
+  else
+    nser := PLogInt(cab.RegVenta, cab.Costo);
+  If msjError <> '' Then MsgErr(msjError);
+  //agrega item a boleta
+  r := TCPItemBoleta.Create;   //crea elemento
+  r.vser := nser;
+  r.Cant := 1;
+  r.pUnit := cab.Costo;
+  r.subtot := cab.Costo;
+  r.cat := GrupoCabinas.CategCabi;
+  r.subcat := 'INTERNET';
+  r.descr := 'Alquiler PC: ' + IntToStr(cab.tSolicMin) + 'm(' +
+             TimeToStr(cab.TranscDat) + ')';
+  r.vfec := date + Time;
+  r.estado := IT_EST_NORMAL;
+  r.fragmen := 0;
+  r.conStk := False;     //No se descuenta stock
+  cab.Boleta.VentaItem(r, False, False, Config.fcGeneral.ImpVen);
+  //fBol.actConBoleta;   //Actualiza la boleta porque se hace "VentaItem" sin mostrar
+end;
+procedure TfrmPrincipal.GrupoCabinas_LogInfo(cab: TCPCabina; msj: string);
+begin
+  PLogInf(usuario, msj);
+end;
+procedure TfrmPrincipal.GrupoCabinas_LogIBol(cab: TCPCabina);
+var
+  it: TCPItemBoleta;
+  lin: String;
+begin
+  for it in cab.boleta.items do begin
+{    If Pventa = '' Then //toma valor por defecto
+        it.pVen = PVentaDef
+    else    //escribe con punto de venta
+        it.pVen = Me.Pventa
+    end;}
+    lin := it.regIBol_AReg;
+    If it.estado = IT_EST_NORMAL Then PLogIBol(lin)        //item normal
+    else PLogIBolD(lin);       //item descartado
+  end;
+  //Graba los campos de la boleta
+  cab.boleta.fec_grab := now;  //fecha de grabación
+  PLogBol(cab.Boleta.RegVenta, cab.boleta.TotPag);
+  Config.escribirArchivoIni;
+  GuardarEstadoArchivo;        //Para salvar la grabación de boleta
+end;
+procedure TfrmPrincipal.FormCreate(Sender: TObject);
+begin
+  Caption := NOM_PROG + ' ' + VER_PROG;
+  //Se necesita un objeto TGrupoTarAlquiler, para crear un Grupo de cabinas
+  GrupTarAlquiler := TGrupoTarAlquiler.Create;
+  //Crea un grupo de cabinas
+  GrupoCabinas := TCPGrupoCabinas.Create(GrupTarAlquiler);
+  TramaTmp := TCPTrama.Create;
+  {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
+  VisorCabinas := TfraVisCPlex.Create(self);
+  VisorCabinas.Parent := self;
+  VisorCabinas.Align := alClient;
+  VisorCabinas.motEdi.OnClickDer:=@VisorCabinas_ClickDer;
+  VisorCabinas.motEdi.OnDblClick:=@VisorCabinas_DblClick;
+  tic := 0;   //inicia contador
+end;
+procedure TfrmPrincipal.FormShow(Sender: TObject);
+begin
+  Config.Iniciar(GrupoCabinas, GrupTarAlquiler);  //lee configuración
+  Config.fcVista.OnUpdateChanges:=@ConfigfcVistaUpdateChanges;
+  frmAdminCabinas.grpCab := GrupoCabinas;  //inicia admin. de cabinas
+  LeerEstadoDeArchivo;   //Lee después de leer la configuración
+  GrupoCabinas.OnCambiaPropied:=@GrupoCabinas_CambiaPropied;
+  GrupoCabinas.OnTramaLista   :=@GrupoCabinas_TramaLista;
+  GrupoCabinas.OnRegMensaje   :=@GrupoCabinas_RegMensaje;
+  GrupoCabinas.OnDetenConteo  :=@GrupoCabinas_DetenConteo;
+  GrupoCabinas.OnLogInfo      :=@GrupoCabinas_LogInfo;
+  GrupoCabinas.OnGrabBoleta   :=@GrupoCabinas_LogIBol;
+  frmAdminTarCab.grpTarAlq := GrupTarAlquiler;
+  frmAdminTarCab.tarCabinas := GrupoCabinas.tarif;
+  frmAdminTarCab.OnModificado:=@GrupTarAlquilerCambia;  //para actualizar cambios
+  if GrupTarAlquiler.items.Count=0 then begin
+    //agrega una tarifa de alquiler por defecto
+    frmAdminTarCab.IniciarPorDefecto;
+    frmAdminTarCab.BitAplicarClick(nil);
+  end;
+  //Crea los objetos gráficos de cabina de acuerdo a GrupoCabinas
+  VisorCabinas.ActualizarPropiedades(GrupoCabinas.ListaCabinas);
+  {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
+   de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
+  ConfigfcVistaUpdateChanges;
+  //Verifica si se puede abrir el archivo de registro principal
+  AbrirPLog(rutDatos, COnfig.fcGeneral.Local);
+  If msjError <> '' then begin
+     MsgErr(msjError);
+     //No tiene sentido seguir, si no se puede abrir registro
+     Close;
+  end;
+
+  //verifica si hay información de usuarios
+  if usuarios.Count = 0 Then begin
+    //crea usuarios por defecto
+    CreaUsuario('admin', '', PER_ADMIN);  //Usuario por defecto
+    CreaUsuario('oper', '', PER_OPER);    //Usuario por defecto
+  end;
+
+  PLogInf(usuario, '----------------- Inicio de Programa ---------------');
+  {frmInicio.edUsu.Text := 'admin';
+  frmInicio.ShowModal;
+  if frmInicio.cancelo then begin
+    fallasesion := True;
+    Close;
+  end;}
+usuario := 'admin';
+perfil  := PER_ADMIN;
+  self.Activate;
+  self.SetFocus;
+  //self.Show;
+end;
+procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  Config.escribirArchivoIni;  //guarda la configuración actual
+  GuardarEstadoArchivo;       //guarda estado
+end;
+procedure TfrmPrincipal.FormDestroy(Sender: TObject);
+begin
+  PLogInf(usuario, '----------------- Fin de Programa ---------------');
+  Debugln('Terminando ... ');
+  TramaTmp.Destroy;
+  //Matar a los hilos de ejecución, puede tomar tiempo
+  GrupoCabinas.Destroy;
+  GrupTarAlquiler.Destroy;
+end;
+procedure TfrmPrincipal.VisorCabinas_ClickDer(xp, yp: integer);
+begin
+  if VisorCabinas.Seleccionado = nil then exit;
+  //hay objeto seleccionado
+  PopupMenu1.PopUp;
+end;
+procedure TfrmPrincipal.VisorCabinas_DblClick(Sender: TObject);
+begin
+  if VisorCabinas.Seleccionado = nil then exit;
+  acCabExplorArcExecute(self);
+end;
+function TfrmPrincipal.CadenaEstado: string;
+{Devuelve una cadena que contiene el estado de cabinas, locutorios y boletas. }
+begin
+  Result := GrupoCabinas.GetEstadoCabinas;
+end;
+procedure TfrmPrincipal.GuardarEstadoArchivo;
+{Guarda el estado de los objetos al archivo de estado}
+var
+  lest: TStringList;
+begin
+  lest:= TSTringList.Create;
+  lest.Text := CadenaEstado;
+  lest.SaveToFile(arcEstado);
+  lest.Destroy;
+end;
+procedure TfrmPrincipal.LeerEstadoDeArchivo;
+{Lee el estado de los objetos del archivo de estado}
+var
+  cad: string;
+begin
+  if not FileExists(arcEstado) then begin
+    msgErr('No se encuentra archivo de estado: ' + arcEstado);
+    exit;
+  end;
+  cad := StringFromFile(arcEstado);
+  //carga el cobtendio del archivo de estado
+  GrupoCabinas.SetEstadoCabinas(cad);
+end;
+procedure TfrmPrincipal.Timer1Timer(Sender: TObject);
+{Como esta rutina se ejecuta cada 0.5 segundos, no es necesario actualizarla por eventos.}
+var
+  tmp: String;
+begin
+  tmp := CadenaEstado;   //lee directamente en lugar de leer archivo
+//  debugln(tmp);
+  VisorCabinas.ActualizarEstado(tmp);
+  Inc(tic);
+  //Aprovevha para referscar el Administrador de Cabinas
+  if frmAdminCabinas.Visible then
+    frmAdminCabinas.RefrescarGrilla;  //actualiza
+  //Aprovecha para refrescar los exploradores de archivos
+//  if tic mod 2 = 0 then begin  //cada 1 seg
+//    for
+//  end;
+  //Guarda en disco, por si acaso.
+  if tic mod 10 = 0 then begin  //para evitar escribir muchas veces en disco
+    GuardarEstadoArchivo; //Por si ha habido cambios
+  end;
+end;
+procedure TfrmPrincipal.ConfigfcVistaUpdateChanges;
+//Cambios en vista
+begin
+  panLLam.Visible := Config.fcVista.verPanLlam;
+  panBolet.Visible:= Config.fcVista.verPanBol;
+  VisorCabinas.ObjBloqueados := not Config.fcVista.modDiseno;
+  case Config.fcVista.StyleToolbar of
+  stb_SmallIcon: begin
+    ToolBar1.ButtonHeight:=22;
+    ToolBar1.ButtonWidth:=22;
+    ToolBar1.Height:=26;
+    ToolBar1.Images:=ImageList16;
+  end;
+  stb_BigIcon: begin
+    ToolBar1.ButtonHeight:=38;
+    ToolBar1.ButtonWidth:=38;
+    ToolBar1.Height:=40;
+    ToolBar1.Images:=ImageList32;
+  end;
+  end;
+end;
+function TfrmPrincipal.BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean = false): TfrmVisorMsjRed;
+{Busca si existe un formaulario de tipo "TfrmVisorMsjRed", que haya sido crreado para
+un nombre de cabina en especial. }
+var
+  i: Integer;
+  frm: TfrmVisorMsjRed;
+begin
+  for i:=0 to ComponentCount-1 do begin
+    if Components[i] is TfrmVisorMsjRed then begin
+      frm := TfrmVisorMsjRed(Components[i]);
+      if frm.nomCab = nomCab then
+        exit(frm);   //coincide
+    end;
+  end;
+  //No encontró
+  if CrearNuevo then begin
+    //debugln('Creando nuevo formulario.');
+    Result := TfrmVisorMsjRed.Create(self);
+    {Los formularios los destruirá el formulario principal, ya que se han creado con
+    este propietario.}
+  end else begin
+    Result := nil;
+  end;
+end;
+function TfrmPrincipal.BuscarExplorCab(nomCab: string; CrearNuevo: boolean = false): TfrmExplorCab;
+{Busca si existe un formaulario de tipo "TfrmVisorMsjRed", que haya sido crreado para
+un nombre de cabina en especial. }
+var
+  i: Integer;
+  frm: TfrmExplorCab;
+begin
+  for i:=0 to ComponentCount-1 do begin
+    if Components[i] is TfrmExplorCab then begin
+      frm := TfrmExplorCab(Components[i]);
+      if frm.nomCab = nomCab then
+        exit(frm);   //coincide
+    end;
+  end;
+  //No encontró
+  if CrearNuevo then begin
+    //debugln('Creando nuevo formulario.');
+    Result := TfrmExplorCab.Create(self);
+    {Los formularios los destruirá el formulario principal, ya que se han creado con
+    este propietario.}
+  end else begin
+    Result := nil;
+  end;
+end;
+{procedure TfrmPrincipal.ChangeAppearance;
+begin
+  StatusBar1.Visible := Config.fcIDE.ViewStatusbar;
+  acVerBarEst.Checked := Config.fcIDE.ViewStatusbar;
+  ToolBar1.Visible := Config.fcIDE.ViewToolbar;
+  acVerBarHer.Checked:= Config.fcIDE.ViewToolbar;
+
+  panMessages.Visible:= Config.fcIDE.ViewPanMsg;
+  Splitter2.Visible := Config.fcIDE.ViewPanMsg;
+  acVerPanMsj.Checked:= Config.fcIDE.ViewPanMsg;
+end;
+}
+procedure TfrmPrincipal.PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+{Envía un comando, llamando directamente a GrupoCabinas_TramaLista()}
+begin
+  TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
+  GrupoCabinas_TramaLista(nil, TramaTmp, true);
+end;
+///// Acciones de Cabinas
+procedure TfrmPrincipal.acCabIniCtaExecute(Sender: TObject);
+//Inicia la cuenta de una cabina de internet
+var
+  ogCab: TObjCabina;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  if ogCab.EnManten then begin
+    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
+  end else if not ogCab.Detenida then begin
+    msgExc('No se puede iniciar una cuenta en esta cabina.');
+    exit;
+  end;
+  frmFijTiempo.MostrarIni(ogCab);  //modal
+  if frmFijTiempo.cancelo then exit;  //canceló
+  PonerComando(C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+end;
+procedure TfrmPrincipal.acCabModTpoExecute(Sender: TObject);
+var
+  ogCab: TObjCabina;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  if ogCab.Detenida then begin
+    acCabIniCtaExecute(self);  //está detenida, inicia la cuenta
+  end else if ogCab.Contando then begin
+    //está en medio de una cuenta
+    frmFijTiempo.Mostrar(ogCab);  //modal
+    if frmFijTiempo.cancelo then exit;  //canceló
+    PonerComando(C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+  end;
+end;
+procedure TfrmPrincipal.acCabDetCtaExecute(Sender: TObject);
+var
+  ogCab: TObjCabina;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
+  PonerComando(C_DET_CTAPC, 0, 0, ogCab.nombre);
+end;
+procedure TfrmPrincipal.acCabPonManExecute(Sender: TObject);
+var
+  ogCab: TObjCabina;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  if not ogCab.Detenida then begin
+    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
+    exit;
+  end;
+  PonerComando(C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
+end;
+
+procedure TfrmPrincipal.acCabExplorArcExecute(Sender: TObject);
+//Muestra la ventana explorador de archivo
+var
+  ogCab: TObjCabina;
+  frmExpArc: TfrmExplorCab;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  //Busca si ya existe ventana exploradora, creadas para esta cabina
+  frmExpArc := BuscarExplorCab(ogCab.Nombre, true);
+  frmExpArc.Exec(VisorCabinas, ogCab.Nombre);
+end;
+procedure TfrmPrincipal.acCabMsjesRedExecute(Sender: TObject);
+var
+  ogCab: TObjCabina;
+  frmMsjes: TfrmVisorMsjRed;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  //Busca si ya existe ventana de mensajes, creadas para esta cabina
+  frmMsjes := BuscarVisorMensajes(ogCab.Nombre, true);
+  frmMsjes.Exec(GrupoCabinas, ogCab.Nombre);
+end;
+procedure TfrmPrincipal.acCabGraBolExecute(Sender: TObject);
+var
+  ogCab: TObjCabina;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  if MsgYesNo('Grabar Boleta de: ' + ogCab.nombre + '?')<>1 then exit;
+  PonerComando(C_GRA_BOLPC, 0, 0, ogCab.nombre);
+end;
+procedure TfrmPrincipal.acCabVerBolExecute(Sender: TObject);
+var
+  ogCab: TObjCabina;
+begin
+  ogCab := VisorCabinas.CabSeleccionada;
+  if ogCab = nil then exit;
+  frmBoleta.Exec(ogCab.Boleta);
+end;
+///// Acciones del sistema
+procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
+begin
+  Config.Mostrar;
+end;
+procedure TfrmPrincipal.acSisAdmCabExecute(Sender: TObject);
+begin
+  frmAdminCabinas.Show;
+end;
+procedure TfrmPrincipal.acSisAdmTarCabExecute(Sender: TObject);
+begin
+  frmAdminTarCab.Show;
+end;
+
+end.
+

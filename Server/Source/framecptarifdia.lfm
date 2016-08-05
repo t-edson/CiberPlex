@@ -1,0 +1,35 @@
+object fraCPTarifDia: TfraCPTarifDia
+  Left = 0
+  Height = 283
+  Top = 0
+  Width = 146
+  ClientHeight = 283
+  ClientWidth = 146
+  OnMouseDown = FrameMouseDown
+  OnMouseMove = FrameMouseMove
+  OnMouseUp = FrameMouseUp
+  TabOrder = 0
+  DesignLeft = 303
+  DesignTop = 202
+  object lblTitulo: TLabel
+    Left = 0
+    Height = 15
+    Top = 0
+    Width = 146
+    Align = alTop
+    Alignment = taCenter
+    Caption = 'lblTitulo'
+    ParentColor = False
+  end
+  object Label1: TLabel
+    Left = 16
+    Height = 15
+    Top = 80
+    Width = 34
+    Caption = 'Label1'
+    Color = clYellow
+    ParentColor = False
+    Transparent = False
+    Visible = False
+  end
+end

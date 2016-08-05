@@ -1,0 +1,111 @@
+object frmBusProductos: TfrmBusProductos
+  Left = 354
+  Height = 359
+  Top = 310
+  Width = 541
+  Caption = 'ALMACÉN'
+  ClientHeight = 339
+  ClientWidth = 541
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  LCLVersion = '1.6.0.4'
+  object grilla: TStringGrid
+    Left = 0
+    Height = 262
+    Top = 32
+    Width = 541
+    Align = alClient
+    TabOrder = 0
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 45
+    Top = 294
+    Width = 541
+    Align = alBottom
+    ClientHeight = 45
+    ClientWidth = 541
+    TabOrder = 1
+    object BitBtn1: TBitBtn
+      Left = 448
+      Height = 30
+      Top = 8
+      Width = 73
+      Anchors = [akTop, akLeft, akRight]
+      DefaultCaption = True
+      Kind = bkClose
+      ModalResult = 11
+      TabOrder = 0
+    end
+    object Label1: TLabel
+      Left = 16
+      Height = 15
+      Top = 16
+      Width = 95
+      Caption = '0 registros visibles'
+      ParentColor = False
+    end
+  end
+  object Panel2: TPanel
+    Left = 0
+    Height = 32
+    Top = 0
+    Width = 541
+    Align = alTop
+    ClientHeight = 32
+    ClientWidth = 541
+    TabOrder = 2
+    inline fraUtilsGrilla1: TfraUtilsGrilla
+      Left = 8
+      Height = 24
+      Top = 3
+      Width = 224
+      ClientHeight = 24
+      ClientWidth = 224
+    end
+  end
+  object MainMenu1: TMainMenu
+    left = 120
+    top = 40
+    object MenuItem1: TMenuItem
+      Caption = '&Archivo'
+      object MenuItem3: TMenuItem
+        Action = acArcSalir
+      end
+    end
+    object MenuItem2: TMenuItem
+      Caption = '&Edición'
+      object MenuItem4: TMenuItem
+        Action = acEdiNuevo
+      end
+      object MenuItem5: TMenuItem
+        Action = acEdiModif
+      end
+      object MenuItem6: TMenuItem
+        Action = acEdiElimin
+      end
+    end
+  end
+  object ActionList1: TActionList
+    left = 352
+    top = 40
+    object acArcSalir: TAction
+      Category = 'Arc'
+      Caption = '&Salir'
+    end
+    object acEdiNuevo: TAction
+      Category = 'Edi'
+      Caption = '&Nuevo'
+    end
+    object acEdiModif: TAction
+      Category = 'Edi'
+      Caption = '&Modificar'
+    end
+    object acEdiElimin: TAction
+      Category = 'Edi'
+      Caption = '&Eliminar'
+    end
+  end
+end
