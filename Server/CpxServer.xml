@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <version Val="CiberPlex Server"/>
+  <local Val="LOCAL1"/>
+  <grupo Val="GRUPO1"/>
+  <inform Val=""/>
+  <PVenDef Val="COUNTER"/>
+  <SimbMon Val="S/."/>
+  <NumDec Val="2"/>
+  <ImpVen Val="18"/>
+  <PanLlamadas Val="True"/>
+  <PanBoletas Val="True"/>
+  <ModDiseno Val="False"/>
+  <StateStatusbar Val="1"/>
+  <GrpsFact Val="
+[[0
+Cab1	192.168.1.33		10	20	V					
+Cab2			105	20	F					
+Cab3			200	20	F					
+Cab4			295	20	F					
+]]
+"/>
+  <usuarios Val="6693732W3643W37637Y77311316317318311315
+6693732W378379368381311311316
+"/>
+</CONFIG>
