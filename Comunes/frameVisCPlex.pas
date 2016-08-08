@@ -9,11 +9,13 @@ interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
-  CPGrupoCabinas, CPFacturables, CPGrupFacturables, ogMotEdicion;
+  CibGFacCabinas, CibFacturables, CPGrupFacturables, ogMotEdicion;
 const
-  ID_CABINA = 1;
+  ID_CABINA = 1;  //Cabinas
+  ID_GCABINA =2;  //Grupo de cabinas
+
+
 type
-  TOgCabina_list = specialize TFPGObjectList<TObjGrafCabina>;
   { TfraVisCPlex }
   TfraVisCPlex = class(TFrame)
   published
@@ -26,21 +28,22 @@ type
     PaintBox1: TPaintBox;
   private
     FObjBloqueados: boolean;
+    procedure ActualizarGruposCabinas(items: TCibGFact_list);
+    function AgregGrupCabinas(gcab: TCibGFacCabinas): TogGCabinas;
     procedure SetObjBloqueados(AValue: boolean);
-    procedure ActualizarCabinas(items: TCPFacturable_list);
+    procedure ActualizarCabinas(items: TCibFac_list);
   public
     motEdi: TModEdicion;  //motor de edición
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
-    function AgregCabina(cab: TCPCabina): TObjGrafCabina;
-    function BuscarOgCabina(const nom: string): TObjGrafCabina;
+    function AgregCabina(cab: TCibFacCabina): TogCabina;
+    function BuscarOgCabina(const nom: string): TogCabina;
     function NumSelecionados: integer;
     function Seleccionado: TObjGraf;
-    function CabSeleccionada: TObjGrafCabina;
+    function CabSeleccionada: TogCabina;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
   private
     decod: TCPDecodCadEstado;  //decodificador de cadenas de estado
-    listCabinas: TOgCabina_list;   //almacenamiento temporal de las referencias a las cabinas
     grupos: TCPGruposFacturables;   {Esta lista de grupos facturables, será una copia
                                         de la lista que existe en el servidor.}
   public
@@ -60,12 +63,12 @@ begin
   end;
   FObjBloqueados:=AValue;
 end;
-function TfraVisCPlex.AgregCabina(cab: TCPCabina): TObjGrafCabina;
-//Agrega un objeto de tipo Cabina al editor
+function TfraVisCPlex.AgregCabina(cab: TCibFacCabina): TogCabina;
+//Agrega un objeto de tipo Cabina, al editor
 var
-  og: TObjGrafCabina;
+  og: TogCabina;
 begin
-  og := TObjGrafCabina.Create(motEdi.v2d, cab);
+  og := TogCabina.Create(motEdi.v2d, cab);
   motEdi.AgregarObjGrafico(og);
   og.icoPC := Image5.Picture.Graphic;   //asigna imagen
   og.icoPCdes:= Image6.Picture.Graphic;   //asigna imagen
@@ -77,16 +80,31 @@ begin
   og.PosLocked := FObjBloqueados;  //depende del esatdo actual
   Result := og;
 end;
-function TfraVisCPlex.BuscarOgCabina(const nom: string): TObjGrafCabina;
+function TfraVisCPlex.AgregGrupCabinas(gcab: TCibGFacCabinas): TogGCabinas;
+//Agrega un objeto de tipo Grupo de Cabinas, al editor
+var
+  og: TogGCabinas;
+begin
+  og := TogGCabinas.Create(motEdi.v2d, gcab);
+  motEdi.AgregarObjGrafico(og);
+  og.icoPC := Image5.Picture.Graphic;   //asigna imagen
+  og.icoRedAct := Image3.Picture.Graphic;
+  og.icoRedDes := Image4.Picture.Graphic;
+  og.Id := ID_GCABINA;
+  og.SizeLocked := true;
+  og.PosLocked := FObjBloqueados;  //depende del esatdo actual
+  Result := og;
+end;
+function TfraVisCPlex.BuscarOgCabina(const nom: string): TogCabina;
 {Devuelve la referencia a una cabina. Si no encuentra devuelve NIL}
 var
   og: TObjGraf;
-  cab : TObjGrafCabina;
+  cab : TogCabina;
 begin
   for og in motEdi.objetos do begin
     if og.Id = ID_CABINA then begin
       if og.nombre = nom then begin
-        cab := TObjGrafCabina(og);
+        cab := TogCabina(og);
         exit(cab);
       end;
     end;
@@ -101,7 +119,7 @@ function TfraVisCPlex.Seleccionado: TObjGraf;  //atajo
 begin
   Result := motEdi.Seleccionado;
 end;
-function TfraVisCPlex.CabSeleccionada: TObjGrafCabina;
+function TfraVisCPlex.CabSeleccionada: TogCabina;
 {Devuelve la cabina seleccionada. Si no hay ninguna, devuelve NIL.}
 var
   og: TObjGraf;
@@ -112,33 +130,93 @@ begin
   end;
   og := Seleccionado;
   if og = nil then exit;
-  if not (og is TObjGrafCabina) then exit(nil);
-  Result := TObjGrafCabina(og);
+  if not (og is TogCabina) then exit(nil);
+  Result := TogCabina(og);
 end;
-procedure TfraVisCPlex.ActualizarCabinas(items: TCPFacturable_list);
-{Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
-que objetos deben existir}
+procedure TfraVisCPlex.ActualizarGruposCabinas(items: TCibGFact_list);
+{Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
+habrá un grupo.}
+var
+  lista: TogGCabinas_list;   //almacenamiento temporal de las referencias a las cabinas
   procedure InicListaCabinas;
-  {Llena "listCabinas", con la lista de referencias a cabinas, y limpia su bandera
+  {Llena "lista", con la lista de referencias a cabinas, y limpia su bandera
    "usado". }
   var
     og: TObjGraf;
   begin
-    listCabinas.Clear;
+    lista.Clear;
     for og in motEdi.objetos do begin
-      if og.Id = ID_CABINA then begin
-        TObjGrafCabina(og).Usado:=false;
-        listCabinas.Add(TObjGrafCabina(og));
+      if og.Id = ID_GCABINA then begin
+        TogGCabinas(og).Usado:=false;
+        lista.Add(TogGCabinas(og));
       end;
     end;
   end;
-  function AgregarSiNoHay(cab: TCPCabina): TObjGrafCabina;
+  function AgregarSiNoHay(gcab: TCibGFacCabinas): TogGCabinas;
   {Devuelve la referencia a una cabina. Si no existe la crea.
-   Debe haberse llenado "listCabinas", previamente}
+   Debe haberse llenado "lista", previamente}
   var
-    c: TObjGrafCabina;
+    c: TogGCabinas;
   begin
-    for c in listCabinas do begin
+    for c in lista do begin
+      if c.nombre = gcab.Nombre then begin
+        //hay, devuelve la referencia
+        Result := c;
+        Result.gcab := gcab;   //actualiza la referencia
+        exit;
+      end;
+    end;
+    //no hay
+    Result := AgregGrupCabinas(gcab);  //crea cabina
+  end;
+var
+  ogGCab: TogGCabinas;
+  gfac : TCibGFac;
+  cab : TCibGFacCabinas;
+begin
+  lista := TogGCabinas_list.Create(false);
+  InicListaCabinas;   //crea lista y marca "Usado"
+  for gfac in items do begin
+    cab := TCibGFacCabinas(gfac);
+    ogGCab := AgregarSiNoHay(cab);
+    ogGCab.CadPropied := cab.CadPropied;  //actualiza propiedades
+    ogGCab.Usado:=true;
+
+  end;
+  //verifica cabinas no usadas
+  for ogGCab in lista do begin
+    if Not ogGCab.Usado then
+      motEdi.EliminarObjGrafico(ogGCab);
+  end;
+  motEdi.Refrescar;
+  lista.Destroy;
+end;
+procedure TfraVisCPlex.ActualizarCabinas(items: TCibFac_list);
+{Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
+que objetos deben existir}
+var
+  lista: TOgCabina_list;   //almacenamiento temporal de las referencias a las cabinas
+  procedure InicListaCabinas;
+  {Llena "lista", con la lista de referencias a cabinas, y limpia su bandera
+   "usado". }
+  var
+    og: TObjGraf;
+  begin
+    lista.Clear;
+    for og in motEdi.objetos do begin
+      if og.Id = ID_CABINA then begin
+        TogCabina(og).Usado:=false;
+        lista.Add(TogCabina(og));
+      end;
+    end;
+  end;
+  function AgregarSiNoHay(cab: TCibFacCabina): TogCabina;
+  {Devuelve la referencia a una cabina. Si no existe la crea.
+   Debe haberse llenado "lista", previamente}
+  var
+    c: TogCabina;
+  begin
+    for c in lista do begin
       if c.nombre = cab.Nombre then begin
         //hay, devuelve la referencia
         Result := c;
@@ -150,31 +228,33 @@ que objetos deben existir}
     Result := AgregCabina(cab);  //crea cabina
   end;
 var
-  ogCab: TObjGrafCabina;
-  fac : TCPFacturable;
-  cab : TCPCabina;
+  ogCab: TogCabina;
+  fac : TCibFac;
+  cab : TCibFacCabina;
 begin
+  lista := TOgCabina_list.Create(false);
   InicListaCabinas;   //crea lista y marca "Usado"
   for fac in items do begin
-    cab := TCPCabina(fac);
+    cab := TCibFacCabina(fac);
     ogCab := AgregarSiNoHay(cab);
     ogCab.CadPropied := cab.CadPropied;  //actualiza propiedades
     ogCab.Usado:=true;
 
   end;
   //verifica cabinas no usadas
-  for ogCab in listCabinas do begin
+  for ogCab in lista do begin
     if Not ogCab.Usado then
       motEdi.EliminarObjGrafico(ogCab);
   end;
   motEdi.Refrescar;
+  lista.Destroy;
 end;
 
 procedure TfraVisCPlex.ActualizarPropiedades(cadProp: string);
 {Recibe la cadena de propiedades del "TCPGruposFacturables" del servidor y actualiza
 su copia local.}
 var
-  gruFac: TCPGrupoFacturable;
+  gruFac: TCibGFac;
 begin
   grupos.items.Clear;  {Para empezar a crear los objetos en ModoCopia TRUE}
   grupos.ModoCopia := true;   //para que cree sus objetos sin conexión
@@ -203,9 +283,9 @@ procedure TfraVisCPlex.ActualizarEstado(cadEstado: string);
  >
  }
 var
-  ogCab: TObjGrafCabina;
-  gruFac: TCPGrupoFacturable;
-  it    : TCPFacturable;
+  ogCab : TogCabina;
+  gruFac: TCibGFac;
+  it    : TCibFac;
 begin
   if cadEstado='' then exit;
   grupos.CadEstado := cadEstado;
@@ -226,7 +306,6 @@ constructor TfraVisCPlex.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   motEdi := TModEdicion.Create(PaintBox1);
-  listCabinas := TOgCabina_list.Create(false);
   decod := TCPDecodCadEstado.Create;
   grupos:= TCPGruposFacturables.Create('GrupVis');
 end;
@@ -234,7 +313,6 @@ destructor TfraVisCPlex.Destroy;
 begin
   grupos.Destroy;
   decod.Destroy;
-  listCabinas.Destroy;
   motEdi.Destroy;
   inherited;
 end;

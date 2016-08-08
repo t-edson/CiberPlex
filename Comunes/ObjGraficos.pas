@@ -5,8 +5,8 @@ unit ObjGraficos;
 interface
 uses
   Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
-  MisUtils, ogMotGraf2d, ogDefObjGraf, CPCabinaBase,
-  CPGrupoCabinas, CPFacturables;
+  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase,
+  CibGFacCabinas, CibFacturables;
 const
   //Constantes de Colores
  COL_AZUL_CLARO = 230 * 256 *256 + 255 *256 + 255;
@@ -63,7 +63,7 @@ TLisFilaOQ = specialize TFPGList<TFilaOQ>;
 TogBoleta = class(TObjVsible)      //Se maneja como objeto
 private
   //tipo     : TipTTab;  //No usado
-  bol      : TCPBoleta;
+  bol      : TCibBoleta;
   filas    : TLisFilaOQ;
   xCheck   : single;
   procedure ReConstGeom;
@@ -75,15 +75,16 @@ public
   procedure MouseUp(Button: TMouseButton; Shift: TShiftState; xp, yp: Integer);
   procedure Agregar(txt: string);  //Agrega una fila al cuadro
 public  //Constructor y destructor
-  constructor Create(mGraf: TMotGraf; bol0: TCPBoleta);
+  constructor Create(mGraf: TMotGraf; bol0: TCibBoleta);
   destructor Destroy; override;
 end;
 
-{ TObjGrafCabina }
-TObjGrafCabina = class(TObjGraf)
+{ TogCabina }
+{Objeto gráfico que representa a los elementos TCibFacCabina}
+TogCabina = class(TObjGraf)
 private
-  Fcab: TCPCabina;
-  procedure Setcab(AValue: TCPCabina);
+  Fcab: TCibFacCabina;
+  procedure Setcab(AValue: TCibFacCabina);
   procedure SetCadEstado(AValue: string);
   procedure SetCadPropied(AValue: string);
 public
@@ -94,7 +95,7 @@ public
   icoRedAct  : TGraphic;    //referencia a ícono
   icoRedDes  : TGraphic;    //referencia a ícono
   Boleta     : TogBoleta;   //La boleta
-  property cab: TCPCabina read Fcab write Setcab;   //contenedor de propiedades
+  property cab: TCibFacCabina read Fcab write Setcab;   //contenedor de propiedades
   procedure DibujarTiempo;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
 //   Function EsVisibleEnPantalla() : Boolean;
@@ -111,9 +112,42 @@ protected
 private
   BotDes   : TogButton;          //Refrencia global al botón de Desactivar
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf; cab0: TCPCabina);
+  constructor Create(mGraf: TMotGraf; cab0: TCibFacCabina);
   destructor Destroy; override;
 end;
+TOgCabina_list = specialize TFPGObjectList<TogCabina>;  //lista de cabinas
+
+{ TogGCabinas }
+{Objeto gráfico que representa a los elementos TCibGFacCabinas}
+TogGCabinas = class(TObjGraf)
+private
+  Fgcab: TCibGFacCabinas;
+  procedure Setgcab(AValue: TCibGFacCabinas);
+  procedure SetCadEstado(AValue: string);
+  procedure SetCadPropied(AValue: string);
+public
+  Usado      : boolean;
+  icoPC      : TGraphic;    //PC con control
+  icoRedAct  : TGraphic;    //referencia a ícono
+  icoRedDes  : TGraphic;    //referencia a ícono
+  property gcab: TCibGFacCabinas read Fgcab write Setgcab;   //contenedor de propiedades
+  procedure DibujarTiempo;
+  procedure Dibujar; override;  //Dibuja el objeto gráfico
+//   Function EsVisibleEnPantalla() : Boolean;
+   //Da un indicio sobre si el objeto es completamente visible en pantalla y en las capas
+  procedure ProcDesac(estado0: Boolean);   //Para responder evento de Habilitar/Deshabilitar
+//  procedure LeePropiedades(cad: string; grabar_ini: boolean=true); override;
+  property CadPropied: string write SetCadPropied;
+  property CadEstado: string write SetCadEstado;
+protected
+  procedure ReubicElemen; override;
+private
+  BotDes   : TogButton;          //Refrencia global al botón de Desactivar
+public  //constructor y detsructor
+  constructor Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
+  destructor Destroy; override;
+end;
+TogGCabinas_list = specialize TFPGObjectList<TogGCabinas>;  //lista de cabinas
 
 implementation
 
@@ -121,7 +155,7 @@ implementation
 //Const ALTO_MIN = 20;     //Alto mínimo de objetos gráficos en Twips (Coord Virtuales)
 
 //////////////////////////////  TogBoleta  //////////////////////////////
-constructor TogBoleta.Create(mGraf: TMotGraf; bol0: TCPBoleta);
+constructor TogBoleta.Create(mGraf: TMotGraf; bol0: TCibBoleta);
 begin
    inherited Crear(mGraf, 80, 22);    //crea
    //tipo := tipo0;
@@ -198,7 +232,8 @@ begin
    filas.Add(f);
    ReConstGeom;      //reconstruye
 end;
-procedure TObjGrafCabina.SetCadPropied(AValue: string);
+{ TogCabina }
+procedure TogCabina.SetCadPropied(AValue: string);
 begin
   //carg1 propiedades
   cab.CadPropied := Avalue;
@@ -208,17 +243,16 @@ begin
   fy := cab.y;
   ReubicElemen;
 end;
-procedure TObjGrafCabina.Setcab(AValue: TCPCabina);
+procedure TogCabina.Setcab(AValue: TCibFacCabina);
 begin
   Fcab:=AValue;   //actualiza referencia
   Boleta.bol := Avalue.Boleta;   //y también el de la boleta
 end;
-
-procedure TObjGrafCabina.SetCadEstado(AValue: string);
+procedure TogCabina.SetCadEstado(AValue: string);
 begin
   cab.CadEstado := AValue;
 end;
-procedure TObjGrafCabina.DibujarTiempo;
+procedure TogCabina.DibujarTiempo;
 var
   tmp: string;
 begin
@@ -247,7 +281,7 @@ begin
   //escribe tiempo
   v2d.Texto(x+4,y+17,tmp);
 end;
-procedure TObjGrafCabina.Dibujar();
+procedure TogCabina.Dibujar();
 var
   x2:Single;
   s: String;
@@ -313,7 +347,7 @@ begin
   end;
   inherited;
 end;
-procedure TObjGrafCabina.ReubicElemen;
+procedure TogCabina.ReubicElemen;
 //Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
 //cambiar las dimensiones.
 var
@@ -326,27 +360,25 @@ begin
   //ubica boleta
   Boleta.Ubicar(x+5,y+110);
 end;
-function TObjGrafCabina.Contando: boolean;
+function TogCabina.Contando: boolean;
 begin
   Result := cab.EstadoCta in [EST_CONTAN, EST_PAUSAD];
 end;
-function TObjGrafCabina.Detenida: boolean;
+function TogCabina.Detenida: boolean;
 begin
   Result := cab.EstadoCta = EST_NORMAL;
 end;
-
-function TObjGrafCabina.EnManten: boolean;
+function TogCabina.EnManten: boolean;
 begin
   Result := cab.EstadoCta = EST_MANTEN;
 end;
-
-procedure TObjGrafCabina.ProcDesac(estado0: Boolean);
+procedure TogCabina.ProcDesac(estado0: Boolean);
 begin
 //   Desactivado := estado0;
    BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
 end;
 //constructor y detsructor
-constructor TObjGrafCabina.Create(mGraf: TMotGraf; cab0: TCPCabina);
+constructor TogCabina.Create(mGraf: TMotGraf; cab0: TCibFacCabina);
 begin
   inherited Create(mGraf);
   Fcab := cab0;   //guarda referencia
@@ -363,9 +395,105 @@ begin
   ProcDesac(False);   //Desactivado := False
   nombre := 'Cabina';
 end;
-destructor TObjGrafCabina.Destroy;
+destructor TogCabina.Destroy;
 begin
   Boleta.Free;
+  inherited;
+end;
+{ TogGCabinas }
+procedure TogGCabinas.SetCadPropied(AValue: string);
+begin
+  //carg1 propiedades
+  gcab.CadPropied := Avalue;
+  //actualiza las propiedades locales
+  nombre := gcab.Nombre;
+  fx := gcab.x;
+  fy := gcab.y;
+  ReubicElemen;
+end;
+procedure TogGCabinas.Setgcab(AValue: TCibGFacCabinas);
+begin
+  Fgcab:=AValue;   //actualiza referencia
+end;
+procedure TogGCabinas.SetCadEstado(AValue: string);
+begin
+  gcab.CadEstado := AValue;
+end;
+procedure TogGCabinas.DibujarTiempo;
+var
+  tmp: string;
+begin
+  //dibuja cuadro de estado
+  v2d.SetText(clBlack, 10,'',false);
+  v2d.FijaRelleno(TColor($80ff80));
+  v2d.RectangR(x, y, x+60, y+36);
+  //escribe tiempo
+  v2d.Texto(x+4,y+17,tmp);
+end;
+procedure TogGCabinas.Dibujar;
+var
+  x2:Single;
+  s: String;
+begin
+  //--------------Dibuja cuerpo de tabla
+  x2 := x + width;
+  //y2 := y + height;
+  //Sombra
+//    Call v2d.FijaLapiz(0, 3, COL_GRIS_CLARO)
+//    Call v2d.FijaRellenoTransparente
+//    v2d.RectRedonR mX + 2, mY + 2, x2 + 2, y2 + 2
+  //Frente
+//  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+//  v2d.FijaRelleno(clWhite);
+//  v2d.RectRedonR(x, y, x2, y2);
+  //--------------Dibuja encabezado
+  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+//  If Desactivado Then v2d.FijaRelleno(COL_BARTIT_DES) Else v2d.FijaRelleno(COL_BARTIT_ACT);
+//  v2d.RectRedonR(x, y, x2, y + ALT_ENCAB_DEF);
+  v2d.SetText(clBlack, 11,'', true);
+  v2d.Texto(X + 2, Y -20, nombre);
+  //dibuja íconos de PC y de conexión
+  v2d.DibujarImagenN(icoPC, x+12, y+20);
+  DibujarTiempo;
+  //muestra consumo
+  v2d.FijaLapiz(psSolid, 1, clBlack);
+  v2d.FijaRelleno(TColor($D5D5D5));
+  v2d.RectangR(x, y+88, x2, y+110);
+  inherited;
+end;
+procedure TogGCabinas.ReubicElemen;
+//Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
+//cambiar las dimensiones.
+var
+  x2: Single;
+begin
+  inherited;
+  x2 := x + width;
+  Buttons[0].Ubicar(x2 - 24, y + 1);
+end;
+procedure TogGCabinas.ProcDesac(estado0: Boolean);
+begin
+  //   Desactivado := estado0;
+     BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
+end;
+constructor TogGCabinas.Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
+begin
+  inherited Create(mGraf);
+  Fgcab := cab0;   //guarda referencia
+  BotDes := AddButton(24,24,BOT_REPROD, @ProcDesac);
+  pc_SUP_CEN.visible:=false;  //oculta punto de control
+
+  Self.Ubicar(100,100);
+  width := 85;
+  height := 130;
+
+  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+
+  ProcDesac(False);   //Desactivado := False
+  nombre := 'Grupo Cabinas';
+end;
+destructor TogGCabinas.Destroy;
+begin
   inherited;
 end;
 
