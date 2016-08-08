@@ -1,0 +1,248 @@
+object frmFijTiempo: TfrmFijTiempo
+  Left = 263
+  Height = 208
+  Top = 265
+  Width = 308
+  BorderStyle = bsDialog
+  Caption = 'frmFijTiempo'
+  ClientHeight = 208
+  ClientWidth = 308
+  LCLVersion = '1.6.0.4'
+  object Image1: TImage
+    Left = 10
+    Height = 70
+    Top = 10
+    Width = 70
+    Picture.Data = {
+      055449636F6EFE0200000000010001002020100000000000E802000016000000
+      2800000020000000400000000100040000000000800200000000000000000000
+      0000000000000000000000000000800000800000008080008000000080008000
+      8080000080808000C0C0C0000000FF0000FF000000FFFF00FF000000FF00FF00
+      FFFF0000FFFFFF00FF7777777777777777777777777FFFFFFF77777777777777
+      777777777777FFFF00000000000000000000000077777FFF0888888888888888
+      88888880000077FF0888888888888888888888800770077F0888888080808080
+      8088880077770077088808080808080808080807777770070880808080808080
+      8080880777777700088888888888888888888880777787700000000000000000
+      0000000707787870FF0000000000000000000777F0778780F088888888888888
+      AA888077FF07780FF08000000000000000008077FFF000F0F080CCCCCCCCCCCC
+      CCC08077FFFFFFF0F080CCFFFFCCCFFFCCC08077FFFFFFF0F080CCCCFCCCCCFC
+      CCC08070FFFFFFF0F080CCCCCFCCCCFCCCC08077F0FFFF0FF080CCCCCCFFFFFC
+      CCC08077FFF000FFF080CCCCCCCFCCFCCCC08077FFFFFFFFF080CCCCCCCCFCFC
+      CCC080000FFFFFFFF080CCCCCCCCCFFCCCC00BBBB00FFFFFF080CCCCCCCCCCFC
+      CC0BBBBBBBB0FFFFF080CCCCCCCCCCCCC00BBBBBBBB0FFFFF070000000000000
+      00BBBBBBBBBB0FFFF07788888888888880BBBB0BBBBB0FFFFF00000000000000
+      00BBB0000BBB0FFFFFFFFFFFFFFFFFFFF0BBBB0BBBBB0FFFFFFFFFFFFFFFFFFF
+      F0BBBB0BBBBB0FFFFFFFFFFFFFFFFFFFFF0BBB0BBBB0FFFFFFFFFFFFFFFFFFFF
+      FF0BBB0BBBB0FFFFFFFFFFFFFFFFFFFFFFF00BBBB00FFFFFFFFFFFFFFFFFFFFF
+      FFFFF0000FFFFFFF000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000
+    }
+    Stretch = True
+  end
+  object Label1: TLabel
+    Left = 96
+    Height = 17
+    Top = 32
+    Width = 59
+    Caption = 'TIEMPO:'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -15
+    Font.Name = 'Times New Roman'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    ParentColor = False
+    ParentFont = False
+  end
+  object txtHH: TEdit
+    Left = 160
+    Height = 29
+    Top = 24
+    Width = 40
+    Alignment = taCenter
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -19
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    TabOrder = 0
+    Text = '00'
+  end
+  object Label2: TLabel
+    Left = 200
+    Height = 22
+    Top = 25
+    Width = 5
+    Caption = ':'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -19
+    Font.Name = 'Times New Roman'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object txtMM: TEdit
+    Left = 208
+    Height = 29
+    Top = 24
+    Width = 40
+    Alignment = taCenter
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -19
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    TabOrder = 1
+    Text = '00'
+  end
+  object Label3: TLabel
+    Left = 248
+    Height = 22
+    Top = 25
+    Width = 5
+    Caption = ':'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -19
+    Font.Name = 'Times New Roman'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object txtSS: TEdit
+    Left = 256
+    Height = 29
+    Top = 24
+    Width = 40
+    Alignment = taCenter
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -19
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    TabOrder = 2
+    Text = '00'
+  end
+  object Label4: TLabel
+    Left = 158
+    Height = 16
+    Top = 8
+    Width = 141
+    Caption = 'horas   minutos  segund'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -13
+    Font.Name = 'Arial'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsItalic]
+    ParentColor = False
+    ParentFont = False
+  end
+  object chkLibre: TCheckBox
+    Left = 192
+    Height = 21
+    Top = 96
+    Width = 102
+    Caption = 'Tiempo Libre'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -15
+    Font.Name = 'Times New Roman'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsItalic]
+    OnChange = chkLibreChange
+    ParentFont = False
+    TabOrder = 3
+  end
+  object chkHorGra: TCheckBox
+    Left = 192
+    Height = 21
+    Top = 120
+    Width = 96
+    Caption = 'Hora Gratis'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -15
+    Font.Name = 'Times New Roman'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsItalic]
+    ParentFont = False
+    TabOrder = 4
+  end
+  object BitBtn1: TBitBtn
+    Left = 32
+    Height = 30
+    Top = 160
+    Width = 75
+    Default = True
+    DefaultCaption = True
+    Kind = bkOK
+    ModalResult = 1
+    OnClick = BitBtn1Click
+    TabOrder = 5
+  end
+  object BitBtn2: TBitBtn
+    Left = 200
+    Height = 30
+    Top = 160
+    Width = 75
+    Cancel = True
+    DefaultCaption = True
+    Kind = bkCancel
+    ModalResult = 2
+    OnClick = BitBtn2Click
+    TabOrder = 6
+  end
+  object cmd30: TBitBtn
+    Left = 96
+    Height = 30
+    Top = 56
+    Width = 64
+    Caption = '+30min'
+    OnClick = cmd30Click
+    TabOrder = 7
+  end
+  object cmd15: TBitBtn
+    Left = 168
+    Height = 30
+    Top = 56
+    Width = 64
+    Caption = '+15min'
+    OnClick = cmd15Click
+    TabOrder = 8
+  end
+  object cmdLim: TBitBtn
+    Left = 240
+    Height = 30
+    Top = 56
+    Width = 64
+    Caption = 'Limpiar'
+    OnClick = cmdLimClick
+    TabOrder = 9
+  end
+  object chkManten: TCheckBox
+    Left = 16
+    Height = 21
+    Top = 96
+    Width = 152
+    Caption = 'PC en mantenimiento'
+    Enabled = False
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -15
+    Font.Name = 'Times New Roman'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsItalic]
+    OnChange = chkMantenChange
+    ParentFont = False
+    TabOrder = 10
+  end
+end
