@@ -2,7 +2,8 @@
 =====
 Se cambia de nombre a TCibGFacturable por TCibGFac.
 Se cambia de nombre a TCibFacturable por TCibFac.
-Se cambai de nombre a TObjGrafCabina por TogCabina.
+Se cambia de nombre a TObjGrafCabina por TogCabina.
+Se crea el objeto gráfico TogGCabinas, para representar a los grupos de cabinas.
 
 
 0.9.1
