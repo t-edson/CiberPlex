@@ -3,7 +3,7 @@ unit FormVisorMsjRed;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Clipbrd, CPGrupoCabinas;
+  StdCtrls, Clipbrd, CibGFacCabinas;
 type
 
   { TfrmVisorMsjRed }
@@ -18,10 +18,10 @@ type
     procedure btnAgrSaltoClick(Sender: TObject);
     procedure btnLimpiarClick(Sender: TObject);
   private
-    GrupCabinas: TCPGrupoCabinas;
+    GrupCabinas: TCibGFacCabinas;
   public
     nomCab: string;
-    procedure Exec(GrupCabinas0: TCPGrupoCabinas; nomCab0: string);
+    procedure Exec(GrupCabinas0: TCibGFacCabinas; nomCab0: string);
     procedure PonerMsje(msj: string);
   end;
 
@@ -42,7 +42,7 @@ procedure TfrmVisorMsjRed.btnAgrSaltoClick(Sender: TObject);
 begin
   Memo1.Lines.Add('');
 end;
-procedure TfrmVisorMsjRed.Exec(GrupCabinas0: TCPGrupoCabinas; nomCab0: string);
+procedure TfrmVisorMsjRed.Exec(GrupCabinas0: TCibGFacCabinas; nomCab0: string);
 begin
   GrupCabinas := GrupCabinas0;
   nomCab:= nomCab0;

@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   ButtonPanel, StdCtrls, Grids, ActnList, Menus, Buttons,
-  FrameUtilsGrilla, UtilsGrilla, MisUtils, CPFacturables, CPProductos, FormConfig;
+  FrameUtilsGrilla, UtilsGrilla, MisUtils, CibFacturables, CPProductos, FormConfig;
 
 type
   //Evento para agregar una venta
@@ -219,7 +219,7 @@ begin
 end;
 procedure TfrmIngVentas.OKButtonClick(Sender: TObject);  //Aceptar
 var
-  itBol: TCPItemBoleta;
+  itBol: TCibItemBoleta;
   pro: TregProdu;
 begin
   if not ActualizarTotal(true) then exit;
@@ -234,7 +234,7 @@ begin
   if pro = nil then exit;
 
   //Crea ítem de boleta
-  itBol := TCPItemBoleta.Create;   //crea elemento
+  itBol := TCibItemBoleta.Create;   //crea elemento
 //  iteMod.vser = nser;     //se asignará después
   itBol.Cant := StrToFloat(txtCantidad.Text);
   itBol.pUnit := LeeMoneda(txtPrecUnit.Text);

@@ -13,7 +13,7 @@ interface
 uses
   Classes, SysUtils, strutils, FileUtil, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, Buttons, Grids, StdCtrls, ActnList, Menus, LCLProc, UtilsGrilla,
-  MisUtils, CPGrupoCabinas, CPFacturables, FormConfig, FormIngVentas;
+  MisUtils, CibGFacCabinas, CibFacturables, FormConfig, FormIngVentas;
 type
   TevAccionItemBol = procedure(const nombreObj, idItemtBol, coment: string) of object;
   TevAccionBoleta = procedure(const nombreObj, coment: string) of object;
@@ -54,13 +54,13 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    cab: TCPCabina;
+    cab: TCibFacCabina;
     gri: TUtilGrillaFil;
-    function HayCambios(bol: TCPBoleta): boolean;
-    function ItemSeleccionado: TCPItemBoleta;
-    function LeerItemSeleccionado(var item: TCPItemBoleta; var codigo: string;
+    function HayCambios(bol: TCibBoleta): boolean;
+    function ItemSeleccionado: TCibItemBoleta;
+    function LeerItemSeleccionado(var item: TCibItemBoleta; var codigo: string;
       var estado: TItemBoletaEstado): boolean;
-    function LlenarFila(f: integer; it: TCPItemBoleta; Cambiar: boolean=true
+    function LlenarFila(f: integer; it: TCibItemBoleta; Cambiar: boolean=true
       ): boolean;
   public  //Eventos que usa la boleta para comunciar sus acciones
     OnGrabarBoleta: TevAccionBoleta;
@@ -71,7 +71,7 @@ type
     OnDividirItem : TevAccionItemBol;
     OnGrabarItem  : TevAccionItemBol;
     procedure ActualizarDatos;
-    procedure Exec(cab0: TCPCabina);
+    procedure Exec(cab0: TCibFacCabina);
   end;
 
 var
@@ -81,14 +81,14 @@ implementation
 {$R *.lfm}
 
 { TfrmBoleta }
-function TfrmBoleta.ItemSeleccionado: TCPItemBoleta;
+function TfrmBoleta.ItemSeleccionado: TCibItemBoleta;
 {Devuelve el ítem seleccionado en la grilla.}
 begin
   if grilla.Row<1 then exit(nil);
   Result := cab.Boleta.items[grilla.Row-1];  //funciona porque se llena en orden
   //cod := grilla.Cells[1, grilla.Row];  //lee código de producto
 end;
-function TfrmBoleta.LlenarFila(f: integer; it: TCPItemBoleta; Cambiar: boolean = true): boolean;
+function TfrmBoleta.LlenarFila(f: integer; it: TCibItemBoleta; Cambiar: boolean = true): boolean;
 {Escribe un ítem de boleta en una fila de la grilla, validando su contenido. Si
  debe realizar cambios, devuelve TRUE.}
   procedure ActualizarCelda(c, f: integer; const valor: string);
@@ -114,11 +114,11 @@ begin
   ActualizarCelda(11,f, it.pVen);
   ActualizarCelda(12,f, it.Id);
 end;
-function TfrmBoleta.HayCambios(bol: TCPBoleta): boolean;
+function TfrmBoleta.HayCambios(bol: TCibBoleta): boolean;
 {Indica si los datos de la grilla, son diferentes a los datos de la boleta que se
  prentende usar para llenar a la grilla.}
 var
-  itBol : TCPItemBoleta;
+  itBol : TCibItemBoleta;
   f: Integer;
 begin
   Result := false;  //por defecto se asume que no hay cambios
@@ -136,7 +136,7 @@ procedure TfrmBoleta.ActualizarDatos;
 {Actualiza el contenido de la boleta, solo cuando detecta que ha habido cambios en
 los ìtems.}
 var
-  itBol : TCPItemBoleta;
+  itBol : TCibItemBoleta;
   f: Integer;
 begin
   if not HayCambios(cab.Boleta) then exit;
@@ -161,7 +161,7 @@ begin
   grilla.EndUpdate();
   txtTotal.Text := CadMoneda(cab.Boleta.TotPag);
 end;
-procedure TfrmBoleta.Exec(cab0: TCPCabina);
+procedure TfrmBoleta.Exec(cab0: TCibFacCabina);
 begin
   cab := cab0;  //OJO que esta es la cabina de la interfaz gráfica, que es de solo lectura
   Caption := 'BOLETA DE: ' + cab.Nombre;
@@ -201,14 +201,14 @@ procedure TfrmBoleta.FormDestroy(Sender: TObject);
 begin
   gri.Destroy;
 end;
-function TfrmBoleta.LeerItemSeleccionado(var item: TCPItemBoleta;
+function TfrmBoleta.LeerItemSeleccionado(var item: TCibItemBoleta;
          var codigo: string; var estado: TItemBoletaEstado): boolean;
 {Lee el ítem seleccionado, y copia el código. Si no hay ítem seleccionado, devuelve FALSE. }
 begin
   item := ItemSeleccionado;
   if item = nil then exit(false);
   {En la mayoría de casos, será útil leer inmediatamente las propiedades del ítem, por
-  seguridad, en lugar usar la referencia, ya que la referencia al objeto "TCPItemBoleta",
+  seguridad, en lugar usar la referencia, ya que la referencia al objeto "TCibItemBoleta",
   al que se refiere "item", puede refrescarse si se está leyendo el ítem de un objeto
   gráfico.}
   codigo := item.Id;
@@ -227,7 +227,7 @@ begin
 end;
 procedure TfrmBoleta.acItemDevolvExecute(Sender: TObject);  //Devolver ítem
 var
-  itTmp: TCPItemBoleta;
+  itTmp: TCibItemBoleta;
   comen, cod: String;
   estado: TItemBoletaEstado;
 begin
@@ -245,7 +245,7 @@ begin
 end;
 procedure TfrmBoleta.acItemDesechExecute(Sender: TObject);  //Desechar Ítem
 var
-  itTmp: TCPItemBoleta;
+  itTmp: TCibItemBoleta;
   comen, cod: String;
   estado: TItemBoletaEstado;
 begin
@@ -263,7 +263,7 @@ begin
 end;
 procedure TfrmBoleta.acItemRecupExecute(Sender: TObject);  //Recuperar ítem desechado
 var
-  itTmp: TCPItemBoleta;
+  itTmp: TCibItemBoleta;
   cod: string;
   estado: TItemBoletaEstado;
 begin
@@ -277,7 +277,7 @@ begin
 end;
 procedure TfrmBoleta.acItemComentExecute(Sender: TObject);  //Comentar ítem
 var
-  itTmp: TCPItemBoleta;
+  itTmp: TCibItemBoleta;
   cod, comen: string;
   estado: TItemBoletaEstado;
 begin
@@ -291,7 +291,7 @@ begin
 end;
 procedure TfrmBoleta.acItemDividirExecute(Sender: TObject);  //Dividir ítem
 var
-  itTmp: TCPItemBoleta;
+  itTmp: TCibItemBoleta;
   cod, comen: string;
   parte, subtot: Double;
   estado: TItemBoletaEstado;
@@ -322,7 +322,7 @@ begin
 end;
 procedure TfrmBoleta.acItemGraSelecExecute(Sender: TObject);  //Grabar ítem
 var
-  itTmp: TCPItemBoleta;
+  itTmp: TCibItemBoleta;
   cod: string;
   estado: TItemBoletaEstado;
 begin

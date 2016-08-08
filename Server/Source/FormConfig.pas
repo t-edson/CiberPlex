@@ -8,7 +8,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Buttons, StdCtrls, ComCtrls, ExtCtrls,
   MiConfigBasic, MiConfigXML, frameCfgUsuarios,
-  Globales, MisUtils, CPGrupoCabinas, CPGrupFacturables;
+  Globales, MisUtils, CibGFacCabinas, CPGrupFacturables;
 
 type
   TStyleToolbar = (stb_SmallIcon, stb_BigIcon);
@@ -78,7 +78,7 @@ type
     listaUsu: TStringList;
 
     procedure escribirArchivoIni;
-    procedure Iniciar(grpCab0: TCPGrupoCabinas);
+    procedure Iniciar(grpCab0: TCibGFacCabinas);
     procedure Mostrar;
   end;
 
@@ -135,7 +135,7 @@ begin
   escribirArchivoIni;   //guarda propiedades en disco
 end;
 
-procedure TConfig.Iniciar(grpCab0: TCPGrupoCabinas);
+procedure TConfig.Iniciar(grpCab0: TCibGFacCabinas);
 //Inicia el formulario de configuración. Debe llamarse antes de usar el formulario y
 //después de haber cargado todos los frames.
 var
@@ -161,9 +161,9 @@ begin
   cfgFile.Asoc_Enum('StateStatusbar', @StyleToolbar, SizeOf(TStyleToolbar),
                     RadioGroup1, 1);
   //propiedades de grupos
-  asocGF := cfgFile.Asoc_Str('GrpsFact', @GrpsFact, '');  //crea asociación sin variable
-  asocGF.OnPropertyToFile:=@asocGFPropertyToFile;  //usamos sus eventos
-  asocGF.OnFileToProperty:=@asocGFFileToProperty;
+  //asocGF := cfgFile.Asoc_Str('GrpsFact', @GrpsFact, '');  //crea asociación sin variable
+  //asocGF.OnPropertyToFile:=@asocGFPropertyToFile;  //usamos sus eventos
+  //asocGF.OnFileToProperty:=@asocGFFileToProperty;
   //propiedades de usuario
   asocUs := cfgFile.Asoc_StrList('usuarios', @FraUsuarios1.listaUsu);
   asocUs.OnFileToProperty := @FraUsuarios1.FiletoProperty;
