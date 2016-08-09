@@ -3,7 +3,7 @@ unit FormVisorMsjRed;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Clipbrd, CibGFacCabinas;
+  StdCtrls, Clipbrd;
 type
 
   { TfrmVisorMsjRed }

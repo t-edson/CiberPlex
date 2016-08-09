@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, Types, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus, ComCtrls,
   MisUtils, FormIngVentas, FormConfig, frameCfgUsuarios, Globales,
-  frameVisCPlex, ObjGraficos, FormFijTiempo, FormAdminCabinas, FormExplorCab,
+  frameVisCPlex, ObjGraficos, FormFijTiempo, FormExplorCab,
   FormVisorMsjRed, FormBoleta, FormRepIngresos, FormBusProductos, FormInicio,
   CPRegistros, CPTramas, CPUtils, CibFacturables, CPProductos,
   CibGFacCabinas, CibGFacNiloM;
@@ -132,8 +132,6 @@ type
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
-    function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
-      ): TfrmVisorMsjRed;
     procedure frmBoleta_GrabarBoleta(const nombreObj, coment: string);
     procedure frmBoletaGrabarItem(const nombreObj, idItemtBol, coment: string);
     procedure frmBoleta_DividirItem(const nombreObj, idItemtBol, coment: string);
@@ -146,7 +144,6 @@ type
     procedure frmIngVentas_AgregarVenta(nombreObj: string; itBol: string);
     procedure GFacCabinas_LogInfo(cab: TCibFacCabina; msj: string);
     procedure GFacCabinas_DetenConteo(cab: TCibFacCabina);
-    procedure GFacCabinas_RegMensaje(NomCab: string; msj: string);
     procedure GFacCabinas_TramaLista(cabOrig: TCibFacCabina; tram: TCPTrama; tramaLocal: boolean);
     procedure GuardarEstadoArchivo;
     procedure LeerEstadoDeArchivo;
@@ -191,10 +188,10 @@ var
 begin
   //debugln(NomCab + ': Trama recibida: '+ tram.TipTraHex);
   if not tramaLocal then begin  //Ignora los mensajes locales
-     frm := BuscarVisorMensajes(cabOrig.Nombre);  //Ve si hay un formulario de mensajes para esta cabina
+     frm := GFacCabinas.BuscarVisorMensajes(cabOrig.Nombre);  //Ve si hay un formulario de mensajes para esta cabina
      {Aunque no se ha detectado consumo de CPU adicional, la búqsqueda regular con
      BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando que
-     se hace para todos los mensjaes que llegan.
+     se hace para todos los mensajes que llegan.
      }
      if frm<>nil then frm.PonerMsje('>>Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end;
@@ -372,13 +369,6 @@ begin
   end;
 end;
 //}
-procedure TfrmPrincipal.GFacCabinas_RegMensaje(NomCab: string; msj: string);
-var
-  frm: TfrmVisorMsjRed;
-begin
-  frm := BuscarVisorMensajes(NomCab);  //Ve si hay un formulario de mensajes para esta cabina
-  if frm<>nil then frm.PonerMsje(msj);  //Envía mensaje a su formaulario
-end;
 procedure TfrmPrincipal.GFacCabinas_DetenConteo(cab: TCibFacCabina);
 {Se usa este evento para guardar información en el registro, y actualizar la boleta.
 Se hace desde fuera de CPGrupoCabinas, porque para estas acciones se requiere acceso a
@@ -444,7 +434,6 @@ begin
   //Inicializa GFacCabinas
   Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
   GFacCabinas.OnTramaLista   :=@GFacCabinas_TramaLista;
-  GFacCabinas.OnRegMensaje   :=@GFacCabinas_RegMensaje;
   GFacCabinas.OnDetenConteo  :=@GFacCabinas_DetenConteo;
   GFacCabinas.OnLogInfo      :=@GFacCabinas_LogInfo;
 
@@ -579,30 +568,6 @@ begin
     ToolBar1.Height:=40;
     ToolBar1.Images:=ImageList32;
   end;
-  end;
-end;
-function TfrmPrincipal.BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean = false): TfrmVisorMsjRed;
-{Busca si existe un formaulario de tipo "TfrmVisorMsjRed", que haya sido crreado para
-un nombre de cabina en especial. }
-var
-  i: Integer;
-  frm: TfrmVisorMsjRed;
-begin
-  for i:=0 to ComponentCount-1 do begin
-    if Components[i] is TfrmVisorMsjRed then begin
-      frm := TfrmVisorMsjRed(Components[i]);
-      if frm.nomCab = nomCab then
-        exit(frm);   //coincide
-    end;
-  end;
-  //No encontró
-  if CrearNuevo then begin
-    //debugln('Creando nuevo formulario.');
-    Result := TfrmVisorMsjRed.Create(self);
-    {Los formularios los destruirá el formulario principal, ya que se han creado con
-    este propietario.}
-  end else begin
-    Result := nil;
   end;
 end;
 procedure TfrmPrincipal.frmIngVentas_AgregarVenta(nombreObj: string;
@@ -770,18 +735,27 @@ end;
 procedure TfrmPrincipal.acGCabAdmTarCabExecute(Sender: TObject);
 var
   ogGcab: TogGCabinas;
+  gcab: TCibGFac;
 begin
   ogGcab := VisorCabinas.GCabSeleccionada;
   if ogGcab = nil then exit;
-  ogGcab.gcab.frmAdminTar.Show;
+  {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
+  de administración de la copia, no del modelo original.}
+  gcab := Config.grupos.BuscarPorNombre(ogGcab.gcab.Nombre);  //Busca grupo en el modelo
+  TCibGFacCabinas(gcab).frmAdminTar.Show;
 end;
 procedure TfrmPrincipal.acGCabAdmCabExecute(Sender: TObject);
+{Muestra la ventana de administración de cabinas.}
 var
   ogGcab: TogGCabinas;
+  gcab: TCibGFac;
 begin
   ogGcab := VisorCabinas.GCabSeleccionada;
   if ogGcab = nil then exit;
-  ogGcab.gcab.frmAdminCabs.Show;
+  {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
+  de administración de la copia, no del modelo original.}
+  gcab := Config.grupos.BuscarPorNombre(ogGcab.gcab.Nombre);  //Busca grupo en el modelo
+  TCibGFacCabinas(gcab).frmAdminCabs.Show;  //abre su ventana de administración
 end;
 //Acciones de Cabinas
 procedure TfrmPrincipal.acCabIniCtaExecute(Sender: TObject);
@@ -853,11 +827,14 @@ procedure TfrmPrincipal.acCabMsjesRedExecute(Sender: TObject);
 var
   ogCab: TogCabina;
   frmMsjes: TfrmVisorMsjRed;
+  gcab: TCibGFac;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
+  //Ubica a su grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogCab.cab.Grupo.Nombre);  //Busca grupo en el modelo
   //Busca si ya existe ventana de mensajes, creadas para esta cabina
-  frmMsjes := BuscarVisorMensajes(ogCab.Nombre, true);
+  frmMsjes := TCibGFacCabinas(gcab).BuscarVisorMensajes(ogCab.Nombre, true);
   frmMsjes.Exec(ogCab.Nombre);
 end;
 procedure TfrmPrincipal.acCabGraBolExecute(Sender: TObject);
