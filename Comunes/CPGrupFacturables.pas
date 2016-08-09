@@ -9,10 +9,10 @@ uses
   //Aquí se incluyen las unidades que definen clases descendientes de TCPFacturables
   CibGFacCabinas, CibGFacNiloM, MisUtils;
 type
-  { TCPGruposFacturables }
+  { TCibGruposFacturables }
   {Objeto que engloba a todos los grupos facturables. Debe haber solo una instancia para
    toda la aplicación, así que trabaja ccomo un SINGLETON.}
-  TCPGruposFacturables = class
+  TCibGruposFacturables = class
   private
     FModoCopia: boolean;
     function GetCadEstado: string;
@@ -22,7 +22,7 @@ type
     procedure SetCadPropiedades(AValue: string);
     procedure SetModoCopia(AValue: boolean);
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
-      var tipo: TCPTipGrupoFactur): boolean;
+      var tipo: TCibTipGFact): boolean;
   public
     nombre: string;      //Es un identificador del grupo. Es útil solo para depuración.
     items: TCibGFact_list;  //lista de grupos facturables
@@ -42,9 +42,9 @@ type
 
 implementation
 
-{ TCPGruposFacturables }
-function TCPGruposFacturables.ExtraerBloqueEstado(lisEstado: TStringList;
-  var estado, nomGrup: string; var tipo: TCPTipGrupoFactur): boolean;
+{ TCibGruposFacturables }
+function TCibGruposFacturables.ExtraerBloqueEstado(lisEstado: TStringList;
+  var estado, nomGrup: string; var tipo: TCibTipGFact): boolean;
 {Extrae de la cadena de estado de la aplicación (guardada en lisEstado), el fragmento
 que corresponde al estado de un grupo facturable. El estado se devuelve en "estado"
 Normalmente lisEstado , tendrá la forma:
@@ -76,7 +76,7 @@ begin
       //Es la primera línea a agregar. Aprovechamos para capturar tipo y nomGrup de grupo
       a := Explode(#9, lisEstado[0]);
       delete(a[0], 1, 1);  //quita "<"
-      tipo := TCPTipGrupoFactur(f2I(a[0]));
+      tipo := TCibTipGFact(f2I(a[0]));
       nomGrup := a[1];
     end;
     estado := estado + lisEstado[0] + LineEnding;  //acumula
@@ -93,7 +93,7 @@ begin
     exit(true);    //Sale sin error
   end;
 end;
-function TCPGruposFacturables.GetCadPropiedades: string;
+function TCibGruposFacturables.GetCadPropiedades: string;
 var
   gf : TCibGFac;
   tmp: String;
@@ -107,12 +107,12 @@ begin
   Result := tmp;
 end;
 
-procedure TCPGruposFacturables.gfCambiaPropied;
+procedure TCibGruposFacturables.gfCambiaPropied;
 begin
   if OnCambiaPropied<>nil then OnCambiaPropied;
 end;
 
-procedure TCPGruposFacturables.SetCadPropiedades(AValue: string);
+procedure TCibGruposFacturables.SetCadPropiedades(AValue: string);
 var
   lin, tmp: string;
   lineas: TStringList;
@@ -135,7 +135,7 @@ debugln(' Limpiando lista para fijar propiedades.');
       tmp:='';  //inicia acumulación
     end else if lin = ']]' then begin
       //marca de fin, termina acumulación
-      case TCPTipGrupoFactur(tipGru) of
+      case TCibTipGFact(tipGru) of
       tgfCabinas: begin
         grupCab := TCibGFacCabinas.Create('CabsSinProp');  //crea la instancia
         grupCab.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
@@ -155,7 +155,7 @@ debugln(' Limpiando lista para fijar propiedades.');
   end;
   lineas.Destroy;
 end;
-procedure TCPGruposFacturables.SetModoCopia(AValue: boolean);
+procedure TCibGruposFacturables.SetModoCopia(AValue: boolean);
 var
   gf : TCibGFac;
 begin
@@ -166,7 +166,7 @@ begin
     gf.ModoCopia:= AValue
   end;
 end;
-function TCPGruposFacturables.GetCadEstado: string;
+function TCibGruposFacturables.GetCadEstado: string;
 var
   gf : TCibGFac;
   primero: Boolean;
@@ -184,12 +184,12 @@ begin
     end;
   end;
 end;
-procedure TCPGruposFacturables.SetCadEstado(const AValue: string);
+procedure TCibGruposFacturables.SetCadEstado(const AValue: string);
 var
   lest: TStringList;
   res: Boolean;
   cad, nombGrup: string;
-  tipo: TCPTipGrupoFactur;
+  tipo: TCibTipGFact;
   gf: TCibGFac;
 begin
 //debugln('---');
@@ -211,11 +211,11 @@ begin
   //carga el cobtendio del archivo de estado
   lest.Destroy;
 end;
-function TCPGruposFacturables.NumGrupos: integer;
+function TCibGruposFacturables.NumGrupos: integer;
 begin
   Result := items.Count;
 end;
-function TCPGruposFacturables.BuscarPorNombre(nomb: string): TCibGFac;
+function TCibGruposFacturables.BuscarPorNombre(nomb: string): TCibGFac;
 {Busca a uno de los grupos de facturables, por su nombre. Si no encuentra, devuelve NIL}
 var
   gf : TCibGFac;
@@ -227,19 +227,19 @@ begin
   //no encontró
   exit(nil);
 end;
-procedure TCPGruposFacturables.Agregar(gf: TCibGFac);
+procedure TCibGruposFacturables.Agregar(gf: TCibGFac);
 {Agrega un grupo de facturables al objeto}
 begin
   gf.OnCambiaPropied:=@gfCambiaPropied;
   items.Add(gf);
 end;
 //constructor y destructor
-constructor TCPGruposFacturables.Create(nombre0: string);
+constructor TCibGruposFacturables.Create(nombre0: string);
 begin
   nombre := nombre0;
   items := TCibGFact_list.Create(true);
 end;
-destructor TCPGruposFacturables.Destroy;
+destructor TCibGruposFacturables.Destroy;
 begin
   items.Destroy;
   inherited Destroy;

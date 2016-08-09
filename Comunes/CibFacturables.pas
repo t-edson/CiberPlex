@@ -108,6 +108,7 @@ type
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
   public
     Boleta : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
+    MsjError: string;          //para mensajes de error
     property Nombre: string read FNombre write SetNombre;  //Nombre del objeto
     property CadEstado: string read GetCadEstado write SetCadEstado;
     property CadPropied: string read GetCadPropied write SetCadPropied;
@@ -122,14 +123,15 @@ type
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
 
   //Tipos de objetos Grupos Facturables
-  TCPTipGrupoFactur = (
+  TCibTipGFact = (
     tgfCabinas = 0,     //Grupo de Cabinas
     tgfLocutNilo = 1    //Grupo de locutorios de enrutador NILO-m
   );
 
   { TCibGFac }
-  {Define a la clase base de donde se derivarán los grupos facturables. Un grupo
-  facturable es un objeto que contiene un conjunto (lista) de objetos facturables.}
+  {Define a la clase base de donde se derivarán los objetos Grupo de Facturables o Grupo
+   Facturbale. Un grupo facturable es un objeto que contiene un conjunto (lista) de
+   objetos facturables.}
   TCibGFac = class
   protected
     Fx: double;
@@ -144,7 +146,7 @@ type
     procedure Sety(AValue: double);
   public
     Nombre: string;           //Nombre de grupo facturable
-    tipo  : TCPTipGrupoFactur;  //tipo de grupo facturable
+    tipo  : TCibTipGFact;  //tipo de grupo facturable
     CategVenta: string;       //categoría de Venta para este grupo
     items : TCibFac_list; //lista de objetos facturables
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
@@ -160,8 +162,9 @@ type
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.
     property x: double read Fx write Setx;   //coordenada X
     property y: double read Fy write Sety;  //coordenada Y
+    function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
   public  //constructor y destructor
-    constructor Create(nombre0: string; tipo0: TCPTipGrupoFactur);
+    constructor Create(nombre0: string; tipo0: TCibTipGFact);
     destructor Destroy; override;
   end;
   //Lista de grupos facturables
@@ -473,7 +476,18 @@ begin
   Fy:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-constructor TCibGFac.Create(nombre0: string; tipo0: TCPTipGrupoFactur
+function TCibGFac.ItemPorNombre(nom: string): TCibFac;
+{Devuelve la referencia a un ítem, ubicándola por su nombre. Si no lo enuentra
+ devuelve NIL.}
+var
+  c : TCibFac;
+begin
+  for c in items do begin
+    if c.Nombre = nom then exit(c);
+  end;
+  exit(nil);
+end;
+constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipGFact
   );
 begin
   items  := TCibFac_list.Create(true);

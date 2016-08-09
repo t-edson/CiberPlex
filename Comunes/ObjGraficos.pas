@@ -127,22 +127,16 @@ private
   procedure SetCadPropied(AValue: string);
 public
   Usado      : boolean;
-  icoPC      : TGraphic;    //PC con control
-  icoRedAct  : TGraphic;    //referencia a ícono
-  icoRedDes  : TGraphic;    //referencia a ícono
+  icono      : TGraphic;    //PC con control
   property gcab: TCibGFacCabinas read Fgcab write Setgcab;   //contenedor de propiedades
-  procedure DibujarTiempo;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
 //   Function EsVisibleEnPantalla() : Boolean;
    //Da un indicio sobre si el objeto es completamente visible en pantalla y en las capas
-  procedure ProcDesac(estado0: Boolean);   //Para responder evento de Habilitar/Deshabilitar
 //  procedure LeePropiedades(cad: string; grabar_ini: boolean=true); override;
   property CadPropied: string write SetCadPropied;
   property CadEstado: string write SetCadEstado;
 protected
   procedure ReubicElemen; override;
-private
-  BotDes   : TogButton;          //Refrencia global al botón de Desactivar
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
   destructor Destroy; override;
@@ -419,21 +413,9 @@ procedure TogGCabinas.SetCadEstado(AValue: string);
 begin
   gcab.CadEstado := AValue;
 end;
-procedure TogGCabinas.DibujarTiempo;
-var
-  tmp: string;
-begin
-  //dibuja cuadro de estado
-  v2d.SetText(clBlack, 10,'',false);
-  v2d.FijaRelleno(TColor($80ff80));
-  v2d.RectangR(x, y, x+60, y+36);
-  //escribe tiempo
-  v2d.Texto(x+4,y+17,tmp);
-end;
 procedure TogGCabinas.Dibujar;
 var
   x2:Single;
-  s: String;
 begin
   //--------------Dibuja cuerpo de tabla
   x2 := x + width;
@@ -448,17 +430,11 @@ begin
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-//  If Desactivado Then v2d.FijaRelleno(COL_BARTIT_DES) Else v2d.FijaRelleno(COL_BARTIT_ACT);
-//  v2d.RectRedonR(x, y, x2, y + ALT_ENCAB_DEF);
+  //dibuja íconos
+  v2d.DibujarImagenN(icono, x, y-2);
+  //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(X + 2, Y -20, nombre);
-  //dibuja íconos de PC y de conexión
-  v2d.DibujarImagenN(icoPC, x+12, y+20);
-  DibujarTiempo;
-  //muestra consumo
-  v2d.FijaLapiz(psSolid, 1, clBlack);
-  v2d.FijaRelleno(TColor($D5D5D5));
-  v2d.RectangR(x, y+88, x2, y+110);
+  v2d.Texto(x + 33, y+3, nombre);
   inherited;
 end;
 procedure TogGCabinas.ReubicElemen;
@@ -469,27 +445,17 @@ var
 begin
   inherited;
   x2 := x + width;
-  Buttons[0].Ubicar(x2 - 24, y + 1);
-end;
-procedure TogGCabinas.ProcDesac(estado0: Boolean);
-begin
-  //   Desactivado := estado0;
-     BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
 end;
 constructor TogGCabinas.Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
 begin
   inherited Create(mGraf);
   Fgcab := cab0;   //guarda referencia
-  BotDes := AddButton(24,24,BOT_REPROD, @ProcDesac);
   pc_SUP_CEN.visible:=false;  //oculta punto de control
 
   Self.Ubicar(100,100);
-  width := 85;
-  height := 130;
-
+  width := 100;
+  height := 29;
   ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
-
-  ProcDesac(False);   //Desactivado := False
   nombre := 'Grupo Cabinas';
 end;
 destructor TogGCabinas.Destroy;
