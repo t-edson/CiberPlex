@@ -1,12 +1,20 @@
-{Unidad que define a la clase TCPGrupoCabinas, que es el objeto que se usa para controlar
-a las cabinas de Internet.}
+{Unidad que define a las clases principales:
+ * TCibFacCabina -> Facturable que representa a una cabina de internet
+ * TCibGFacCabinas -> Grupo facturable que agrupa a las cabinas.
+Estos objeto se usan para controlar a las cabinas de Internet.
+Adicionalmente la clase TCibGFacCabinas, puede crear dinámicamente lso siguientes
+formularios:
+ * Un Formulario para configuración de tarifas de alquiler de cabinas.
+ * Un Formulario de administración de cabinas (agregar, eliminar o modificar)
+ * Varios Formualarios para mostrar los mensajes de conexión de red de las cabinas.
+}
 unit CibGFacCabinas;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, types, dateutils, math, LCLProc, ExtCtrls, MisUtils,
-  CibCabinaBase, CPTramas, FormInicio, CibFacturables, CibCabinaTarifas,
-  FormAdminTarCab, FormAdminCabinas;
+  Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
+  MisUtils, CPTramas, FormInicio, CibFacturables,
+  CibCabinaBase, CibCabinaTarifas, FormVisorMsjRed, FormAdminTarCab, FormAdminCabinas;
 const
   IDE_EST_CAB = 'c'; {Identificador de línea de estado de cabina. Debe ser de un caracter.
                       El formato de estado, para una cabina es:
@@ -130,7 +138,7 @@ type
       destructor Destroy; override;
   end;
 
-
+  TForm_list = specialize TFPGObjectList<TfrmVisorMsjRed>;
   { TCibGFacCabinas }
   { Clase que define al conjunto de las PC clientes. Se juntan todas las
   cabinas en un objeto único, porque la arquitectura se define para centralizar el
@@ -142,6 +150,7 @@ type
   private
     timer1 : TTimer;
     decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
+    ventMsjes: TForm_list;     //Ventanas de mensajes de red
     procedure cab_LogInfo(cab: TCibFacCabina; msj: string);
     procedure cab_DetenConteo(cab: TCibFacCabina);
     procedure cab_RegMensaje(NomCab: string; msj: string);
@@ -169,6 +178,8 @@ type
     function ListaCabinas: string;
     function CabPorNombre(nom: string): TCibFacCabina;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
     function Toleran: TDateTime;   //acceso a la tolerancia
+    function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
+      ): TfrmVisorMsjRed;
   public  //operaciones con cabinas
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
@@ -696,9 +707,14 @@ begin
   if OnTramaLista<>nil then OnTramaLista(cab, tram, tramaLocal);
 end;
 procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
+var
+  frm: TfrmVisorMsjRed;
 begin
   //dispara evento
   if OnRegMensaje<>nil then OnRegMensaje(NomCab, msj);
+  //pasa mensaje a Visor de mensaje, si está abierto
+  frm := BuscarVisorMensajes(NomCab);  //Ve si hay un formulario de mensajes para esta cabina
+  if frm<>nil then frm.PonerMsje(msj);  //Envía mensaje a su formaulario
 end;
 procedure TCibGFacCabinas.cab_DetenConteo(cab: TCibFacCabina);
 {Se ha detenido la cuenta de la cabina.}
@@ -851,6 +867,27 @@ function TCibGFacCabinas.Toleran: TDateTime;
 begin
   Result := tarif.toler;
 end;
+function TCibGFacCabinas.BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean = false): TfrmVisorMsjRed;
+{Busca si existe un formulario de tipo "TfrmVisorMsjRed", que haya sido crreado para
+un nombre de cabina en especial. }
+var
+  frm: TfrmVisorMsjRed;
+begin
+  for frm in ventMsjes do begin
+    if frm.nomCab = nomCab then begin
+      //Encontró
+      exit(frm);   //devuelve refrecnia
+    end;
+  end;
+  //No encontró
+  if CrearNuevo then begin
+    //debugln('Creando nuevo formulario.');
+    Result := TfrmVisorMsjRed.Create(nil);
+    ventMsjes.Add(Result);  //El formulario será destruido con la lista
+  end else begin
+    Result := nil;
+  end;
+end;
 //operaciones con cabinas
 procedure TCibGFacCabinas.TCP_envComando(nom: string; comando: TCPTipCom; ParamX,
   ParamY: word; cad: string = '');
@@ -873,7 +910,7 @@ end;
 constructor TCibGFacCabinas.Create(nombre0: string);
 begin
   inherited Create(nombre0, tgfCabinas);
-debugln('-Creando: '+ nombre0);
+//debugln('-Creando: '+ nombre0);
   //Se incluye un objeto TGrupoTarAlquiler para la tarificación
   GrupTarAlquiler := TGrupoTarAlquiler.Create;
   tarif := TCPTarifCabinas.Create(GrupTarAlquiler);
@@ -895,14 +932,16 @@ debugln('-Creando: '+ nombre0);
   //Crea ventana de administración de cabinas
   frmAdminCabs:= TfrmAdminCabinas.Create(nil);
   frmAdminCabs.grpCab := self;  //inicia admin. de cabinas
-
+  //Ventanas de mensajes de red
+  ventMsjes := TForm_list.Create;
 end;
 destructor TCibGFacCabinas.Destroy;
 var
   c : TCibFac;
 begin
-debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipo))+','+
-                          CategVenta+','+IntTostr(items.Count));
+//debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipo))+','+
+//                          CategVenta+','+IntTostr(items.Count));
+  ventMsjes.Destroy;
   frmAdminCabs.Destroy;
   frmAdminTar.Destroy;
   OnCambiaPropied:= nil;  //para evitar refrescar controles en este estado
