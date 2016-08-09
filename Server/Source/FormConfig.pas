@@ -72,7 +72,7 @@ type
     modDiseno: Boolean;
     StyleToolbar: TStyleToolbar;
     ////// propiedad de grupos
-    grupos: TCPGruposFacturables;  //objeto principal
+    grupos: TCibGruposFacturables;  //objeto principal
     GrpsFact: string;   //cadena "espejo" para las propiedades
     ////// propiedades usuarios
     listaUsu: TStringList;
@@ -108,7 +108,7 @@ end;
 
 procedure TConfig.FormCreate(Sender: TObject);
 begin
-  grupos := TCPGruposFacturables.Create('GrupServ');
+  grupos := TCibGruposFacturables.Create('GrupServ');
   cfgFile.VerifyFile;
   cfgFile.OnPropertiesChanges:=@cfgFilePropertiesChanges;
 end;

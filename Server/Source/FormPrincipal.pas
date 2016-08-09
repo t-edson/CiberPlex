@@ -4,8 +4,7 @@ interface
 uses
   Classes, SysUtils, Types, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus, ComCtrls,
   MisUtils, FormIngVentas, FormConfig, frameCfgUsuarios, Globales,
-  frameVisCPlex, ObjGraficos, FormFijTiempo,
-  FormAdminCabinas, FormAdminTarCab, FormExplorCab,
+  frameVisCPlex, ObjGraficos, FormFijTiempo, FormAdminCabinas, FormExplorCab,
   FormVisorMsjRed, FormBoleta, FormRepIngresos, FormBusProductos, FormInicio,
   CPRegistros, CPTramas, CPUtils, CibFacturables, CPProductos,
   CibGFacCabinas, CibGFacNiloM;
@@ -22,8 +21,8 @@ type
     acRefPan: TAction;
     acSisConfig: TAction;
     acArcSalir: TAction;
-    acSisAdmCab: TAction;
-    acSisAdmTarCab: TAction;
+    acGCabAdmCab: TAction;
+    acGCabAdmTarCab: TAction;
     acCabPonMan: TAction;
     acCabPaus: TAction;
     acCabExplorArc: TAction;
@@ -48,8 +47,6 @@ type
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
-    MenuItem12: TMenuItem;
-    MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
     MenuItem15: TMenuItem;
     MenuItem16: TMenuItem;
@@ -72,7 +69,14 @@ type
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
     MenuItem33: TMenuItem;
+    MenuItem34: TMenuItem;
+    MenuItem35: TMenuItem;
+    MenuItem36: TMenuItem;
+    MenuItem37: TMenuItem;
     MenuItem4: TMenuItem;
+    MenuItem41: TMenuItem;
+    MenuItem43: TMenuItem;
+    MenuItem44: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem7: TMenuItem;
@@ -80,7 +84,8 @@ type
     MenuItem9: TMenuItem;
     panLLam: TPanel;
     panBolet: TPanel;
-    PopupMenu1: TPopupMenu;
+    PopupCabina: TPopupMenu;
+    PopupGCabina: TPopupMenu;
     splPanLlam: TSplitter;
     splPanBolet: TSplitter;
     Timer1: TTimer;
@@ -107,8 +112,8 @@ type
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
     procedure acNilVerTermExecute(Sender: TObject);
-    procedure acSisAdmCabExecute(Sender: TObject);
-    procedure acSisAdmTarCabExecute(Sender: TObject);
+    procedure acGCabAdmCabExecute(Sender: TObject);
+    procedure acGCabAdmTarCabExecute(Sender: TObject);
     procedure acSisConfigExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
     procedure ConfigfcVistaUpdateChanges;
@@ -118,7 +123,6 @@ type
     procedure FormShow(Sender: TObject);
     procedure VisorCabinas_ClickDer(xp, yp: integer);
     procedure grupos_CambiaPropied;
-    procedure GrupTarAlquilerCambia;
     procedure Timer1Timer(Sender: TObject);
   private
     GFacCabinas : TCibGFacCabinas;  //Grupo de cabinas
@@ -159,14 +163,10 @@ var
 implementation
 {$R *.lfm}
 
-procedure TfrmPrincipal.GrupTarAlquilerCambia;  { TODO : Debe eejcutarse al modificar las tarifas }
-begin
-  Config.escribirArchivoIni;  //guarda cambios
-end;
 procedure TfrmPrincipal.grupos_CambiaPropied;
 {Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
 begin
-  debugln('** Cambio de propiedades en cabinas: ');
+  debugln('** Cambio de propiedades: ');
   Config.escribirArchivoIni;  //guarda cambios
   VisorCabinas.ActualizarPropiedades(Config.grupos.CadPropiedades);
 end;
@@ -440,7 +440,6 @@ begin
   Config.grupos.Agregar(GFacCabinas);  //agrega el grupo de cabinas por defecto
   Config.Iniciar(GFacCabinas);  //lee configuración
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
-  frmAdminCabinas.grpCab := GFacCabinas;  //inicia admin. de cabinas
   LeerEstadoDeArchivo;   //Lee después de leer la configuración
   //Inicializa GFacCabinas
   Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
@@ -448,9 +447,6 @@ begin
   GFacCabinas.OnRegMensaje   :=@GFacCabinas_RegMensaje;
   GFacCabinas.OnDetenConteo  :=@GFacCabinas_DetenConteo;
   GFacCabinas.OnLogInfo      :=@GFacCabinas_LogInfo;
-  frmAdminTarCab.grpTarAlq := GFacCabinas.GrupTarAlquiler;
-  frmAdminTarCab.tarCabinas := GFacCabinas.tarif;
-  frmAdminTarCab.OnModificado:=@GrupTarAlquilerCambia;  //para actualizar cambios
 
   //Crea los objetos gráficos de cabina de acuerdo a GFacCabinas
   VisorCabinas.ActualizarPropiedades(config.grupos.CadPropiedades);
@@ -511,13 +507,13 @@ begin
   Debugln('Terminando ... ');
   TramaTmp.Destroy;
   //Matar a los hilos de ejecución, puede tomar tiempo
-//  GFacCabinas.Destroy;
 end;
 procedure TfrmPrincipal.VisorCabinas_ClickDer(xp, yp: integer);
 begin
   if VisorCabinas.Seleccionado = nil then exit;
   //hay objeto seleccionado
-  PopupMenu1.PopUp;
+  if VisorCabinas.Seleccionado.Id = ID_CABINA then PopupCabina.PopUp;
+  if VisorCabinas.Seleccionado.Id = ID_GCABINA then PopupGCabina.PopUp;
 end;
 procedure TfrmPrincipal.VisorCabinas_DblClick(Sender: TObject);
 begin
@@ -551,9 +547,6 @@ procedure TfrmPrincipal.Timer1Timer(Sender: TObject);
 begin
 //  debugln(tmp);
   VisorCabinas.ActualizarEstado(Config.grupos.CadEstado);
-  //Aprovevha para refrescar el Administrador de Cabinas
-  if (frmAdminCabinas<>nil) and frmAdminCabinas.Visible then
-    frmAdminCabinas.RefrescarGrilla;  //actualiza
   //Aprovecha para refrescar la ventana de boleta
   if (frmBoleta<>nil) and frmBoleta.Visible then
     frmBoleta.ActualizarDatos;
@@ -773,6 +766,23 @@ procedure TfrmPrincipal.acBusGastosExecute(Sender: TObject);
 begin
 
 end;
+//Acciones de Grupos de Cabinas
+procedure TfrmPrincipal.acGCabAdmTarCabExecute(Sender: TObject);
+var
+  ogGcab: TogGCabinas;
+begin
+  ogGcab := VisorCabinas.GCabSeleccionada;
+  if ogGcab = nil then exit;
+  ogGcab.gcab.frmAdminTar.Show;
+end;
+procedure TfrmPrincipal.acGCabAdmCabExecute(Sender: TObject);
+var
+  ogGcab: TogGCabinas;
+begin
+  ogGcab := VisorCabinas.GCabSeleccionada;
+  if ogGcab = nil then exit;
+  ogGcab.gcab.frmAdminCabs.Show;
+end;
 //Acciones de Cabinas
 procedure TfrmPrincipal.acCabIniCtaExecute(Sender: TObject);
 //Inicia la cuenta de una cabina de internet
@@ -848,7 +858,7 @@ begin
   if ogCab = nil then exit;
   //Busca si ya existe ventana de mensajes, creadas para esta cabina
   frmMsjes := BuscarVisorMensajes(ogCab.Nombre, true);
-  frmMsjes.Exec(GFacCabinas, ogCab.Nombre);
+  frmMsjes.Exec(ogCab.Nombre);
 end;
 procedure TfrmPrincipal.acCabGraBolExecute(Sender: TObject);
 var
@@ -880,14 +890,6 @@ end;
 procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
   Config.Mostrar;
-end;
-procedure TfrmPrincipal.acSisAdmCabExecute(Sender: TObject);
-begin
-  frmAdminCabinas.Show;
-end;
-procedure TfrmPrincipal.acSisAdmTarCabExecute(Sender: TObject);
-begin
-  frmAdminTarCab.Show;
 end;
 
 end.

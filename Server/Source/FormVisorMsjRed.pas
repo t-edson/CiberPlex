@@ -17,11 +17,9 @@ type
     procedure btnCopiarClick(Sender: TObject);
     procedure btnAgrSaltoClick(Sender: TObject);
     procedure btnLimpiarClick(Sender: TObject);
-  private
-    GrupCabinas: TCibGFacCabinas;
   public
-    nomCab: string;
-    procedure Exec(GrupCabinas0: TCibGFacCabinas; nomCab0: string);
+    nomCab: string;  //Para saber a qué cabina está monitoreando
+    procedure Exec(nomCab0: string);
     procedure PonerMsje(msj: string);
   end;
 
@@ -42,9 +40,8 @@ procedure TfrmVisorMsjRed.btnAgrSaltoClick(Sender: TObject);
 begin
   Memo1.Lines.Add('');
 end;
-procedure TfrmVisorMsjRed.Exec(GrupCabinas0: TCibGFacCabinas; nomCab0: string);
+procedure TfrmVisorMsjRed.Exec(nomCab0: string);
 begin
-  GrupCabinas := GrupCabinas0;
   nomCab:= nomCab0;
   Caption := 'Mensajes de Red - ' + nomCab;
   self.Show;
