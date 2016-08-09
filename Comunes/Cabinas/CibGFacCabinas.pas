@@ -5,8 +5,8 @@ unit CibGFacCabinas;
 interface
 uses
   Classes, SysUtils, types, dateutils, math, LCLProc, ExtCtrls, MisUtils,
-  CibCabinaBase, CPTramas, FormInicio, CibFacturables,
-  CibCabinaTarifas;
+  CibCabinaBase, CPTramas, FormInicio, CibFacturables, CibCabinaTarifas,
+  FormAdminTarCab, FormAdminCabinas;
 const
   IDE_EST_CAB = 'c'; {Identificador de línea de estado de cabina. Debe ser de un caracter.
                       El formato de estado, para una cabina es:
@@ -63,9 +63,8 @@ type
     Grupo   : TCibGFacCabinas;  //Referencia a su grupo, si es que pertenece a uno.
     tarif   : TCPTarifCabinas;  {Tarifa de cabina. Se podría acceder también a la "tarif"
                                  a través de la referencia "Grupo"}
-    MsjError: string;         //para mensajes de error
     function RegVenta: string; //línea para registro de venta
-    procedure Contar1seg;     //usado para temporización
+    procedure Contar1seg;      //usado para temporización
   public  //campos de propiedades
     property NombrePC : string read FNombrePC write SetNombrePC;  //Nombre de Red que tiene la PC cliente
     property IP: string read GetIP write SetIP;
@@ -162,11 +161,13 @@ type
   public
     tarif: TCPTarifCabinas; //tarifas de cabina
     GrupTarAlquiler: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
+    frmAdminTar: TfrmAdminTarCab;
+    frmAdminCabs: TfrmAdminCabinas;
     function Agregar(nombre0: string; ip0: string): TCibFacCabina;
     function Eliminar(nombre0: string): boolean;
     procedure Conectar;
     function ListaCabinas: string;
-    function CabPorNombre(nom: string): TCibFacCabina;
+    function CabPorNombre(nom: string): TCibFacCabina;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
     function Toleran: TDateTime;   //acceso a la tolerancia
   public  //operaciones con cabinas
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
@@ -680,6 +681,9 @@ begin
   for cab in items do begin
     TCibFacCabina(cab).Contar1seg;
   end;
+  //Se aprovecha para actualizar la ventana de administarción
+  if (frmAdminCabs<>nil) and frmAdminCabs.Visible then
+    frmAdminCabs.RefrescarGrilla;  //actualiza
 end;
 procedure TCibGFacCabinas.cab_CambiaPropied;
 begin
@@ -872,17 +876,26 @@ begin
 debugln('-Creando: '+ nombre0);
   //Se incluye un objeto TGrupoTarAlquiler para la tarificación
   GrupTarAlquiler := TGrupoTarAlquiler.Create;
-  if GrupTarAlquiler.items.Count=0 then begin
-    //agrega una tarifa de alquiler por defecto
-//    frmAdminTarCab.IniciarPorDefecto;  { TODO : Ver si es necesario }
-//    frmAdminTarCab.BitAplicarClick(nil);
-  end;
   tarif := TCPTarifCabinas.Create(GrupTarAlquiler);
   timer1 := TTimer.Create(nil);
   decod := TCPDecodCadEstado.Create;
   timer1.Interval:=1000;
   timer1.OnTimer:=@timer1Timer;
   CategVenta := 'COUNTER';
+  //Crea ventana de configuración de tarifas
+  frmAdminTar:= TfrmAdminTarCab.Create(nil);
+  frmAdminTar.grpTarAlq := GrupTarAlquiler;
+  frmAdminTar.tarCabinas := tarif;
+  frmAdminTar.OnModificado:=@cab_CambiaPropied;  //para actualizar cambios
+  if GrupTarAlquiler.items.Count=0 then begin
+    //agrega una tarifa de alquiler por defecto
+    frmAdminTar.IniciarPorDefecto;  { TODO : Ver si es necesario }
+    frmAdminTar.BitAplicarClick(nil);
+  end;
+  //Crea ventana de administración de cabinas
+  frmAdminCabs:= TfrmAdminCabinas.Create(nil);
+  frmAdminCabs.grpCab := self;  //inicia admin. de cabinas
+
 end;
 destructor TCibGFacCabinas.Destroy;
 var
@@ -890,6 +903,8 @@ var
 begin
 debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipo))+','+
                           CategVenta+','+IntTostr(items.Count));
+  frmAdminCabs.Destroy;
+  frmAdminTar.Destroy;
   OnCambiaPropied:= nil;  //para evitar refrescar controles en este estado
   OnTramaLista   := nil;   { TODO : Tal vez estas rutinas de limpieza se deban hacer en directamente en TCibFacCabina }
   OnRegMensaje   := nil;
