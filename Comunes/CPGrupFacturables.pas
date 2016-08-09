@@ -106,12 +106,10 @@ begin
   end;
   Result := tmp;
 end;
-
 procedure TCibGruposFacturables.gfCambiaPropied;
 begin
   if OnCambiaPropied<>nil then OnCambiaPropied;
 end;
-
 procedure TCibGruposFacturables.SetCadPropiedades(AValue: string);
 var
   lin, tmp: string;
