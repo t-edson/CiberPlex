@@ -228,6 +228,11 @@ object frmPrincipal: TfrmPrincipal
       Caption = 'Insertar Enrutador &Nilo-m'
       OnExecute = acEdiInsEnrutExecute
     end
+    object acEdiElimGru: TAction
+      Category = 'Edi'
+      Caption = '&Eliminar Grupo'
+      OnExecute = acEdiElimGruExecute
+    end
   end
   object PopupCabina: TPopupMenu
     Images = ImageList16
@@ -326,6 +331,9 @@ object frmPrincipal: TfrmPrincipal
       end
       object MenuItem32: TMenuItem
         Action = acEdiInsEnrut
+      end
+      object MenuItem12: TMenuItem
+        Action = acEdiElimGru
       end
     end
     object MenuItem24: TMenuItem
@@ -2181,7 +2189,7 @@ object frmPrincipal: TfrmPrincipal
       }
     end
     object MenuItem41: TMenuItem
-      Action = acCabExplorArc
+      Action = acEdiElimGru
     end
     object MenuItem43: TMenuItem
       Caption = '-'

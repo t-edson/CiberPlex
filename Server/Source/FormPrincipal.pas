@@ -2,11 +2,11 @@ unit FormPrincipal;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Types, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus, ComCtrls,
-  MisUtils, FormIngVentas, FormConfig, frameCfgUsuarios, Globales,
-  frameVisCPlex, ObjGraficos, FormFijTiempo, FormExplorCab,
-  FormVisorMsjRed, FormBoleta, FormRepIngresos, FormBusProductos, FormInicio,
-  CPRegistros, CPTramas, CPUtils, CibFacturables, CPProductos,
+  Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
+  ComCtrls, Dialogs, MisUtils, ogDefObjGraf, FormIngVentas, FormConfig,
+  frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos, FormFijTiempo,
+  FormExplorCab, FormVisorMsjRed, FormBoleta, FormRepIngresos, FormBusProductos,
+  FormInicio, CibRegistros, CibTramas, CibFacturables, CPProductos,
   CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
@@ -38,6 +38,7 @@ type
     acNilVerTerm: TAction;
     acEdiInsEnrut: TAction;
     acEdiInsGrCab: TAction;
+    acEdiElimGru: TAction;
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
@@ -47,6 +48,7 @@ type
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
+    MenuItem12: TMenuItem;
     MenuItem14: TMenuItem;
     MenuItem15: TMenuItem;
     MenuItem16: TMenuItem;
@@ -109,6 +111,7 @@ type
     procedure acCabMsjesRedExecute(Sender: TObject);
     procedure acCabPonManExecute(Sender: TObject);
     procedure acCabVerBolExecute(Sender: TObject);
+    procedure acEdiElimGruExecute(Sender: TObject);
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
     procedure acNilVerTermExecute(Sender: TObject);
@@ -125,30 +128,27 @@ type
     procedure grupos_CambiaPropied;
     procedure Timer1Timer(Sender: TObject);
   private
-    GFacCabinas : TCibGFacCabinas;  //Grupo de cabinas
     VisorCabinas: TfraVisCPlex;     //Visor de cabinas
     TramaTmp    : TCPTrama;    //Trama temporal
 //    fallasesion : boolean;  //indica si se cancela el inicio de sesión
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
-    procedure frmBoleta_GrabarBoleta(const nombreObj, coment: string);
-    procedure frmBoletaGrabarItem(const nombreObj, idItemtBol, coment: string);
-    procedure frmBoleta_DividirItem(const nombreObj, idItemtBol, coment: string);
-    procedure frmBoleta_ComentarItem(const nombreObj, idItemtBol, coment: string
-      );
-    procedure frmBoleta_RecuperarItem(const nombreObj, idItemtBol, coment: string
-      );
-    procedure frmBoleta_DesecharItem(const nombreObj, idItemtBol, coment: string);
-    procedure frmBoleta_DevolverItem(const nombreObj, idItemtBol, coment: string);
-    procedure frmIngVentas_AgregarVenta(nombreObj: string; itBol: string);
-    procedure GFacCabinas_LogInfo(cab: TCibFacCabina; msj: string);
-    procedure GFacCabinas_DetenConteo(cab: TCibFacCabina);
-    procedure GFacCabinas_TramaLista(cabOrig: TCibFacCabina; tram: TCPTrama; tramaLocal: boolean);
+    procedure ConfiggruposLeerCadPropiedades(var cadProp: string);
+    procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+    procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmBoleta_ComentarItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmBoleta_RecuperarItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string);
+    procedure GFacCabinas_LogInfo(cab: TCibFac; msj: string);
     procedure GuardarEstadoArchivo;
     procedure LeerEstadoDeArchivo;
     procedure NiloM_RegMsjError(NomObj: string; msj: string);
-    procedure PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+    procedure PonerComando(facOrig: TCibFac; comando: TCPTipCom; ParamX,
+      ParamY: word; cad: string);
     procedure VisorCabinas_DblClick(Sender: TObject);
   public
     { public declarations }
@@ -167,241 +167,7 @@ begin
   Config.escribirArchivoIni;  //guarda cambios
   VisorCabinas.ActualizarPropiedades(Config.grupos.CadPropiedades);
 end;
-procedure TfrmPrincipal.GFacCabinas_TramaLista(cabOrig: TCibFacCabina;
-  tram: TCPTrama; tramaLocal: boolean);
-{Rutina de respuesta al mensaje OnTramaListade GrupoCabinas. También se usa para ejecutar
-comandos del visor local. Los parámetros son:
-"cabOrig" -> Es la cabina origen, de donde llega la trama. Para comandos locales es NIL
-"tram" -> Es la trama que contiene el comando que debe ejecutarse.}
-var
-  frm: TfrmVisorMsjRed;
-  arch: RawByteString;
-  HoraPC, tSolic: TDateTime;
-  NombrePC, Nombre, tmp: string;
-  bloqueado: boolean;
-  cabDest: TCibFacCabina;
-  tLibre, horGra: boolean;
-  itBol, itBol2: TCibItemBoleta;
-  a: TStringDynArray;
-  parte: Double;
-  idx, idx2: LongInt;
-begin
-  //debugln(NomCab + ': Trama recibida: '+ tram.TipTraHex);
-  if not tramaLocal then begin  //Ignora los mensajes locales
-     frm := GFacCabinas.BuscarVisorMensajes(cabOrig.Nombre);  //Ve si hay un formulario de mensajes para esta cabina
-     {Aunque no se ha detectado consumo de CPU adicional, la búqsqueda regular con
-     BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando que
-     se hace para todos los mensajes que llegan.
-     }
-     if frm<>nil then frm.PonerMsje('>>Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
-  end;
-  case tram.tipTra of
-  M_ESTAD_CLI: begin  //Se recibió el estado remoto del clente
-      Decodificar_M_ESTAD_CLI(tram.traDat, NombrePC, HoraPC, bloqueado);
-      cabOrig.NombrePC:= NombrePC;
-      cabOrig.HoraPC  := HoraPC;
-      cabOrig.PantBloq:= bloqueado;
-    end;
-  C_SOL_T_PCS: begin  //Se solicita la lista de tiempos de las PC cliente
-      debugln(cabOrig.Nombre + ': Tiempos de PC solicitado.');
-      GFacCabinas.TCP_envComando(cabOrig.Nombre, M_SOL_T_PCS, 0, 0,
-         GFacCabinas.CadEstado);
-    end;
-  C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
-      GFacCabinas.TCP_envComando(cabOrig.Nombre, M_SOL_ARINI, 0, 0, config.grupos.CadPropiedades);
-    end;
-  C_PAN_COMPL: begin  //se pide una captura de pantalla
-      debugln(cabOrig.Nombre+ ': Pantalla completa solicitada.');
-      if tram.posX = 0 then begin  //se pide de la PC local
-        arch := ExtractFilePath(Application.ExeName) + '~00.tmp';
-        PantallaAArchivo(arch);
-        GFacCabinas.TCP_envComando(cabOrig.Nombre, M_PAN_COMP, 0, 0, StringFromFile(arch));
-      end else begin
-
-      end;
-    end;
-  C_INI_CTAPC: begin   //Se pide iniciar la cuenta de una PC
-      DecodActivCabina(tram.traDat, Nombre, tSolic, tLibre, horGra );
-      if Nombre='' then exit; //protección
-      cabDest := GFacCabinas.CabPorNombre(Nombre);
-      cabDest.InicConteo(tSolic, tLibre, horGra);
-      GuardarEstadoArchivo;        //Para salvar cambios
-    end;
-  C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
-      DecodActivCabina(tram.traDat, Nombre, tSolic, tLibre, horGra );
-      if Nombre='' then exit; //protección
-      cabDest := GFacCabinas.CabPorNombre(Nombre);
-      cabDest.ModifConteo(tSolic, tLibre, horGra);
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
-      cabDest := GFacCabinas.CabPorNombre(tram.traDat);
-      if cabDest=nil then exit;
-      if tram.posX = 1 then begin  //Indica que se quiere poner en mantenimiento.
-        cabDest.PonerManten();
-      end else begin
-        cabDest.DetenConteo();
-      end;
-      GuardarEstadoArchivo;        //Para salvar la grabación de boleta
-      { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
-      de estado, (como se hace actualmente con el timer) , ya que se está detectando cada
-      evento que geenra cambios. Verificar si  eso es cierto, sobre todo en el caso de la
-      desconexión automático, o algún otro evento similar que requiera guardar el estado.}
-    end;
-  C_GRA_BOLPC: begin  //Se pide grabar la boleta de una PC
-      cabDest := GFacCabinas.CabPorNombre(tram.traDat);
-      if cabDest=nil then exit;
-      for itBol in cabDest.boleta.items do begin
-    {    If Pventa = '' Then //toma valor por defecto
-            itBol.pVen = PVentaDef
-        else    //escribe con punto de venta
-            itBol.pVen = Me.Pventa
-        end;}
-        tmp := itBol.regIBol_AReg;
-        If itBol.estado = IT_EST_NORMAL Then PLogIBol(tmp)        //item normal
-        else PLogIBolD(tmp);       //item descartado
-      end;
-      //Graba los campos de la boleta
-      cabDest.boleta.fec_grab := now;  //fecha de grabación
-      PLogBol(cabDest.Boleta.RegVenta, cabDest.boleta.TotPag);
-      //Config.escribirArchivoIni;
-      GuardarEstadoArchivo;        //Para salvar la grabación de boleta
-      cabDest.LimpiarBol;          //Limpia los items
-    end;
-  C_AGR_ITBOL: begin  //Se pide agregar una venta
-      tmp := tram.traDat;
-      cabDest := GFacCabinas.CabPorNombre(copy(tmp,1,tram.posY));
-      if cabDest=nil then exit;
-      delete(tmp, 1, tram.posY);  //quita nombre, deja cadena de estado
-      itBol := TCibItemBoleta.Create;
-      itBol.CadEstado := tmp;  //recupera ítem
-      cabDest.Boleta.VentaItem(itBol, true);
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_DEV_ITBOL: begin  //Devolver ítem
-      a := Explode(#9, tram.traDat);
-      cabDest := GFacCabinas.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      IF itBol=nil then exit;
-      itBol.coment := a[2];         //escribe comentario
-      itBol.Cant   := -itBol.Cant;   //pone cantidad negativa
-      itBol.subtot := -itBol.subtot; //pone total negativo
-      PLogVenD(ItBol.regIBol_AReg, itBol.subtot);  //registra mensaje
-      cabDest.Boleta.ItemDelete(a[1]);  //quita de la lista
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_DES_ITBOL: begin  //Desechar ítem
-      a := Explode(#9, tram.traDat);
-      cabDest := GFacCabinas.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      IF itBol=nil then exit;
-      itBol.coment := a[2];         //escribe comentario
-      itBol.estado := IT_EST_DESECH;
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_REC_ITBOL: begin  //Recuperar ítem
-      a := Explode(#9, tram.traDat);
-      cabDest := GFacCabinas.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      IF itBol=nil then exit;
-      itBol.coment := '';         //escribe comentario
-      itBol.estado := IT_EST_NORMAL;
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_COM_ITBOL: begin  //Comentar ítem
-      a := Explode(#9, tram.traDat);
-      cabDest := GFacCabinas.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      if itBol=nil then exit;
-      itBol.coment := a[2];         //escribe comentario
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_DIV_ITBOL: begin
-      a := Explode(#9, tram.traDat);
-      cabDest := GFacCabinas.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      if itBol=nil then exit;
-      //actualiza ítem inicial
-      parte := StrToFloat(a[2]);
-      itBol.subtot:= itBol.subtot - parte;
-      itBol.fragmen += 1;  //lleva cuenta
-      //agrega elemento separado
-      itBol2 := TCibItemBoleta.Create;
-      itBol2.Assign(itBol);  //crea copia
-      //actualiza separación
-      itBol2.vfec:=now;   //El ítem debe tener otro ID
-      itBol2.subtot := parte;
-      itBol2.fragmen := 1;      //marca como separado
-      itBol2.conStk := false;   //para que no descuente
-      cabDest.Boleta.VentaItem(itBol2, true);  //agrega nuevo ítem
-      //Reubica ítem
-      idx := cabDest.Boleta.items.IndexOf(itBol);
-      idx2 := cabDest.Boleta.items.IndexOf(itBol2);
-      cabDest.Boleta.items.Move(idx2, idx+1);  //acomoda posición
-      cabDest.Boleta.Recalcula;
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  C_GRA_ITBOL: begin
-      a := Explode(#9, tram.traDat);
-      cabDest := GFacCabinas.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      if itBol=nil then exit;
-      If itBol.estado = IT_EST_NORMAL Then PLogIBol(tmp)        //item normal
-      else PLogIBolD(tmp);       //item descartado
-      cabDest.Boleta.ItemDelete(a[1]);
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      GuardarEstadoArchivo;        //Para salvar cambios en la boleta
-    end;
-  else
-    if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
-  end;
-end;
-//}
-procedure TfrmPrincipal.GFacCabinas_DetenConteo(cab: TCibFacCabina);
-{Se usa este evento para guardar información en el registro, y actualizar la boleta.
-Se hace desde fuera de CPGrupoCabinas, porque para estas acciones se requiere acceso a
-campos de configuración propios de esta aplicación, que no corresponden a CPGRupoCabinas
-que es usada también en el Ciberplex-Visor.}
-var
-  nser: Integer;
-  r: TCibItemBoleta;
-begin
-  //Registra la venta en el archivo de registro
-  if cab.horGra Then { TODO : Revisar si este código se puede uniformizar con las otras llamadas a VentaItem() }
-    nser := PLogIntD(cab.RegVenta, cab.Costo)
-  else
-    nser := PLogInt(cab.RegVenta, cab.Costo);
-  If msjError <> '' Then MsgErr(msjError);
-  //agrega item a boleta
-  r := TCibItemBoleta.Create;   //crea elemento
-  r.vser := nser;
-  r.Cant := 1;
-  r.pUnit := cab.Costo;
-  r.subtot := cab.Costo;
-  r.cat := cab.Grupo.CategVenta;
-  r.subcat := 'INTERNET';
-  r.descr := 'Alquiler PC: ' + IntToStr(cab.tSolicMin) + 'm(' +
-             TimeToStr(cab.TranscDat) + ')';
-  r.vfec := date + Time;
-  r.estado := IT_EST_NORMAL;
-  r.fragmen := 0;
-  r.conStk := False;     //No se descuenta stock
-  cab.Boleta.VentaItem(r, False);
-  //fBol.actConBoleta;   //Actualiza la boleta porque se hace "VentaItem" sin mostrar
-end;
-procedure TfrmPrincipal.GFacCabinas_LogInfo(cab: TCibFacCabina; msj: string);
+procedure TfrmPrincipal.GFacCabinas_LogInfo(cab: TCibFac; msj: string);
 begin
   PLogInf(usuario, msj);
 end;
@@ -413,7 +179,6 @@ procedure TfrmPrincipal.FormCreate(Sender: TObject);
 begin
   Caption := NOM_PROG + ' ' + VER_PROG;
   //Crea un grupo de cabinas
-  GFacCabinas := TCibGFacCabinas.Create('Cabinas');
   TramaTmp := TCPTrama.Create;
   {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
   VisorCabinas := TfraVisCPlex.Create(self);
@@ -427,17 +192,16 @@ procedure TfrmPrincipal.FormShow(Sender: TObject);
 var
   Err: String;
 begin
-  Config.grupos.Agregar(GFacCabinas);  //agrega el grupo de cabinas por defecto
-  Config.Iniciar(GFacCabinas);  //lee configuración
+  Config.Iniciar;  //lee configuración
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
   LeerEstadoDeArchivo;   //Lee después de leer la configuración
-  //Inicializa GFacCabinas
+  //Inicializa Grupos
   Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
-  GFacCabinas.OnTramaLista   :=@GFacCabinas_TramaLista;
-  GFacCabinas.OnDetenConteo  :=@GFacCabinas_DetenConteo;
-  GFacCabinas.OnLogInfo      :=@GFacCabinas_LogInfo;
+  Config.grupos.OnLogInfo      :=@GFacCabinas_LogInfo;
+  Config.grupos.OnLeerCadPropiedades:=@ConfiggruposLeerCadPropiedades;
+  Config.grupos.OnGuardarEstado:=@GuardarEstadoArchivo;
 
-  //Crea los objetos gráficos de cabina de acuerdo a GFacCabinas
+  //Crea los objetos gráficos de cabina de acuerdo.
   VisorCabinas.ActualizarPropiedades(config.grupos.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
    de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
@@ -570,70 +334,70 @@ begin
   end;
   end;
 end;
-procedure TfrmPrincipal.frmIngVentas_AgregarVenta(nombreObj: string;
-  itBol: string);
+procedure TfrmPrincipal.frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string
+  );
 {Este evento se genera cuando se solicita ingresar una venta a la boletad e un objeto.}
 var
   txt: string;
 begin
-  txt := nombreObj + itBol;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_AGR_ITBOL, 0, length(nombreObj), txt);  //envía con tamaño en Y
+  txt := CibFac.Nombre + itBol;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_AGR_ITBOL, 0, length(CibFac.Nombre), txt);  //envía con tamaño en Y
 end;
-procedure TfrmPrincipal.frmBoleta_GrabarBoleta(const nombreObj, coment: string);
+procedure TfrmPrincipal.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
 {Graba el contenido de una boleta}
 begin
-  if MsgYesNo('Grabar Boleta de: ' + nombreObj + '?')<>1 then exit;
-  PonerComando(C_GRA_BOLPC, 0, 0, nombreObj);
+  if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
+  PonerComando(CibFac, C_GRA_BOLPC, 0, 0, CibFac.Nombre);
 end;
-procedure TfrmPrincipal.frmBoleta_DevolverItem(const nombreObj, idItemtBol,
+procedure TfrmPrincipal.frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol,
   coment: string);
 {Evento que solicita eliminar un ítem de la boleta}
 var
   txt: string;
 begin
-  txt := nombreObj + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_DEV_ITBOL, 0, 0, txt);  //envía con tamaño en Y
+  txt := CibFac.Nombre + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_DEV_ITBOL, 0, 0, txt);  //envía con tamaño en Y
 end;
-procedure TfrmPrincipal.frmBoleta_DesecharItem(const nombreObj, idItemtBol,
+procedure TfrmPrincipal.frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol,
   coment: string);
 {Evento que solicita desechar un ítem de una boleta}
 var
   txt: string;
 begin
-  txt := nombreObj + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_DES_ITBOL, 0, 0, txt);
+  txt := CibFac.Nombre + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_DES_ITBOL, 0, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoleta_RecuperarItem(const nombreObj, idItemtBol,
+procedure TfrmPrincipal.frmBoleta_RecuperarItem(CibFac: TCibFac; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := nombreObj + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_REC_ITBOL, 0, 0, txt);
+  txt := CibFac.Nombre + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_REC_ITBOL, 0, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoleta_ComentarItem(const nombreObj, idItemtBol,
+procedure TfrmPrincipal.frmBoleta_ComentarItem(CibFac: TCibFac; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := nombreObj + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_COM_ITBOL, 0, 0, txt);
+  txt := CibFac.Nombre + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_COM_ITBOL, 0, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoleta_DividirItem(const nombreObj, idItemtBol,
+procedure TfrmPrincipal.frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := nombreObj + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_DIV_ITBOL, 0, 0, txt);
+  txt := CibFac.Nombre + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_DIV_ITBOL, 0, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoletaGrabarItem(const nombreObj, idItemtBol,
+procedure TfrmPrincipal.frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := nombreObj + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_GRA_ITBOL, 0, 0, txt);
+  txt := CibFac.Nombre + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  PonerComando(CibFac, C_GRA_ITBOL, 0, 0, txt);
 end;
 function TfrmPrincipal.BuscarExplorCab(nomCab: string; CrearNuevo: boolean = false): TfrmExplorCab;
 {Busca si existe un formaulario de tipo "TfrmVisorMsjRed", que haya sido crreado para
@@ -659,6 +423,10 @@ begin
     Result := nil;
   end;
 end;
+procedure TfrmPrincipal.ConfiggruposLeerCadPropiedades(var cadProp: string);
+begin
+  cadProp := config.grupos.CadPropiedades
+end;
 {procedure TfrmPrincipal.ChangeAppearance;
 begin
   StatusBar1.Visible := Config.fcIDE.ViewStatusbar;
@@ -671,11 +439,14 @@ begin
   acVerPanMsj.Checked:= Config.fcIDE.ViewPanMsg;
 end;
 }
-procedure TfrmPrincipal.PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
-{Envía un comando, llamando directamente a GrupoCabinas_TramaLista()}
+procedure TfrmPrincipal.PonerComando(facOrig: TCibFac; comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+{Envía un comando al modelo, de la misma forma a como si fuera un comando remoto.
+  facOrig -> Objeto facturable que genera el comando. Si no aplica, debe estar en NIL.
+}
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
-  GFacCabinas_TramaLista(nil, TramaTmp, true);
+  //llama como evento, indicando que es una trama local
+  Config.grupos.gf_TramaLista(facOrig, TramaTmp, true);
 end;
 //////////////// Acciones //////////////////////
 procedure TfrmPrincipal.acArcTarifasExecute(Sender: TObject);  //Tarifas
@@ -691,15 +462,15 @@ begin
   Close;
 end;
 procedure TfrmPrincipal.acEdiInsGrCabExecute(Sender: TObject);  //Inserta Grupo de cabinas
-{var
+var
   ncabTxt, nom: String;
   ncab: Longint;
-  grupCabinas: TCPGrupoCabinas;}
+  grupCabinas: TCibGFacCabinas;
 begin
-{  ncabTxt := InputBox('', 'Número de cabinas', '10');
+  ncabTxt := InputBox('', 'Número de cabinas', '5');
   if not TryStrToInt(ncabTxt, ncab) then exit;
   nom := 'Cabinas'+IntToStr(Config.grupos.NumGrupos+1);   //nombre
-  grupCabinas := TCPGrupoCabinas.Create(nom);  //crea grupo
+  grupCabinas := TCibGFacCabinas.Create(nom);  //crea grupo
   Config.grupos.Agregar(grupCabinas);  //agrega el grupo}
 end;
 procedure TfrmPrincipal.acEdiInsEnrutExecute(Sender: TObject); //Inserta Enrutador
@@ -707,12 +478,26 @@ var
   grupNILOm: TCibGFacNiloM;
 begin
   grupNILOm := TCibGFacNiloM.Create('NILO-m','12',Config.Local, NOM_PROG, 0.1,
-                               usuario, 'LLAMADAS');
+                                    usuario, 'LLAMADAS');
   //Inicializa Nilo-m
   //grupNILOm.OnRegMsjError:=@NiloM_RegMsjError;
   //grupNILOm.Conectar;
   //if grupNILOm.MsjError<>'' then self.Close;  //Error grave
   Config.grupos.Agregar(grupNILOm);  //agrega el grupo
+end;
+procedure TfrmPrincipal.acEdiElimGruExecute(Sender: TObject);  //Eliminar grupo
+var
+  gcab: TCibGFac;
+  og: TObjGraf;
+  ogCab: TogGCabinas;
+begin
+  og := VisorCabinas.Seleccionado;
+  if og = nil then exit;
+  if (og is TogGCabinas) then begin
+    ogCab := TogGCabinas(og);  //restaura objeto
+    gcab := Config.grupos.BuscarPorNombre(ogCab.gcab.Nombre);  //Busca grupo en el modelo
+    Config.grupos.Eliminar(gcab);
+  end;
 end;
 //Acciones Buscar
 procedure TfrmPrincipal.acBusTarifExecute(Sender: TObject);
@@ -773,7 +558,7 @@ begin
   end;
   frmFijTiempo.MostrarIni(ogCab);  //modal
   if frmFijTiempo.cancelo then exit;  //canceló
-  PonerComando(C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+  PonerComando(ogCab.cab, C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
 end;
 procedure TfrmPrincipal.acCabModTpoExecute(Sender: TObject);
 var
@@ -787,7 +572,7 @@ begin
     //está en medio de una cuenta
     frmFijTiempo.Mostrar(ogCab);  //modal
     if frmFijTiempo.cancelo then exit;  //canceló
-    PonerComando(C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+    PonerComando(ogCab.cab, C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
   end;
 end;
 procedure TfrmPrincipal.acCabDetCtaExecute(Sender: TObject);
@@ -797,7 +582,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
-  PonerComando(C_DET_CTAPC, 0, 0, ogCab.nombre);
+  PonerComando(ogCab.cab, C_DET_CTAPC, 0, 0, ogCab.nombre);
 end;
 procedure TfrmPrincipal.acCabPonManExecute(Sender: TObject);
 var
@@ -809,7 +594,7 @@ begin
     MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
     exit;
   end;
-  PonerComando(C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
+  PonerComando(ogCab.cab, C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
 end;
 procedure TfrmPrincipal.acCabExplorArcExecute(Sender: TObject);
 //Muestra la ventana explorador de archivo
@@ -844,7 +629,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('Grabar Boleta de: ' + ogCab.nombre + '?')<>1 then exit;
-  PonerComando(C_GRA_BOLPC, 0, 0, ogCab.nombre);
+  PonerComando(ogCab.cab, C_GRA_BOLPC, 0, 0, ogCab.nombre);
 end;
 procedure TfrmPrincipal.acCabVerBolExecute(Sender: TObject);
 var

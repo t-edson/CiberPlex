@@ -11,7 +11,7 @@ uses
 
 type
   //Evento para agregar una venta
-  TevAgregarVenta = procedure(nombreObj: string; itBol: string) of object;
+  TevAgregarVenta = procedure(CibFac: TCibFac; itBol: string) of object;
 
   { TfrmIngVentas }
   TfrmIngVentas = class(TForm)
@@ -46,14 +46,14 @@ type
     procedure txtCantidadChange(Sender: TObject);
     procedure txtPrecUnitChange(Sender: TObject);
   private
-    nombreObj: string;   //nombre del objeto de trabajo (cabina, lcoutorio, ...)
+    CibFac: TCibFac;   //nombre del objeto de trabajo (cabina, lcoutorio, ...)
     function ActualizarTotal(mostrarError: boolean): boolean;
     procedure grillaEnter(Sender: TObject);
     function ProdSeleccionado: TregProdu;
   public
     gri : TUtilGrilla;
     OnAgregarVenta: TevAgregarVenta;
-    procedure Exec(nombreObj0: string);
+    procedure Exec(CibFac0: TCibFac);
     procedure LeerDatos;
   end;
 
@@ -75,9 +75,9 @@ procedure TfrmIngVentas.txtPrecUnitChange(Sender: TObject);
 begin
   ActualizarTotal(false);
 end;
-procedure TfrmIngVentas.Exec(nombreObj0: string);
+procedure TfrmIngVentas.Exec(CibFac0: TCibFac);
 begin
-  nombreObj := nombreObj0;
+  CibFac := CibFac0;   //referencia al objeto origen
   fraUtilsGrilla1.Edit1.Clear;
   self.Show;
   if fraUtilsGrilla1.Edit1.Visible then fraUtilsGrilla1.Edit1.SetFocus;
@@ -259,7 +259,7 @@ begin
   txtCantidad.Text:='';
   txtTotal.Text:='';
 
-  if OnAgregarVenta<>nil then OnAgregarVenta(nombreObj, itBol.CadEstado);
+  if OnAgregarVenta<>nil then OnAgregarVenta(CibFac, itBol.CadEstado);
   itBol.Destroy;
   self.Close;
 end;
