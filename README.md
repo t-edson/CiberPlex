@@ -1,4 +1,4 @@
-CiberPlex 0.9.2b
+CiberPlex 0.9.4b
 ================
 
 CiberPlex es un programa de control avanzado de cabinas de Internet, desarrollado en Lazarus y FreePascal. Inlcuye todas las funcionalidades comunes a este tipo de programas, así como funciones de control avanzadas de las computadoras cliente.

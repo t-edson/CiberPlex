@@ -1,20 +1,55 @@
+0.9.4
+=====
+Se crea y activa el evento TCibGruposFacturables.OnLogInfo.
+Se cambia el nombre de CPRegistros a CibRegistros.
+Se cambia el nombre de CPTramas por CibTramas.
+Se mueve el procesamiento del evento OnDetenConteo a la unidad CPGrupFacturables.
+Se mueve la propiedad TCibFacCabina.Grupo al ancestro TCibGFac.
+
+0.9.3
+=====
+Se cambia de nombre a TCPTipGrupoFactur por TCibTipGFact.
+Se quita el formulario de administración de Tarifas de cabina como objeto estático, y se 
+crea de forma dinámica, asociado a un objeto TCibGFacCabinas.
+Se modifica al formulario FormAdminCAbinas, para poder ser incluida en CibGFacCabinas, sin
+generar referencia circular.
+Se quita el formulario de administración de Cabina como objeto estático, y se 
+crea de forma dinámica, asociado a un objeto TCibGFacCabinas.
+Se mueven los ítems del menu para mostrar la ventana de administración de cabinas y la 
+ventana de administración de tarifas, del menú ">Sistema" al menú ">Cabinas", y se 
+incluyen también estas opciones en el menú contextual. Además se configura para que estas
+opciones reconozcan el objeto seleccionado y no apunten a un objeto estático, como antes.
+Se mueve la administración de las ventanas de mensajes de red de las cabinas a la clase
+TCibGFacCabinas.
+El cambio de la administración de objetos Grupos de facturables, genera aún, errores en 
+la liberación de memoria.
+
+
 0.9.2
 =====
 Se cambia de nombre a TCibGFacturable por TCibGFac.
 Se cambia de nombre a TCibFacturable por TCibFac.
 Se cambia de nombre a TObjGrafCabina por TogCabina.
-Se crea el objeto gráfico TogGCabinas, para representar a los grupos de cabinas.
-
+Se cambia de nombre a TCPGruposFacturables por TCibGruposFacturables
+Se mueven nuevas unidades a la carpeta \Comunes\Cabinas\ completando la clasificación
+iniciada en la versión anterior.
+Se crea el objeto gráfico TogGCabinas, para representar a los grupos de cabinas, y se 
+implementa su visualización en la pantalla.
+Se crea el menú Popup para los grupos de cabinas.
+El cambio de la administración de objetos Grupos de facturables, genera aún, errores en 
+la liberación de memoria.
 
 0.9.1
 =====
 Se cambian de nombre a varias unidades para que dejen de usar el prefijio de tipos "TCP",
 que puede confundirse con el protocolo TCP. Ahora se usará "TCib" y "Cib" como prefijos.
-Se completa la funcionalidad del los objetos TCibFacNiloM de geenrar su información de 
+Se completa la funcionalidad del los objetos TCibFacNiloM de generar su información de 
 propiedades y estados.
 Se crea el evento TCibGFacturable.OnCambiaPropied.
-Se 
-
+Se clasifican los archivos de la carpeta \Comunes, creando dos carpetas nuevas: 
+\Comunes\Cabinas\ y \Comunes\NiloM\
+El cambio de la administración de objetos Grupos de facturables, genera errores en la 
+liberación de memoria.
 
 0.9
 ===
@@ -44,7 +79,8 @@ Se cambia el nombre de la unidad CPBoletas a CPFacturables y se crea la clase ge
 TCPFacturable_list.
 Se crea el tipo TCPTipGrupoFactur.
 Se crea el concepto de "Grupo de facturables" o "Grupo facturable".
-Se crea la clase TCPGrupoFacturable, para poder definir a las clases que son Grupos facturables.
+Se crea la clase TCPGrupoFacturable, para poder definir a las clases que son Grupos 
+facturables.
 Se actualizan las clases TCPGrupoCabinas y TCPNiloM para que deriven de la clase 
 TCPGrupoFacturable y se adaptan los lazos de exploración para que trabajen con ítems de tipo 
 TCPFacturable.
@@ -76,8 +112,8 @@ Se implementan las acciones sobre los ítems de las boletas y se reordena el códi
 0.6
 ===
 11-Jun-2016
-Se elimina el evento TCPGrupoCabinas.OnCambiaEstado, porque se encontró que se podría generar muy 
-frcuentemente y por lo tanto, pierde utilidad.
+Se elimina el evento TCPGrupoCabinas.OnCambiaEstado, porque se encontró que se podría generar
+muy frcuentemente y por lo tanto, pierde utilidad.
 Se mueve el parte del código de TfrmPrincipal.FormDestroy (liberación de eventos) al destructor 
 de TCPGrupoCabinas.
 Se modifican las rutinas GetEstadoCabinas y SetEstadoCabinas de TCPCabina, para incluir la 
@@ -104,8 +140,8 @@ todos los comandos de control de cabinas.
 Se crea el evento TCPCabina.OnDetenConteo() y se eliminan los métodos ComPonerManten(), 
 ComSacarManten() y ComDesactivar() de TCPGrupoCabinas.
 Se corrige un error en TCPCabina.Faltante(), y así se soluciona.
-Se corrigió un error en TCPCabina.VerCorteAutomatico, que hacía que la cabina se corte antes de
-tiempo.
+Se corrigió un error en TCPCabina.VerCorteAutomatico, que hacía que la cabina se corte antes 
+de tiempo.
 Se cambia el nombre a TCPCabina.Transc por TCPCabina.TranscSeg.
 Se cambia el nombre de la clase TBoleta a TogBoleta en la unidad ObjGraficos. Además se 
 modifica la clase para usar a un objeto TCPBoleta, como contenedor de propiedades.
@@ -130,10 +166,11 @@ Se configura para que se actualicen los objetos al iniciar el aplicativo.
 
 0.5
 ===
-Se crea un tipo para definir a los tipos de comandos de las tramas, en lugar de usar constantes.
+Se crea un tipo para definir a los tipos de comandos de las tramas, en lugar de usar 
+constantes.
 Se cambia todo el código de los proyectos, para que se adapten al nuevo tipo de datos.
-Se crean métodos nuevos en TCPTrama, para mostrar el nombre del tipo de comando, como cadena y 
-como hexadecimal, aprovechando las facilidades por tener el tipo de comando como enumerado.
+Se crean métodos nuevos en TCPTrama, para mostrar el nombre del tipo de comando, como cadena 
+y como hexadecimal, aprovechando las facilidades por tener el tipo de comando como enumerado.
 Se crean dos nuevos comandos, para solicitar y devolver el archivo INI, principal.
 Se cambia el nombre de TGrupoCabinas a TCPGrupoCabinas.
 Se cambia el nombre del tipo lista TCPCabinas a TCPCabina_list
@@ -160,8 +197,8 @@ cerrar el programa y evitar goteras de memoria.
 
 0.4
 ===
-Se habilita la propiedad "TCPTrama.Encab" para manejar el encabezado como texto y se elimina el 
-método TCPTrama.LeeEncabezado
+Se habilita la propiedad "TCPTrama.Encab" para manejar el encabezado como texto y se elimina
+el método TCPTrama.LeeEncabezado
 
 VISOR
 Se eliminan las propiedades TCabServidor.sEncRpta y TCabServidor.sDatRpta y se pasa a usar un 
