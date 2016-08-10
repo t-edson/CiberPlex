@@ -758,7 +758,9 @@ begin
   cab := CabPorNombre(nombre0);
   if cab = nil then exit(false);
   items.Remove(cab);  //puede tomar tiempo, por la destrucción del hilo
-  if OnCambiaPropied<>nil then OnCambiaPropied();
+  if OnCambiaPropied<>nil then begin
+    OnCambiaPropied;
+  end;
   Result := true;
 end;
 procedure TCibGFacCabinas.Conectar;
