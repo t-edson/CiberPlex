@@ -13,7 +13,7 @@ unit CibGFacCabinas;
 interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
-  MisUtils, CPTramas, FormInicio, CibFacturables,
+  MisUtils, CibTramas, FormInicio, CibFacturables,
   CibCabinaBase, CibCabinaTarifas, FormVisorMsjRed, FormAdminTarCab, FormAdminCabinas;
 const
   IDE_EST_CAB = 'c'; {Identificador de línea de estado de cabina. Debe ser de un caracter.
@@ -27,10 +27,12 @@ type
   TCibGFacCabinas = class;
 
   //TEvCabCambiaEstado = procedure(nuevoEstado: TCabEstadoConex) of object;
-  TEvCabTramaLista = procedure(cab: TCibFacCabina; tram: TCPTrama; tramaLocal: boolean) of object;
+  {El evento TEvCabTramaLista, se define con el primer parámetro como TCibFac, en lugar
+  de TCibFacCabina, porque el manejador de este evento se rsará como rutina general para
+  el procesamiento de la mayoría de comandos de la aplicación.}
+  TEvCabTramaLista = procedure(facOri: TCibFac; tram: TCPTrama; tramaLocal: boolean) of object;
   TEvCabRegMensaje = procedure(NomCab: string; msj: string) of object;
   TEvCabAccionCab = procedure(cab: TCibFacCabina) of object;
-  TEvCabLogInfo = procedure(cab: TCibFacCabina; msj: string) of object;
 //  TEvCabLogIBol = procedure(cab: TCPCabina; it: TCPItemBoleta; msj: string) of object;
 
   { TCibFacCabina }
@@ -68,9 +70,7 @@ type
     OnDetenConteo : TEVCabAccionCab;    //Cuando se detiene el conteo de una cabina
     OnLogInfo     : TEvCabLogInfo;      //Indica que se quiere registrar un mensaje en el registro
     //OnGrabBoleta  : TEvCabAccionCab;    //Indica que se ha grabado la boleta
-    Grupo   : TCibGFacCabinas;  //Referencia a su grupo, si es que pertenece a uno.
-    tarif   : TCPTarifCabinas;  {Tarifa de cabina. Se podría acceder también a la "tarif"
-                                 a través de la referencia "Grupo"}
+    function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
     function RegVenta: string; //línea para registro de venta
     procedure Contar1seg;      //usado para temporización
   public  //campos de propiedades
@@ -151,16 +151,15 @@ type
     timer1 : TTimer;
     decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
     ventMsjes: TForm_list;     //Ventanas de mensajes de red
-    procedure cab_LogInfo(cab: TCibFacCabina; msj: string);
+    procedure cab_LogInfo(cab: TCibFac; msj: string);
     procedure cab_DetenConteo(cab: TCibFacCabina);
     procedure cab_RegMensaje(NomCab: string; msj: string);
-    procedure cab_TramaLista(cab: TCibFacCabina; tram: TCPTrama; tramaLocal: boolean);
+    procedure cab_TramaLista(facOri: TCibFac; tram: TCPTrama; tramaLocal: boolean);
   public  //Eventos.
     {Acciones que se pueden disparar automáticamente. Sin intrevención del usuario}
     OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
     OnRegMensaje   : TEvCabRegMensaje; //indica que se ha geenrado un mensaje de la conexión
     OnDetenConteo  : TEVCabAccionCab;  //indica que se ha detenido la cuenta en alguna cabina
-    OnLogInfo      : TEvCabLogInfo;    //Indica que se quiere registrar un mensaje en el registro
   protected //Getters and Setters
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
@@ -348,6 +347,10 @@ begin
       Result := True;
       exit;
   end;
+end;
+function TCibFacCabina.tarif: TCPTarifCabinas;
+begin
+  Result := TCibGFacCabinas(Grupo).tarif;
 end;
 procedure TCibFacCabina.Contar1seg;
 {Rutina de temporización. Se encarga de actualizar los campos FTransc y FCosto.
@@ -701,10 +704,10 @@ begin
   //dispara evento
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-procedure TCibGFacCabinas.cab_TramaLista(cab: TCibFacCabina; tram: TCPTrama;
+procedure TCibGFacCabinas.cab_TramaLista(facOri: TCibFac; tram: TCPTrama;
   tramaLocal: boolean);
 begin
-  if OnTramaLista<>nil then OnTramaLista(cab, tram, tramaLocal);
+  if OnTramaLista<>nil then OnTramaLista(facOri, tram, tramaLocal);
 end;
 procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
 var
@@ -721,7 +724,7 @@ procedure TCibGFacCabinas.cab_DetenConteo(cab: TCibFacCabina);
 begin
   if OnDetenConteo<>nil then OnDetenConteo(cab);
 end;
-procedure TCibGFacCabinas.cab_LogInfo(cab: TCibFacCabina; msj: string);
+procedure TCibGFacCabinas.cab_LogInfo(cab: TCibFac; msj: string);
 begin
   if OnLogInfo<>nil then OnLogInfo(cab, msj);
 end;
@@ -743,7 +746,6 @@ begin
   cab.OnDetenConteo:=@cab_DetenConteo;
   cab.OnLogInfo    :=@cab_LogInfo;
   cab.Grupo := self;
-  cab.tarif := tarif;
   items.Add(cab);
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := cab;

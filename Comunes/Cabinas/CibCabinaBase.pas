@@ -30,7 +30,7 @@ unit CibCabinaBase;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, LCLProc, MisUtils, blcksock, CPTramas;
+  Classes, SysUtils, LCLProc, MisUtils, blcksock, CibTramas;
 type
   //Estado de conteo de las cabinas.
   TcabEstadoCuenta = (
