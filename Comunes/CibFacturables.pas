@@ -9,7 +9,7 @@ unit CibFacturables;
 interface
 uses
   Classes, SysUtils, fgl, types, LCLProc, dateutils, CPProductos, MisUtils,
-  CPRegistros, FormInicio;
+  CibRegistros, FormInicio;
 type
   TItemBoletaEstado = (
     IT_EST_NORMAL = 0,    //Item en estado normal
@@ -88,6 +88,7 @@ type
     destructor Destroy; override;
   end;
 
+  TCibGFac = class;
   { TCibFac }
   { Define a la clase abstracta que sirve de base a objetos que pueden generar consumo
    (boletas), como puede ser una cabina de internet, o un locutorio.}
@@ -107,8 +108,9 @@ type
     OnCambiaEstado: procedure of object;  //cuando cambia alguna variable de estado
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
   public
-    Boleta : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
-    MsjError: string;          //para mensajes de error
+    Boleta  : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
+    MsjError: string;      //para mensajes de error
+    Grupo   : TCibGFac;    //Referencia a su grupo.
     property Nombre: string read FNombre write SetNombre;  //Nombre del objeto
     property CadEstado: string read GetCadEstado write SetCadEstado;
     property CadPropied: string read GetCadPropied write SetCadPropied;
@@ -128,6 +130,7 @@ type
     tgfLocutNilo = 1    //Grupo de locutorios de enrutador NILO-m
   );
 
+  TEvCabLogInfo = procedure(cab: TCibFac; msj: string) of object;
   { TCibGFac }
   {Define a la clase base de donde se derivarán los objetos Grupo de Facturables o Grupo
    Facturbale. Un grupo facturable es un objeto que contiene un conjunto (lista) de
@@ -150,6 +153,7 @@ type
     CategVenta: string;       //categoría de Venta para este grupo
     items : TCibFac_list; //lista de objetos facturables
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
+    OnLogInfo      : TEvCabLogInfo;    //Indica que se quiere registrar un mensaje en el registro
     {El campo ModoCopia indica si se quiere trabajar sin conexión (como en un visor).
     Debería fijarse justo después de crear el objeto, para que los ítems a crear, se
     creen con la conexión configurada desde el inicio. No todos los objetos descendientes

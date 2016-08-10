@@ -3,7 +3,7 @@ unit CPProductos;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, MisUtils, CPRegistros, FormInicio;
+  Classes, SysUtils, fgl, types, MisUtils, CibRegistros, FormInicio;
 type
   //Define el tipo que almacena un producto (Una línea del archivo de productos)
 
