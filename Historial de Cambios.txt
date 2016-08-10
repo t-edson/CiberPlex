@@ -5,6 +5,12 @@ Se cambia el nombre de CPRegistros a CibRegistros.
 Se cambia el nombre de CPTramas por CibTramas.
 Se mueve el procesamiento del evento OnDetenConteo a la unidad CPGrupFacturables.
 Se mueve la propiedad TCibFacCabina.Grupo al ancestro TCibGFac.
+Se mueve el procesamiento del evento OnTramaLista a la unidad CPGrupFacturables.
+Se deja de usar el objeto Grupo de cabinas como objeto estático, y se activa la opción
+de poder agregarlo dinámicamente, de modo que puede agregarse más de uno.
+Se soluciona el problema de liberación de memoria, que se observaba cuando no se 
+administraba correctamente a los grupos dinámicos.
+
 
 0.9.3
 =====
