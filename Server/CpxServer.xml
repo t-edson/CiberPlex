@@ -10,9 +10,19 @@
   <ImpVen Val="18"/>
   <PanLlamadas Val="True"/>
   <PanBoletas Val="True"/>
-  <ModDiseno Val="False"/>
+  <ModDiseno Val="True"/>
   <StateStatusbar Val="1"/>
-  <usuarios Val="514191208305308317313318252252256
-514191208319320309322252252257
+  <GrpsFact Val="
+[[0
+Cabinas1	COUNTER
+Cab1			12	20	F					
+Cab2			105	20	F					
+]]
+[[0
+Cabinas2	COUNTER
+]]
+"/>
+  <usuarios Val="766254260357360369365370304304308
+76625426037137Y61374304304309
 "/>
 </CONFIG>
