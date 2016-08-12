@@ -149,6 +149,7 @@ type
     procedure NiloM_RegMsjError(NomObj: string; msj: string);
     procedure PonerComando(facOrig: TCibFac; comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
+    procedure VisorCabinasObjectsMoved;
     procedure VisorCabinas_DblClick(Sender: TObject);
   public
     { public declarations }
@@ -186,6 +187,7 @@ begin
   VisorCabinas.Align := alClient;
   VisorCabinas.motEdi.OnClickDer:=@VisorCabinas_ClickDer;
   VisorCabinas.motEdi.OnDblClick:=@VisorCabinas_DblClick;
+  VisorCabinas.OnObjectsMoved:=@VisorCabinasObjectsMoved;
   tic := 0;   //inicia contador
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
@@ -448,6 +450,34 @@ begin
   //llama como evento, indicando que es una trama local
   Config.grupos.gf_TramaLista(facOrig, TramaTmp, true);
 end;
+procedure TfrmPrincipal.VisorCabinasObjectsMoved;
+{Se ha producido el movimiento de objetos en el editor. Se actualiza en el modelo.}
+var
+  og: TObjGraf;
+  Gfac: TCibGFac;
+  fac: TCibFac;
+begin
+  //Se supone que se han movido los objetos seleccionados
+  Config.grupos.DeshabEven:=true;   //para evitar interferencia
+  for og in VisorCabinas.motEdi.seleccion do begin
+    if og.Tipo = OBJ_GRUP then begin
+      //Es un grupo. Ubica el obejto
+      Gfac := Config.grupos.BuscarPorNombre(og.Nombre);
+      if Gfac=nil then exit;
+      Gfac.x := og.x;
+      Gfac.y := og.y;
+    end else if og.Tipo = OBJ_FACT then begin
+      //Es un facturable
+      Gfac := Config.grupos.BuscarPorNombre(TogFac(og).NomGrupo);  //ubica a su grupo
+      if Gfac=nil then exit;
+      fac := Gfac.ItemPorNombre(og.Nombre);
+      fac.x := og.x;
+      fac.y := og.y;
+    end;
+  end;
+  Config.grupos.DeshabEven:=false;   //restaura estado
+  Config.grupos.OnCambiaPropied;
+end;
 //////////////// Acciones //////////////////////
 procedure TfrmPrincipal.acArcTarifasExecute(Sender: TObject);  //Tarifas
 begin
@@ -489,13 +519,13 @@ procedure TfrmPrincipal.acEdiElimGruExecute(Sender: TObject);  //Eliminar grupo
 var
   gcab: TCibGFac;
   og: TObjGraf;
-  ogCab: TogGCabinas;
+  ogGCab: TogGCabinas;
 begin
   og := VisorCabinas.Seleccionado;
   if og = nil then exit;
   if (og is TogGCabinas) then begin
-    ogCab := TogGCabinas(og);  //restaura objeto
-    gcab := Config.grupos.BuscarPorNombre(ogCab.gcab.Nombre);  //Busca grupo en el modelo
+    ogGCab := TogGCabinas(og);  //restaura objeto
+    gcab := Config.grupos.BuscarPorNombre(ogGCab.gfac.Nombre);  //Busca grupo en el modelo
     Config.grupos.Eliminar(gcab);
   end;
 end;
@@ -526,7 +556,7 @@ begin
   if ogGcab = nil then exit;
   {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
   de administración de la copia, no del modelo original.}
-  gcab := Config.grupos.BuscarPorNombre(ogGcab.gcab.Nombre);  //Busca grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogGcab.gfac.Nombre);  //Busca grupo en el modelo
   TCibGFacCabinas(gcab).frmAdminTar.Show;
 end;
 procedure TfrmPrincipal.acGCabAdmCabExecute(Sender: TObject);
@@ -539,7 +569,7 @@ begin
   if ogGcab = nil then exit;
   {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
   de administración de la copia, no del modelo original.}
-  gcab := Config.grupos.BuscarPorNombre(ogGcab.gcab.Nombre);  //Busca grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogGcab.gfac.Nombre);  //Busca grupo en el modelo
   TCibGFacCabinas(gcab).frmAdminCabs.Show;  //abre su ventana de administración
 end;
 //Acciones de Cabinas
@@ -558,7 +588,7 @@ begin
   end;
   frmFijTiempo.MostrarIni(ogCab);  //modal
   if frmFijTiempo.cancelo then exit;  //canceló
-  PonerComando(ogCab.cab, C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+  PonerComando(ogCab.fac, C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
 end;
 procedure TfrmPrincipal.acCabModTpoExecute(Sender: TObject);
 var
@@ -572,7 +602,7 @@ begin
     //está en medio de una cuenta
     frmFijTiempo.Mostrar(ogCab);  //modal
     if frmFijTiempo.cancelo then exit;  //canceló
-    PonerComando(ogCab.cab, C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+    PonerComando(ogCab.fac, C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
   end;
 end;
 procedure TfrmPrincipal.acCabDetCtaExecute(Sender: TObject);
@@ -582,7 +612,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
-  PonerComando(ogCab.cab, C_DET_CTAPC, 0, 0, ogCab.nombre);
+  PonerComando(ogCab.fac, C_DET_CTAPC, 0, 0, ogCab.nombre);
 end;
 procedure TfrmPrincipal.acCabPonManExecute(Sender: TObject);
 var
@@ -594,7 +624,7 @@ begin
     MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
     exit;
   end;
-  PonerComando(ogCab.cab, C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
+  PonerComando(ogCab.fac, C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
 end;
 procedure TfrmPrincipal.acCabExplorArcExecute(Sender: TObject);
 //Muestra la ventana explorador de archivo
@@ -617,7 +647,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   //Ubica a su grupo en el modelo
-  gcab := Config.grupos.BuscarPorNombre(ogCab.cab.Grupo.Nombre);  //Busca grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogCab.fac.Grupo.Nombre);  //Busca grupo en el modelo
   //Busca si ya existe ventana de mensajes, creadas para esta cabina
   frmMsjes := TCibGFacCabinas(gcab).BuscarVisorMensajes(ogCab.Nombre, true);
   frmMsjes.Exec(ogCab.Nombre);
@@ -629,7 +659,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('Grabar Boleta de: ' + ogCab.nombre + '?')<>1 then exit;
-  PonerComando(ogCab.cab, C_GRA_BOLPC, 0, 0, ogCab.nombre);
+  PonerComando(ogCab.fac, C_GRA_BOLPC, 0, 0, ogCab.nombre);
 end;
 procedure TfrmPrincipal.acCabVerBolExecute(Sender: TObject);
 var
@@ -637,7 +667,7 @@ var
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
-  frmBoleta.Exec(ogCab.cab);
+  frmBoleta.Exec(ogCab.fac);
 end;
 procedure TfrmPrincipal.acNilVerTermExecute(Sender: TObject);
 begin
