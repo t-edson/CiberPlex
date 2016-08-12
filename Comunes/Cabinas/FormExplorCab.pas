@@ -50,15 +50,15 @@ implementation
 { TfrmExplorCab }
 procedure TfrmExplorCab.Timer1Timer(Sender: TObject);
 var
-  cab: TogCabina;
+  ogCab: TogCabina;
 begin
   if not self.Visible then exit;
-  cab := VisorCabinas.BuscarOgCabina(nomCab);
+  ogCab := VisorCabinas.BuscarOgCabina(nomCab);
   //Actualiza campos
-  lblNomPC.Caption:=cab.cab.NombrePC;
-  txtFec.Caption:= DateToStr(cab.cab.HoraPC) + LineEnding +
-                   TimeToStr(cab.cab.HoraPC);
-  if cab.cab.PantBloq then Button1.Caption:='Desbloquear'
+  lblNomPC.Caption:=ogCab.cab.NombrePC;
+  txtFec.Caption:= DateToStr(ogCab.cab.HoraPC) + LineEnding +
+                   TimeToStr(ogCab.cab.HoraPC);
+  if ogCab.cab.PantBloq then Button1.Caption:='Desbloquear'
   else Button1.Caption:='Bloquear';
 end;
 procedure TfrmExplorCab.picPantClick(Sender: TObject);
