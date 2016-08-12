@@ -28,8 +28,9 @@ type
       var tipo: TCibTipGFact): boolean;
     procedure gf_DetenConteo(cab: TCibFacCabina);
   public
-    nombre: string;      //Es un identificador del grupo. Es útil solo para depuración.
-    items: TCibGFact_list;  //lista de grupos facturables
+    nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
+    items  : TCibGFact_list;  //lista de grupos facturables
+    DeshabEven: boolean;     //deshabilita los eventos
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad de algun grupo
     OnLogInfo      : TEvCabLogInfo;    //Indica que se quiere registrar un mensaje en el registro
     OnLeerCadPropiedades: TEvLeerCadPropiedades;
@@ -211,7 +212,7 @@ begin
     end;
   C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      if OnLeerCadPropiedades<>nil then begin
+      if not DeshabEven and (OnLeerCadPropiedades<>nil) then begin
         OnLeerCadPropiedades(tmp);
         gru.TCP_envComando(cab.Nombre, M_SOL_ARINI, 0, 0, tmp);
       end;
@@ -233,7 +234,7 @@ begin
       if Nomb='' then exit; //protección
       cabDest := gru.CabPorNombre(Nomb);
       cabDest.InicConteo(tSolic, tLibre, horGra);
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -241,7 +242,7 @@ begin
       if Nomb='' then exit; //protección
       cabDest := gru.CabPorNombre(Nomb);
       cabDest.ModifConteo(tSolic, tLibre, horGra);
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -252,10 +253,10 @@ begin
       end else begin
         cabDest.DetenConteo();
       end;
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
       { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
-      de estado, (como se hace actualmente con el timer) , ya que se está detectando cada
-      evento que geenra cambios. Verificar si  eso es cierto, sobre todo en el caso de la
+      de estado, (como se hace actualmente con el Timer) , ya que se está detectando cada
+      evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automático, o algún otro evento similar que requiera guardar el estado.}
     end;
   C_GRA_BOLPC: begin  //Se pide grabar la boleta de una PC
@@ -276,7 +277,7 @@ begin
       cabDest.boleta.fec_grab := now;  //fecha de grabación
       PLogBol(cabDest.Boleta.RegVenta, cabDest.boleta.TotPag);
       //Config.escribirArchivoIni;
-    if OnGuardarEstado<>nil then OnGuardarEstado;
+    if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
       cabDest.LimpiarBol;          //Limpia los items
     end;
   C_AGR_ITBOL: begin  //Se pide agregar una venta
@@ -289,7 +290,7 @@ begin
       itBol.CadEstado := tmp;  //recupera ítem
       cabDest.Boleta.VentaItem(itBol, true);
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_DEV_ITBOL: begin  //Devolver ítem
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -304,7 +305,7 @@ begin
       PLogVenD(ItBol.regIBol_AReg, itBol.subtot);  //registra mensaje
       cabDest.Boleta.ItemDelete(a[1]);  //quita de la lista
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_DES_ITBOL: begin  //Desechar ítem
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -316,7 +317,7 @@ begin
       itBol.coment := a[2];         //escribe comentario
       itBol.estado := IT_EST_DESECH;
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_REC_ITBOL: begin  //Recuperar ítem
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -328,7 +329,7 @@ begin
       itBol.coment := '';         //escribe comentario
       itBol.estado := IT_EST_NORMAL;
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_COM_ITBOL: begin  //Comentar ítem
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -339,7 +340,7 @@ begin
       if itBol=nil then exit;
       itBol.coment := a[2];         //escribe comentario
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_DIV_ITBOL: begin
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -367,7 +368,7 @@ begin
       cabDest.Boleta.items.Move(idx2, idx+1);  //acomoda posición
       cabDest.Boleta.Recalcula;
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_GRA_ITBOL: begin
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -380,7 +381,7 @@ begin
       else PLogIBolD(tmp);       //item descartado
       cabDest.Boleta.ItemDelete(a[1]);
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if OnGuardarEstado<>nil then OnGuardarEstado;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   else
     if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
@@ -401,11 +402,11 @@ begin
 end;
 procedure TCibGruposFacturables.gfCambiaPropied;
 begin
-  if OnCambiaPropied<>nil then OnCambiaPropied;
+  if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 procedure TCibGruposFacturables.gfLogInfo(cab: TCibFac; msj: string);
 begin
-  if OnLogInfo<>nil then OnLogInfo(cab, msj);
+  if not DeshabEven and (OnLogInfo<>nil) then OnLogInfo(cab, msj);
 end;
 procedure TCibGruposFacturables.SetCadPropiedades(AValue: string);
 var
@@ -534,12 +535,12 @@ begin
   end;
   //Agrega
   items.Add(gf);
-  if OnCambiaPropied<>nil then OnCambiaPropied;
+  if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 procedure TCibGruposFacturables.Eliminar(gf: TCibGFac);
 begin
   items.Remove(gf);
-  if OnCambiaPropied<>nil then OnCambiaPropied;
+  if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 //constructor y destructor
 constructor TCibGruposFacturables.Create(nombre0: string);

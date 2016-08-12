@@ -31,10 +31,12 @@ type
     FObjBloqueados: boolean;
     procedure ActualizarGruposCabinas(items: TCibGFact_list);
     function AgregGrupCabinas(gcab: TCibGFacCabinas): TogGCabinas;
+    procedure motEdiObjectsMoved;
     procedure SetObjBloqueados(AValue: boolean);
     procedure ActualizarCabinas(grupo: TCibGFac);
   public
     motEdi: TModEdicion;  //motor de edición
+    OnObjectsMoved: procedure of object;
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
     function AgregCabina(cab: TCibFacCabina): TogCabina;
     function BuscarOgCabina(const nom: string): TogCabina;
@@ -166,12 +168,10 @@ que objetos deben existir}
 debugln('>Buscando:' + cab.Nombre);
     for og in Motedi.objetos do if og.Tipo = OBJ_FACT then begin
       ogFac := TogFac(og);  //restaura tipo
-{ TODO : Se debe también capturar el nombre del grupo, como se captura el "Nombre".}
-      if (ogFac.Grupo = cab.Grupo.Nombre) and (ogFac.Nombre = cab.Nombre) then begin
+      if (ogFac.NomGrupo = cab.Grupo.Nombre) and (ogFac.Nombre = cab.Nombre) then begin
         //hay, devuelve la referencia
         Result := TogCabina(ogFac);  //restaura tipo
         Result.fac := cab;   //actualiza la referencia
-debugln('   encontrado.');
         exit;
       end;
     end;
@@ -293,10 +293,16 @@ begin
   end;
   motEdi.Refrescar;
 end;
+procedure TfraVisCPlex.motEdiObjectsMoved;
+//Se ha producido el movimiento de uno o más objetos
+begin
+  if OnObjectsMoved<>nil then OnObjectsMoved;
+end;
 constructor TfraVisCPlex.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   motEdi := TModEdicion.Create(PaintBox1);
+  motEdi.OnObjectsMoved:=@motEdiObjectsMoved;
   decod := TCPDecodCadEstado.Create;
   grupos:= TCibGruposFacturables.Create('GrupVis');
 end;

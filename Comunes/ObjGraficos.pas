@@ -89,7 +89,7 @@ private
   Ffac: TCibFac;
   procedure Setfac(AValue: TCibFac);
 public
-  Grupo    : string;  //nombre del grupo al que pertenece.
+  NomGrupo   : string;  //nombre del grupo al que pertenece.
   Boleta     : TogBoleta;   //La boleta
   property fac: TCibFac read Ffac write Setfac;   //contenedor de propiedades
   function gru: TCibGFac;  //referecnia al grupo
@@ -252,7 +252,7 @@ begin
   Boleta.bol := Avalue.Boleta;   //y también el de la boleta
   //Al actualizar la referencia, se debte también actualizar las variables copia
   nombre := Ffac.Nombre;
-  grupo := Ffac.Grupo.Nombre;  {Se guarda la referencia al grupo como cadena, porque una
+  NomGrupo := Ffac.Grupo.Nombre;  {Se guarda la referencia al NomGrupo como cadena, porque una
                                 cadena es una referencia segura, ya que la referencia
                                 Fcab, puede quedar apuntando a objetos liberados.}
   fx := Ffac.x;
@@ -282,7 +282,7 @@ begin
   Ffac.CadPropied := Avalue;
   //actualiza las propiedades locales
   nombre := Ffac.Nombre;
-  grupo := Ffac.Grupo.Nombre;
+  NomGrupo := Ffac.Grupo.Nombre;
   fx := Ffac.x;
   fy := Ffac.y;
   ReubicElemen;

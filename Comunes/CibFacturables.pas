@@ -148,10 +148,10 @@ type
     procedure Setx(AValue: double);
     procedure Sety(AValue: double);
   public
-    Nombre: string;           //Nombre de grupo facturable
-    tipo  : TCibTipGFact;  //tipo de grupo facturable
+    Nombre : string;          //Nombre de grupo facturable
+    tipo   : TCibTipGFact;   //tipo de grupo facturable
     CategVenta: string;       //categoría de Venta para este grupo
-    items : TCibFac_list; //lista de objetos facturables
+    items  : TCibFac_list;   //lista de objetos facturables
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnLogInfo      : TEvCabLogInfo;    //Indica que se quiere registrar un mensaje en el registro
     {El campo ModoCopia indica si se quiere trabajar sin conexión (como en un visor).
@@ -167,6 +167,7 @@ type
     property x: double read Fx write Setx;   //coordenada X
     property y: double read Fy write Sety;  //coordenada Y
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
+    procedure SetXY(x0, y0: double);
   public  //constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipGFact);
     destructor Destroy; override;
@@ -472,6 +473,13 @@ procedure TCibGFac.Setx(AValue: double);
 begin
   if Fx=AValue then exit;
   Fx:=AValue;
+  if OnCambiaPropied<>nil then OnCambiaPropied();
+end;
+procedure TCibGFac.SetXY(x0,y0: double);
+begin
+  if (Fx=x0) and (Fy=y0) then exit;
+  Fx:=x0;
+  Fy:=y0;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibGFac.Sety(AValue: double);
