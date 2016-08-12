@@ -777,7 +777,7 @@ var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta;
+  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9  + #9 ;
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + TCibFacCabina(c).CadPropied ;
@@ -797,6 +797,8 @@ begin
   a := Explode(#9, lineas[0]);
   Nombre:=a[0];
   CategVenta:=a[1];
+  Fx := f2N(a[2]);
+  Fy := f2N(a[3]);
   lineas.Delete(0);  //elimima línea
   //Procesa líneas con información de las cabinas
   items.Clear;
