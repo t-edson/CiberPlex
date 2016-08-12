@@ -12,7 +12,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ActnList,
   Menus, lclProc, LCLType, LCLIntf,
   MisUtils, FormPant, FormPantCli, FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos,
-  FormFijTiempo, CPTramas, CPCabinaBase, FormExplorCab, CPServidorCab, Globales;
+  FormFijTiempo, CibTramas, CibCabinaBase, FormExplorCab, CPServidorCab, Globales;
 type
   { TForm1 }
   TForm1 = class(TForm)
@@ -285,7 +285,7 @@ end;
 procedure TForm1.acCabIniCtaExecute(Sender: TObject);
 //Inicia la cuenta de una cabina de internet
 var
-  ogCab: TObjGrafCabina;
+  ogCab: TogCabina;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
@@ -302,7 +302,7 @@ begin
 end;
 procedure TForm1.acCabModTpoExecute(Sender: TObject);
 var
-  ogCab: TObjGrafCabina;
+  ogCab: TogCabina;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
@@ -313,7 +313,7 @@ begin
 end;
 procedure TForm1.acCabDetCtaExecute(Sender: TObject);  //Detener cuentea
 var
-  ogCab: TObjGrafCabina;
+  ogCab: TogCabina;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
@@ -322,7 +322,7 @@ begin
 end;
 procedure TForm1.acCabPonManExecute(Sender: TObject);
 var
-  ogCab: TObjGrafCabina;
+  ogCab: TogCabina;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
@@ -334,7 +334,7 @@ begin
 end;
 procedure TForm1.acCabExplorArcExecute(Sender: TObject);
 var
-  ogCab: TObjGrafCabina;
+  ogCab: TogCabina;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
@@ -343,7 +343,7 @@ begin
 end;
 procedure TForm1.acCabGraBolExecute(Sender: TObject);  //Graba la boleta
 var
-  ogCab: TObjGrafCabina;
+  ogCab: TogCabina;
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;

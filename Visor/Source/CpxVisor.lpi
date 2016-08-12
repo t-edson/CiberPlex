@@ -28,6 +28,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\..\Comunes\Cabinas;..\..\Comunes\NiloM"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -69,7 +70,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="10">
+    <Units Count="11">
       <Unit0>
         <Filename Value="CpxVisor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -111,27 +112,27 @@
         <IsPartOfProject Value="True"/>
       </Unit5>
       <Unit6>
-        <Filename Value="..\..\Comunes\FormFijTiempo.pas"/>
+        <Filename Value="Globales.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmFijTiempo"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit6>
       <Unit7>
-        <Filename Value="Globales.pas"/>
+        <Filename Value="..\..\Comunes\CPUtils.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\Comunes\CPUtils.pas"/>
+        <Filename Value="..\..\Comunes\Cabinas\FormFijTiempo.pas"/>
         <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\Comunes\FormExplorCab.pas"/>
+        <Filename Value="..\..\Comunes\Cabinas\FormExplorCab.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmExplorCab"/>
         <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit9>
+      <Unit10>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -142,7 +143,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.4;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse"/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.4;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

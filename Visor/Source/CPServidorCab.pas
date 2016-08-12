@@ -5,7 +5,7 @@
 unit CPServidorCab;  {$mode objfpc}{$H+}
 interface
 uses
-  Classes, blcksock, synsock, lclproc, dialogs, sysutils, MisUtils, CPTramas;
+  Classes, blcksock, synsock, lclproc, dialogs, sysutils, MisUtils, CibTramas;
 type
   TEvRegMensaje = procedure(msj: string) of object;
   TEvTramaLista = procedure(tram: TCPTrama) of object;
