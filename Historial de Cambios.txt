@@ -1,3 +1,13 @@
+0.9.5
+=====
+Se crea el objeto TogFac, en la unidad ObjGraficos, para servir de ancestro a todos
+los objetos facturables. Se adecúa el código para usar la nueva definición de TogCabina.
+Se corrige un problema en la actualización de los objetos gráficos a partir de los 
+modelos.
+Se crea el campo TCibGruposFacturables.DeshabEven, para inhabilitar eventos.
+Se implementa el cambio de coordenadas de los objetos, cuando se modifican en el visor.
+
+
 0.9.4
 =====
 Se crea y activa el evento TCibGruposFacturables.OnLogInfo.
