@@ -79,23 +79,45 @@ public  //Constructor y destructor
   destructor Destroy; override;
 end;
 
+const //Constantes a usar en el "TObjGraf.tipo", para catgeorizar a los objetos gráficos.
+  OBJ_FACT = 1;
+  OBJ_GRUP = 2;
+type
+{TogFac, es el objeto intermedio usado para modelar a todos los objetos facturables.}
+TogFac = class(TObjGraf)
+private
+  Ffac: TCibFac;
+  procedure Setfac(AValue: TCibFac);
+public
+  Grupo    : string;  //nombre del grupo al que pertenece.
+  Boleta     : TogBoleta;   //La boleta
+  property fac: TCibFac read Ffac write Setfac;   //contenedor de propiedades
+  function gru: TCibGFac;  //referecnia al grupo
+  constructor Create(mGraf: TMotGraf); override;
+end;
+
+{ TogGFac }
+{TogFac, es el objeto intermedio usado para modelar a todos los objetos Grupos de
+facturables.}
+TogGFac = class(TObjGraf)
+private
+public
+  gfac   : TCibGFac;   //referencia a su objeto grupo
+  constructor Create(mGraf: TMotGraf); override;
+end;
+
 { TogCabina }
 {Objeto gráfico que representa a los elementos TCibFacCabina}
-TogCabina = class(TObjGraf)
+TogCabina = class(TogFac)
 private
-  Fcab: TCibFacCabina;
-  procedure Setcab(AValue: TCibFacCabina);
   procedure SetCadEstado(AValue: string);
   procedure SetCadPropied(AValue: string);
 public
-  Usado      : boolean;
   icoPC      : TGraphic;    //PC con control
   icoPCdes   : TGraphic;    //PC sin control
   icoUSU     : TGraphic;    //referencia a ícono
   icoRedAct  : TGraphic;    //referencia a ícono
   icoRedDes  : TGraphic;    //referencia a ícono
-  Boleta     : TogBoleta;   //La boleta
-  property cab: TCibFacCabina read Fcab write Setcab;   //contenedor de propiedades
   procedure DibujarTiempo;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
 //   Function EsVisibleEnPantalla() : Boolean;
@@ -107,6 +129,7 @@ public
   function EnManten: boolean;
   property CadPropied: string write SetCadPropied;
   property CadEstado: string write SetCadEstado;
+  function cab: TCibFacCabina; inline;  //acceso a la cabina
 protected
   procedure ReubicElemen; override;
 private
@@ -119,16 +142,13 @@ TOgCabina_list = specialize TFPGObjectList<TogCabina>;  //lista de cabinas
 
 { TogGCabinas }
 {Objeto gráfico que representa a los elementos TCibGFacCabinas}
-TogGCabinas = class(TObjGraf)
+TogGCabinas = class(TogGFac)
 private
-  Fgcab: TCibGFacCabinas;
-  procedure Setgcab(AValue: TCibGFacCabinas);
   procedure SetCadEstado(AValue: string);
   procedure SetCadPropied(AValue: string);
 public
-  Usado      : boolean;
-  icono      : TGraphic;    //PC con control
-  property gcab: TCibGFacCabinas read Fgcab write Setgcab;   //contenedor de propiedades
+  icono  : TGraphic;    //PC con control
+//  gcab   : TCibGFacCabinas;   //referencia a su grupo
   procedure Dibujar; override;  //Dibuja el objeto gráfico
 //   Function EsVisibleEnPantalla() : Boolean;
    //Da un indicio sobre si el objeto es completamente visible en pantalla y en las capas
@@ -144,7 +164,6 @@ end;
 TogGCabinas_list = specialize TFPGObjectList<TogGCabinas>;  //lista de cabinas
 
 implementation
-
 //Const ANCHO_MIN = 20;    //Ancho mínimo de objetos gráficos en pixels (Coord Virtuales)
 //Const ALTO_MIN = 20;     //Alto mínimo de objetos gráficos en Twips (Coord Virtuales)
 
@@ -226,25 +245,54 @@ begin
    filas.Add(f);
    ReConstGeom;      //reconstruye
 end;
+{ TogFac }
+procedure TogFac.Setfac(AValue: TCibFac);
+begin
+  Ffac:=AValue;   //actualiza referencia
+  Boleta.bol := Avalue.Boleta;   //y también el de la boleta
+  //Al actualizar la referencia, se debte también actualizar las variables copia
+  nombre := Ffac.Nombre;
+  grupo := Ffac.Grupo.Nombre;  {Se guarda la referencia al grupo como cadena, porque una
+                                cadena es una referencia segura, ya que la referencia
+                                Fcab, puede quedar apuntando a objetos liberados.}
+  fx := Ffac.x;
+  fy := Ffac.y;
+end;
+function TogFac.gru: TCibGFac;
+begin
+  Result := Ffac.Grupo;
+end;
+constructor TogFac.Create(mGraf: TMotGraf);
+begin
+  inherited Create(mGraf);
+  tipo := OBJ_FACT;   //Usa el campo tipo, para identificar a los facturables
+end;
+{ TogGFac }
+constructor TogGFac.Create(mGraf: TMotGraf);
+begin
+  inherited Create(mGraf);
+  tipo := OBJ_GRUP;   //Usa el campo tipo, para identificar a los grupos facturables
+end;
+
 { TogCabina }
 procedure TogCabina.SetCadPropied(AValue: string);
+{Recibe una cadena de propiedades y la escribe en el objeto facturable.}
 begin
-  //carg1 propiedades
-  cab.CadPropied := Avalue;
+  //transfiere propiedades al objeto facturable propiedades
+  Ffac.CadPropied := Avalue;
   //actualiza las propiedades locales
-  nombre := cab.Nombre;
-  fx := cab.x;
-  fy := cab.y;
+  nombre := Ffac.Nombre;
+  grupo := Ffac.Grupo.Nombre;
+  fx := Ffac.x;
+  fy := Ffac.y;
   ReubicElemen;
-end;
-procedure TogCabina.Setcab(AValue: TCibFacCabina);
-begin
-  Fcab:=AValue;   //actualiza referencia
-  Boleta.bol := Avalue.Boleta;   //y también el de la boleta
+  {No necesita actualizar alguna otra propiedad porque, el acceso a las propiedades
+   adicionales, se hace a través de la referencia "fac", además no se está cambiando
+   la referencia, sino que se está actualizando sus propiedades.}
 end;
 procedure TogCabina.SetCadEstado(AValue: string);
 begin
-  cab.CadEstado := AValue;
+  fac.CadEstado := AValue;
 end;
 procedure TogCabina.DibujarTiempo;
 var
@@ -255,7 +303,7 @@ begin
   v2d.FijaRelleno(TColor($80ff80));
   v2d.RectangR(x, y, x+60, y+36);
   //muestra tiempo transcurrido
-//  DateTimeToString(tmp, 'hh:mm:ss', now-cab.hor_ini);  //convierte
+//  DateTimeToString(tmp, 'hh:mm:ss', now-fac.hor_ini);  //convierte
   DateTimeToString(tmp, 'hh:mm:ss', cab.TranscDat);  //convierte
   v2d.Texto(x+4,y+1,tmp);
   //muestra tiempo total
@@ -366,6 +414,11 @@ function TogCabina.EnManten: boolean;
 begin
   Result := cab.EstadoCta = EST_MANTEN;
 end;
+function TogCabina.cab: TCibFacCabina; inline;
+{Función de acceso pro comodidad}
+begin
+  Result := TCibFacCabina(fac);
+end;
 procedure TogCabina.ProcDesac(estado0: Boolean);
 begin
 //   Desactivado := estado0;
@@ -375,10 +428,11 @@ end;
 constructor TogCabina.Create(mGraf: TMotGraf; cab0: TCibFacCabina);
 begin
   inherited Create(mGraf);
-  Fcab := cab0;   //guarda referencia
-  BotDes := AddButton(24,24,BOT_REPROD, @ProcDesac);
+  Boleta := TogBoleta.Create(v2d, nil);  //crea boleta
+  fac := cab0;   {Actualiza referencia, a través de la propiedad, para que se actualicen
+                  tambiém, las variables necesarias}
+  BotDes := AddButton(24, 24, BOT_REPROD, @ProcDesac);
   pc_SUP_CEN.visible:=false;  //oculta punto de control
-  Boleta := TogBoleta.Create(v2d, cab.Boleta);  //crea boleta
 
   Self.Ubicar(100,100);
   width := 85;
@@ -398,20 +452,16 @@ end;
 procedure TogGCabinas.SetCadPropied(AValue: string);
 begin
   //carg1 propiedades
-  gcab.CadPropied := Avalue;
+  gfac.CadPropied := Avalue;
   //actualiza las propiedades locales
-  nombre := gcab.Nombre;
-  fx := gcab.x;
-  fy := gcab.y;
+  nombre := gfac.Nombre;
+  fx := gfac.x;
+  fy := gfac.y;
   ReubicElemen;
-end;
-procedure TogGCabinas.Setgcab(AValue: TCibGFacCabinas);
-begin
-  Fgcab:=AValue;   //actualiza referencia
 end;
 procedure TogGCabinas.SetCadEstado(AValue: string);
 begin
-  gcab.CadEstado := AValue;
+  gfac.CadEstado := AValue;
 end;
 procedure TogGCabinas.Dibujar;
 var
@@ -449,7 +499,7 @@ end;
 constructor TogGCabinas.Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
 begin
   inherited Create(mGraf);
-  Fgcab := cab0;   //guarda referencia
+  gfac := cab0;   //guarda referencia
   pc_SUP_CEN.visible:=false;  //oculta punto de control
 
   Self.Ubicar(100,100);

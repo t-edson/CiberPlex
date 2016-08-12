@@ -32,7 +32,7 @@ type
     procedure ActualizarGruposCabinas(items: TCibGFact_list);
     function AgregGrupCabinas(gcab: TCibGFacCabinas): TogGCabinas;
     procedure SetObjBloqueados(AValue: boolean);
-    procedure ActualizarCabinas(items: TCibFac_list);
+    procedure ActualizarCabinas(grupo: TCibGFac);
   public
     motEdi: TModEdicion;  //motor de edición
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
@@ -152,40 +152,31 @@ begin
   end;
 end;
 
-procedure TfraVisCPlex.ActualizarCabinas(items: TCibFac_list);
+procedure TfraVisCPlex.ActualizarCabinas(grupo: TCibGFac);
 {Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
 que objetos deben existir}
-var
-  lista: TOgCabina_list;   //almacenamiento temporal de las referencias a las cabinas
-  procedure InicLista;
-  {Llena "lista", con la lista de referencias a cabinas, y limpia su bandera
-   "usado". }
+  function AgregarSiNoHay(cab: TCibFacCabina): TogCabina;
+  {Devuelve la referencia a un objeto gráfico TogCabina, del motor de edición, que tenga
+   el nombre de la cabina indicada. Si no existe el objeto, lo crea y devuelve la
+   referencia. }
   var
     og: TObjGraf;
+    ogFac: TogFac;
   begin
-    lista.Clear;
-    for og in motEdi.objetos do begin
-      if og.Id = ID_CABINA then begin
-        TogCabina(og).Usado:=false;
-        lista.Add(TogCabina(og));
-      end;
-    end;
-  end;
-  function AgregarSiNoHay(cab: TCibFacCabina): TogCabina;
-  {Devuelve la referencia a una cabina. Si no existe la crea.
-   Debe haberse llenado "lista", previamente}
-  var
-    c: TogCabina;
-  begin
-    for c in lista do begin
-      if c.nombre = cab.Nombre then begin
+debugln('>Buscando:' + cab.Nombre);
+    for og in Motedi.objetos do if og.Tipo = OBJ_FACT then begin
+      ogFac := TogFac(og);  //restaura tipo
+{ TODO : Se debe también capturar el nombre del grupo, como se captura el "Nombre".}
+      if (ogFac.Grupo = cab.Grupo.Nombre) and (ogFac.Nombre = cab.Nombre) then begin
         //hay, devuelve la referencia
-        Result := c;
-        Result.cab := cab;   //actualiza la referencia
+        Result := TogCabina(ogFac);  //restaura tipo
+        Result.fac := cab;   //actualiza la referencia
+debugln('   encontrado.');
         exit;
       end;
     end;
     //no hay
+debugln('>Agregando.');
     Result := AgregCabina(cab);  //crea cabina
   end;
 var
@@ -193,53 +184,29 @@ var
   fac : TCibFac;
   cab : TCibFacCabina;
 begin
-  lista := TOgCabina_list.Create(false);
-  InicLista;   //crea lista y marca "Usado"
-  for fac in items do begin
+  for fac in grupo.items do begin
     cab := TCibFacCabina(fac);
     ogCab := AgregarSiNoHay(cab);
     ogCab.CadPropied := cab.CadPropied;  //actualiza propiedades
-    ogCab.Usado:=true;
-
+    ogCab.Data:='';  //Para que no se elimine.
   end;
-  //verifica cabinas no usadas
-  for ogCab in lista do begin
-    if Not ogCab.Usado then
-      motEdi.EliminarObjGrafico(ogCab);
-  end;
-  motEdi.Refrescar;
-  lista.Destroy;
 end;
 procedure TfraVisCPlex.ActualizarGruposCabinas(items: TCibGFact_list);
 {Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
 habrá un grupo.}
-var
-  lista: TogGCabinas_list;   //almacenamiento temporal de las referencias a las cabinas
-  procedure InicLista;
-  {Llena "lista", con la lista de referencias a cabinas, y limpia su bandera
-   "usado". }
-  var
-    og: TObjGraf;
-  begin
-    lista.Clear;
-    for og in motEdi.objetos do begin
-      if og.Id = ID_GCABINA then begin
-        TogGCabinas(og).Usado:=false;
-        lista.Add(TogGCabinas(og));
-      end;
-    end;
-  end;
   function AgregarSiNoHay(gcab: TCibGFacCabinas): TogGCabinas;
   {Devuelve la referencia a una cabina. Si no existe la crea.
    Debe haberse llenado "lista", previamente}
   var
-    c: TogGCabinas;
+    og: TObjGraf;
+    ogGFac: TogGFac;
   begin
-    for c in lista do begin
-      if c.nombre = gcab.Nombre then begin
+    for og in Motedi.objetos do if og.Tipo = OBJ_GRUP then begin
+      ogGFac := TogGFac(og);  //restaura tipo
+      if ogGFac.nombre = gcab.Nombre then begin
         //hay, devuelve la referencia
-        Result := c;
-        Result.gcab := gcab;   //actualiza la referencia
+        Result := TogGCabinas(ogGFac);
+        Result.gfac := gcab;   //actualiza la referencia
         exit;
       end;
     end;
@@ -251,28 +218,19 @@ var
   gfac : TCibGFac;
   cab : TCibGFacCabinas;
 begin
-  lista := TogGCabinas_list.Create(false);
-  InicLista;   //crea lista y marca "Usado"
   for gfac in items do begin
     cab := TCibGFacCabinas(gfac);
     ogGCab := AgregarSiNoHay(cab);
     ogGCab.CadPropied := cab.CadPropied;  //actualiza propiedades
-    ogGCab.Usado:=true;
-
+    ogGCab.Data:='';  //Para que no se elimine.
   end;
-  //verifica cabinas no usadas
-  for ogGCab in lista do begin
-    if Not ogGCab.Usado then
-      motEdi.EliminarObjGrafico(ogGCab);
-  end;
-  motEdi.Refrescar;
-  lista.Destroy;
 end;
 
 procedure TfraVisCPlex.ActualizarPropiedades(cadProp: string);
 {Recibe la cadena de propiedades del "TCibGruposFacturables" del servidor y actualiza
 su copia local.}
 var
+  og : TObjGraf;
   gruFac: TCibGFac;
 begin
   //Actualiza el contenido del TCibGruposFacturables local
@@ -281,8 +239,8 @@ begin
   grupos.CadPropiedades := cadProp;  //copia propiedades de todos los grupos
   {Crea o elimina objetos gráficos (que representan a objetos TCibGFac) de acuerdo al
   contenido de "grupos".}
+  for og in motEdi.objetos do og.Data:='x';  //marca todos para eliminación
   ActualizarGruposCabinas(grupos.items);
-
   {Crea o elimina objetos gráficos (que representan a objetos TCibFac) de acuerdo al
   contenido de "grupos".
   La opción más sencilla sería crear todos de nuevo de acuerdo al estado de "grupos",
@@ -291,9 +249,17 @@ begin
   el usuario.}
   for gruFac in grupos.items do begin
     if gruFac.tipo = tgfCabinas then begin
-      ActualizarCabinas(gruFac.items);
+      ActualizarCabinas(gruFac);
     end;
   end;
+  //Verifica objetos no usados (no actualizados), para eliminarlos
+  for og in motEdi.objetos do begin
+    if og.Data = 'x' then begin
+debugln('>Eliminando: ' + og.Nombre);
+      motEdi.EliminarObjGrafico(og);
+    end;
+  end;
+  motEdi.Refrescar;
 end;
 procedure TfraVisCPlex.ActualizarEstado(cadEstado: string);
 {Actualiza el estado de los objetos existentes. No se cambian las propiedades ni se

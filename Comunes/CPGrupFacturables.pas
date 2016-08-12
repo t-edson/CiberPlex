@@ -26,7 +26,7 @@ type
     procedure SetModoCopia(AValue: boolean);
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
       var tipo: TCibTipGFact): boolean;
-    procedure TCibGFacCabinasDetenConteo(cab: TCibFacCabina);
+    procedure gf_DetenConteo(cab: TCibFacCabina);
   public
     nombre: string;      //Es un identificador del grupo. Es útil solo para depuración.
     items: TCibGFact_list;  //lista de grupos facturables
@@ -42,7 +42,8 @@ type
     function NumGrupos: integer;
     function BuscarPorNombre(nomb: string): TCibGFac;
     procedure Agregar(gf: TCibGFac);
-    procedure TCibGFacCabinasTramaLista(facOri: TCibFac; tram: TCPTrama;
+    procedure Eliminar(gf: TCibGFac);
+    procedure gf_TramaLista(facOri: TCibFac; tram: TCPTrama;
       tramaLocal: boolean);
   public  //constructor y destructor
     constructor Create(nombre0: string);
@@ -103,7 +104,7 @@ begin
   end;
 end;
 
-procedure TCibGruposFacturables.TCibGFacCabinasDetenConteo(cab: TCibFacCabina);
+procedure TCibGruposFacturables.gf_DetenConteo(cab: TCibFacCabina);
 {Se usa este evento para guardar información en el registro, y actualizar la boleta.
 Se hace desde fuera de CPGrupoCabinas, porque para estas acciones se requiere acceso a
 campos de configuración propios de esta aplicación, que no corresponden a CPGRupoCabinas
@@ -137,7 +138,7 @@ begin
   { TODO : Debería modificarse para generar eventos para escribir en el registro.
 No parece buena idea acceder a lso registros desde aquí. }
 end;
-procedure TCibGruposFacturables.TCibGFacCabinasTramaLista(facOri: TCibFac;
+procedure TCibGruposFacturables.gf_TramaLista(facOri: TCibFac;
   tram: TCPTrama; tramaLocal: boolean);
 {Rutina de respuesta al mensaje OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
 También se usa para ejecutar los comandos generados a través de un visor(tramaLocal=TRUE).
@@ -406,7 +407,6 @@ procedure TCibGruposFacturables.gfLogInfo(cab: TCibFac; msj: string);
 begin
   if OnLogInfo<>nil then OnLogInfo(cab, msj);
 end;
-
 procedure TCibGruposFacturables.SetCadPropiedades(AValue: string);
 var
   lin, tmp: string;
@@ -419,7 +419,6 @@ begin
   lineas := TStringList.Create;
   lineas.Text:=AValue;  //divide en líneas
 
-debugln(' Limpiando lista para fijar propiedades.');
   items.Clear;  //elimina todos para crearlos de nuevo
   lin := lineas[0];  //toma primera línea
   //
@@ -435,7 +434,7 @@ debugln(' Limpiando lista para fijar propiedades.');
         grupCab := TCibGFacCabinas.Create('CabsSinProp');  //crea la instancia
         grupCab.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
         grupCab.CadPropied:=tmp;    //asigna propiedades
-        items.Add(grupCab);         //agrega a la lista
+        Agregar(grupCab);         //agrega a la lista
       end;
       tgfLocutNilo: begin
         gruNiloM := TCibGFacNiloM.Create('NiloSinProp','','','',0,'','');
@@ -523,17 +522,24 @@ begin
   exit(nil);
 end;
 procedure TCibGruposFacturables.Agregar(gf: TCibGFac);
-{Agrega un grupo de facturables al objeto}
+{Agrega un grupo de facturables al objeto. Notar que esta rutina solo configura
+lso eventos, antes de agregar.}
 begin
   //Configura eventos
   gf.OnCambiaPropied := @gfCambiaPropied;
   gf.OnLogInfo:=@gfLogInfo;
   if gf.tipo = tgfCabinas then begin
-    TCibGFacCabinas(gf).OnDetenConteo:=@TCibGFacCabinasDetenConteo;
-    TCibGFacCabinas(gf).OnTramaLista:=@TCibGFacCabinasTramaLista;
+    TCibGFacCabinas(gf).OnDetenConteo:=@gf_DetenConteo;
+    TCibGFacCabinas(gf).OnTramaLista:=@gf_TramaLista;
   end;
   //Agrega
   items.Add(gf);
+  if OnCambiaPropied<>nil then OnCambiaPropied;
+end;
+procedure TCibGruposFacturables.Eliminar(gf: TCibGFac);
+begin
+  items.Remove(gf);
+  if OnCambiaPropied<>nil then OnCambiaPropied;
 end;
 //constructor y destructor
 constructor TCibGruposFacturables.Create(nombre0: string);
