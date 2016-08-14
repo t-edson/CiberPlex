@@ -1,11 +1,18 @@
 0.9.5
 =====
-Se crea el objeto TogFac, en la unidad ObjGraficos, para servir de ancestro a todos
-los objetos facturables. Se adecúa el código para usar la nueva definición de TogCabina.
+Se crean las clases TogFac y TogGFac, en la unidad ObjGraficos, para servir de ancestro 
+a todos los objetos facturables y los grupos de facturables. 
+Se adecúa el código para usar la nueva definición de TogCabina y de TogGCabinas.
 Se corrige un problema en la actualización de los objetos gráficos a partir de los 
 modelos.
 Se crea el campo TCibGruposFacturables.DeshabEven, para inhabilitar eventos.
 Se implementa el cambio de coordenadas de los objetos, cuando se modifican en el visor.
+Se corrige la actualización de estado en CiberPlex Visor.
+Se corrige la actualización de propiedades y estados en los objetos gráficos, ya que 
+no son necesarios porque actualmente se usa referencias.
+Se modifican varios método dentro de frameVisCPlex, para generalizar el código, de 
+modo que sea más fácil agregar nuevos objetos gráficos, para cuando se crean 
+facturables nuevos y grupos nuevos.
 
 
 0.9.4
