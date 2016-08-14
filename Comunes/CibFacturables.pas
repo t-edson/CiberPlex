@@ -126,8 +126,8 @@ type
 
   //Tipos de objetos Grupos Facturables
   TCibTipGFact = (
-    tgfCabinas = 0,     //Grupo de Cabinas
-    tgfLocutNilo = 1    //Grupo de locutorios de enrutador NILO-m
+    tgfCabinas = 0,   //Grupo de Cabinas
+    tgfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
   );
 
   TEvCabLogInfo = procedure(cab: TCibFac; msj: string) of object;

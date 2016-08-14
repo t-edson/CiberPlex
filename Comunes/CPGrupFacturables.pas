@@ -10,7 +10,6 @@ uses
   CibGFacCabinas, CibGFacNiloM, MisUtils, CibRegistros, CibTramas, CPUtils,
   FormVisorMsjRed;
 type
-  TEvLeerCadPropiedades = procedure(var cadProp: string) of object;
   { TCibGruposFacturables }
   {Objeto que engloba a todos los grupos facturables. Debe haber solo una instancia para
    toda la aplicación, así que trabaja ccomo un SINGLETON.}
@@ -27,14 +26,18 @@ type
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
       var tipo: TCibTipGFact): boolean;
     procedure gf_DetenConteo(cab: TCibFacCabina);
+  public  //Eventos.
+    {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
+    para leer información o ejecutar acciones. Para esto se usan los eventos.}
+    OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad de algun grupo
+    OnLogInfo      : TEvCabLogInfo;       //Indica que se quiere registrar un mensaje en el registro
+//    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
+//    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
+    OnGuardarEstado: procedure of object;
   public
     nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
     DeshabEven: boolean;     //deshabilita los eventos
-    OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad de algun grupo
-    OnLogInfo      : TEvCabLogInfo;    //Indica que se quiere registrar un mensaje en el registro
-    OnLeerCadPropiedades: TEvLeerCadPropiedades;
-    OnGuardarEstado: procedure of object;
     property ModoCopia: boolean  {Indica si se quiere manejar al objeto sin conexión (como en un visor),
                                   debería hacerse antes de que se agreguen objetos a "items"}
              read FModoCopia write SetModoCopia;
@@ -208,14 +211,13 @@ begin
   C_SOL_T_PCS: begin  //Se solicita la lista de tiempos de las PC cliente
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
       debugln(cab.Nombre + ': Tiempos de PC solicitado.');
-      gru.TCP_envComando(cab.Nombre, M_SOL_T_PCS, 0, 0, gru.CadEstado);
+      tmp := CadEstado;
+      gru.TCP_envComando(cab.Nombre, M_SOL_T_PCS, 0, 0, tmp);
     end;
   C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      if not DeshabEven and (OnLeerCadPropiedades<>nil) then begin
-        OnLeerCadPropiedades(tmp);
-        gru.TCP_envComando(cab.Nombre, M_SOL_ARINI, 0, 0, tmp);
-      end;
+      tmp := CadPropiedades;
+      gru.TCP_envComando(cab.Nombre, M_SOL_ARINI, 0, 0, tmp);
     end;
   C_PAN_COMPL: begin  //se pide una captura de pantalla
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -437,7 +439,7 @@ begin
         grupCab.CadPropied:=tmp;    //asigna propiedades
         Agregar(grupCab);         //agrega a la lista
       end;
-      tgfLocutNilo: begin
+      tgfNiloM: begin
         gruNiloM := TCibGFacNiloM.Create('NiloSinProp','','','',0,'','');
         gruNiloM.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
         gruNiloM.CadPropied:=tmp;
