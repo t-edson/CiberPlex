@@ -134,7 +134,6 @@ type
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
-    procedure ConfiggruposLeerCadPropiedades(var cadProp: string);
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol, coment: string);
@@ -143,8 +142,8 @@ type
     procedure frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string);
-    procedure GFacCabinas_LogInfo(cab: TCibFac; msj: string);
-    procedure GuardarEstadoArchivo;
+    procedure grupos_LogInfo(cab: TCibFac; msj: string);
+    procedure grupos_EstadoArchivo;
     procedure LeerEstadoDeArchivo;
     procedure NiloM_RegMsjError(NomObj: string; msj: string);
     procedure PonerComando(facOrig: TCibFac; comando: TCPTipCom; ParamX,
@@ -168,7 +167,7 @@ begin
   Config.escribirArchivoIni;  //guarda cambios
   VisorCabinas.ActualizarPropiedades(Config.grupos.CadPropiedades);
 end;
-procedure TfrmPrincipal.GFacCabinas_LogInfo(cab: TCibFac; msj: string);
+procedure TfrmPrincipal.grupos_LogInfo(cab: TCibFac; msj: string);
 begin
   PLogInf(usuario, msj);
 end;
@@ -199,9 +198,8 @@ begin
   LeerEstadoDeArchivo;   //Lee después de leer la configuración
   //Inicializa Grupos
   Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
-  Config.grupos.OnLogInfo      :=@GFacCabinas_LogInfo;
-  Config.grupos.OnLeerCadPropiedades:=@ConfiggruposLeerCadPropiedades;
-  Config.grupos.OnGuardarEstado:=@GuardarEstadoArchivo;
+  Config.grupos.OnLogInfo      :=@grupos_LogInfo;
+  Config.grupos.OnGuardarEstado:=@grupos_EstadoArchivo;
 
   //Crea los objetos gráficos de cabina de acuerdo.
   VisorCabinas.ActualizarPropiedades(config.grupos.CadPropiedades);
@@ -254,7 +252,7 @@ end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   Config.escribirArchivoIni;  //guarda la configuración actual
-  GuardarEstadoArchivo;       //guarda estado
+  grupos_EstadoArchivo;       //guarda estado
 end;
 procedure TfrmPrincipal.FormDestroy(Sender: TObject);
 begin
@@ -275,7 +273,7 @@ begin
   if VisorCabinas.Seleccionado = nil then exit;
   acCabExplorArcExecute(self);
 end;
-procedure TfrmPrincipal.GuardarEstadoArchivo;
+procedure TfrmPrincipal.grupos_EstadoArchivo;
 {Guarda el estado de los objetos al archivo de estado}
 var
   lest: TStringList;
@@ -312,7 +310,7 @@ begin
 //  end;
   //Guarda en disco, por si acaso.
   if tic mod 60 = 0 then begin  //para evitar escribir muchas veces en disco
-    GuardarEstadoArchivo; //Por si ha habido cambios
+    grupos_EstadoArchivo; //Por si ha habido cambios
   end;
 end;
 procedure TfrmPrincipal.ConfigfcVistaUpdateChanges;
@@ -425,10 +423,6 @@ begin
     Result := nil;
   end;
 end;
-procedure TfrmPrincipal.ConfiggruposLeerCadPropiedades(var cadProp: string);
-begin
-  cadProp := config.grupos.CadPropiedades
-end;
 {procedure TfrmPrincipal.ChangeAppearance;
 begin
   StatusBar1.Visible := Config.fcIDE.ViewStatusbar;
@@ -525,7 +519,7 @@ begin
   if og = nil then exit;
   if (og is TogGCabinas) then begin
     ogGCab := TogGCabinas(og);  //restaura objeto
-    gcab := Config.grupos.BuscarPorNombre(ogGCab.gfac.Nombre);  //Busca grupo en el modelo
+    gcab := Config.grupos.BuscarPorNombre(ogGCab.GFac.Nombre);  //Busca grupo en el modelo
     Config.grupos.Eliminar(gcab);
   end;
 end;
@@ -556,7 +550,7 @@ begin
   if ogGcab = nil then exit;
   {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
   de administración de la copia, no del modelo original.}
-  gcab := Config.grupos.BuscarPorNombre(ogGcab.gfac.Nombre);  //Busca grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogGcab.GFac.Nombre);  //Busca grupo en el modelo
   TCibGFacCabinas(gcab).frmAdminTar.Show;
 end;
 procedure TfrmPrincipal.acGCabAdmCabExecute(Sender: TObject);
@@ -569,7 +563,7 @@ begin
   if ogGcab = nil then exit;
   {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
   de administración de la copia, no del modelo original.}
-  gcab := Config.grupos.BuscarPorNombre(ogGcab.gfac.Nombre);  //Busca grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogGcab.GFac.Nombre);  //Busca grupo en el modelo
   TCibGFacCabinas(gcab).frmAdminCabs.Show;  //abre su ventana de administración
 end;
 //Acciones de Cabinas
@@ -588,7 +582,7 @@ begin
   end;
   frmFijTiempo.MostrarIni(ogCab);  //modal
   if frmFijTiempo.cancelo then exit;  //canceló
-  PonerComando(ogCab.fac, C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+  PonerComando(ogCab.Fac, C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
 end;
 procedure TfrmPrincipal.acCabModTpoExecute(Sender: TObject);
 var
@@ -602,7 +596,7 @@ begin
     //está en medio de una cuenta
     frmFijTiempo.Mostrar(ogCab);  //modal
     if frmFijTiempo.cancelo then exit;  //canceló
-    PonerComando(ogCab.fac, C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+    PonerComando(ogCab.Fac, C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
   end;
 end;
 procedure TfrmPrincipal.acCabDetCtaExecute(Sender: TObject);
@@ -612,7 +606,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
-  PonerComando(ogCab.fac, C_DET_CTAPC, 0, 0, ogCab.nombre);
+  PonerComando(ogCab.Fac, C_DET_CTAPC, 0, 0, ogCab.nombre);
 end;
 procedure TfrmPrincipal.acCabPonManExecute(Sender: TObject);
 var
@@ -624,7 +618,7 @@ begin
     MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
     exit;
   end;
-  PonerComando(ogCab.fac, C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
+  PonerComando(ogCab.Fac, C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
 end;
 procedure TfrmPrincipal.acCabExplorArcExecute(Sender: TObject);
 //Muestra la ventana explorador de archivo
@@ -647,7 +641,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   //Ubica a su grupo en el modelo
-  gcab := Config.grupos.BuscarPorNombre(ogCab.fac.Grupo.Nombre);  //Busca grupo en el modelo
+  gcab := Config.grupos.BuscarPorNombre(ogCab.Fac.Grupo.Nombre);  //Busca grupo en el modelo
   //Busca si ya existe ventana de mensajes, creadas para esta cabina
   frmMsjes := TCibGFacCabinas(gcab).BuscarVisorMensajes(ogCab.Nombre, true);
   frmMsjes.Exec(ogCab.Nombre);
@@ -659,7 +653,7 @@ begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('Grabar Boleta de: ' + ogCab.nombre + '?')<>1 then exit;
-  PonerComando(ogCab.fac, C_GRA_BOLPC, 0, 0, ogCab.nombre);
+  PonerComando(ogCab.Fac, C_GRA_BOLPC, 0, 0, ogCab.nombre);
 end;
 procedure TfrmPrincipal.acCabVerBolExecute(Sender: TObject);
 var
@@ -667,7 +661,7 @@ var
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
-  frmBoleta.Exec(ogCab.fac);
+  frmBoleta.Exec(ogCab.Fac);
 end;
 procedure TfrmPrincipal.acNilVerTermExecute(Sender: TObject);
 begin
