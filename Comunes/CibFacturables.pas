@@ -90,8 +90,8 @@ type
 
   //Tipos de objetos Grupos Facturables
   TCibTipFact = (
-    tgfCabinas = 0,   //Grupo de Cabinas
-    tgfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
+    ctfCabinas = 0,   //Grupo de Cabinas
+    ctfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
   );
 
   TCibGFac = class;

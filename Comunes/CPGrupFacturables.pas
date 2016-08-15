@@ -433,13 +433,13 @@ begin
     end else if lin = ']]' then begin
       //marca de fin, termina acumulación
       case TCibTipFact(tipGru) of
-      tgfCabinas: begin
+      ctfCabinas: begin
         grupCab := TCibGFacCabinas.Create('CabsSinProp');  //crea la instancia
         grupCab.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
         grupCab.CadPropied:=tmp;    //asigna propiedades
         Agregar(grupCab);         //agrega a la lista
       end;
-      tgfNiloM: begin
+      ctfNiloM: begin
         gruNiloM := TCibGFacNiloM.Create('NiloSinProp','','','',0,'','');
         gruNiloM.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
         gruNiloM.CadPropied:=tmp;
@@ -531,7 +531,7 @@ begin
   //Configura eventos
   gf.OnCambiaPropied := @gfCambiaPropied;
   gf.OnLogInfo:=@gfLogInfo;
-  if gf.tipo = tgfCabinas then begin
+  if gf.tipo = ctfCabinas then begin
     TCibGFacCabinas(gf).OnDetenConteo:=@gf_DetenConteo;
     TCibGFacCabinas(gf).OnTramaLista:=@gf_TramaLista;
   end;

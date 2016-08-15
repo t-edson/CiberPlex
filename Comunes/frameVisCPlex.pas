@@ -76,7 +76,7 @@ var
 begin
   Result := nil;
   case Fac.tipo of
-  tgfCabinas: begin
+  ctfCabinas: begin
     og := TogCabina.Create(motEdi.v2d, TCibFacCabina(Fac));
     motEdi.AgregarObjGrafico(og, false);
     og.icoPC := Image5.Picture.Graphic;   //asigna imagen
@@ -99,7 +99,7 @@ var
 begin
   Result := nil;   //valor por defecto
   case GFac.tipo of
-  tgfCabinas : begin  //Es grupo de cabinas TCibGFacCabinas
+  ctfCabinas : begin  //Es grupo de cabinas TCibGFacCabinas
     ogGCabs := TogGCabinas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
     motEdi.AgregarObjGrafico(ogGCabs, false);
     ogGCabs.icono := Image7.Picture.Graphic;   //asigna imagen
@@ -108,7 +108,7 @@ begin
     ogGCabs.PosLocked := FObjBloqueados;  //depende del esatdo actual
     Result := ogGCabs;
   end;
-  tgfNiloM: begin
+  ctfNiloM: begin
     ogGNiloM := TogGNiloM.Create(motEdi.v2d, TCibGFacNiloM(GFac));
     motEdi.AgregarObjGrafico(ogGNiloM, false);
     ogGNiloM.icono := Image8.Picture.Graphic;   //asigna imagen
@@ -284,9 +284,9 @@ begin
   innecesarios en los objetos, que además serían una molestia para la interacción con
   el usuario.}
   for gruFac in grupos.items do begin
-    if gruFac.tipo = tgfCabinas then begin
+//    if gruFac.tipo = ctfCabinas then begin
       ActualizarOgFacturables(gruFac);
-    end;
+//    end;
   end;
   //Verifica objetos no usados (no actualizados), para eliminarlos
   for og in motEdi.objetos do begin
