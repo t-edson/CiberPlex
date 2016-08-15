@@ -10,7 +10,7 @@ unit CibGFacNiloM;
 interface
 uses
   Classes, SysUtils, Types, LCLProc, MisUtils, crt, strutils, CibFacturables,
-  CPNilomBase, CPRegistros, Globales, FormNiloTarifario, FormNiloMTerminal;
+  CibNiloMBase, CibRegistros, Globales, FormNiloTarifario, FormNiloMTerminal;
 const
   IDE_EST_LOC = 'l';   //identificador de estado de cabina
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
@@ -567,6 +567,7 @@ end;
 constructor TCibFacLocutor.Create;
 begin
   inherited Create;
+  tipo := ctfNiloM;   //se identifica
   llamadas:= regLlamada_list.Create(true);
   llam  := regLlamada.Create;
 end;
@@ -671,7 +672,7 @@ var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta;
+  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9  + #9 ;
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + TCibFacLocutor(c).CadPropied;
@@ -691,6 +692,8 @@ begin
   a := Explode(#9, lineas[0]);
   Nombre:=a[0];
   CategVenta:=a[1];
+  Fx := f2N(a[2]);
+  Fy := f2N(a[3]);
   lineas.Delete(0);  //elimima línea
   //Procesa líneas con información de las cabinas
   items.Clear;
@@ -716,7 +719,7 @@ begin
   for loc in items do begin
     Result += loc.CadEstado + LineEnding;  //estadoCnx de locutorio
   end;
-  Result += '>' + LineEnding;  //delimitador final.
+  Result += '>';  //delimitador final.
 end;
 procedure TCibGFacNiloM.SetCadEstado(AValue: string);
 begin
@@ -812,6 +815,7 @@ begin
   loc.num_can:=num_can;
   loc.trm := self;
   loc.OnCambiaPropied:=@loc_CambiaPropied;
+  loc.Grupo := self;
   items.Add(loc);  //agrega
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := loc;
@@ -820,9 +824,10 @@ end;
 constructor TCibGFacNiloM.Create(nombre0: string; puerto0: string; nom_local0, nom_prog0: string;
                             facCmoneda0: double; usuario0: string; CategLocu0: string);
 begin
-  inherited Create(nombre0, tgfLocutNilo);
+  inherited Create(nombre0, ctfNiloM);
 debugln('-Creando: '+ nombre0);
-  //frmNilomTerminal:= TfrmNiloMTerminal.Create(nil);   //crea su terminal de forma dinámica
+  tipo := ctfNiloM;
+  frmNilomTerminal:= TfrmNiloMTerminal.Create(nil);   //crea su terminal de forma dinámica
   nilConex := TNiloConexion.Create(puerto0);  //Nombre del enrutador
   nom_local  := nom_local0;
   nom_prog   := nom_prog0;
@@ -842,20 +847,20 @@ debugln('-Creando: '+ nombre0);
   Agregar('LOC2','1');
   Agregar('LOC3','2');
   Agregar('LOC4','3');
+  CategVenta := 'LLAMADAS';
   //Configura terminal
-  {frmNilomTerminal.onEnviarCom:=@frmNilomTerminalEnviarCom;
+  frmNilomTerminal.onEnviarCom:=@frmNilomTerminalEnviarCom;
   //GFacNiloM.OnProcesarCad:=@frmNiloMTerminal.ProcesarCad;
   OnTermWrite:=@frmNiloMTerminal.TermWrite;
   OnTermWriteLn:=@frmNiloMTerminal.TermWriteLn;
   OnRegMensaje :=@frmNiloMTerminal.RegMensaje;
-  }
 end;
 destructor TCibGFacNiloM.Destroy;
 begin
 debugln('-destruyendo: '+ self.Nombre);
   mens_error.Destroy;
   nilConex.Destroy;
-  //frmNilomTerminal.Destroy;
+  frmNilomTerminal.Destroy;
   inherited Destroy;
 end;
 

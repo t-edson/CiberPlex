@@ -3,7 +3,7 @@ unit FormNiloTarifario;
 interface
 uses
   Classes, SysUtils, FileUtil, SynEdit, Forms, Controls, Graphics, Dialogs,
-  MisUtils, fgl, Types, strutils, CPRegistros, FormInicio,
+  MisUtils, fgl, Types, strutils, CibRegistros, FormInicio,
   CibNiloMPreproc;
 type
 
