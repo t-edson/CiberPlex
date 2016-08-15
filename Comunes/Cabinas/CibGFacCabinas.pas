@@ -661,6 +661,7 @@ end;
 constructor TCibFacCabina.Create(nombre0: string; ip0: string);
 begin
   inherited Create;
+  tipo := ctfCabinas;  //se identifica
   FNombre := nombre0;
   cabCuenta:= TCabCuenta.Create;  //Estado de cabina
   cabConex := TCabConexion.Create(ip0);  //conexión
@@ -915,7 +916,7 @@ begin
 end;
 constructor TCibGFacCabinas.Create(nombre0: string);
 begin
-  inherited Create(nombre0, tgfCabinas);
+  inherited Create(nombre0, ctfCabinas);
 //debugln('-Creando: '+ nombre0);
   //Se incluye un objeto TGrupoTarAlquiler para la tarificación
   GrupTarAlquiler := TGrupoTarAlquiler.Create;
