@@ -24,7 +24,7 @@ type
     procedure SetCadPropiedades(AValue: string);
     procedure SetModoCopia(AValue: boolean);
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
-      var tipo: TCibTipGFact): boolean;
+      var tipo: TCibTipFact): boolean;
     procedure gf_DetenConteo(cab: TCibFacCabina);
   public  //Eventos.
     {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
@@ -58,7 +58,7 @@ implementation
 
 { TCibGruposFacturables }
 function TCibGruposFacturables.ExtraerBloqueEstado(lisEstado: TStringList;
-  var estado, nomGrup: string; var tipo: TCibTipGFact): boolean;
+  var estado, nomGrup: string; var tipo: TCibTipFact): boolean;
 {Extrae de la cadena de estado de la aplicación (guardada en lisEstado), el fragmento
 que corresponde al estado de un grupo facturable. El estado se devuelve en "estado"
 Normalmente lisEstado , tendrá la forma:
@@ -90,7 +90,7 @@ begin
       //Es la primera línea a agregar. Aprovechamos para capturar tipo y nomGrup de grupo
       a := Explode(#9, lisEstado[0]);
       delete(a[0], 1, 1);  //quita "<"
-      tipo := TCibTipGFact(f2I(a[0]));
+      tipo := TCibTipFact(f2I(a[0]));
       nomGrup := a[1];
     end;
     estado := estado + lisEstado[0] + LineEnding;  //acumula
@@ -432,7 +432,7 @@ begin
       tmp:='';  //inicia acumulación
     end else if lin = ']]' then begin
       //marca de fin, termina acumulación
-      case TCibTipGFact(tipGru) of
+      case TCibTipFact(tipGru) of
       tgfCabinas: begin
         grupCab := TCibGFacCabinas.Create('CabsSinProp');  //crea la instancia
         grupCab.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
@@ -486,7 +486,7 @@ var
   lest: TStringList;
   res: Boolean;
   cad, nombGrup: string;
-  tipo: TCibTipGFact;
+  tipo: TCibTipFact;
   gf: TCibGFac;
 begin
 //debugln('---');

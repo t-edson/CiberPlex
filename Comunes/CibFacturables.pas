@@ -88,6 +88,12 @@ type
     destructor Destroy; override;
   end;
 
+  //Tipos de objetos Grupos Facturables
+  TCibTipFact = (
+    tgfCabinas = 0,   //Grupo de Cabinas
+    tgfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
+  );
+
   TCibGFac = class;
   { TCibFac }
   { Define a la clase abstracta que sirve de base a objetos que pueden generar consumo
@@ -108,6 +114,7 @@ type
     OnCambiaEstado: procedure of object;  //cuando cambia alguna variable de estado
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
   public
+    tipo    : TCibTipFact; //tipo de grupo facturable
     Boleta  : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
     MsjError: string;      //para mensajes de error
     Grupo   : TCibGFac;    //Referencia a su grupo.
@@ -123,12 +130,6 @@ type
     destructor Destroy; override;
   end;
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
-
-  //Tipos de objetos Grupos Facturables
-  TCibTipGFact = (
-    tgfCabinas = 0,   //Grupo de Cabinas
-    tgfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
-  );
 
   TEvCabLogInfo = procedure(cab: TCibFac; msj: string) of object;
   { TCibGFac }
@@ -149,7 +150,7 @@ type
     procedure Sety(AValue: double);
   public
     Nombre : string;          //Nombre de grupo facturable
-    tipo   : TCibTipGFact;   //tipo de grupo facturable
+    tipo   : TCibTipFact;   //tipo de grupo facturable
     CategVenta: string;       //categoría de Venta para este grupo
     items  : TCibFac_list;   //lista de objetos facturables
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
@@ -169,7 +170,7 @@ type
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
     procedure SetXY(x0, y0: double);
   public  //constructor y destructor
-    constructor Create(nombre0: string; tipo0: TCibTipGFact);
+    constructor Create(nombre0: string; tipo0: TCibTipFact);
     destructor Destroy; override;
   end;
   //Lista de grupos facturables
@@ -499,7 +500,7 @@ begin
   end;
   exit(nil);
 end;
-constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipGFact
+constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipFact
   );
 begin
   items  := TCibFac_list.Create(true);

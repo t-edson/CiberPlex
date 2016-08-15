@@ -6,7 +6,7 @@ interface
 uses
   Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
   MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase,
-  CibGFacCabinas, CibFacturables;
+  CibGFacCabinas, CibGFacNiloM, CibFacturables;
 const
   //Constantes de Colores
  COL_AZUL_CLARO = 230 * 256 *256 + 255 *256 + 255;
@@ -143,17 +143,28 @@ public
   icono  : TGraphic;    //PC con control
   procedure Dibujar; override;  //Dibuja el objeto gráfico
 protected
-  procedure ReubicElemen; override;
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
-  destructor Destroy; override;
 end;
-TogGCabinas_list = specialize TFPGObjectList<TogGCabinas>;  //lista de cabinas
+
+{Objeto gráfico que representa a los elementos TCibGFacNiloM}
+
+{ TogGNiloM }
+
+TogGNiloM = class(TogGFac)
+private
+public
+  icono  : TGraphic;    //PC con control
+  procedure Dibujar; override;  //Dibuja el objeto gráfico
+protected
+public  //constructor y detsructor
+  constructor Create(mGraf: TMotGraf; nil0: TCibGFacNiloM);
+end;
 
 implementation
+
 //Const ANCHO_MIN = 20;    //Ancho mínimo de objetos gráficos en pixels (Coord Virtuales)
 //Const ALTO_MIN = 20;     //Alto mínimo de objetos gráficos en Twips (Coord Virtuales)
-
 //////////////////////////////  TogBoleta  //////////////////////////////
 constructor TogBoleta.Create(mGraf: TMotGraf; bol0: TCibBoleta);
 begin
@@ -434,15 +445,6 @@ var
 begin
   //--------------Dibuja cuerpo de tabla
   x2 := x + width;
-  //y2 := y + height;
-  //Sombra
-//    Call v2d.FijaLapiz(0, 3, COL_GRIS_CLARO)
-//    Call v2d.FijaRellenoTransparente
-//    v2d.RectRedonR mX + 2, mY + 2, x2 + 2, y2 + 2
-  //Frente
-//  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-//  v2d.FijaRelleno(clWhite);
-//  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   //dibuja íconos
@@ -451,15 +453,6 @@ begin
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(x + 33, y+3, nombre);
   inherited;
-end;
-procedure TogGCabinas.ReubicElemen;
-//Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
-//cambiar las dimensiones.
-var
-  x2: Single;
-begin
-  inherited;
-  x2 := x + width;
 end;
 constructor TogGCabinas.Create(mGraf: TMotGraf; cab0: TCibGFacCabinas);
 begin
@@ -472,9 +465,32 @@ begin
   nombre := 'Grupo Cabinas';
   GFac := cab0;   //guarda referencia y actualiza propiedades que son copia
 end;
-destructor TogGCabinas.Destroy;
+{ TogGNiloM }
+procedure TogGNiloM.Dibujar;
+var
+  x2:Single;
 begin
-  inherited;
+  //--------------Dibuja cuerpo de tabla
+  x2 := x + width;
+  //--------------Dibuja encabezado
+  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  //dibuja íconos
+  v2d.DibujarImagenN(icono, x, y-2);
+  //Muestra Nombre
+  v2d.SetText(clBlack, 11,'', true);
+  v2d.Texto(x + 33, y+3, nombre);
+  inherited Dibujar;
+end;
+constructor TogGNiloM.Create(mGraf: TMotGraf; nil0: TCibGFacNiloM);
+begin
+  inherited Create(mGraf);
+  pc_SUP_CEN.visible:=false;  //oculta punto de control
+  Self.Ubicar(100,100);
+  width := 100;
+  height := 29;
+  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  nombre := 'Grupo NiloM';
+  GFac := nil0;   //guarda referencia y actualiza propiedades que son copia
 end;
 
 end.

@@ -9,11 +9,11 @@ interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
-  CibGFacCabinas, CibFacturables, CPGrupFacturables, ogMotEdicion;
+  CibGFacCabinas, CibGFacNiloM, CibFacturables, CPGrupFacturables, ogMotEdicion;
 const
-  ID_CABINA = 1;  //Cabinas
-  ID_GCABINA =2;  //Grupo de cabinas
-
+  ID_CABINA  = 1;  //Cabinas
+  ID_GCABINA = 2;  //Grupo de cabinas
+  ID_GNILOM  = 3;  //Grupo NiloM
 
 type
   { TfraVisCPlex }
@@ -26,24 +26,26 @@ type
     Image5: TImage;
     Image6: TImage;
     Image7: TImage;
+    Image8: TImage;
     PaintBox1: TPaintBox;
   private
     FObjBloqueados: boolean;
-    procedure ActualizarGrupos(items: TCibGFact_list);
+    procedure ActualizarOgGrupos(items: TCibGFact_list);
     function AgregarOgGrupo(GFac: TCibGFac): TogGFac;
     procedure motEdiObjectsMoved;
     procedure SetObjBloqueados(AValue: boolean);
-    procedure ActualizarCabinas(grupo: TCibGFac);
+    procedure ActualizarOgFacturables(grupo: TCibGFac);
   public
     motEdi: TModEdicion;  //motor de edición
     OnObjectsMoved: procedure of object;
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
-    function AgregCabina(cab: TCibFacCabina): TogCabina;
+    function AgregOgFac(Fac: TCibFac): TogFac;
     function BuscarOgCabina(const nom: string): TogCabina;
     function NumSelecionados: integer;
     function Seleccionado: TObjGraf;
     function CabSeleccionada: TogCabina;
-    function GCabSeleccionada: TogGCabinas;
+    function GCabinasSeleccionado: TogGCabinas;
+    function GNiloMSeleccionado: TogGNiloM;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
   private
@@ -67,42 +69,54 @@ begin
   end;
   FObjBloqueados:=AValue;
 end;
-function TfraVisCPlex.AgregCabina(cab: TCibFacCabina): TogCabina;
-//Agrega un objeto de tipo Cabina, al editor
+function TfraVisCPlex.AgregOgFac(Fac: TCibFac): TogFac;
+//Agrega un objeto gráfica asociado a un objeto facturable, al editor.
 var
   og: TogCabina;
 begin
-  og := TogCabina.Create(motEdi.v2d, cab);
-  motEdi.AgregarObjGrafico(og, false);
-  og.icoPC := Image5.Picture.Graphic;   //asigna imagen
-  og.icoPCdes:= Image6.Picture.Graphic;   //asigna imagen
-  og.icoUSU := Image2.Picture.Graphic;  //asigna imagen
-  og.icoRedAct := Image3.Picture.Graphic;
-  og.icoRedDes := Image4.Picture.Graphic;
-  og.Id := ID_CABINA;
-  og.SizeLocked := true;
-  og.PosLocked := FObjBloqueados;  //depende del esatdo actual
-  Result := og;
-end;
-function TfraVisCPlex.AgregarOgGrupo(GFac: TCibGFac): TogGFac;
-{Agrega un objeto de tipo Grupo de Cabinas, al editor}
-var
-  og: TogGCabinas;
-begin
-  case GFac.tipo of
-  tgfCabinas : begin  //Es grupo de cabinas TCibGFacCabinas
-    og := TogGCabinas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
+  Result := nil;
+  case Fac.tipo of
+  tgfCabinas: begin
+    og := TogCabina.Create(motEdi.v2d, TCibFacCabina(Fac));
     motEdi.AgregarObjGrafico(og, false);
-    og.icono := Image7.Picture.Graphic;   //asigna imagen
-    og.Id := ID_GCABINA;
+    og.icoPC := Image5.Picture.Graphic;   //asigna imagen
+    og.icoPCdes:= Image6.Picture.Graphic;   //asigna imagen
+    og.icoUSU := Image2.Picture.Graphic;  //asigna imagen
+    og.icoRedAct := Image3.Picture.Graphic;
+    og.icoRedDes := Image4.Picture.Graphic;
+    og.Id := ID_CABINA;
     og.SizeLocked := true;
     og.PosLocked := FObjBloqueados;  //depende del esatdo actual
     Result := og;
   end;
-//  tgfNiloM: begin
-//  end;
-  else
-    Result := nil;
+  end;
+end;
+function TfraVisCPlex.AgregarOgGrupo(GFac: TCibGFac): TogGFac;
+{Agrega un objeto de tipo Grupo de Cabinas, al editor}
+var
+  ogGCabs: TogGCabinas;
+  ogGNiloM: TogGNiloM;
+begin
+  Result := nil;   //valor por defecto
+  case GFac.tipo of
+  tgfCabinas : begin  //Es grupo de cabinas TCibGFacCabinas
+    ogGCabs := TogGCabinas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
+    motEdi.AgregarObjGrafico(ogGCabs, false);
+    ogGCabs.icono := Image7.Picture.Graphic;   //asigna imagen
+    ogGCabs.Id := ID_GCABINA;
+    ogGCabs.SizeLocked := true;
+    ogGCabs.PosLocked := FObjBloqueados;  //depende del esatdo actual
+    Result := ogGCabs;
+  end;
+  tgfNiloM: begin
+    ogGNiloM := TogGNiloM.Create(motEdi.v2d, TCibGFacNiloM(GFac));
+    motEdi.AgregarObjGrafico(ogGNiloM, false);
+    ogGNiloM.icono := Image8.Picture.Graphic;   //asigna imagen
+    ogGNiloM.Id := ID_GNILOM;
+    ogGNiloM.SizeLocked := true;
+    ogGNiloM.PosLocked := FObjBloqueados;  //depende del esatdo actual
+    Result := ogGNiloM;
+  end;
   end;
 end;
 function TfraVisCPlex.BuscarOgCabina(const nom: string): TogCabina;
@@ -143,7 +157,7 @@ begin
   if not (og is TogCabina) then exit(nil);
   Result := TogCabina(og);
 end;
-function TfraVisCPlex.GCabSeleccionada: TogGCabinas;
+function TfraVisCPlex.GCabinasSeleccionado: TogGCabinas;
 var
   og: TObjGraf;
 begin
@@ -161,46 +175,64 @@ begin
     exit(nil);
   end;
 end;
-procedure TfraVisCPlex.ActualizarCabinas(grupo: TCibGFac);
+function TfraVisCPlex.GNiloMSeleccionado: TogGNiloM;
+var
+  og: TObjGraf;
+begin
+  if NumSelecionados>1 then begin
+    //MsgExc('Se debe seleccionar solo una cabina.');
+    exit(nil);
+  end;
+  og := Seleccionado;
+  if og = nil then exit(nil);
+  if og is TogGNiloM then begin
+    //Grupo seleccionado directamente
+    Result := TogGNiloM(og);
+  end else begin
+    //Otro obejto seleccionado
+    exit(nil);
+  end;
+end;
+procedure TfraVisCPlex.ActualizarOgFacturables(grupo: TCibGFac);
 {Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
 que objetos deben existir}
-  function AgregarSiNoHay(cab: TCibFacCabina): TogCabina;
-  {Devuelve la referencia a un objeto gráfico TogCabina, del motor de edición, que tenga
-   el nombre de la cabina indicada. Si no existe el objeto, lo crea y devuelve la
-   referencia. }
+  function AgregarSiNoHay(fac: TCibFac): TogFac;
+  {Devuelve la referencia a un objeto gráfico facturable, del motor de edición, que tenga
+   el nombre del facturable indicado y que pertenezca al mismo grupo. Si no existe el
+   objeto, lo crea y devuelve la referencia. }
   var
     og: TObjGraf;
     ogFac: TogFac;
   begin
-//debugln('>Buscando:' + cab.Nombre);
+//debugln('>Buscando:' + fac.Nombre);
     for og in Motedi.objetos do if og.Tipo = OBJ_FACT then begin
       ogFac := TogFac(og);  //restaura tipo
-      if (ogFac.NomGrupo = cab.Grupo.Nombre) and (ogFac.Nombre = cab.Nombre) then begin
+      if (ogFac.NomGrupo = fac.Grupo.Nombre) and (ogFac.Nombre = fac.Nombre) then begin
         //hay, devuelve la referencia
-        Result := TogCabina(ogFac);  //restaura tipo
-        Result.Fac := cab;   //actualiza la referencia
+        Result := ogFac;  //restaura tipo
+        Result.Fac := fac;   //actualiza la referencia
         exit;
       end;
     end;
     //no hay
 //debugln('>Agregando.');
-    Result := AgregCabina(cab);  //crea cabina
+    Result := AgregOgFac(fac);  //crea cabina
   end;
 var
-  ogCab: TogCabina;
+  ogFac: TogFac;
   fac : TCibFac;
-  cab : TCibFacCabina;
 begin
   for fac in grupo.items do begin
-    cab := TCibFacCabina(fac);
-    ogCab := AgregarSiNoHay(cab);
-    ogCab.Data:='';  //Para que no se elimine.
+    ogFac := AgregarSiNoHay(fac);
+    if ogFac<>nil then begin
+      ogFac.Data:='';  //Para que no se elimine.
+    end;
   end;
 end;
-procedure TfraVisCPlex.ActualizarGrupos(items: TCibGFact_list);
+procedure TfraVisCPlex.ActualizarOgGrupos(items: TCibGFact_list);
 {Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
 habrá un grupo.}
-  function AgregarSiNoHay(gcab: TCibGFac): TogGFac;
+  function AgregarSiNoHay(gfac: TCibGFac): TogGFac;
   {Devuelve la referencia a una cabina. Si no existe la crea.
    Debe haberse llenado "lista", previamente}
   var
@@ -209,15 +241,15 @@ habrá un grupo.}
   begin
     for og in Motedi.objetos do if og.Tipo = OBJ_GRUP then begin
       ogGFac := TogGFac(og);  //restaura tipo
-      if ogGFac.nombre = gcab.Nombre then begin
+      if ogGFac.nombre = gfac.Nombre then begin
         //Hay. Porque no debería haber grupos con el mismo nombre.
         Result := ogGFac;    //devuelve la referencia
-        Result.gfac := gcab;   //actualiza la referencia
+        Result.gfac := gfac;   //actualiza la referencia
         exit;
       end;
     end;
     //no hay
-    Result := AgregarOgGrupo(gcab);  //crea grupo ogGFac
+    Result := AgregarOgGrupo(gfac);  //crea grupo ogGFac
   end;
 var
   ogGFac: TogGFac;
@@ -244,16 +276,16 @@ begin
   {Crea o elimina objetos gráficos (que representan a objetos TCibGFac) de acuerdo al
   contenido de "grupos".}
   for og in motEdi.objetos do og.Data:='x';  //marca todos para eliminación
-  ActualizarGrupos(grupos.items);  //Actualiza los objetos TogGFac
+  ActualizarOgGrupos(grupos.items);  //Actualiza los objetos TogGFac
   {Crea o elimina objetos gráficos (que representan a objetos TCibFac) de acuerdo al
   contenido de "grupos".
   La opción más sencilla sería crear todos de nuevo de acuerdo al estado de "grupos",
   pero se evita este método, para mejorar el rendimiento y para no realizar cambios
-  innecesarios en los objetos, que adem´s serían una molestia para la interacción con
+  innecesarios en los objetos, que además serían una molestia para la interacción con
   el usuario.}
   for gruFac in grupos.items do begin
     if gruFac.tipo = tgfCabinas then begin
-      ActualizarCabinas(gruFac);
+      ActualizarOgFacturables(gruFac);
     end;
   end;
   //Verifica objetos no usados (no actualizados), para eliminarlos
@@ -277,10 +309,6 @@ procedure TfraVisCPlex.ActualizarEstado(cadEstado: string);
  ...
  >
  }
-var
-  ogCab : TogCabina;
-  gruFac: TCibGFac;
-  it    : TCibFac;
 begin
   if cadEstado='' then exit;
   grupos.CadEstado := cadEstado;  //solo cambia las variables de estado de "grupos"
