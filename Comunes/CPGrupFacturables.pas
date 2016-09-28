@@ -18,14 +18,15 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
-    procedure gfCambiaPropied;
-    procedure gfLogInfo(cab: TCibFac; msj: string);
+    procedure gf_CambiaPropied;
+    procedure gf_LogInfo(cab: TCibFac; msj: string);
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
     procedure SetModoCopia(AValue: boolean);
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
       var tipo: TCibTipFact): boolean;
     procedure gf_DetenConteo(cab: TCibFacCabina);
+    procedure gf_RequiereInfo(var NombProg, NombLocal, Usuario: string);
   public  //Eventos.
     {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
     para leer información o ejecutar acciones. Para esto se usan los eventos.}
@@ -34,6 +35,7 @@ type
 //    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
 //    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
     OnGuardarEstado: procedure of object;
+    OnRequiereInfo: TEvRequiereInfo; //Se requiere información global
   public
     nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
@@ -107,7 +109,14 @@ begin
     exit(true);    //Sale sin error
   end;
 end;
-
+procedure TCibGruposFacturables.gf_CambiaPropied;
+begin
+  if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
+end;
+procedure TCibGruposFacturables.gf_LogInfo(cab: TCibFac; msj: string);
+begin
+  if not DeshabEven and (OnLogInfo<>nil) then OnLogInfo(cab, msj);
+end;
 procedure TCibGruposFacturables.gf_DetenConteo(cab: TCibFacCabina);
 {Se usa este evento para guardar información en el registro, y actualizar la boleta.
 Se hace desde fuera de CPGrupoCabinas, porque para estas acciones se requiere acceso a
@@ -389,6 +398,17 @@ begin
     if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
   end;
 end;
+procedure TCibGruposFacturables.gf_RequiereInfo(var NombProg,
+  NombLocal, Usuario: string);
+begin
+  if OnRequiereInfo<>nil then begin
+    OnRequiereInfo(NombProg, NombLocal, Usuario);
+  end else begin
+    NombProg := '';
+    NombLocal := '';
+    Usuario := '';
+  end;
+end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
   gf : TCibGFac;
@@ -401,14 +421,6 @@ begin
                  ']]' + LineEnding;
   end;
   Result := tmp;
-end;
-procedure TCibGruposFacturables.gfCambiaPropied;
-begin
-  if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
-end;
-procedure TCibGruposFacturables.gfLogInfo(cab: TCibFac; msj: string);
-begin
-  if not DeshabEven and (OnLogInfo<>nil) then OnLogInfo(cab, msj);
 end;
 procedure TCibGruposFacturables.SetCadPropiedades(AValue: string);
 var
@@ -440,10 +452,10 @@ begin
         Agregar(grupCab);         //agrega a la lista
       end;
       ctfNiloM: begin
-        gruNiloM := TCibGFacNiloM.Create('NiloSinProp','','','',0,'','');
+        gruNiloM := TCibGFacNiloM.Create('NiloSinProp');
         gruNiloM.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
         gruNiloM.CadPropied:=tmp;
-        items.Add(gruNiloM);         //agrega a la lista
+        Agregar(gruNiloM);         //agrega a la lista
       end;
       end;
     end else begin
@@ -526,14 +538,19 @@ begin
 end;
 procedure TCibGruposFacturables.Agregar(gf: TCibGFac);
 {Agrega un grupo de facturables al objeto. Notar que esta rutina solo configura
-lso eventos, antes de agregar.}
+los eventos, antes de agregar.}
 begin
   //Configura eventos
-  gf.OnCambiaPropied := @gfCambiaPropied;
-  gf.OnLogInfo:=@gfLogInfo;
-  if gf.tipo = ctfCabinas then begin
+  gf.OnCambiaPropied := @gf_CambiaPropied;
+  gf.OnLogInfo:=@gf_LogInfo;
+  case gf.tipo of
+  ctfCabinas: begin
     TCibGFacCabinas(gf).OnDetenConteo:=@gf_DetenConteo;
     TCibGFacCabinas(gf).OnTramaLista:=@gf_TramaLista;
+  end;
+  ctfNiloM: begin
+    TCibGFacNiloM(gf).OnRequiereInfo:=@gf_RequiereInfo;
+  end;
   end;
   //Agrega
   items.Add(gf);

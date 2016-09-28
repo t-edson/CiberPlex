@@ -132,6 +132,7 @@ type
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
 
   TEvCabLogInfo = procedure(cab: TCibFac; msj: string) of object;
+  TEvRequiereInfo = procedure(var NombProg, NombLocal, Usuario: string) of object;
   { TCibGFac }
   {Define a la clase base de donde se derivarán los objetos Grupo de Facturables o Grupo
    Facturbale. Un grupo facturable es un objeto que contiene un conjunto (lista) de

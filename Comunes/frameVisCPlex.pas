@@ -9,17 +9,20 @@ interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
-  CibGFacCabinas, CibGFacNiloM, CibFacturables, CPGrupFacturables, ogMotEdicion;
+  CibFacturables, CibGFacCabinas, CibGFacNiloM, CPGrupFacturables, ogMotEdicion;
 const
   ID_CABINA  = 1;  //Cabinas
   ID_GCABINA = 2;  //Grupo de cabinas
   ID_GNILOM  = 3;  //Grupo NiloM
+  ID_NILOM   = 4;  //Locutorio
 
 type
   { TfraVisCPlex }
   TfraVisCPlex = class(TFrame)
   published
     Image1: TImage;
+    Image10: TImage;
+    Image11: TImage;
     Image2: TImage;
     Image3: TImage;
     Image4: TImage;
@@ -27,6 +30,7 @@ type
     Image6: TImage;
     Image7: TImage;
     Image8: TImage;
+    Image9: TImage;
     PaintBox1: TPaintBox;
   private
     FObjBloqueados: boolean;
@@ -72,23 +76,36 @@ end;
 function TfraVisCPlex.AgregOgFac(Fac: TCibFac): TogFac;
 //Agrega un objeto gráfica asociado a un objeto facturable, al editor.
 var
-  og: TogCabina;
+  ogCab: TogCabina;
+  ogNil: TogNiloM;
 begin
   Result := nil;
   case Fac.tipo of
   ctfCabinas: begin
-    og := TogCabina.Create(motEdi.v2d, TCibFacCabina(Fac));
-    motEdi.AgregarObjGrafico(og, false);
-    og.icoPC := Image5.Picture.Graphic;   //asigna imagen
-    og.icoPCdes:= Image6.Picture.Graphic;   //asigna imagen
-    og.icoUSU := Image2.Picture.Graphic;  //asigna imagen
-    og.icoRedAct := Image3.Picture.Graphic;
-    og.icoRedDes := Image4.Picture.Graphic;
-    og.Id := ID_CABINA;
-    og.SizeLocked := true;
-    og.PosLocked := FObjBloqueados;  //depende del esatdo actual
-    Result := og;
+    ogCab := TogCabina.Create(motEdi.v2d, TCibFacCabina(Fac));
+    motEdi.AgregarObjGrafico(ogCab, false);
+    ogCab.icoPC := Image5.Picture.Graphic;   //asigna imagen
+    ogCab.icoPCdes:= Image6.Picture.Graphic;   //asigna imagen
+    ogCab.icoUSU := Image2.Picture.Graphic;  //asigna imagen
+    ogCab.icoRedAct := Image3.Picture.Graphic;
+    ogCab.icoRedDes := Image4.Picture.Graphic;
+    ogCab.Id := ID_CABINA;
+    ogCab.SizeLocked := true;
+    ogCab.PosLocked := FObjBloqueados;  //depende del esatdo actual
+    Result := ogCab;
   end;
+  ctfNiloM: begin
+    ogNil := TogNiloM.Create(motEdi.v2d, TCibFacLocutor(Fac));
+    motEdi.AgregarObjGrafico(ogNil, false);
+    ogNil.icoTelCol := Image9.Picture.Graphic;   //asigna imagen
+    ogNil.icoTelDes := Image10.Picture.Graphic;
+    ogNil.icoTelDes2:= Image11.Picture.Graphic;
+    ogNil.Id := ID_NILOM;
+    ogNil.SizeLocked := true;
+    ogNil.PosLocked := FObjBloqueados;  //depende del esatdo actual
+    Result := ogNil;
+  end;
+  //}
   end;
 end;
 function TfraVisCPlex.AgregarOgGrupo(GFac: TCibGFac): TogGFac;

@@ -137,25 +137,20 @@ end;
 {Objeto gráfico que representa a los elementos TCibFacCabina}
 TogNiloM = class(TogFac)
 private
+  procedure ProcDesac(estado0: Boolean);
 public
-  icoPC      : TGraphic;    //PC con control
-  icoPCdes   : TGraphic;    //PC sin control
-  icoUSU     : TGraphic;    //referencia a ícono
-  icoRedAct  : TGraphic;    //referencia a ícono
-  icoRedDes  : TGraphic;    //referencia a ícono
+  icoTelCol   : TGraphic;    //Teléfono colgado
+  icoTelDes   : TGraphic;    //Teléfono descolgado
+  icoTelDes2  : TGraphic;    //Teléfono descolgado con llamada contestada
   procedure DibujarTiempo;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
-  procedure ProcDesac(estado0: Boolean);   //Para responder evento de Habilitar/Deshabilitar
-  function Contando: boolean;
-  function Detenida: boolean;
-  function EnManten: boolean;
-  function cab: TCibFacCabina; inline;  //acceso a la cabina
+  function loc: TCibFacLocutor; inline;  //acceso a la cabina
 protected
   procedure ReubicElemen; override;
 private
   BotDes   : TogButton;          //Refrencia global al botón de Desactivar
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf; cab0: TCibFacCabina);
+  constructor Create(mGraf: TMotGraf; loc0: TCibFacLocutor);
   destructor Destroy; override;
 end;
 
@@ -473,22 +468,10 @@ begin
   v2d.RectangR(x, y, x+60, y+36);
   //muestra tiempo transcurrido
 //  DateTimeToString(tmp, 'hh:mm:ss', now-Fac.hor_ini);  //convierte
-  DateTimeToString(tmp, 'hh:mm:ss', cab.TranscDat);  //convierte
+  DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
   v2d.Texto(x+4,y+1,tmp);
-  //muestra tiempo total
-  if cab.tLibre then   //pidió tiempo libre
-    v2d.SetText(clBlue, 10,'',true);
   //Genera Tiempo solicitado en texto descriptivo.
-  if cab.tLibre then begin  //pidió tiempo libre
-    tmp := '<libre>'
-  end else if Abs(cab.tSolic - 1/24) < 0.0001 then
-    tmp := '1 hora'
-  else if Abs(cab.tSolic - 1/48) < 0.0001 then
-    tmp := '1/2 hora'
-  else if Abs(cab.tSolic - 1/96) < 0.0001 then
-    tmp := '1/4 hora'
-  else   //no es tiempo conocido
-    DateTimeToString(tmp, 'hh:mm:ss', cab.tSolic);  //convierte
+  DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
   //escribe tiempo
   v2d.Texto(x+4,y+17,tmp);
 end;
@@ -510,52 +493,26 @@ begin
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.FijaRelleno(TColor($BCF5A9));
+  v2d.RectangR(x, y, x2, y+height);
 //  If Desactivado Then v2d.FijaRelleno(COL_BARTIT_DES) Else v2d.FijaRelleno(COL_BARTIT_ACT);
 //  v2d.RectRedonR(x, y, x2, y + ALT_ENCAB_DEF);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, nombre);
   //dibuja íconos de PC y de conexión
-  if cab.ConConexion then begin
-    if cab.EstadoConex = cecConectado then begin
-      v2d.DibujarImagenN(icoRedAct, x+38, y+30);
-      v2d.DibujarImagenN(icoPC, x+12, y+20);
-    end else begin
-      v2d.DibujarImagenN(icoRedDes, x+38, y+30);
-      v2d.DibujarImagenN(icoPCdes, x+12, y+20);
-    end;
-  end else begin
-    v2d.DibujarImagenN(icoPCdes, x+12, y+20);
-  end;
-  if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
-     //muestra ícono de persona
-     if icoUSU<>NIL then v2d.DibujarImagenN(icoUSU, x, y+35);
-     DibujarTiempo;
-  end;
+  v2d.DibujarImagenN(icoTelCol, x+25, y+40);
+  DibujarTiempo;
   //muestra consumo
   v2d.FijaLapiz(psSolid, 1, clBlack);
   v2d.FijaRelleno(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
-  if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
-    //solo muestra tiempo, en conteo
-    s := Format('S/ %f',[cab.Costo]);
-    v2d.SetText(clBlue, 11,'',false);
-    v2d.TextoR(x+2, y+88, width-4, 22, s);
-    if cab.horGra then begin  //hora gratis
-       v2d.SetText(clRed, 10, '', true);
-       v2d.Texto(x+25, y+40, 'GRATIS');
-    end;
-    BotDes.estado:= true;
-  end else begin
-    BotDes.estado:= false;
-  end;
+  //solo muestra tiempo, en conteo
+  s := Format('S/ %f',[0.1]);
+  v2d.SetText(clBlue, 11,'',false);
+  v2d.TextoR(x+2, y+88, width-4, 22, s);
+  BotDes.estado:= true;
   //muestra boleta
-  if cab.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
-  if cab.EstadoCta = EST_MANTEN then begin
-    //dibuja aspa roja
-    v2d.FijaLapiz(psSolid, 3, clred);
-    v2d.Linea(x,y,x2,y+90);
-    v2d.Linea(x2,y,x,y+90);
-  end;
+  if loc.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
 procedure TogNiloM.ReubicElemen;
@@ -566,27 +523,14 @@ var
 begin
   inherited;
   x2 := x + width;
-  Buttons[0].Ubicar(x2 - 24, y + 1);
+  Buttons[0].Ubicar(x + 30, y + 50);
 //   Botones[2].Ubicar(x2 - 20, y + 3);  //Botón Cerrar
   //ubica boleta
   Boleta.Ubicar(x+5,y+110);
 end;
-function TogNiloM.Contando: boolean;
+function TogNiloM.loc: TCibFacLocutor;
 begin
-  Result := cab.EstadoCta in [EST_CONTAN, EST_PAUSAD];
-end;
-function TogNiloM.Detenida: boolean;
-begin
-  Result := cab.EstadoCta = EST_NORMAL;
-end;
-function TogNiloM.EnManten: boolean;
-begin
-  Result := cab.EstadoCta = EST_MANTEN;
-end;
-function TogNiloM.cab: TCibFacCabina; inline;
-{Función de acceso pro comodidad}
-begin
-  Result := TCibFacCabina(Fac);
+  Result := TCibFacLocutor(Fac);
 end;
 procedure TogNiloM.ProcDesac(estado0: Boolean);
 begin
@@ -594,7 +538,7 @@ begin
    BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
 end;
 //constructor y detsructor
-constructor TogNiloM.Create(mGraf: TMotGraf; cab0: TCibFacCabina);
+constructor TogNiloM.Create(mGraf: TMotGraf; loc0: TCibFacLocutor);
 begin
   inherited Create(mGraf);
   Boleta := TogBoleta.Create(v2d, nil);  //crea boleta
@@ -606,9 +550,8 @@ begin
   height := 130;
   ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 
-  Fac := cab0;   {Actualiza referencia, a través de la propiedad, para que se actualicen
+  Fac := loc0;   {Actualiza referencia, a través de la propiedad, para que se actualicen
                   tambiém, las variables necesarias}
-  ProcDesac(False);   //Desactivado := False
 end;
 destructor TogNiloM.Destroy;
 begin
