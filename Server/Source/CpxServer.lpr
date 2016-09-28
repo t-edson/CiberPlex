@@ -9,9 +9,9 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, FormPrincipal, FormConfig, CibFacturables,
   CibCabinaTarifas,
-  FormVisorMsjRed, FormBoleta, FormRepIngresos, RegistrosVentas,
+  FormBoleta, FormRepIngresos, RegistrosVentas,
   FormBusProductos, FormIngVentas, FormAgrupVert, CibGFacNiloM,
-  FormNiloMTerminal, FormFijTiempo, FormAdminCabinas, FormAdminTarCab;
+  FormNiloMConex, FormFijTiempo, FormAdminCabinas, FormAdminTarCab, CibNiloMTarifRut;
 
 {$R *.res}
 

@@ -35,10 +35,11 @@ type
     acBusRutas: TAction;
     acBusProduc: TAction;
     acBusGastos: TAction;
-    acNilVerTerm: TAction;
+    acNilPropied: TAction;
     acEdiInsEnrut: TAction;
     acEdiInsGrCab: TAction;
     acEdiElimGru: TAction;
+    acNilConex: TAction;
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
@@ -49,6 +50,7 @@ type
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
     MenuItem15: TMenuItem;
     MenuItem16: TMenuItem;
@@ -75,10 +77,13 @@ type
     MenuItem35: TMenuItem;
     MenuItem36: TMenuItem;
     MenuItem37: TMenuItem;
+    MenuItem38: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem41: TMenuItem;
+    MenuItem42: TMenuItem;
     MenuItem43: TMenuItem;
     MenuItem44: TMenuItem;
+    MenuItem45: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem7: TMenuItem;
@@ -88,6 +93,7 @@ type
     panBolet: TPanel;
     PopupCabina: TPopupMenu;
     PopupGCabina: TPopupMenu;
+    PopupGNiloM: TPopupMenu;
     splPanLlam: TSplitter;
     splPanBolet: TSplitter;
     Timer1: TTimer;
@@ -114,7 +120,8 @@ type
     procedure acEdiElimGruExecute(Sender: TObject);
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
-    procedure acNilVerTermExecute(Sender: TObject);
+    procedure acNilConexExecute(Sender: TObject);
+    procedure acNilPropiedExecute(Sender: TObject);
     procedure acGCabAdmCabExecute(Sender: TObject);
     procedure acGCabAdmTarCabExecute(Sender: TObject);
     procedure acSisConfigExecute(Sender: TObject);
@@ -134,6 +141,7 @@ type
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
+    procedure grupos_RequiereInfo(var NombProg, NombLocal, Usuario: string);
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol, coment: string);
@@ -171,6 +179,23 @@ procedure TfrmPrincipal.grupos_LogInfo(cab: TCibFac; msj: string);
 begin
   PLogInf(usuario, msj);
 end;
+procedure TfrmPrincipal.grupos_EstadoArchivo;
+{Guarda el estado de los objetos al archivo de estado}
+var
+  lest: TStringList;
+begin
+  lest:= TSTringList.Create;
+  lest.Text := Config.grupos.CadEstado;
+  lest.SaveToFile(arcEstado);
+  lest.Destroy;
+end;
+procedure TfrmPrincipal.grupos_RequiereInfo(var NombProg, NombLocal,
+  Usuario: string);
+begin
+  NombProg  := NOM_PROG;
+  NombLocal := Config.Local;
+  Usuario   := FormInicio.usuario;
+end;
 procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
   PLogErr(usuario, msj);
@@ -200,6 +225,7 @@ begin
   Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
   Config.grupos.OnLogInfo      :=@grupos_LogInfo;
   Config.grupos.OnGuardarEstado:=@grupos_EstadoArchivo;
+  Config.grupos.OnRequiereInfo:= @grupos_RequiereInfo;
 
   //Crea los objetos gráficos de cabina de acuerdo.
   VisorCabinas.ActualizarPropiedades(config.grupos.CadPropiedades);
@@ -267,21 +293,12 @@ begin
   //hay objeto seleccionado
   if VisorCabinas.Seleccionado.Id = ID_CABINA then PopupCabina.PopUp;
   if VisorCabinas.Seleccionado.Id = ID_GCABINA then PopupGCabina.PopUp;
+  if VisorCabinas.Seleccionado.Id = ID_GNILOM then PopupGNiloM.PopUp;
 end;
 procedure TfrmPrincipal.VisorCabinas_DblClick(Sender: TObject);
 begin
   if VisorCabinas.Seleccionado = nil then exit;
   acCabExplorArcExecute(self);
-end;
-procedure TfrmPrincipal.grupos_EstadoArchivo;
-{Guarda el estado de los objetos al archivo de estado}
-var
-  lest: TStringList;
-begin
-  lest:= TSTringList.Create;
-  lest.Text := Config.grupos.CadEstado;
-  lest.SaveToFile(arcEstado);
-  lest.Destroy;
 end;
 procedure TfrmPrincipal.LeerEstadoDeArchivo;
 {Lee el estado de los objetos del archivo de estado}
@@ -423,18 +440,6 @@ begin
     Result := nil;
   end;
 end;
-{procedure TfrmPrincipal.ChangeAppearance;
-begin
-  StatusBar1.Visible := Config.fcIDE.ViewStatusbar;
-  acVerBarEst.Checked := Config.fcIDE.ViewStatusbar;
-  ToolBar1.Visible := Config.fcIDE.ViewToolbar;
-  acVerBarHer.Checked:= Config.fcIDE.ViewToolbar;
-
-  panMessages.Visible:= Config.fcIDE.ViewPanMsg;
-  Splitter2.Visible := Config.fcIDE.ViewPanMsg;
-  acVerPanMsj.Checked:= Config.fcIDE.ViewPanMsg;
-end;
-}
 procedure TfrmPrincipal.PonerComando(facOrig: TCibFac; comando: TCPTipCom; ParamX, ParamY: word; cad: string);
 {Envía un comando al modelo, de la misma forma a como si fuera un comando remoto.
   facOrig -> Objeto facturable que genera el comando. Si no aplica, debe estar en NIL.
@@ -485,6 +490,7 @@ procedure TfrmPrincipal.acArcSalirExecute(Sender: TObject);   //Salir
 begin
   Close;
 end;
+//Acciones Editar
 procedure TfrmPrincipal.acEdiInsGrCabExecute(Sender: TObject);  //Inserta Grupo de cabinas
 var
   ncabTxt, nom: String;
@@ -501,8 +507,7 @@ procedure TfrmPrincipal.acEdiInsEnrutExecute(Sender: TObject); //Inserta Enrutad
 var
   grupNILOm: TCibGFacNiloM;
 begin
-  grupNILOm := TCibGFacNiloM.Create('NILO-m','12',Config.Local, NOM_PROG, 0.1,
-                                    usuario, 'LLAMADAS');
+  grupNILOm := TCibGFacNiloM.Create('NILO-m');
   //Inicializa Nilo-m
   //grupNILOm.OnRegMsjError:=@NiloM_RegMsjError;
   //grupNILOm.Conectar;
@@ -521,6 +526,11 @@ begin
     ogGCab := TogGCabinas(og);  //restaura objeto
     gcab := Config.grupos.BuscarPorNombre(ogGCab.GFac.Nombre);  //Busca grupo en el modelo
     Config.grupos.Eliminar(gcab);
+  end;
+  if (og is TogGNiloM) then begin
+///    ogGCab := TogGCabinas(og);  //restaura objeto
+//    gcab := Config.grupos.BuscarPorNombre(ogGCab.GFac.Nombre);  //Busca grupo en el modelo
+//    Config.grupos.Eliminar(gcab);
   end;
 end;
 //Acciones Buscar
@@ -546,7 +556,7 @@ var
   ogGcab: TogGCabinas;
   gcab: TCibGFac;
 begin
-  ogGcab := VisorCabinas.GCabSeleccionada;
+  ogGcab := VisorCabinas.GCabinasSeleccionado;
   if ogGcab = nil then exit;
   {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
   de administración de la copia, no del modelo original.}
@@ -559,7 +569,7 @@ var
   ogGcab: TogGCabinas;
   gcab: TCibGFac;
 begin
-  ogGcab := VisorCabinas.GCabSeleccionada;
+  ogGcab := VisorCabinas.GCabinasSeleccionado;
   if ogGcab = nil then exit;
   {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
   de administración de la copia, no del modelo original.}
@@ -663,9 +673,29 @@ begin
   if ogCab = nil then exit;
   frmBoleta.Exec(ogCab.Fac);
 end;
-procedure TfrmPrincipal.acNilVerTermExecute(Sender: TObject);
+procedure TfrmPrincipal.acNilConexExecute(Sender: TObject);
+var
+  ogGnil: TogGNiloM;
+  gnil: TCibGFac;
 begin
-  //escuchar;
+  ogGnil := VisorCabinas.GNiloMSeleccionado;
+  if ogGnil = nil then exit;
+  {Aquí sería fácil acceder a "ogGnil.gcab.frmAdminCabs", pero esta sería la ventana
+  de administración de la copia, no del modelo original.}
+  gnil := Config.grupos.BuscarPorNombre(ogGnil.GFac.Nombre);  //Busca grupo en el modelo
+  TCibGFacNiloM(gnil).frmNilomConex.Show;
+end;
+procedure TfrmPrincipal.acNilPropiedExecute(Sender: TObject);
+var
+  ogGnil: TogGNiloM;
+  gnil: TCibGFac;
+begin
+  ogGnil := VisorCabinas.GNiloMSeleccionado;
+  if ogGnil = nil then exit;
+  {Aquí sería fácil acceder a "ogGnil.gcab.frmAdminCabs", pero esta sería la ventana
+  de administración de la copia, no del modelo original.}
+  gnil := Config.grupos.BuscarPorNombre(ogGnil.GFac.Nombre);  //Busca grupo en el modelo
+  TCibGFacNiloM(gnil).frmNilomProp.Show;
 end;
 // Acciones Ver
 procedure TfrmPrincipal.acVerRepIngExecute(Sender: TObject);

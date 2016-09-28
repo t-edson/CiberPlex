@@ -1,10 +1,10 @@
 object frmPrincipal: TfrmPrincipal
   Left = 417
-  Height = 574
+  Height = 660
   Top = 77
   Width = 874
   Caption = 'frmPrincipal'
-  ClientHeight = 554
+  ClientHeight = 640
   ClientWidth = 874
   Menu = MainMenu1
   OnClose = FormClose
@@ -45,7 +45,7 @@ object frmPrincipal: TfrmPrincipal
   end
   object panLLam: TPanel
     Left = 0
-    Height = 528
+    Height = 614
     Top = 26
     Width = 227
     Align = alLeft
@@ -53,13 +53,13 @@ object frmPrincipal: TfrmPrincipal
   end
   object splPanLlam: TSplitter
     Left = 227
-    Height = 528
+    Height = 614
     Top = 26
     Width = 5
   end
   object panBolet: TPanel
     Left = 668
-    Height = 528
+    Height = 614
     Top = 26
     Width = 206
     Align = alRight
@@ -67,7 +67,7 @@ object frmPrincipal: TfrmPrincipal
   end
   object splPanBolet: TSplitter
     Left = 663
-    Height = 528
+    Height = 614
     Top = 26
     Width = 5
     Align = alRight
@@ -213,11 +213,6 @@ object frmPrincipal: TfrmPrincipal
       Caption = '&Gastos'
       OnExecute = acBusGastosExecute
     end
-    object acNilVerTerm: TAction
-      Category = 'Nil'
-      Caption = 'Ver &Terminal'
-      OnExecute = acNilVerTermExecute
-    end
     object acEdiInsGrCab: TAction
       Category = 'Edi'
       Caption = 'Insertar Grupo de &Cabinas'
@@ -232,6 +227,16 @@ object frmPrincipal: TfrmPrincipal
       Category = 'Edi'
       Caption = '&Eliminar Grupo'
       OnExecute = acEdiElimGruExecute
+    end
+    object acNilConex: TAction
+      Category = 'Nil'
+      Caption = 'Cone&xiones'
+      OnExecute = acNilConexExecute
+    end
+    object acNilPropied: TAction
+      Category = 'Nil'
+      Caption = '&Propiedades'
+      OnExecute = acNilPropiedExecute
     end
   end
   object PopupCabina: TPopupMenu
@@ -483,7 +488,7 @@ object frmPrincipal: TfrmPrincipal
     object MenuItem29: TMenuItem
       Caption = '&Nilo-m'
       object MenuItem30: TMenuItem
-        Action = acNilVerTerm
+        Action = acNilPropied
       end
     end
     object MenuItem4: TMenuItem
@@ -2196,6 +2201,23 @@ object frmPrincipal: TfrmPrincipal
     end
     object MenuItem44: TMenuItem
       Action = acCabPropied
+    end
+  end
+  object PopupGNiloM: TPopupMenu
+    Images = ImageList16
+    left = 424
+    top = 120
+    object MenuItem42: TMenuItem
+      Action = acEdiElimGru
+    end
+    object MenuItem45: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem13: TMenuItem
+      Action = acNilConex
+    end
+    object MenuItem38: TMenuItem
+      Action = acNilPropied
     end
   end
 end
