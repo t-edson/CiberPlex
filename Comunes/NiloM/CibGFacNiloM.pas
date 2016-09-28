@@ -10,7 +10,8 @@ unit CibGFacNiloM;
 interface
 uses
   Classes, SysUtils, Types, LCLProc, MisUtils, crt, strutils, CibFacturables,
-  CibNiloMBase, CibRegistros, Globales, FormNiloTarifario, FormNiloMTerminal;
+  CibNiloMConex, CibRegistros, FormNiloTarifario, FormNiloMConex, FormNiloMProp,
+  CibNiloMTarifRut, Globales;
 const
   IDE_EST_LOC = 'l';   //identificador de estado de cabina
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
@@ -39,7 +40,7 @@ type
     procedure LeeListaLlamadas;
     procedure ProcesaColgado;
     procedure ProcesaDescolgado;
-    procedure ProcesaDigitado(dig: String);
+    procedure ProcesaDigitado(dig: String; tarif: TNiloMTarif);
     procedure ProcesarContestada(cansal: String);
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -53,7 +54,7 @@ type
     function AgregarFila: integer;
     procedure EscribeDatosAdicionales;
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
-      CategLocu: string);
+      CategLocu: string; tarif: TNiloMTarif);
   public  //constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -64,20 +65,16 @@ type
   private
     nilConex : TNiloConexion;   {Objeto para la conexión al enrutador. A diferencia de
                                  TCPGrupoCabinas, aquí solo se maneja una conexión.}
-    nom_local : string;
-    nom_prog  : string;
-    facCmoneda: Double;
-    usuario   : string;
-    CategLocu : string;   //categoría para registrar en al venta
+    tarif    : TNiloMTarif;      //Objeto para la tarificación
     FestadoCnx: TNilEstadoConex;
     mens_error: TStringList;  //acumula los mensajes de error
     lin_serial: string;     //acumula los datos recibidos hasta completar la línea
-    //Funcione para manejo del registro
+    //Funciones para manejo del registro
     procedure AbrirRegistro;
     procedure CerrarRegistro;
-    procedure frmNilomTerminalEnviarCom(com: string);
     procedure loc_CambiaPropied;
     procedure ErrorLog(mensaje: string);
+  private //Funciones para escribir en los archivos de registros
     procedure VolcarErrorLog;
     procedure EscribeLog(mensaje: string);
     procedure EscribeLogPrompt;
@@ -85,6 +82,7 @@ type
     procedure EscribeTerPrompt;
   protected //Getters and Setters
     function GetPuertoN: string;
+    procedure SetPuertoN(AValue: string);
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
     function GetCadEstado: string; override;
@@ -92,12 +90,14 @@ type
   public
     ArcReg   : string;
     MsjError : string;  //Bandera - Mensaje de error
-    frmNilomTerminal: TfrmNiloMTerminal;
+    facCmoneda: Double;
+    frmNilomConex: TfrmNiloMConex;
+    frmNilomProp: TfrmNiloMProp;
     property estadoCnx: TNilEstadoConex read FestadoCnx
-             write FestadoCnx;   {"estado" es una propiedad de solo lectura, pero se habilita
-                               la escritura, para cuando se usa CabConexión sin Red}
+             write FestadoCnx;   {"estadoCnx" es una propiedad de solo lectura, pero se
+                                   habilita la escritura, para cuando se usa sin Red}
 //    property Puerto: string read nilConex.puerto;
-    property PuertoN: string read GetPuertoN;
+    property PuertoN: string read GetPuertoN write SetPuertoN;
   private //servicio de eventos
     procedure nilConex_CambiaEstado(nuevoEstado: TNilEstadoConex);
     procedure nilConex_RegMensaje(NomObj: string; msj: string);
@@ -105,9 +105,11 @@ type
     procedure nilConex_ProcesarLin(cad: string);
     procedure nilConex_TermWrite(cad: string);
     procedure nilConex_TermWriteLn(const subcad: string; const lin: string);
+    function tarif_LogErr(mensaje: string): integer;
+    function tarif_LogInf(mensaje: string): integer;
   public  //Eventos que se pueden generar de forma automática
     //Eventos reflejo de "TNiloConexion"
-    OnCambiaEstado: TEvCambiaEstado;
+    OnCambiaEstadoCnx: TEvCambiaEstado;  //Cambia el estado de la conexión
     OnRegMensaje  : TEvRegMensaje;  //Indica que ha llegado un mensaje de la conexión
     OnProcesarCad : TEvProcesarCad; //indica que hay una cadena lista esperando
     OnProcesarLin : TEvRegMensaje;  //Se genera una línea para registrar mensaje
@@ -115,15 +117,14 @@ type
     OnTermWrite   : TEvProcesarCad;
     OnTermWriteLn : TEvProcesarCad;
     //Eventos propios de la clase
-    OnRegMsjError : TEvRegMensaje;  //Se solicita registrar un mensaje de error
+    OnRegMsjError : TEvRegMensaje;   //Se solicita registrar un mensaje de error
+    OnRequiereInfo: TEvRequiereInfo; //Se requiere información global
     procedure Conectar;
     procedure Desconectar;
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
     function Agregar(nomLoc: string; num_can: char): TCibFacLocutor;
   public  //constructor y destructor
-    constructor Create(nombre0: string; puerto0: string; nom_local0,
-      nom_prog0: string; facCmoneda0: double; usuario0: string;
-  CategLocu0: string);
+    constructor Create(nombre0: string);
     destructor Destroy; override;
   end;
 
@@ -352,9 +353,10 @@ begin
             num_can + #9 +
             I2f(tpoLimitado) + #9 +
             N2f(ctoLimitado) + #9 +
+            N2f(x) + #9 +
+            N2f(y) + #9 +
             #9 + #9 + #9;;
 end;
-
 procedure TCibFacLocutor.SetCadPropied(AValue: string);
 var
   campos: TStringDynArray;
@@ -364,6 +366,8 @@ begin
   num_can := campos[1][1];
   tpoLimitado := f2I(campos[2]);
   ctoLimitado := f2N(campos[3]);
+  x := f2N(campos[4]);
+  y := f2N(campos[5]);
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFacLocutor.EscribeDatosAdicionales;
@@ -381,7 +385,7 @@ begin
     trm.VolcarErrorLog;        //Vuelca también los mensajes de error
     trm.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
 end;
-procedure TCibFacLocutor.ProcesaDigitado(dig : String);
+procedure TCibFacLocutor.ProcesaDigitado(dig : String; tarif: TNiloMTarif);
 var
   rr : regTarifa;
 begin
@@ -400,7 +404,7 @@ begin
 //    llam.costop = ""                 //Actualiza costo por paso
 //    llam.costo = 0
 //    i = frmConsTar.HayTarifa(llam.numdig)
-    rr := frmNiloTarifario.BuscaTarifa(llam.NUM_DIG);      //Si no encuentra devuelve campos nulos
+    rr := tarif.BuscaTarifa(llam.NUM_DIG);      //Si no encuentra devuelve campos nulos
     llam.DESCR_ := rr.descripcion;     //Actualiza descripción
     llam.PASO_ := rr.paso;               //Actualiza paso
     llam.COSTOP_ := rr.costop;           //Actualiza costo por paso
@@ -461,7 +465,7 @@ begin
     llam.HORA_CON := now;      //toma hora de contestación
 end;
 procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
-  CategLocu{categoría de venta para lcoutorios}: string);
+  CategLocu{categoría de venta para lcoutorios}: string; tarif: TNiloMTarif);
   function EsLineaCDR: boolean;
   {Indica si la línea recibida es de un CDR de este locutorio:
      '[#]###;' + num_can + '*'}
@@ -555,7 +559,7 @@ begin
     end;
 
     if copy(linea, 1, 2)  = 'n' + num_can then  //Procesamiento de número digitado
-        ProcesaDigitado(Copy(linea, 3, 1))
+        ProcesaDigitado(Copy(linea, 3, 1), tarif)
     else if copy(linea, 1, 2)  = 'c' + num_can then  //Llamada colgada
         ProcesaColgado
     else if copy(linea, 1, 2)  = 'y' + num_can then     //Llamada contestada
@@ -582,23 +586,21 @@ end;
 //Funcione para manejo del registro
 procedure TCibGFacNiloM.AbrirRegistro();
 {Actualiza nombre final de arhcivo de registro}
+var
+  NombProg, NombLocal, Usuario: string;
 begin
-    ArcReg := NombFinal(rutDatos, nom_local + '.' + nilConex.puertoN, '.dat');
-    if msjError <> '' then exit;
-    EscribeLog('');
-    EscribeLog(nom_prog);
-    EscribeLog('Inicio CIBERPX --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
+  if OnRequiereInfo<>nil then  //Pide información global
+      OnRequiereInfo(NombProg, NombLocal, Usuario);
+  ArcReg := NombFinal(rutDatos, NombLocal + '.' + nilConex.puertoN, '.dat');
+  if msjError <> '' then exit;
+  EscribeLog('');
+  EscribeLog(NombProg);
+  EscribeLog('Inicio CIBERPX --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
 end;
 procedure TCibGFacNiloM.CerrarRegistro();
 begin
     EscribeLog('Fin CIBERPX    --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
     EscribeLog('');
-end;
-
-procedure TCibGFacNiloM.frmNilomTerminalEnviarCom(com: string);
-{EL terminal solicita enviar un comando, al enrutador}
-begin
-  EnvComando(com);
 end;
 
 procedure TCibGFacNiloM.loc_CambiaPropied;
@@ -614,6 +616,25 @@ begin
     //Se vuelca al archivo en el momento apropiado
     mens_error.Add('ERROR: ' + TimeToStr(Time) + '-' + mensaje);
 end;
+function TCibGFacNiloM.tarif_LogErr(mensaje: string): integer;
+//Se solicita registrar un mensaje de error
+var
+  NombProg, NombLocal, Usuario: string;
+begin
+  if OnRequiereInfo<>nil then  //Pide información global
+      OnRequiereInfo(NombProg, NombLocal, Usuario);
+  PLogErr(usuario, mensaje);
+end;
+function TCibGFacNiloM.tarif_LogInf(mensaje: string): integer;
+//Se solicita registrar un mensaje informativo
+var
+  NombProg, NombLocal, Usuario: string;
+begin
+  if OnRequiereInfo<>nil then  //Pide información global
+      OnRequiereInfo(NombProg, NombLocal, Usuario);
+  PLogInf(usuario, mensaje);
+end;
+//Funciones para escribir en los archivos de registros
 procedure TCibGFacNiloM.VolcarErrorLog;
 {Vuelca los mensajes de error en el archivo de registro
 Se debe llamar al final de cada llamada para escribir los errores}
@@ -667,12 +688,17 @@ function TCibGFacNiloM.GetPuertoN: string;
 begin
   Result := nilConex.puertoN;
 end;
+procedure TCibGFacNiloM.SetPuertoN(AValue: string);
+begin
+  nilConex.puertoN:=AValue;
+end;
 function TCibGFacNiloM.GetCadPropied: string;
 var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9  + #9 ;
+  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 +
+            N2f(Fy) + #9 + PuertoN + #9 + N2f(facCmoneda) + #9 + #9;
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + TCibFacLocutor(c).CadPropied;
@@ -694,6 +720,8 @@ begin
   CategVenta:=a[1];
   Fx := f2N(a[2]);
   Fy := f2N(a[3]);
+  PuertoN:=a[4];
+  facCmoneda:=f2N(a[5]);
   lineas.Delete(0);  //elimima línea
   //Procesa líneas con información de las cabinas
   items.Clear;
@@ -737,6 +765,7 @@ procedure TCibGFacNiloM.nilConex_TermWriteLn(const subcad: string; const lin: st
 {Se usa para refrescar al terminal y escribir en el registro.}
 var
   fac: TCibFac;
+  NombProg, NombLocal, Usuario: string;
 begin
   lin_serial := lin_serial + subcad;
   msjError := EscribReg(ArcReg, lin_serial);  //en el registro, escibe la línea completa.
@@ -759,10 +788,12 @@ que acceder a objetos fuera del alcance de esta librería. }
     frmContadorI.txtContNilo = tmp
     frmContadorI.txtHistNilo = "Actualizado a las " & Time}
   end else begin
+    if OnRequiereInfo<>nil then  //Pide información global
+        OnRequiereInfo(NombProg, NombLocal, Usuario);
     //Pasa el mensaje a las cabinas.
     for fac in items do begin
       //Aquí se puede escribir datos adicionales en el terminal y el registro
-      TCibFacLocutor(fac).ProcesarLinea(lin, facCmoneda, usuario, CategLocu);
+      TCibFacLocutor(fac).ProcesarLinea(lin, facCmoneda, Usuario, CategVenta, tarif);
     end;
   end;
   DebugLn('linea:'+lin);
@@ -770,7 +801,9 @@ que acceder a objetos fuera del alcance de esta librería. }
 end;
 procedure TCibGFacNiloM.nilConex_CambiaEstado(nuevoEstado: TNilEstadoConex);
 begin
-  if OnCambiaEstado<>nil then OnCambiaEstado(FestadoCnx);
+  FestadoCnx := nuevoEstado;
+  if OnCambiaEstadoCnx<>nil then OnCambiaEstadoCnx(FestadoCnx);
+//DebugLn('estado:'+lin);
 end;
 procedure TCibGFacNiloM.nilConex_RegMensaje(NomObj: string; msj: string);
 begin
@@ -821,20 +854,19 @@ begin
   Result := loc;
 end;
 //constructor y destructor
-constructor TCibGFacNiloM.Create(nombre0: string; puerto0: string; nom_local0, nom_prog0: string;
-                            facCmoneda0: double; usuario0: string; CategLocu0: string);
+constructor TCibGFacNiloM.Create(nombre0: string);
 begin
   inherited Create(nombre0, ctfNiloM);
 debugln('-Creando: '+ nombre0);
-  tipo := ctfNiloM;
-  frmNilomTerminal:= TfrmNiloMTerminal.Create(nil);   //crea su terminal de forma dinámica
-  nilConex := TNiloConexion.Create(puerto0);  //Nombre del enrutador
-  nom_local  := nom_local0;
-  nom_prog   := nom_prog0;
-  facCmoneda := facCmoneda0;
-  usuario    := usuario0;
-  CategLocu  := CategLocu0;
-  FestadoCnx := cecMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
+  tipo       := ctfNiloM;
+  frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
+  frmNilomProp:= TfrmNiloMProp.Create(nil);
+  nilConex    := TNiloConexion.Create;  //Crea la conexión serial
+  tarif       := TNiloMTarif.Create;    //crea tarifas
+  tarif.OnLogErr:=@tarif_LogErr;
+  tarif.OnLogInf:=@tarif_LogInf;
+  facCmoneda  := 0.1;  //valor por defecto
+  FestadoCnx  := cecMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
   //Conectar;  //No inicia la conexión
   mens_error:= TStringList.Create;
   nilConex.OnCambiaEstado:= @nilConex_CambiaEstado;
@@ -849,18 +881,21 @@ debugln('-Creando: '+ nombre0);
   Agregar('LOC4','3');
   CategVenta := 'LLAMADAS';
   //Configura terminal
-  frmNilomTerminal.onEnviarCom:=@frmNilomTerminalEnviarCom;
-  //GFacNiloM.OnProcesarCad:=@frmNiloMTerminal.ProcesarCad;
-  OnTermWrite:=@frmNiloMTerminal.TermWrite;
-  OnTermWriteLn:=@frmNiloMTerminal.TermWriteLn;
-  OnRegMensaje :=@frmNiloMTerminal.RegMensaje;
+  frmNilomConex.padre := self;  //referencia a la clase
+  frmNilomProp.padre := self;
+  //GFacNiloM.OnProcesarCad:=@frmNilomConex.ProcesarCad;
+  OnTermWrite:=@frmNilomConex.TermWrite;
+  OnTermWriteLn:=@frmNilomConex.TermWriteLn;
+  OnRegMensaje :=@frmNilomConex.RegMensaje;
 end;
 destructor TCibGFacNiloM.Destroy;
 begin
 debugln('-destruyendo: '+ self.Nombre);
   mens_error.Destroy;
+  tarif.Destroy;
   nilConex.Destroy;
-  frmNilomTerminal.Destroy;
+  frmNilomProp.Destroy;
+  frmNilomConex.Destroy;
   inherited Destroy;
 end;
 
