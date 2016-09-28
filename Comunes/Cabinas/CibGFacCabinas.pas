@@ -156,9 +156,9 @@ type
     procedure cab_RegMensaje(NomCab: string; msj: string);
     procedure cab_TramaLista(facOri: TCibFac; tram: TCPTrama; tramaLocal: boolean);
   public  //Eventos.
-    {Acciones que se pueden disparar automáticamente. Sin intrevención del usuario}
+    {Acciones que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
-    OnRegMensaje   : TEvCabRegMensaje; //indica que se ha geenrado un mensaje de la conexión
+    OnRegMensaje   : TEvCabRegMensaje; //indica que se ha generado un mensaje de la conexión
     OnDetenConteo  : TEVCabAccionCab;  //indica que se ha detenido la cuenta en alguna cabina
   protected //Getters and Setters
     function GetCadPropied: string; override;
