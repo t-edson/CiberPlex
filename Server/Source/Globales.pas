@@ -15,15 +15,13 @@ var
    //Variables globales
    MsjError    : String;    //Bandera - Mensaje de error
 
-   rutApp     : string;     //ruta de la aplicación
-   rutTemp    : string;     //ruta de la carpeta de scripts
-   rutDatos   : string;     //ruta de la carpeta de datos
-   rutArchivos: string;     //ruta para descargar de archivos
+   rutApp     : string;     //ruta de la aplicación (sin "\" final)
+   rutTemp    : string;     //ruta de la carpeta de scripts (sin "\" final)
+   rutDatos   : string;     //ruta de la carpeta de datos (sin "\" final)
+   rutArchivos: string;     //ruta para descargar de archivos (sin "\" final)
    //archivos de configuración
    arcProduc : string;     //archivo de productos
    arcGastos : string;     //archivo de gastos
-   arcTarifas: string;     //archivo de tarifas
-   arcRutas  : string;     //archivo de rutas
    //archivo de estado
    arcEstado : string;
 
@@ -64,8 +62,6 @@ initialization
   //inicia archivos de configuración
   arcProduc := rutApp + '\productos.txt';    //archivo de productos
   arcGastos := rutApp + '\gastos.txt';       //archivo de gastos
-  arcTarifas := rutApp + '\tarifario.txt';   //archivo de tarifas
-  arcRutas := rutApp + '\rutas.txt';         //archivo de rutas
   arcEstado := rutApp + '\estado.ini';         //archivo de estado
 
 finalization
@@ -78,8 +74,6 @@ finalization
 
   arcProduc := '';
   arcGastos := '';
-  arcTarifas := '';
-  arcRutas := '';
   arcEstado := '';
 end.
 

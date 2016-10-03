@@ -1,10 +1,10 @@
 object Config: TConfig
-  Left = 173
-  Height = 294
-  Top = 265
+  Left = 315
+  Height = 296
+  Top = 294
   Width = 351
   Caption = 'Configuración'
-  ClientHeight = 294
+  ClientHeight = 296
   ClientWidth = 351
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -13,7 +13,7 @@ object Config: TConfig
   object BitAplicar: TBitBtn
     Left = 136
     Height = 30
-    Top = 248
+    Top = 256
     Width = 75
     Caption = '&Aplicar'
     Default = True
@@ -24,7 +24,7 @@ object Config: TConfig
   object BitCancel: TBitBtn
     Left = 256
     Height = 30
-    Top = 248
+    Top = 256
     Width = 75
     Cancel = True
     DefaultCaption = True
@@ -35,7 +35,7 @@ object Config: TConfig
   object BitAceptar: TBitBtn
     Left = 24
     Height = 30
-    Top = 248
+    Top = 256
     Width = 75
     DefaultCaption = True
     Kind = bkOK
@@ -44,15 +44,15 @@ object Config: TConfig
   end
   object PageControl1: TPageControl
     Left = 0
-    Height = 240
+    Height = 248
     Top = 0
     Width = 344
-    ActivePage = TabSheet3
-    TabIndex = 2
+    ActivePage = TabSheet1
+    TabIndex = 0
     TabOrder = 3
     object TabSheet1: TTabSheet
       Caption = 'General'
-      ClientHeight = 212
+      ClientHeight = 220
       ClientWidth = 336
       object edLocal: TEdit
         Left = 48
@@ -131,6 +131,7 @@ object Config: TConfig
         Height = 23
         Top = 120
         Width = 40
+        OnChange = edSimbMonChange
         TabOrder = 4
         Text = 'edSimbMon'
       end
@@ -142,18 +143,10 @@ object Config: TConfig
         Caption = 'Número de decimales:'
         ParentColor = False
       end
-      object edNumDec: TEdit
-        Left = 144
-        Height = 23
-        Top = 152
-        Width = 40
-        TabOrder = 5
-        Text = 'edNumDec'
-      end
       object Label7: TLabel
-        Left = 8
+        Left = 9
         Height = 15
-        Top = 189
+        Top = 192
         Width = 127
         Caption = 'Impuesto a la venta (%):'
         ParentColor = False
@@ -161,9 +154,10 @@ object Config: TConfig
       object edImpVen: TEdit
         Left = 144
         Height = 23
-        Top = 181
+        Top = 184
         Width = 40
-        TabOrder = 6
+        Alignment = taRightJustify
+        TabOrder = 5
         Text = 'edImpVen'
       end
       object Label8: TLabel
@@ -175,10 +169,11 @@ object Config: TConfig
         ParentColor = False
       end
       object Label9: TLabel
-        Left = 216
+        Left = 200
         Height = 40
         Top = 152
-        Width = 86
+        Width = 128
+        Alignment = taCenter
         AutoSize = False
         Caption = 'S/0.00'
         Font.CharSet = ANSI_CHARSET
@@ -189,6 +184,16 @@ object Config: TConfig
         Font.Quality = fqDraft
         ParentColor = False
         ParentFont = False
+      end
+      object spnNumDec: TSpinEdit
+        Left = 144
+        Height = 23
+        Top = 152
+        Width = 42
+        Alignment = taRightJustify
+        MaxValue = 4
+        OnChange = spnNumDecChange
+        TabOrder = 6
       end
     end
     object TabSheet2: TTabSheet

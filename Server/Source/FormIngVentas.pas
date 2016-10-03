@@ -95,7 +95,7 @@ begin
     grilla.Cells[1,f] := reg.cod;
     grilla.Cells[2,f] := reg.cat;
     grilla.Cells[3,f] := reg.subcat;
-    grilla.Cells[4,f] := CadMoneda(reg.pUnit);
+    grilla.Cells[4,f] := Config.CadMon(reg.pUnit);
     grilla.Cells[5,f] := reg.desc;
     grilla.Cells[6,f] := FloatToStr(reg.stock);
     f := f + 1;

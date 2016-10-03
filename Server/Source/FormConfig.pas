@@ -7,8 +7,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Buttons, StdCtrls, ComCtrls, ExtCtrls,
-  MiConfigBasic, MiConfigXML, frameCfgUsuarios,
-  Globales, MisUtils, CPGrupFacturables;
+  Spin, MiConfigBasic, MiConfigXML, frameCfgUsuarios, Globales, MisUtils,
+  CPGrupFacturables;
 
 type
   TStyleToolbar = (stb_SmallIcon, stb_BigIcon);
@@ -26,7 +26,6 @@ type
     edImpVen: TEdit;
     edInform: TEdit;
     edLocal: TEdit;
-    edNumDec: TEdit;
     edPVenDef: TEdit;
     edSimbMon: TEdit;
     FraUsuarios1: TFraUsuarios;
@@ -41,14 +40,17 @@ type
     Label9: TLabel;
     PageControl1: TPageControl;
     RadioGroup1: TRadioGroup;
+    spnNumDec: TSpinEdit;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
     TabSheet3: TTabSheet;
     procedure BitAceptarClick(Sender: TObject);
     procedure BitAplicarClick(Sender: TObject);
+    procedure edSimbMonChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure spnNumDecChange(Sender: TObject);
   private
     version: String;
     procedure asocGFFileToProperty;
@@ -63,9 +65,9 @@ type
     Grupo : string;   //Nombre del grupo
     Inform: string;
     PVenDef: string;
-    SimbMon: string;
-    NumDec : integer;
-    ImpVen : integer;
+    SimbMon: string;   //Sïmbolo de moneda
+    NumDec : integer;  //Número de decimales
+    ImpVen : double;   //Impuesto a las ventas
     ////// propiedades vista
     verPanLlam: boolean;
     verPanBol: boolean;
@@ -80,6 +82,7 @@ type
     procedure escribirArchivoIni;
     procedure Iniciar;
     procedure Mostrar;
+    function CadMon(valor: double): string;
   end;
 
 var
@@ -95,7 +98,7 @@ implementation
 function CadMoneda(valor: double): string; inline;
 {Genera el formato de moneda usado para toda la aplicación.}
 begin
-  Result := FloatToStrF(valor, ffCurrency, 6, Config.NumDec);
+  Result := Config.SimbMon + ' ' + FloatToStrF(valor, ffNumber, 6, Config.NumDec);
 end;
 function LeeMoneda(txt: string): double;
 {Lee una cadena que incluye el símbolo de moneda y la convierte a número.}
@@ -135,6 +138,16 @@ begin
   escribirArchivoIni;   //guarda propiedades en disco
 end;
 
+procedure TConfig.spnNumDecChange(Sender: TObject);
+begin
+  //Refresca muestra
+  Label9.Caption := edSimbMon.Text + ' ' + FloatToStrF(0, ffNumber, 6, spnNumDec.Value);
+end;
+procedure TConfig.edSimbMonChange(Sender: TObject);
+begin
+  spnNumDecChange(self);     //Refresca muestra
+end;
+
 procedure TConfig.Iniciar;
 //Inicia el formulario de configuración. Debe llamarse antes de usar el formulario y
 //después de haber cargado todos los frames.
@@ -152,8 +165,8 @@ begin
   cfgFile.Asoc_Str('inform', @Inform, edInform,'');
   cfgFile.Asoc_Str('PVenDef',@PVenDef,edPVenDef,'COUNTER');
   cfgFile.Asoc_Str('SimbMon',@SimbMon,edSimbMon,'S/.');
-  cfgFile.Asoc_Int('NumDec', @NumDec, edNumDec, 2, 0, 4);
-  cfgFile.Asoc_Int('ImpVen', @ImpVen, edImpVen, 18, 0, 50);
+  cfgFile.Asoc_Int('NumDec', @NumDec, spnNumDec, 2);
+  cfgFile.Asoc_Dbl('ImpVen', @ImpVen, edImpVen, 18, 0, 50);
   //propiedades de vista
   cfgFile.Asoc_Bol('PanLlamadas', @verPanLlam, chkPanLLamadas, true);
   cfgFile.Asoc_Bol('PanBoletas' , @verPanBol,  chkPanBoletas, true);
@@ -200,6 +213,11 @@ procedure TConfig.Mostrar;
 begin
   PageControl1.PageIndex := 0;
   Showmodal;
+end;
+function TConfig.CadMon(valor: double): string;
+//Versión en método, de CadMoneda()
+begin
+  Result := CadMoneda(valor);
 end;
 procedure TConfig.escribirArchivoIni;
 //Escribe el archivo de configuración

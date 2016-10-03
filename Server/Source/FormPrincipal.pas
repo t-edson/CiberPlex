@@ -141,7 +141,7 @@ type
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
-    procedure grupos_RequiereInfo(var NombProg, NombLocal, Usuario: string);
+    procedure grupos_ReqConfigGen(var NombProg, NombLocal, Usuario: string);
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol, coment: string);
@@ -189,7 +189,7 @@ begin
   lest.SaveToFile(arcEstado);
   lest.Destroy;
 end;
-procedure TfrmPrincipal.grupos_RequiereInfo(var NombProg, NombLocal,
+procedure TfrmPrincipal.grupos_ReqConfigGen(var NombProg, NombLocal,
   Usuario: string);
 begin
   NombProg  := NOM_PROG;
@@ -225,8 +225,8 @@ begin
   Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
   Config.grupos.OnLogInfo      :=@grupos_LogInfo;
   Config.grupos.OnGuardarEstado:=@grupos_EstadoArchivo;
-  Config.grupos.OnRequiereInfo:= @grupos_RequiereInfo;
-
+  Config.grupos.OnReqConfigGen := @grupos_ReqConfigGen;
+  Config.grupos.OnReqCadMoneda := @Config.CadMon;
   //Crea los objetos gráficos de cabina de acuerdo.
   VisorCabinas.ActualizarPropiedades(config.grupos.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
