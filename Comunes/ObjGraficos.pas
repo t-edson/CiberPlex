@@ -6,7 +6,7 @@ interface
 uses
   Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
   MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase,
-  CibGFacCabinas, CibGFacNiloM, CibFacturables;
+  CibGFacCabinas, CibGFacNiloM, CibFacturables, FormConfig;
 const
   //Constantes de Colores
  COL_AZUL_CLARO = 230 * 256 *256 + 255 *256 + 255;
@@ -379,7 +379,7 @@ begin
   v2d.RectangR(x, y+88, x2, y+110);
   if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
     //solo muestra tiempo, en conteo
-    s := Format('S/ %f',[cab.Costo]);
+    s := CadMoneda(cab.Costo);
     v2d.SetText(clBlue, 11,'',false);
     v2d.TextoR(x+2, y+88, width-4, 22, s);
     if cab.horGra then begin  //hora gratis
@@ -507,7 +507,7 @@ begin
   v2d.FijaRelleno(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
   //solo muestra tiempo, en conteo
-  s := Format('S/ %f',[0.1]);
+  s := CadMoneda(0.1);
   v2d.SetText(clBlue, 11,'',false);
   v2d.TextoR(x+2, y+88, width-4, 22, s);
   BotDes.estado:= true;

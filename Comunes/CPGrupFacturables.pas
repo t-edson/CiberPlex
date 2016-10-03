@@ -12,12 +12,13 @@ uses
 type
   { TCibGruposFacturables }
   {Objeto que engloba a todos los grupos facturables. Debe haber solo una instancia para
-   toda la aplicación, así que trabaja ccomo un SINGLETON.}
+   toda la aplicación, así que trabaja como un SINGLETON.}
   TCibGruposFacturables = class
   private
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
+    function gf_ReqCadMoneda(valor: double): string;
     procedure gf_CambiaPropied;
     procedure gf_LogInfo(cab: TCibFac; msj: string);
     procedure SetCadEstado(const AValue: string);
@@ -35,7 +36,8 @@ type
 //    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
 //    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
     OnGuardarEstado: procedure of object;
-    OnRequiereInfo: TEvRequiereInfo; //Se requiere información global
+    OnReqConfigGen: TEvReqConfigGen; //Se requiere información de configruación
+    OnReqCadMoneda: TevReqCadMoneda; //Se requiere convertir a formato de moneda
   public
     nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
@@ -401,13 +403,18 @@ end;
 procedure TCibGruposFacturables.gf_RequiereInfo(var NombProg,
   NombLocal, Usuario: string);
 begin
-  if OnRequiereInfo<>nil then begin
-    OnRequiereInfo(NombProg, NombLocal, Usuario);
+  if OnReqConfigGen<>nil then begin
+    OnReqConfigGen(NombProg, NombLocal, Usuario);
   end else begin
     NombProg := '';
     NombLocal := '';
     Usuario := '';
   end;
+end;
+function TCibGruposFacturables.gf_ReqCadMoneda(valor: double): string;
+begin
+  if OnReqCadMoneda=nil then Result := ''
+  else Result := OnReqCadMoneda(valor);
 end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
@@ -543,13 +550,22 @@ begin
   //Configura eventos
   gf.OnCambiaPropied := @gf_CambiaPropied;
   gf.OnLogInfo:=@gf_LogInfo;
+  gf.OnReqConfigGen:=@gf_RequiereInfo;
+  gf.OnReqCadMoneda:=@gf_ReqCadMoneda;
   case gf.tipo of
   ctfCabinas: begin
     TCibGFacCabinas(gf).OnDetenConteo:=@gf_DetenConteo;
     TCibGFacCabinas(gf).OnTramaLista:=@gf_TramaLista;
   end;
   ctfNiloM: begin
-    TCibGFacNiloM(gf).OnRequiereInfo:=@gf_RequiereInfo;
+    {Se aprovecha aquí para leer los archivos de configuración. No se encontró un mejor
+    lugar, ya que lo que se desea, es que los archivos de configuración se carguen solo
+    una vez, sea que el NILO-m se agrege por el  menú principal o se carge del archivo
+    de configuración.}
+    if not TCibGFacNiloM(gf).ModoCopia then begin
+      //En modo copia, no se cargan las configuraciones
+      TCibGFacNiloM(gf).LeerArchivosConfig;   //si genera error, muestra su mensaje
+    end;
   end;
   end;
   //Agrega

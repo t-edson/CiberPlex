@@ -132,7 +132,13 @@ type
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
 
   TEvCabLogInfo = procedure(cab: TCibFac; msj: string) of object;
-  TEvRequiereInfo = procedure(var NombProg, NombLocal, Usuario: string) of object;
+  //Para requerir información de configuración general a la aplicaicón
+  TEvReqConfigGen = procedure(var NombProg, NombLocal, Usuario: string) of object;
+  //Para requerir información de configuración de moneda a la aplicaicón
+  TEvReqConfigMon = procedure(var SimbMon: string; var numDec: integer; var IGV: Double) of object;
+  //Requiere convertir a formato de moneda, usando el formato de la aplicación
+  TevReqCadMoneda = function(valor: double): string of object;
+
   { TCibGFac }
   {Define a la clase base de donde se derivarán los objetos Grupo de Facturables o Grupo
    Facturbale. Un grupo facturable es un objeto que contiene un conjunto (lista) de
@@ -154,8 +160,6 @@ type
     tipo   : TCibTipFact;   //tipo de grupo facturable
     CategVenta: string;       //categoría de Venta para este grupo
     items  : TCibFac_list;   //lista de objetos facturables
-    OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
-    OnLogInfo      : TEvCabLogInfo;    //Indica que se quiere registrar un mensaje en el registro
     {El campo ModoCopia indica si se quiere trabajar sin conexión (como en un visor).
     Debería fijarse justo después de crear el objeto, para que los ítems a crear, se
     creen con la conexión configurada desde el inicio. No todos los objetos descendientes
@@ -170,7 +174,13 @@ type
     property y: double read Fy write Sety;  //coordenada Y
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
     procedure SetXY(x0, y0: double);
-  public  //constructor y destructor
+  public  //Eventos para que el grupo se comunique con la apliación principal
+    OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
+    OnLogInfo      : TEvCabLogInfo;   //Indica que se quiere registrar un mensaje en el registro
+    OnReqConfigGen : TEvReqConfigGen; //Se requiere información general
+    OnReqConfigMon : TEvReqConfigMon; //Se requiere información de moneda
+    OnReqCadMoneda : TevReqCadMoneda; //Se requiere convertir a foramto de moneda
+  public  //Constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipFact);
     destructor Destroy; override;
   end;
