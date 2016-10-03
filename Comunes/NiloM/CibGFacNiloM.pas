@@ -10,7 +10,7 @@ unit CibGFacNiloM;
 interface
 uses
   Classes, SysUtils, Types, LCLProc, MisUtils, crt, strutils, CibFacturables,
-  CibNiloMConex, CibRegistros, FormNiloTarifario, FormNiloMConex, FormNiloMProp,
+  CibNiloMConex, CibRegistros, FormNiloMConex, FormNiloMProp,
   CibNiloMTarifRut, Globales;
 const
   IDE_EST_LOC = 'l';   //identificador de estado de cabina
@@ -40,7 +40,7 @@ type
     procedure LeeListaLlamadas;
     procedure ProcesaColgado;
     procedure ProcesaDescolgado;
-    procedure ProcesaDigitado(dig: String; tarif: TNiloMTarif);
+    procedure ProcesaDigitado(dig: String; tarif: TNiloMTabTar);
     procedure ProcesarContestada(cansal: String);
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -54,7 +54,7 @@ type
     function AgregarFila: integer;
     procedure EscribeDatosAdicionales;
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
-      CategLocu: string; tarif: TNiloMTarif);
+      CategLocu: string; tarif: TNiloMTabTar);
   public  //constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -65,13 +65,13 @@ type
   private
     nilConex : TNiloConexion;   {Objeto para la conexión al enrutador. A diferencia de
                                  TCPGrupoCabinas, aquí solo se maneja una conexión.}
-    tarif    : TNiloMTarif;      //Objeto para la tarificación
     FestadoCnx: TNilEstadoConex;
     mens_error: TStringList;  //acumula los mensajes de error
     lin_serial: string;     //acumula los datos recibidos hasta completar la línea
     //Funciones para manejo del registro
     procedure AbrirRegistro;
     procedure CerrarRegistro;
+    procedure frmNilomProp_CambiaProp;
     procedure loc_CambiaPropied;
     procedure ErrorLog(mensaje: string);
   private //Funciones para escribir en los archivos de registros
@@ -88,16 +88,22 @@ type
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
   public
-    ArcReg   : string;
-    MsjError : string;  //Bandera - Mensaje de error
+    ArcReg    : string;  //Archivo de registro para el registr propio del enrutador
+    ArcTarif  : string;  //Archivo de configuración de tarifas
+    ArcRutas  : string;  //Archivo de configuración de rutas
+    MsjError  : string;  //Bandera - Mensaje de error
     facCmoneda: Double;
     frmNilomConex: TfrmNiloMConex;
     frmNilomProp: TfrmNiloMProp;
+    tarif     : TNiloMTabTar;      //Contenedor de tarifas
+    rutas     : TNiloMTabRut;      //Contenedor de rutas
     property estadoCnx: TNilEstadoConex read FestadoCnx
              write FestadoCnx;   {"estadoCnx" es una propiedad de solo lectura, pero se
                                    habilita la escritura, para cuando se usa sin Red}
 //    property Puerto: string read nilConex.puerto;
     property PuertoN: string read GetPuertoN write SetPuertoN;
+    //Rutinas para leer archivos de configuración
+    procedure LeerArchivosConfig;  //Lee archivos de tarifas y rutas
   private //servicio de eventos
     procedure nilConex_CambiaEstado(nuevoEstado: TNilEstadoConex);
     procedure nilConex_RegMensaje(NomObj: string; msj: string);
@@ -118,7 +124,6 @@ type
     OnTermWriteLn : TEvProcesarCad;
     //Eventos propios de la clase
     OnRegMsjError : TEvRegMensaje;   //Se solicita registrar un mensaje de error
-    OnRequiereInfo: TEvRequiereInfo; //Se requiere información global
     procedure Conectar;
     procedure Desconectar;
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
@@ -160,7 +165,6 @@ begin
     Result := 0;
   end;
 end;
-
 Function verTiempo(cad: String): String;
 //Recibe cadena de duración del NILO: MMMSS y devuelve tiempo en formato hh:nn:ss.
 //Si hay error devuelve en MsjError
@@ -189,7 +193,6 @@ begin
         msjError := 'Cadena de duración no cumple formato (' + cad + ')';
     end;
 End;
-
 Function verPasos(cad : String; paso : Integer; var seg_restantes: Integer): Integer;
 {Recibe cadena de duración del NILO: MMMSS y devuelve la cantidad de pasos redondeado al
 máximo entero superior.
@@ -220,7 +223,6 @@ begin
         msjError := 'Cadena de duración no cumple formato (' + cad + ')';
     End;
 End;
-
 Function verCosto(const cad, CPaso : String; ccosto : String) : Double;
 //Devuelve el costo de la llamada analizando la duración, el paso y el costo
 //SE PUEDE OPTIMIZAR ????????????????????????????????????
@@ -295,7 +297,6 @@ begin
     If costopaso1 <> -1 Then tmp := tmp + costopaso1;    //Había
     Result := tmp;
 End;
-
 function TCibFacLocutor.AgregarFila: integer;
 {Agrega un registro, a la lista de llamadas. Devuelve índice al último registro.}
 var
@@ -305,7 +306,6 @@ begin
   llamadas.Add(l);
   Result := llamadas.Count-1;
 end;
-
 procedure ActualizaLista();
 //Actualiza la fila del listbox que representa a la llamada
 begin
@@ -385,7 +385,7 @@ begin
     trm.VolcarErrorLog;        //Vuelca también los mensajes de error
     trm.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
 end;
-procedure TCibFacLocutor.ProcesaDigitado(dig : String; tarif: TNiloMTarif);
+procedure TCibFacLocutor.ProcesaDigitado(dig : String; tarif: TNiloMTabTar);
 var
   rr : regTarifa;
 begin
@@ -465,7 +465,7 @@ begin
     llam.HORA_CON := now;      //toma hora de contestación
 end;
 procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
-  CategLocu{categoría de venta para lcoutorios}: string; tarif: TNiloMTarif);
+  CategLocu{categoría de venta para lcoutorios}: string; tarif: TNiloMTabTar);
   function EsLineaCDR: boolean;
   {Indica si la línea recibida es de un CDR de este locutorio:
      '[#]###;' + num_can + '*'}
@@ -508,7 +508,7 @@ begin
 //            MiLista1.Refrescar;           //fuerza actualización
             llam.HORA_INI := now;         //asume la hora de inicio
             llam.NUM_DIG := llam.digitado;   //toma del CDR
-            L := frmNiloTarifario.BuscaTarifa(llam.NUM_DIG);  //Si no encuentra devuelve campos nulos
+            L := tarif.BuscaTarifa(llam.NUM_DIG);  //Si no encuentra devuelve campos nulos
             llam.DESCR_ := L.descripcion;    //Actualiza descripción
             llam.PASO_ := L.paso;            //Actualiza paso
             llam.COSTOP_ := L.costop;        //Actualiza costo por paso
@@ -589,8 +589,8 @@ procedure TCibGFacNiloM.AbrirRegistro();
 var
   NombProg, NombLocal, Usuario: string;
 begin
-  if OnRequiereInfo<>nil then  //Pide información global
-      OnRequiereInfo(NombProg, NombLocal, Usuario);
+  if OnReqConfigGen<>nil then  //Pide información global
+      OnReqConfigGen(NombProg, NombLocal, Usuario);
   ArcReg := NombFinal(rutDatos, NombLocal + '.' + nilConex.puertoN, '.dat');
   if msjError <> '' then exit;
   EscribeLog('');
@@ -602,7 +602,11 @@ begin
     EscribeLog('Fin CIBERPX    --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
     EscribeLog('');
 end;
-
+procedure TCibGFacNiloM.frmNilomProp_CambiaProp;
+{Se produjo un cambio en las propiedades del NILO-m.}
+begin
+  if OnCambiaPropied<>nil then OnCambiaPropied;
+end;
 procedure TCibGFacNiloM.loc_CambiaPropied;
 begin
   //dispara evento
@@ -621,18 +625,18 @@ function TCibGFacNiloM.tarif_LogErr(mensaje: string): integer;
 var
   NombProg, NombLocal, Usuario: string;
 begin
-  if OnRequiereInfo<>nil then  //Pide información global
-      OnRequiereInfo(NombProg, NombLocal, Usuario);
-  PLogErr(usuario, mensaje);
+  if OnReqConfigGen<>nil then  //Pide información global
+      OnReqConfigGen(NombProg, NombLocal, Usuario);
+  Result := PLogErr(usuario, mensaje);
 end;
 function TCibGFacNiloM.tarif_LogInf(mensaje: string): integer;
 //Se solicita registrar un mensaje informativo
 var
   NombProg, NombLocal, Usuario: string;
 begin
-  if OnRequiereInfo<>nil then  //Pide información global
-      OnRequiereInfo(NombProg, NombLocal, Usuario);
-  PLogInf(usuario, mensaje);
+  if OnReqConfigGen<>nil then  //Pide información global
+      OnReqConfigGen(NombProg, NombLocal, Usuario);
+  Result := PLogInf(usuario, mensaje);
 end;
 //Funciones para escribir en los archivos de registros
 procedure TCibGFacNiloM.VolcarErrorLog;
@@ -753,6 +757,17 @@ procedure TCibGFacNiloM.SetCadEstado(AValue: string);
 begin
 
 end;
+procedure TCibGFacNiloM.LeerArchivosConfig;
+{Lee el contenido de los archivos de tarifas y rutas y los carga en "tarif" y "rutas".
+ Formalmente esto debería ser parte las propiedades, pero como es una rutina  pesada, y
+ los archivos de tarifas y rutas son grandes, el proceso de carga se maneja como una
+ rutina separada.
+ Se debería ejecutar solo una vez al inicio.}
+begin
+  frmNilomProp.CargarArchivosConfig;
+  frmNilomProp.ValidarTarifario;  //puede mostrar mensaje de error
+  frmNilomProp.ValidarRutas;      //puede mostrar mensaje de error
+end;
 //Rutinas para escribir en el terminal y en el registro
 procedure TCibGFacNiloM.nilConex_TermWrite(cad: string);
 {Se usa para refrescar al terminal}
@@ -788,8 +803,8 @@ que acceder a objetos fuera del alcance de esta librería. }
     frmContadorI.txtContNilo = tmp
     frmContadorI.txtHistNilo = "Actualizado a las " & Time}
   end else begin
-    if OnRequiereInfo<>nil then  //Pide información global
-        OnRequiereInfo(NombProg, NombLocal, Usuario);
+    if OnReqConfigGen<>nil then  //Pide información global
+        OnReqConfigGen(NombProg, NombLocal, Usuario);
     //Pasa el mensaje a las cabinas.
     for fac in items do begin
       //Aquí se puede escribir datos adicionales en el terminal y el registro
@@ -861,10 +876,18 @@ debugln('-Creando: '+ nombre0);
   tipo       := ctfNiloM;
   frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
   frmNilomProp:= TfrmNiloMProp.Create(nil);
+  frmNilomProp.onCambiaProp:=@frmNilomProp_CambiaProp;
   nilConex    := TNiloConexion.Create;  //Crea la conexión serial
-  tarif       := TNiloMTarif.Create;    //crea tarifas
+  //Configuración de tarifas y rutas
+  tarif       := TNiloMTabTar.Create;    //crea tarifas
   tarif.OnLogErr:=@tarif_LogErr;
   tarif.OnLogInf:=@tarif_LogInf;
+  rutas       := TNiloMTabRut.Create;
+  rutas.OnLogErr:=@tarif_LogErr;
+  rutas.OnLogInf:=@tarif_LogInf;
+
+  ArcTarif := rutApp + DirectorySeparator + 'tarifario.txt';  //valor fijo por ahora
+  ArcRutas := rutApp + DirectorySeparator + 'rutas.txt';  //valor fijo por ahora
   facCmoneda  := 0.1;  //valor por defecto
   FestadoCnx  := cecMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
   //Conectar;  //No inicia la conexión
@@ -892,6 +915,7 @@ destructor TCibGFacNiloM.Destroy;
 begin
 debugln('-destruyendo: '+ self.Nombre);
   mens_error.Destroy;
+  rutas.Destroy;
   tarif.Destroy;
   nilConex.Destroy;
   frmNilomProp.Destroy;

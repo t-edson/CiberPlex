@@ -45,7 +45,6 @@ type
     descripc : String;  //Descripción de llamada
     //datos generales de la llamada (campos calculados)
     //Son necesarios para el correcto procesamiento en frmCabina
-    //Se sugiere no cambiar los nombres para evitar que VB cambie el "case"
     HORA_INI : TDateTime; //Hora de inicio de llamada
     HORA_CON : TDateTime; //hora de inicio de contestación
     NUM_DIG : String;     //numero digitado
