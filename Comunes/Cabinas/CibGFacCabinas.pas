@@ -15,12 +15,6 @@ uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
   MisUtils, CibTramas, FormInicio, CibFacturables,
   CibCabinaBase, CibCabinaTarifas, FormVisorMsjRed, FormAdminTarCab, FormAdminCabinas;
-const
-  IDE_EST_CAB = 'c'; {Identificador de línea de estado de cabina. Debe ser de un caracter.
-                      El formato de estado, para una cabina es:
-                      c<Estado de cabina>
-                       <Estado de boleta>
-                      }
 
 type
   TCibFacCabina = class;
@@ -120,23 +114,6 @@ type
     constructor CreateSinRed;  //Crea objeto sin red
     destructor Destroy; override;
   end;
-//  TCPCabina_list = specialize TFPGObjectList<TCPCabina>;   //lista de bloques
-
-  { TCPDecodCadEstado }
-  {Objeto sencillo que permite decodificar una cadena de estado de un grupo facturable. }
-  { TODO : Ver si solo es aplicable a las cabinas, y de ser así, se deberái incluir dentro de la clase  TCPGrupoCabina }
-  TCPDecodCadEstado = class
-    private
-      lineas: TStringList;
-      pos1, pos2: Integer;
-    public
-      procedure Inic(const cad: string);
-      function ExtraerNombre(const lin: string): string;
-      function Extraer(var car: char; var nombre, cadena: string): boolean;
-    public  //constructor y destructor
-      constructor Create;
-      destructor Destroy; override;
-  end;
 
   TForm_list = specialize TFPGObjectList<TfrmVisorMsjRed>;
   { TCibGFacCabinas }
@@ -149,7 +126,6 @@ type
     procedure timer1Timer(Sender: TObject);
   private
     timer1 : TTimer;
-    decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
     ventMsjes: TForm_list;     //Ventanas de mensajes de red
     procedure cab_LogInfo(cab: TCibFac; msj: string);
     procedure cab_DetenConteo(cab: TCibFacCabina);
@@ -165,7 +141,6 @@ type
     procedure SetCadPropied(AValue: string); override;
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
-    procedure SetModoCopia(AValue: boolean); override;
   public
     tarif: TCPTarifCabinas; //tarifas de cabina
     GrupTarAlquiler: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
@@ -179,12 +154,12 @@ type
     function Toleran: TDateTime;   //acceso a la tolerancia
     function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
       ): TfrmVisorMsjRed;
-  public  //operaciones con cabinas
+  public  //Operaciones con cabinas
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
-  public  //constructor y destructor
+  public  //Constructor y destructor
     procedure MuestraConexionCabina;
-    constructor Create(nombre0: string);
+    constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
   end;
 
@@ -418,7 +393,7 @@ function TCibFacCabina.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
 begin
-  Result := IDE_EST_CAB + {se omite la coma para reducir tamaño}
+  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
          Nombre + #9 +    {el nombre es obligatorio para identificar unívocamente a la cabina}
          I2f(cabConex.estadoN)+ #9 + {se coloca primero el Estado de la conexión, porque
              es el campo que siempre debe actualizarse, cuando hay conexión remota activada}
@@ -479,19 +454,7 @@ begin
     FCosto            := 0;   //el costo se lee directamente en el campo FCosto
   end;
   //Agrega información de boletas
-  boleta.ItemClear;    {se pensó en evitar limpiar toda la lista (por eficiencia)
-                        cambiando "Count", pero esto dejaba los nodos en NIL }
-  for i:=1 to high(lineas) do begin
-    lin := lineas[i];
-    if trim(lin) = '' then continue;
-    //Actualiza
-    it := TCibItemBoleta.Create;
-    delete(lin, 1, 1);  //quita espacio
-    it.CadEstado := lin;
-    boleta.ItemAdd(it, false);  //sin calculo, por eficiencia
-  end;
-  ///////////////// Actualizar
-  boleta.Recalcula;
+  LeerEstadoBoleta(lineas);
 end;
 //rutinas de actualización de campos de estado
 procedure TCibFacCabina.ActualizaTranscYCosto;
@@ -827,25 +790,14 @@ procedure TCibGFacCabinas.SetCadEstado(AValue: string);
 {Fija el estado de las cabinas, a partir de una lista de cadenas}
 var
   nomb, cad: string;
-  cab: TCibFacCabina;
   car: char;
+  it: TCibFac;
 begin
   decod.Inic(AValue);
   while decod.Extraer(car, nomb, cad) do begin
     if cad = '' then continue;
-    cab := CabPorNombre(nomb);
-    if cab<>nil then cab.SetCadEstado(cad);
-  end;
-end;
-procedure TCibGFacCabinas.SetModoCopia(AValue: boolean);
-{Fija el modo de las cabina. El ModoCopia, debería fijarse antes de crear a los objetos,
-pero se implementa este método por si se hace después, cuando ya hay ítems.}
-var
-  c : TCibFac;
-begin
-  inherited SetModoCopia(AValue);
-  for c in items do begin
-    TCibFacCabina(c).SinRed := ModoCopia;
+    it := ItemPorNombre(nomb);
+    if it<>nil then it.CadEstado := cad;
   end;
 end;
 function TCibGFacCabinas.ListaCabinas: string;
@@ -914,15 +866,15 @@ begin
     debugln('  Nomb:' + c.Nombre + ' SinRed:' + B2f(TCibFacCabina(c).SinRed));
   end;
 end;
-constructor TCibGFacCabinas.Create(nombre0: string);
+constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
 begin
   inherited Create(nombre0, ctfCabinas);
+  FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 //debugln('-Creando: '+ nombre0);
   //Se incluye un objeto TGrupoTarAlquiler para la tarificación
   GrupTarAlquiler := TGrupoTarAlquiler.Create;
   tarif := TCPTarifCabinas.Create(GrupTarAlquiler);
   timer1 := TTimer.Create(nil);
-  decod := TCPDecodCadEstado.Create;
   timer1.Interval:=1000;
   timer1.OnTimer:=@timer1Timer;
   CategVenta := 'COUNTER';
@@ -956,7 +908,6 @@ begin
   OnRegMensaje   := nil;
   OnDetenConteo  := nil;
   OnLogInfo      := nil;
-  decod.Destroy;
   timer1.OnTimer:=nil;
   timer1.Destroy;
   tarif.Destroy;
@@ -967,74 +918,6 @@ begin
   end;
   GrupTarAlquiler.Destroy;
   inherited Destroy;  {Aquí se hace items.Destroy, que puede demorar por los hilos}
-end;
-
-{ TCPDecodCadEstado }
-procedure TCPDecodCadEstado.Inic(const cad: string);
-{Inicia la exploración de la cadenas}
-begin
-  lineas.Text := cad;
-  pos1 := 0;  //posición inicial alta
-  pos2 := -1;
-  if lineas.Count<2 then begin
-    MsgErr('Error en formato de cadena de estado: ' + cad);
-    exit;
-  end;
-  lineas.Delete(0);              //elimina la línea: "<0,   Cabinas"
-  lineas.Delete(lineas.Count-1); //elimina la línea: ">"
-end;
-function TCPDecodCadEstado.ExtraerNombre(const lin: string): string;
-var
-  p: integer;
-begin
-  p := pos(#9, lin);  //busca delimitador
-  if p=0 then begin
-    //no hay delimitador, toma todo
-    Result := lin;
-  end else begin
-    Result := copy(lin, 2, p-2);
-  end;
-end;
-function TCPDecodCadEstado.Extraer(var car: char; var nombre, cadena: string): boolean;
-{Extrae una subcadena (de una o varias líneas) de la cadena de estado, que corresponden a
-los datos de una cabina). Si no encuentra más datos, devuelve FALSE}
-var
-  linea: String;
-begin
-  if lineas.Count=0 then exit(false);
-  cadena := '';
-  while (lineas.Count>0) do begin
-    linea := lineas[0];
-//    res := TCPGrupoFacturable.ExtraerEstado(lest, cad, nombre, tipo);
-    if trim(linea) = '' then begin
-      lineas.Delete(0);  //elimina línea
-      continue;  //filtra líneas vacías
-    end;
-    if cadena = '' then begin
-      //Primera línea.
-      car := linea[1];   //Aprovecha para capturar el caracter identificador.
-      nombre := ExtraerNombre(linea);  //Aprovecha para capturar el nombre.
-      cadena := linea;   //Copia la primera línea
-    end else begin
-      //Líneas adicionales
-      cadena := cadena + LineEnding + linea;
-    end;
-    lineas.Delete(0);  //elimina línea leída
-    if (lineas.Count>0) and  //hay más líneas
-       (lineas[0][1]<>' ') then begin //y sigue una línea de datos
-      break;
-    end;
-  end;
-  exit(true);   //sale, pero hay mas datos
-end;
-constructor TCPDecodCadEstado.Create;
-begin
-  lineas := TStringList.Create;
-end;
-destructor TCPDecodCadEstado.Destroy;
-begin
-  lineas.Destroy;
-  inherited Destroy;
 end;
 
 end.
