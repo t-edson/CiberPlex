@@ -1,3 +1,43 @@
+0.9.7
+=====
+Se elimina el método "override" TCibGFacCabinas.SetModoCopia(), ya que se supone que
+el modo de copia, no va a cambiar en el transcurso de la ejecución. 
+Se modifican los constructores de las clases TCibGruposFacturables, TCibGFacCabinas y
+TCibGFacNiloM, para que incluyan el parámetro ModoCopia y se tenga definido el modo 
+de trabajo desde la creación del objeto.
+Se hace que la propiedad ModoCopia, sea de solo lectura, en las clases que la 
+implementan.
+Se agregan más opciones en el formulario de propiedades del NILO-m, y se modifica el
+formulario de conexiones del NILO-m.
+Se completa el código para la recuperación de estado de los locutorios.
+Se mueve la clase TCPDecodCadEstado de la unidad CibGFacCabinas a CibFacturables, de 
+modo que se puede usar ahora en todos los Grupos de facturables.
+Se mueve el campo decod de CibGFacCabinas a CibGFac, de modo que se puede usar ahora 
+en todos los Grupos de facturables.
+Se cambia el formato de la cadena de estado de los facturables, dejando de usar un 
+caracter especial para cada tipo de facturable. Ahora solo se usa '.'.
+
+0.9.6
+=====
+Se implementa el tratamiento de errores al leer el tarifario.
+Se elimina la unidad CibNiloMPreproc, y se mueven sus rutinas a la unidad 
+CibNiloMTarifRut.
+Se unifican las rutinas que definen la sintaxis del tarifario para usar la misma 
+sintaxis, tanto para el resaltador, como para el lexer.
+Se encapsulan las rutinas de procesamiento de definiciones en una nueva clase TContextTar, 
+que es descendiente de un contexto.
+Se mueven campos y funciones independientes, para dentro de la clase TContextTar.
+Se corrige el procesamiento de las tarifas. Se simplifican y modifican diversas rutinas de 
+lectura del tarifario, para adaptarlas a la manera de trabajo de Object Pascal.
+Se crean las clases para los contenedores de las tablas de tarifas y de rutas: TNiloMTabTar
+ y TNiloMTabRut, y la clase padre TNiloMTab.
+Se habilita el procesamiento de las tablas de rutas del NILO-m.
+Se mejora la ventana de configuración "Config", en cuanto a propiedades de moneda y se 
+cambia el campo IGV para que acepte decimales.
+Se agregan los eventos OnRegConfigMon y TevReqCadMoneda en TCibGFac y en 
+TCibGruposFacturables, y se configuran.
+Se crea el método TConfig.CadMon().
+
 0.9.5
 =====
 Se crean las clases TogFac y TogGFac, en la unidad ObjGraficos, para servir de ancestro 
@@ -10,9 +50,16 @@ Se implementa el cambio de coordenadas de los objetos, cuando se modifican en el
 Se corrige la actualización de estado en CiberPlex Visor.
 Se corrige la actualización de propiedades y estados en los objetos gráficos, ya que 
 no son necesarios porque actualmente se usa referencias.
-Se modifican varios método dentro de frameVisCPlex, para generalizar el código, de 
+Se modifican varios métodos dentro de frameVisCPlex, para generalizar el código, de 
 modo que sea más fácil agregar nuevos objetos gráficos, para cuando se crean 
 facturables nuevos y grupos nuevos.
+Se cambia de nombre a la unidad CibNiloMBase por CibNiloMConex. Se elimina el formulario 
+FormNiloTarifario y se crea la unidad CibNiloMTarifRut, para alojar a las definiciones
+para la tarificación y el enrutamiento.
+Se cambia de nombre al formulario FormNiloMTerminal a FormNiloMConex, y se habilita la
+administración del puerto serial.
+Se crea el formulario FormNiloMProp y se incluyen las principales propiedades de 
+configuración.
 
 
 0.9.4
