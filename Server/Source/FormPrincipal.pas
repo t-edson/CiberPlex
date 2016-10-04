@@ -500,14 +500,14 @@ begin
   ncabTxt := InputBox('', 'Número de cabinas', '5');
   if not TryStrToInt(ncabTxt, ncab) then exit;
   nom := 'Cabinas'+IntToStr(Config.grupos.NumGrupos+1);   //nombre
-  grupCabinas := TCibGFacCabinas.Create(nom);  //crea grupo
+  grupCabinas := TCibGFacCabinas.Create(nom, false);  //crea grupo
   Config.grupos.Agregar(grupCabinas);  //agrega el grupo}
 end;
 procedure TfrmPrincipal.acEdiInsEnrutExecute(Sender: TObject); //Inserta Enrutador
 var
   grupNILOm: TCibGFacNiloM;
 begin
-  grupNILOm := TCibGFacNiloM.Create('NILO-m');
+  grupNILOm := TCibGFacNiloM.Create('NILO-m', false);
   //Inicializa Nilo-m
   //grupNILOm.OnRegMsjError:=@NiloM_RegMsjError;
   //grupNILOm.Conectar;
