@@ -23,7 +23,6 @@ type
     procedure gf_LogInfo(cab: TCibFac; msj: string);
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
-    procedure SetModoCopia(AValue: boolean);
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
       var tipo: TCibTipFact): boolean;
     procedure gf_DetenConteo(cab: TCibFacCabina);
@@ -44,7 +43,7 @@ type
     DeshabEven: boolean;     //deshabilita los eventos
     property ModoCopia: boolean  {Indica si se quiere manejar al objeto sin conexión (como en un visor),
                                   debería hacerse antes de que se agreguen objetos a "items"}
-             read FModoCopia write SetModoCopia;
+             read FModoCopia;
     property CadPropiedades: string read GetCadPropiedades write SetCadPropiedades;
     property CadEstado: string read GetCadEstado write SetCadEstado;
     function NumGrupos: integer;
@@ -54,7 +53,7 @@ type
     procedure gf_TramaLista(facOri: TCibFac; tram: TCPTrama;
       tramaLocal: boolean);
   public  //constructor y destructor
-    constructor Create(nombre0: string);
+    constructor Create(nombre0: string; ModoCopia0: boolean=false);
     destructor Destroy; override;
   end;
 
@@ -446,21 +445,20 @@ begin
   //
   lineas.Delete(0);   //elimina primera línea
   for lin in lineas do begin
-    if copy(lin,1,2) = '[[' then begin
+    if copy(lin,1,2) = '[[' then begin  //Marca de inicio
       tipGru := StrToInt(copy(lin, 3, length(lin)));
       tmp:='';  //inicia acumulación
-    end else if lin = ']]' then begin
-      //marca de fin, termina acumulación
+    end else if lin = ']]' then begin  //Marca de fin,
+      //Ya se tiene la cadena de propiedades para el nuevo grupo
+      //Crea al grupo, en el mismo modo (ModoCopia), con que se ha creado esre objeto.
       case TCibTipFact(tipGru) of
       ctfCabinas: begin
-        grupCab := TCibGFacCabinas.Create('CabsSinProp');  //crea la instancia
-        grupCab.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
+        grupCab := TCibGFacCabinas.Create('CabsSinProp', ModoCopia);  //crea la instancia
         grupCab.CadPropied:=tmp;    //asigna propiedades
         Agregar(grupCab);         //agrega a la lista
       end;
       ctfNiloM: begin
-        gruNiloM := TCibGFacNiloM.Create('NiloSinProp');
-        gruNiloM.ModoCopia := FModoCopia;   //fija modo de creación, antes de crear objetos
+        gruNiloM := TCibGFacNiloM.Create('NiloSinProp', ModoCopia);
         gruNiloM.CadPropied:=tmp;
         Agregar(gruNiloM);         //agrega a la lista
       end;
@@ -470,17 +468,6 @@ begin
     end;
   end;
   lineas.Destroy;
-end;
-procedure TCibGruposFacturables.SetModoCopia(AValue: boolean);
-var
-  gf : TCibGFac;
-begin
-//  if FModoCopia=AValue then Exit;
-  FModoCopia:=AValue;   //Fija modo
-  for gf in items do begin   {Transfiere a todos los posibles objetos creados, aunque lo
-                           normal sería que se asigne el modo, cuando no hay ítems}
-    gf.ModoCopia:= AValue
-  end;
 end;
 function TCibGruposFacturables.GetCadEstado: string;
 var
@@ -578,9 +565,10 @@ begin
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 //constructor y destructor
-constructor TCibGruposFacturables.Create(nombre0: string);
+constructor TCibGruposFacturables.Create(nombre0: string; ModoCopia0: boolean = false);
 begin
   nombre := nombre0;
+  FModoCopia:=ModoCopia0;   //Define el modo de trabajo
   items := TCibGFact_list.Create(true);
 end;
 destructor TCibGruposFacturables.Destroy;

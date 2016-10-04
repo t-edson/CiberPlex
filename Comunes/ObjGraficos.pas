@@ -142,7 +142,7 @@ public
   icoTelCol   : TGraphic;    //Teléfono colgado
   icoTelDes   : TGraphic;    //Teléfono descolgado
   icoTelDes2  : TGraphic;    //Teléfono descolgado con llamada contestada
-  procedure DibujarTiempo;
+  procedure DibujarDatosLlam;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
   function loc: TCibFacLocutor; inline;  //acceso a la cabina
 protected
@@ -458,22 +458,27 @@ begin
   inherited;
 end;
 { TogNiloM }
-procedure TogNiloM.DibujarTiempo;
+procedure TogNiloM.DibujarDatosLlam;
 var
   tmp: string;
 begin
   //dibuja cuadro de estado
   v2d.SetText(clBlack, 10,'',false);
-  v2d.FijaRelleno(TColor($80ff80));
-  v2d.RectangR(x, y, x+60, y+36);
-  //muestra tiempo transcurrido
-//  DateTimeToString(tmp, 'hh:mm:ss', now-Fac.hor_ini);  //convierte
-  DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
-  v2d.Texto(x+4,y+1,tmp);
-  //Genera Tiempo solicitado en texto descriptivo.
-  DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
-  //escribe tiempo
-  v2d.Texto(x+4,y+17,tmp);
+  if loc.descolg then begin    //Está descolgado
+    v2d.FijaRelleno(TColor($D0D0D0));
+  //  v2d.FijaRelleno(TColor($80ff80));
+    v2d.RectangR(x, y, x+85, y+48);
+    //muestra tiempo transcurrido
+  //  DateTimeToString(tmp, 'hh:mm:ss', now-Fac.hor_ini);  //convierte
+    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
+    v2d.Texto(x+4,y+1,tmp);
+    //Genera Tiempo solicitado en texto descriptivo.
+    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
+    //escribe tiempo
+    v2d.Texto(x+4,y+17,tmp);
+  end else begin    //Está colgado
+    //No muestra cuadro
+  end;
 end;
 procedure TogNiloM.Dibujar();
 var
@@ -499,9 +504,10 @@ begin
 //  v2d.RectRedonR(x, y, x2, y + ALT_ENCAB_DEF);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, nombre);
-  //dibuja íconos de PC y de conexión
+  //dibuja íconos de teléfono
   v2d.DibujarImagenN(icoTelCol, x+25, y+40);
-  DibujarTiempo;
+  //Dibuja datos de llamada
+  DibujarDatosLlam;
   //muestra consumo
   v2d.FijaLapiz(psSolid, 1, clBlack);
   v2d.FijaRelleno(TColor($D5D5D5));

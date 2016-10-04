@@ -110,6 +110,7 @@ type
     procedure SetCadPropied(AValue: string);virtual; abstract;
     procedure Setx(AValue: double);
     procedure Sety(AValue: double);
+    procedure LeerEstadoBoleta(var lineas: TStringDynArray);
   public  //eventos generales
     OnCambiaEstado: procedure of object;  //cuando cambia alguna variable de estado
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
@@ -139,6 +140,21 @@ type
   //Requiere convertir a formato de moneda, usando el formato de la aplicación
   TevReqCadMoneda = function(valor: double): string of object;
 
+  { TCPDecodCadEstado }
+  {Objeto sencillo que permite decodificar una cadena de estado de un grupo facturable. }
+  TCPDecodCadEstado = class
+    private
+      lineas: TStringList;
+      pos1, pos2: Integer;
+    public
+      procedure Inic(const cad: string);
+      function ExtraerNombre(const lin: string): string;
+      function Extraer(var car: char; var nombre, cadena: string): boolean;
+    public  //constructor y destructor
+      constructor Create;
+      destructor Destroy; override;
+  end;
+
   { TCibGFac }
   {Define a la clase base de donde se derivarán los objetos Grupo de Facturables o Grupo
    Facturbale. Un grupo facturable es un objeto que contiene un conjunto (lista) de
@@ -148,7 +164,7 @@ type
     Fx: double;
     Fy: double;
     FModoCopia: boolean;
-    procedure SetModoCopia(AValue: boolean); virtual;
+    decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
     function GetCadPropied: string; virtual; abstract;
     procedure SetCadPropied(AValue: string); virtual; abstract;
     function GetCadEstado: string; virtual; abstract;
@@ -166,7 +182,7 @@ type
     de TCibGFac, tienen que usar este campo. Solo les será útil a los que
     manejan conexión. Crear objetos facturables sin conexión es útil para los objetos
     creados en el visor, ya que estos, solo deben funcionar como objetos-copia.}
-    property ModoCopia: boolean read FModoCopia write SetModoCopia;
+    property ModoCopia: boolean read FModoCopia;
     property CadEstado: string read GetCadEstado write SetCadEstado;  //cadena de estado
     property CadPropied: string read GetCadPropied write SetCadPropied;  //cadena de propiedades
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.
@@ -186,7 +202,6 @@ type
   end;
   //Lista de grupos facturables
   TCibGFact_list = specialize TFPGObjectList<TCibGFac>;
-
 
 implementation
 //Funciones especiales de conversión
@@ -451,6 +466,29 @@ begin
   Fy:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
+procedure TCibFac.LeerEstadoBoleta(var lineas: TStringDynArray);
+{Recibe un arreglo de líneas, con información de la boleta (a partir de la segunda línea).
+ La decodifica y carga las propiedades de la boleta ahí guardada. En otras palabras,
+ decodifica lo que ha generado, TCibBoleta.GetCadEstado(), pero de un arreglo. }
+var
+  i: Integer;
+  it: TCibItemBoleta;
+  lin: String;
+begin
+  boleta.ItemClear;    {se pensó en evitar limpiar toda la lista (por eficiencia)
+                        cambiando "Count", pero esto dejaba los nodos en NIL }
+  for i:=1 to high(lineas) do begin
+    lin := lineas[i];
+    if trim(lin) = '' then continue;
+    //Actualiza
+    it := TCibItemBoleta.Create;
+    delete(lin, 1, 1);  //quita espacio
+    it.CadEstado := lin;
+    boleta.ItemAdd(it, false);  //sin calculo, por eficiencia
+  end;
+  ///////////////// Actualizar
+  boleta.Recalcula;
+end;
 procedure TCibFac.LimpiarBol;
 begin
   boleta.ItemClear;
@@ -476,11 +514,6 @@ begin
   inherited Destroy;
 end;
 { TCibGFac }
-procedure TCibGFac.SetModoCopia(AValue: boolean);
-begin
-  //if FModoCopia=AValue then Exit;
-  FModoCopia:=AValue;
-end;
 procedure TCibGFac.Setx(AValue: double);
 begin
   if Fx=AValue then exit;
@@ -517,11 +550,89 @@ begin
   items  := TCibFac_list.Create(true);
   nombre := nombre0;
   tipo   := tipo0;
+  decod := TCPDecodCadEstado.Create;
 end;
 destructor TCibGFac.Destroy;
 begin
+  decod.Destroy;
   items.Destroy;
   inherited Destroy;
 end;
+{ TCPDecodCadEstado }
+procedure TCPDecodCadEstado.Inic(const cad: string);
+{Inicia la exploración de la cadenas}
+begin
+  lineas.Text := cad;
+  pos1 := 0;  //posición inicial alta
+  pos2 := -1;
+  if lineas.Count<2 then begin
+    MsgErr('Error en formato de cadena de estado: ' + cad);
+    exit;
+  end;
+  lineas.Delete(0);              //elimina la línea: "<0,   Cabinas"
+  lineas.Delete(lineas.Count-1); //elimina la línea: ">"
+end;
+function TCPDecodCadEstado.ExtraerNombre(const lin: string): string;
+var
+  p: integer;
+begin
+  p := pos(#9, lin);  //busca delimitador
+  if p=0 then begin
+    //no hay delimitador, toma todo
+    Result := lin;
+  end else begin
+    Result := copy(lin, 2, p-2);
+  end;
+end;
+function TCPDecodCadEstado.Extraer(var car: char; var nombre, cadena: string): boolean;
+{Extrae una subcadena (de una o varias líneas) de la cadena de estado, que corresponden a
+los datos de un facturable. Si no encuentra más datos, devuelve FALSE.
+La cadena de estado, tiene la forma:
 
+cCab1	0	1899:12:30:00:00:00	1	2016:10:03:22:04:23	1899:12:30:00:15:00	F	F	1833	1.5
+ [b]0	20161003215656872	2	COUNTER	INTERNET		Alquiler PC: 0m(01:07:12)	1	50.5	50.5	0	0		F
+cCab2	3	1899:12:30:00:00:00	1	2016:10:03:16:48:23	1899:12:30:00:15:00	F	F	20793	12
+cCab3	3	1899:12:30:00:00:00	1	2016:10:03:22:04:27	1899:12:30:00:15:00	F	F	1829	1.5
+
+En este caso, se tienen 3 cadenas de estado de facturables. La primera tiene 2 líneas
+miestras que las otras dos, son de solo una línea.
+}
+var
+  linea: String;
+begin
+  if lineas.Count=0 then exit(false);
+  cadena := '';
+  while (lineas.Count>0) do begin
+    linea := lineas[0];
+//    res := TCPGrupoFacturable.ExtraerEstado(lest, cad, nombre, tipo);
+    if trim(linea) = '' then begin
+      lineas.Delete(0);  //elimina línea
+      continue;  //filtra líneas vacías
+    end;
+    if cadena = '' then begin
+      //Primera línea.
+      car := linea[1];   //Aprovecha para capturar el caracter identificador.
+      nombre := ExtraerNombre(linea);  //Aprovecha para capturar el nombre.
+      cadena := linea;   //Copia la primera línea
+    end else begin
+      //Líneas adicionales
+      cadena := cadena + LineEnding + linea;
+    end;
+    lineas.Delete(0);  //elimina línea leída
+    if (lineas.Count>0) and  //hay más líneas
+       (lineas[0][1]<>' ') then begin //y sigue una línea de datos
+      break;
+    end;
+  end;
+  exit(true);   //sale, pero hay mas datos
+end;
+constructor TCPDecodCadEstado.Create;
+begin
+  lineas := TStringList.Create;
+end;
+destructor TCPDecodCadEstado.Destroy;
+begin
+  lineas.Destroy;
+  inherited Destroy;
+end;
 end.

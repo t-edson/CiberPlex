@@ -288,7 +288,6 @@ var
 begin
   //Actualiza el contenido del TCibGruposFacturables local
   grupos.items.Clear;  {Para empezar a crear los objetos en ModoCopia TRUE}
-  grupos.ModoCopia := true;   //para que cree sus objetos sin conexión
   grupos.CadPropiedades := cadProp;  //copia propiedades de todos los grupos
   {Crea o elimina objetos gráficos (que representan a objetos TCibGFac) de acuerdo al
   contenido de "grupos".}
@@ -343,7 +342,7 @@ begin
   motEdi := TModEdicion.Create(PaintBox1);
   motEdi.OnObjectsMoved:=@motEdiObjectsMoved;
   decod := TCPDecodCadEstado.Create;
-  grupos:= TCibGruposFacturables.Create('GrupVis');
+  grupos:= TCibGruposFacturables.Create('GrupVis', true);  //Crea en modo copia
 end;
 destructor TfraVisCPlex.Destroy;
 begin
