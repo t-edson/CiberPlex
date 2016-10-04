@@ -3,7 +3,7 @@ unit FormNiloMConex;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, Buttons, Spin, MisUtils;
+  ExtCtrls, Buttons, Spin, ComCtrls, MisUtils;
 type
   TEvCibNiloMEnviarCom = procedure(com: string) of object;   //
   { TfrmNiloMConex }
@@ -15,13 +15,14 @@ type
     btnConect: TButton;
     btnDescon: TButton;
     cmbPuerto: TComboBox;
+    PageControl1: TPageControl;
+    tabSerial: TTabSheet;
+    tabConexiones: TTabSheet;
     Timer1: TTimer;
     Label1: TLabel;
     Panel2: TPanel;
-    Panel3: TPanel;
     txtComando: TEdit;
     Memo1: TMemo;
-    Panel1: TPanel;
     procedure btnAceptarClick(Sender: TObject);
     procedure btnAplicarClick(Sender: TObject);
     procedure btnCancelarClick(Sender: TObject);

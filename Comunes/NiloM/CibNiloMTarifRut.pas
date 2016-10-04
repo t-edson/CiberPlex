@@ -18,8 +18,6 @@ type
   regTarifa = class
     //Campos leidos directamente del archivo tarifario
     serie   : String;     //serie de la tarifa
-    costop  : String;     {costo del paso tal y como se lee del tarifario
-                          (puede incluir sintaxis de subpaso o costo de paso 1)}
     categoria : string;   //categoría de llamada
     descripcion: String;  //Descripción de la serie
     //Campos calculados
@@ -30,7 +28,8 @@ type
     Nsubcosto: Double;    //Valor del subcosto en flotante
     HayCPaso1: Boolean;   //Indica si hay costo de paso 1
     NCpaso1  : Double;    //Costo del Paso 1 en flotante
-    function  paso: String;
+    function paso: String;  //Paso como cadena
+    function costop: string;  //Costo comoc cadena
     procedure assign(reg: regTarifa);   //para copia
   end;
   regTarifa_list = specialize TFPGObjectList<regTarifa>;
@@ -111,19 +110,18 @@ type
   {Contenedor para la tabla de tarifas}
   TNiloMTabTar = class(TNiloMTab)
   private
-    minCostop, maxCostop: Double;
     nlin : integer;
     ctx  : TContextTar;   //contexto para procesar el tarifario
     procedure ActualizarMinMax;
     function BuscaTarifaI(num: String): regTarifa;
-    function regTarif_DeEdi(r: regTarifa; cad: string): string;
-    procedure VerificaTarifa(r: regTarifa; facCmoneda: double);
+    function regTarif_DeEdi(r: regTarifa; cad: string; facCmoneda: double): string;
     procedure VerificFinal(var numlin: Integer);
   public
-    monNil : string;
+    monNil : string;   //símbolo de moneda a grabar en el NILO-m
     tarifasTmp: regTarifa_list;
     tarifas: regTarifa_list;
     tarNula: regTarifa;  //tarifa con valores nulos
+    minCostop, maxCostop: Double;   //costo mínimo y máximo
     function BuscaTarifa(num: String): regTarifa;
     procedure CargarTarifas(lins: TStrings; facCmoneda: double);
 //    function CargarTarifas(archivo: String; facCmoneda: double): Integer;
@@ -217,15 +215,13 @@ end;
 procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
 {Configura la sintaxis de un resaltador, para que reconozca la sintaxis de una tabla de
 rutas para un NILO-mC/D/E}
-var
-  tkPreproc: TSynHighlighterAttributes;
 begin
   hl.ClearSpecials;               //para empezar a definir tokens
   hl.CreateAttributes;            //Limpia atributos
   hl.ClearMethodTables;           //limpìa tabla de métodos
-  tkPreproc := hl.NewTokType('preprocesador');
-  tkPreproc.Foreground:=clRed;        //color de texto
-  tkPreproc.Style:=[fsBold];
+  attPrepro := hl.NewTokType('preprocesador');
+  attPrepro.Foreground:=clRed;        //color de texto
+  attPrepro.Style:=[fsBold];
   hl.tkKeyword.Style:=[fsBold];
   //Define tokens. Notar que la definición de número es particular
   hl.DefTokIdentif('[$A-Za-z_]', '[A-Za-z0-9_]*');
@@ -234,7 +230,7 @@ begin
   hl.DefTokDelim('//','',hl.tkComment);
   hl.tkComment.Style:=[];
   //define palabras claves
-  hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', tkPreproc);
+  hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', attPrepro);
   hl.Rebuild;  //reconstruye
 end;
 
@@ -245,10 +241,19 @@ begin
   if HaySubPaso then Result:=IntToStr(npaso)+'/'+IntToStr(Nsubpaso)
   else Result:=IntToStr(npaso);
 end;
+
+function regTarifa.costop: string;
+{Costo del paso tal y como se leería del tarifario  (puede incluir sintaxis de SubCosto
+o costo de paso 1)}
+begin
+  Result := FLoatToStr(Ncosto);
+  if HaySubPaso then Result := Result + '/' + FLoatToStr(Nsubcosto);
+  if HayCPaso1  then Result := FLoatToStr(NCpaso1) + ':' + Result;
+end;
+
 procedure regTarifa.assign(reg: regTarifa);
 begin
   serie       := reg.serie;
-  costop      := reg.costop;
   categoria   := reg.categoria;
   descripcion := reg.descripcion;
   //Campos calculados
@@ -445,7 +450,6 @@ begin
   inherited Create;
   xLex := TSynFacilSyn.Create(nil);
   DefSyn(xLex);
-  ConfigurarSintaxisTarif(xLex, tkPrepro);  //usa la misma sintaxis que el resaltador
   definiciones:= TNilDefinicion_list.Create(true);
 end;
 destructor TContextTar.Destroy;
@@ -501,10 +505,12 @@ begin
   //No encuentra concidencia
   Result := nil;
 end;
-function TNiloMTabTar.regTarif_DeEdi(r: regTarifa; cad: string): string;
+function TNiloMTabTar.regTarif_DeEdi(r: regTarifa; cad: string; facCmoneda: double): string;
 {Convierte cadena de texto en registro. Se usa para leer del editor
 Se asume que el editor sólo tiene espacios como separadores. Las tabulaciones
 deben haberse reemplazado previamente. Si hay error, devuelve mensaje como cadena.}
+var
+  dif: ValReal;
 begin
   Result := '';   //por defecto no hay error
   ctx.SetSource(cad);  //carga lexer
@@ -524,7 +530,6 @@ begin
     r.HaySubPaso:=true;
     ctx.Next;  //pasa al siguiente
     if ctx.Eof then exit('Campos insuficientes');
-//    if not ctx.EsNumero then exit('Se esperaba número después de "/".');
     r.Nsubpaso := ctx.CogerInt;  //coge subpaso
     if r.Nsubpaso = MaxInt then exit('Se esperaba número después de "/".');
   end;
@@ -533,7 +538,40 @@ begin
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
   if not ctx.EsNumero then exit('Se esperaba número.');
-  r.costop := ctx.CogerCad;  //lee y pasa al siguiente
+  r.Ncosto := ctx.CogerFloat;  //lee y pasa al siguiente (Se asume que es costo)
+  if r.Ncosto = MaxFloat then exit('Se esperaba número en campo COSTO.');
+  //Verifica si se trata de Costo de Paso1
+  if ctx.Token=':' then begin
+    //Es costo de paso 1
+    r.HayCPaso1:=true;
+    ctx.Next;
+    r.NCpaso1:=r.Ncosto;   //copia el valor leído
+    //ahora sí lee el costo
+    r.Ncosto:= ctx.CogerFloat;
+    if r.Ncosto= MaxFloat then exit('Se esperaba número en campo COSTO.');
+  end;
+  if r.HaySubPaso then begin
+    //Hay subpaso, se espera un SubCosto
+    if ctx.Token<>'/' then exit('Se esperaba SubCosto.');
+    ctx.Next;   //coge "/"
+    if ctx.Eof then exit('Campos insuficientes');
+    r.Nsubcosto := ctx.CogerFloat;  //coge subpaso
+    if r.Nsubcosto = MaxFloat then exit('Se esperaba número después de "/".');
+  end;
+  //Valida si es posible la codificación de este costo
+  dif := frac(r.Ncosto / facCmoneda);
+  dif := round(dif * 1000000)/1000000;  //redondea por posible error de decimales
+  if (dif <> 0) and (dif<>1) Then begin
+      exit('Costo de paso: ' + FloatToStr(r.Ncosto) +
+           ' no se puede codificar con Factor de corrección de moneda: ' +
+           FloatToStr(facCmoneda));
+  end;
+  if r.Ncosto>facCmoneda*255 then exit('Costo muy alto para ' +
+            'Factor de corrección de moneda actual');  //Valida costo máximo
+  if r.Nsubcosto>facCmoneda*255 then exit('SubCosto muy alto para ' +
+            'Factor de corrección de moneda actual');  //Valida costo máximo
+  if r.NCpaso1>facCmoneda*255 then exit('Costo de Paso 1 muy alto para ' +
+            'Factor de corrección de moneda actual');  //Valida costo máximo
 
   //Coge CATEGORÍA
   ctx.SkipWhites;
@@ -549,66 +587,6 @@ begin
 
   ctx.SkipWhites;
   if not ctx.Eof then exit('Demasiados campos');
-end;
-procedure TNiloMTabTar.VerificaTarifa(r: regTarifa; facCmoneda: double);
-{Verifica si el registro de tarifa cumple con la definición.
-Realiza además las adaptaciones necesarias con los campos y completa
-los campos calculados.
-El error se devuelve en "MsjError"}
-var
-  costop: String;
-  posi : Integer;
-  a: TStringDynArray;
-  dif: Double;
-begin
-    msjError := '';   //Inicia mensaje
-    //------------------ Verifica costo --------------------
-    costop := r.costop;
-    if costop[1] in ['0'..'9'] Then begin //Verifica costo
-        if Pos(',', costop) <> 0 Then begin  //Verifica costo
-            msjError := 'Error en serie: ' + r.serie + '. No se permite uso de coma en costo.';
-            Exit;
-        end;
-        //Verifica si hay costo de paso 1
-        If pos(':', costop) <> 0 Then begin
-            posi := pos(':', costop);    //lee posición
-            r.NCpaso1 := StrToFloat(LeftStr(costop, posi - 1));  //toma costo de paso 1
-            r.HayCPaso1 := True;
-            costop := copy(costop, posi + 1, length(costop));  //recorta para seguir leyendo
-        End;
-        //Continúa verficando
-        If r.HaySubPaso Then begin
-            If pos('/', costop) <> 0 Then begin    //Debería haber subcosto
-                a := Explode('/', costop);
-                r.Ncosto := StrToFloat(a[0]);       //toma costo de paso
-                r.Nsubcosto := StrToFloat(a[1]);    //toma sub costo de paso 1
-            end Else begin
-                msjError := 'Error en serie: "' + r.serie + '". Se esperaba subcosto';
-                Exit;
-            End;
-        end Else begin   //No hay subpaso, No debe haber subcosto
-            If pos('/', costop) <> 0 Then begin
-                msjError := 'Error en serie: "' + r.serie + '". No se esperaba subcosto';
-                Exit;
-            end Else begin
-                r.Ncosto := StrToFloat(costop);       //toma costo
-            End;
-        End;
-    end Else begin
-        msjError := 'Error en serie: "' + r.serie + '". Costo debe ser númerico';
-        Exit;
-    End;
-    //--------------Verifica codificación de paso---------------
-//    CPaso = CPSimple(r.costop)  //toma costo de paso ignorando el subpaso
-    dif := frac(r.Ncosto / facCmoneda);
-    dif := round(dif * 1000000)/1000000;  //redondea por posible error de decimales
-    if (dif <> 0) and (dif<>1) Then begin
-        msjError := 'Error en serie: "' + r.serie +
-                    '". Costo de paso: ' + FloatToStr(r.Ncosto) +
-                    ' no se puede codificar con Factor de corrección de moneda: ' +
-                    FloatToStr(facCmoneda);
-        Exit;
-    end;
 end;
 procedure TNiloMTabTar.VerificFinal(var numlin: Integer);
 //Hace las verificaciones de símbolo de moneda
@@ -648,6 +626,7 @@ var
   i : Integer;
   tar, tar2: regTarifa;
 begin
+  debugln('Cargando tarifas.');
   nlin := 0;
   minCostop := 1000000;
   maxCostop := 0;    //inicia máximo y mínimo
@@ -664,8 +643,11 @@ begin
       if trim(linea) <> '' then  begin //tiene datos
           tar := regTarifa.Create;
           tarifasTmp.Add(tar);  //agrega nueva tarifa
-          msjError := regTarif_DeEdi(tar, linea);
-          If msjError <> '' Then break;
+          msjError := regTarif_DeEdi(tar, linea, facCmoneda);
+          If msjError <> '' Then begin
+            msjError := msjError + ' Línea: ' + IntToStr(nlin);
+            break;
+          end;
           //Verifica si hay duplicidad de serie
           for i:=0 to tarifasTmp.Count-2 do begin  //menos el último
             if tarifasTmp[i].serie = tar.serie then begin
@@ -673,8 +655,6 @@ begin
               break;
             end;
           end;
-          VerificaTarifa(tar, facCmoneda);    //Verifica consistencia y analiza
-          If msjError <> '' Then break;
       end;
   end;
   if msjError='' then VerificFinal(nlin);  //verificación final
@@ -704,6 +684,7 @@ begin
   tarifas:= regTarifa_list.Create(true);
   tarNula:= regTarifa.Create;  //crea tarifa con campos en blanco
   ctx := TContextTar.Create;
+  ConfigurarSintaxisTarif(ctx.xLex, ctx.tkPrepro);  //usa la misma sintaxis que el resaltador
 end;
 destructor TNiloMTabTar.Destroy;
 begin
@@ -803,6 +784,7 @@ var
   i : Integer;
   rut, rut2: regRuta;
 begin
+  debugln('Cargando rutas.');
   nlin := 0;
   ctx.definiciones.Clear;   //inicia preprocesador
   rutasTmp.Clear;
@@ -852,6 +834,7 @@ begin
   rutasTmp:= regRuta_list.Create(true);
   rutas:= regRuta_list.Create(true);
   ctx := TContextTar.Create;
+  ConfigurarSintaxisRutas(ctx.xLex, ctx.tkPrepro);  //usa la misma sintaxis que el resaltador
 end;
 destructor TNiloMTabRut.Destroy;
 begin

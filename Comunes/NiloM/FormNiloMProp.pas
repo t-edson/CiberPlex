@@ -4,28 +4,45 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEdit, SynEditHighlighter, Forms, Controls,
   Graphics, Dialogs, StdCtrls, ExtCtrls, Buttons, Spin, ComCtrls, EditBtn,
-  LCLType, MisUtils, CibNiloMTarifRut, CibFacturables, SynFacilUtils;
+  LCLType, ActnList, Menus, MisUtils, CibNiloMTarifRut, CibFacturables,
+  SynFacilUtils;
 type
   TEvCibNiloMEnviarCom = procedure(com: string) of object;   //
   { TfrmNiloMProp }
   TfrmNiloMProp = class(TForm)
   published
+    acTarVerEstad: TAction;
+    acRutTrans: TAction;
+    acTarTrans: TAction;
+    ActionList1: TActionList;
     btnAplicar: TBitBtn;
     btnAceptar: TBitBtn;
     btnCancelar: TBitBtn;
     btnCfgConex: TButton;
+    btnTarTransf: TButton;
+    btnActCI: TButton;
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
     CheckBox3: TCheckBox;
+    cmbFacMon: TComboBox;
+    Edit1: TEdit;
     filTarif: TFileNameEdit;
     filRut: TFileNameEdit;
     GroupBox1: TGroupBox;
     GroupBox2: TGroupBox;
+    GroupBox3: TGroupBox;
     Label1: TLabel;
     Label7: TLabel;
     Label8: TLabel;
+    Label9: TLabel;
+    ListBox1: TListBox;
     Memo1: TMemo;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem4: TMenuItem;
     PageControl1: TPageControl;
+    PopupTar: TPopupMenu;
+    PopupRut: TPopupMenu;
     SpinEdit1: TSpinEdit;
     spnX: TFloatSpinEdit;
     spnY: TFloatSpinEdit;
@@ -42,19 +59,22 @@ type
     txtEstConex: TStaticText;
     Timer1: TTimer;
     txtNombre: TEdit;
-    txtFacMon: TEdit;
     Label2: TLabel;
     Panel2: TPanel;
     txtCategVenta: TEdit;
+    procedure acRutTransExecute(Sender: TObject);
+    procedure acTarTransExecute(Sender: TObject);
+    procedure acTarVerEstadExecute(Sender: TObject);
     procedure btnAceptarClick(Sender: TObject);
     procedure btnAplicarClick(Sender: TObject);
     procedure btnCancelarClick(Sender: TObject);
+    procedure btnCfgConexClick(Sender: TObject);
+    procedure cmbFacMonChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShow(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
-    procedure txtFacMonChange(Sender: TObject);
   private
     HayError: boolean;
     edTarif: TSynFacilEditor;
@@ -150,7 +170,7 @@ begin
   GFacNiloM := TCibGFacNiloM(padre);
   HayError := true;
   //Valida factor de corrección de moneda
-  if not TryStrToFloat(txtFacMon.Text, fc) then begin
+  if not TryStrToFloat(cmbFacMon.Text, fc) then begin
     MsgErr('Error en factor de corrección de moneda');
     exit;
   end;
@@ -175,6 +195,10 @@ procedure TfrmNiloMProp.btnCancelarClick(Sender: TObject);
 begin
   self.Hide;
 end;
+procedure TfrmNiloMProp.btnCfgConexClick(Sender: TObject);
+begin
+  TCibGFacNiloM(padre).frmNilomConex.Show;
+end;
 procedure TfrmNiloMProp.FormCreate(Sender: TObject);
 var
   attPrepro: TSynHighlighterAttributes;
@@ -197,9 +221,10 @@ begin
   filRut.Text       := TCibGFacNiloM(padre).ArcRutas;
 
   txtCategVenta.Text:= TCibGFacNiloM(padre).CategVenta;
-  txtFacMon.Text    := FloatToStr(TCibGFacNiloM(padre).facCmoneda);
+  cmbFacMon.Text    := FloatToStr(TCibGFacNiloM(padre).facCmoneda);
   //Carga contenido de los archivos de configuración
   CargarArchivosConfig;
+  cmbFacMonChange(self); //actualiza combo
 end;
 procedure TfrmNiloMProp.FormDestroy(Sender: TObject);
 begin
@@ -236,12 +261,10 @@ begin
     end;
   end;
 end;
-procedure TfrmNiloMProp.txtFacMonChange(Sender: TObject);
+procedure TfrmNiloMProp.cmbFacMonChange(Sender: TObject);
 {Cambia el factor de corrección de moneda}
 var
-  fc, IGV: Double;
-  SimbMon: string;
-  numDec: integer;
+  fc: Double;
   OnReqCadMoneda: TevReqCadMoneda;
 begin
   //Obtiene función para conversión de moneda
@@ -250,21 +273,44 @@ begin
   if OnReqCadMoneda=nil then begin
     //No se tiene acceso
     Memo1.Text:='ERROR accediendo a función de conversión de moneda.';
-  end else if TryStrToFloat(txtFacMon.Text, fc) then begin
+  end else if TryStrToFloat(cmbFacMon.Text, fc) then begin
     //Conversión sin error
     Memo1.Text:='Costo de paso mínimo: ' + OnReqCadMoneda(0) + LineEnding +
-                'Intervalo Mínimo: '     + OnReqCadMoneda(1 * fc)+ LineEnding +
+                'Intervalo Mínimo    : ' + OnReqCadMoneda(1 * fc)+ LineEnding +
                 'Costo de paso máximo: ' + OnReqCadMoneda(255 * fc)+ LineEnding +
-                '' + LineEnding +
-                'TARIFARIO CONSISTENTE' + LineEnding +
-                '=================' + LineEnding +
-                'Mínimo costo =' + LineEnding +
-                'Máximo Costo =' + LineEnding +
-                '';
+                '' + LineEnding;
   end else begin
     //Hubo error en la conversión
     Memo1.Text:='ERROR en factor de conversión de moneda.';
   end;
+end;
+///////////////////// Acciones ///////////////////////
+procedure TfrmNiloMProp.acTarVerEstadExecute(Sender: TObject);
+var
+  tarif: TNiloMTabTar;
+  OnReqCadMoneda: TevReqCadMoneda;
+begin
+  OnReqCadMoneda := TCibGFacNiloM(padre).OnReqCadMoneda;
+  if OnReqCadMoneda=nil then exit;
+  if ValidarTarifario then begin
+    tarif := TCibGFacNiloM(padre).tarif;
+    MsgBox('Número de tarifas =' + IntToStr(tarif.tarifas.Count) + LineEnding +
+           'Mínimo costo =' + OnReqCadMoneda(tarif.minCostop) + LineEnding +
+           'Máximo Costo =' + OnReqCadMoneda(tarif.maxCostop));
+  end else begin  //si hay error
+    MsgErr('Error en tarifario.');  //muestra y sale
+  end;
+end;
+procedure TfrmNiloMProp.acTarTransExecute(Sender: TObject);  //Trasnfiere Tarifario
+begin
+  if MsgYesNo('¿Tranferir tarifario al enrutador?')<>1 then exit;
+
+end;
+
+procedure TfrmNiloMProp.acRutTransExecute(Sender: TObject);
+begin
+  if MsgYesNo('¿Tranferir tabla de rutas al enrutador?')<>1 then exit;
+
 end;
 
 end.

@@ -13,7 +13,6 @@ uses
   CibNiloMConex, CibRegistros, FormNiloMConex, FormNiloMProp,
   CibNiloMTarifRut, Globales;
 const
-  IDE_EST_LOC = 'l';   //identificador de estado de cabina
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 type
   TCibGFacNiloM = class;
@@ -32,7 +31,6 @@ type
     costo_tot: Double;  //costo acumulado de todas las llamadas
     num_llam : Double;  //número de llamadas acumuladas
   protected
-    descolg : Boolean;    //Bandera de descolgado
     llam    : regLlamada; //llamada en curso
     llamadas: regLlamada_list;  //lista de llamadas
     PosLlam : integer;
@@ -51,6 +49,7 @@ type
     r       : regTarifa;
     trama_tmp: String;    //bolsa temporal para la trama
     fBol    : TCibBoleta;
+    descolg : Boolean;    //Bandera de descolgado
     function AgregarFila: integer;
     procedure EscribeDatosAdicionales;
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
@@ -129,7 +128,7 @@ type
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
     function Agregar(nomLoc: string; num_can: char): TCibFacLocutor;
   public  //constructor y destructor
-    constructor Create(nombre0: string);
+    constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
   end;
 
@@ -336,7 +335,7 @@ function TCibFacLocutor.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
 begin
-  Result := IDE_EST_LOC + {se omite la coma para reducir tamaño}
+  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
          nombre + #9 +    {el nombre es obligatorio para identificarLO unívocamente}
          B2f(descolg);
   //Agrega información sobre los ítems de la boleta
@@ -344,8 +343,18 @@ begin
     Result := Result + LineEnding + boleta.CadEstado;
 end;
 procedure TCibFacLocutor.SetCadEstado(AValue: string);
+var
+  lineas, campos: TStringDynArray;
+  lin: String;
 begin
+  lineas := Explode(LineEnding, AValue);
+  lin := lineas[0];  //primera línea´, debe haber al menos una
+  delete(lin, 1, 1);  //recorta identificador
+  campos := Explode(#9, lin);
+  descolg   := f2B(campos[1]);
 
+  //Agrega información de boletas
+  LeerEstadoBoleta(lineas);
 end;
 function TCibFacLocutor.GetCadPropied: string;
 begin
@@ -585,10 +594,11 @@ end;
 { TCibGFacNiloM }
 //Funcione para manejo del registro
 procedure TCibGFacNiloM.AbrirRegistro();
-{Actualiza nombre final de arhcivo de registro}
+{Actualiza nombre final de archivo de registro}
 var
   NombProg, NombLocal, Usuario: string;
 begin
+  if ModoCopia then exit;
   if OnReqConfigGen<>nil then  //Pide información global
       OnReqConfigGen(NombProg, NombLocal, Usuario);
   ArcReg := NombFinal(rutDatos, NombLocal + '.' + nilConex.puertoN, '.dat');
@@ -599,8 +609,9 @@ begin
 end;
 procedure TCibGFacNiloM.CerrarRegistro();
 begin
-    EscribeLog('Fin CIBERPX    --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
-    EscribeLog('');
+  if ModoCopia then exit;
+  EscribeLog('Fin CIBERPX    --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
+  EscribeLog('');
 end;
 procedure TCibGFacNiloM.frmNilomProp_CambiaProp;
 {Se produjo un cambio en las propiedades del NILO-m.}
@@ -690,10 +701,12 @@ begin
 end;
 function TCibGFacNiloM.GetPuertoN: string;
 begin
+  if ModoCopia then exit('');
   Result := nilConex.puertoN;
 end;
 procedure TCibGFacNiloM.SetPuertoN(AValue: string);
 begin
+  if ModoCopia then exit;
   nilConex.puertoN:=AValue;
 end;
 function TCibGFacNiloM.GetCadPropied: string;
@@ -754,8 +767,19 @@ begin
   Result += '>';  //delimitador final.
 end;
 procedure TCibGFacNiloM.SetCadEstado(AValue: string);
+{Fija el estado de los locutorios, a partir de una lista de cadenas}
+{ TODO : Se debe ver si este método se puede pasar como método de la clase CibGFac, para evitar repetirlae en todos los grupos de facurables }
+var
+  nomb, cad: string;
+  car: char;
+  it: TCibFac;
 begin
-
+  decod.Inic(AValue);
+  while decod.Extraer(car, nomb, cad) do begin
+    if cad = '' then continue;
+    it := ItemPorNombre(nomb);
+    if it<>nil then it.CadEstado := cad;
+  end;
 end;
 procedure TCibGFacNiloM.LeerArchivosConfig;
 {Lee el contenido de los archivos de tarifas y rutas y los carga en "tarif" y "rutas".
@@ -835,6 +859,7 @@ end;
 procedure TCibGFacNiloM.Conectar;
 {Inicia la conexión}
 begin
+  if ModoCopia then exit;
   AbrirRegistro;
   if MsjError<>'' then begin
     //No poder escribir en el registro es un error grave. Se debe terminar el programa.
@@ -846,11 +871,13 @@ begin
 end;
 procedure TCibGFacNiloM.Desconectar;
 begin
+  if ModoCopia then exit;
   nilConex.Desconectar;
   CerrarRegistro;
 end;
 procedure TCibGFacNiloM.EnvComando(com: string; IncluirSalto: boolean);
 begin
+  if ModoCopia then exit;
   nilConex.EnvComando(com, IncluirSalto);
 end;
 function TCibGFacNiloM.Agregar(nomLoc: string; num_can: char): TCibFacLocutor;
@@ -869,20 +896,37 @@ begin
   Result := loc;
 end;
 //constructor y destructor
-constructor TCibGFacNiloM.Create(nombre0: string);
+constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
 begin
   inherited Create(nombre0, ctfNiloM);
+  FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 debugln('-Creando: '+ nombre0);
   tipo       := ctfNiloM;
-  frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
-  frmNilomProp:= TfrmNiloMProp.Create(nil);
-  frmNilomProp.onCambiaProp:=@frmNilomProp_CambiaProp;
-  nilConex    := TNiloConexion.Create;  //Crea la conexión serial
+  if not FModoCopia then begin
+    //Configura ventana de conexiones
+    frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
+    frmNilomConex.padre := self;  //referencia a la clase
+    OnTermWrite:=@frmNilomConex.TermWrite;
+    OnTermWriteLn:=@frmNilomConex.TermWriteLn;
+    OnRegMensaje :=@frmNilomConex.RegMensaje;
+    //Configura ventaba de propiedades
+    frmNilomProp:= TfrmNiloMProp.Create(nil);
+    frmNilomProp.onCambiaProp:=@frmNilomProp_CambiaProp;
+    frmNilomProp.padre := self;
+    //COnfigura la conexión serial
+    nilConex    := TNiloConexion.Create;
+    nilConex.OnCambiaEstado:= @nilConex_CambiaEstado;
+    nilConex.OnProcesarCad := @nilConex_ProcesarCad;
+    nilConex.OnProcesarLin := @nilConex_ProcesarLin;
+    nilConex.OnRegMensaje  := @nilConex_RegMensaje;
+    nilConex.OnTermWrite   := @nilConex_TermWrite;
+    nilConex.OnTermWriteLn := @nilConex_TermWriteLn;
+  end;
   //Configuración de tarifas y rutas
-  tarif       := TNiloMTabTar.Create;    //crea tarifas
+  tarif         := TNiloMTabTar.Create;    //crea tarifas
   tarif.OnLogErr:=@tarif_LogErr;
   tarif.OnLogInf:=@tarif_LogInf;
-  rutas       := TNiloMTabRut.Create;
+  rutas         := TNiloMTabRut.Create;
   rutas.OnLogErr:=@tarif_LogErr;
   rutas.OnLogInf:=@tarif_LogInf;
 
@@ -892,24 +936,11 @@ debugln('-Creando: '+ nombre0);
   FestadoCnx  := cecMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
   //Conectar;  //No inicia la conexión
   mens_error:= TStringList.Create;
-  nilConex.OnCambiaEstado:= @nilConex_CambiaEstado;
-  nilConex.OnProcesarCad := @nilConex_ProcesarCad;
-  nilConex.OnProcesarLin := @nilConex_ProcesarLin;
-  nilConex.OnRegMensaje  := @nilConex_RegMensaje;
-  nilConex.OnTermWrite   := @nilConex_TermWrite;
-  nilConex.OnTermWriteLn := @nilConex_TermWriteLn;
   Agregar('LOC1','0');
   Agregar('LOC2','1');
   Agregar('LOC3','2');
   Agregar('LOC4','3');
   CategVenta := 'LLAMADAS';
-  //Configura terminal
-  frmNilomConex.padre := self;  //referencia a la clase
-  frmNilomProp.padre := self;
-  //GFacNiloM.OnProcesarCad:=@frmNilomConex.ProcesarCad;
-  OnTermWrite:=@frmNilomConex.TermWrite;
-  OnTermWriteLn:=@frmNilomConex.TermWriteLn;
-  OnRegMensaje :=@frmNilomConex.RegMensaje;
 end;
 destructor TCibGFacNiloM.Destroy;
 begin
@@ -917,9 +948,11 @@ debugln('-destruyendo: '+ self.Nombre);
   mens_error.Destroy;
   rutas.Destroy;
   tarif.Destroy;
-  nilConex.Destroy;
-  frmNilomProp.Destroy;
-  frmNilomConex.Destroy;
+  if not FModoCopia then begin
+    nilConex.Destroy;
+    frmNilomProp.Destroy;
+    frmNilomConex.Destroy;
+  end;
   inherited Destroy;
 end;
 

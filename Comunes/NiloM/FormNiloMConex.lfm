@@ -1,7 +1,7 @@
 object frmNiloMConex: TfrmNiloMConex
-  Left = 305
+  Left = 295
   Height = 361
-  Top = 147
+  Top = 226
   Width = 425
   Caption = 'Conexiones'
   ClientHeight = 361
@@ -9,156 +9,153 @@ object frmNiloMConex: TfrmNiloMConex
   OnDestroy = FormDestroy
   OnShow = FormShow
   LCLVersion = '1.6.0.4'
-  object Panel2: TPanel
+  object PageControl1: TPageControl
     Left = 0
     Height = 361
     Top = 0
-    Width = 184
-    Align = alLeft
-    ClientHeight = 361
-    ClientWidth = 184
-    TabOrder = 0
-    object Label1: TLabel
-      Left = 8
-      Height = 15
-      Top = 16
-      Width = 108
-      Caption = 'Puerto Serial (COM):'
-      ParentColor = False
-    end
-    object btnConect: TButton
-      Left = 8
-      Height = 25
-      Top = 48
-      Width = 75
-      Caption = 'Ab&rir'
-      OnClick = btnConectClick
-      TabOrder = 0
-    end
-    object btnDescon: TButton
-      Left = 96
-      Height = 25
-      Top = 48
-      Width = 75
-      Caption = 'Cer&rar'
-      OnClick = btnDesconClick
-      TabOrder = 1
-    end
-    object btnAceptar: TBitBtn
-      Left = 8
-      Height = 30
-      Top = 312
-      Width = 75
-      DefaultCaption = True
-      Kind = bkOK
-      ModalResult = 1
-      OnClick = btnAceptarClick
-      TabOrder = 2
-    end
-    object btnCancelar: TBitBtn
-      Left = 96
-      Height = 30
-      Top = 312
-      Width = 75
-      Cancel = True
-      DefaultCaption = True
-      Kind = bkCancel
-      ModalResult = 2
-      OnClick = btnCancelarClick
-      TabOrder = 3
-    end
-    object cmbPuerto: TComboBox
-      Left = 128
-      Height = 23
-      Top = 16
-      Width = 43
-      ItemHeight = 15
-      ItemIndex = 0
-      Items.Strings = (
-        '1'
-        '2'
-        '3'
-        '4'
-        '5'
-        '6'
-        '7'
-        '8'
-        '9'
-        '10'
-        '11'
-        '12'
-      )
-      OnChange = cmbPuertoChange
-      TabOrder = 4
-      Text = '1'
-    end
-    object btnAplicar: TBitBtn
-      Left = 48
-      Height = 30
-      Top = 272
-      Width = 75
-      Caption = '&A&plicar'
-      Default = True
-      Kind = bkYes
-      ModalResult = 6
-      OnClick = btnAplicarClick
-      TabOrder = 5
-    end
-  end
-  object Panel3: TPanel
-    Left = 184
-    Height = 361
-    Top = 0
-    Width = 241
+    Width = 425
+    ActivePage = tabConexiones
     Align = alClient
-    ClientHeight = 361
-    ClientWidth = 241
-    TabOrder = 1
-    object Memo1: TMemo
-      Left = 1
-      Height = 315
-      Top = 1
-      Width = 239
-      Align = alClient
-      Font.CharSet = ANSI_CHARSET
-      Font.Height = -12
-      Font.Name = 'Courier New'
-      Font.Pitch = fpFixed
-      Font.Quality = fqDraft
-      Lines.Strings = (
-        ''
-      )
-      ParentFont = False
-      ScrollBars = ssAutoBoth
-      TabOrder = 0
-      WordWrap = False
-    end
-    object Panel1: TPanel
-      Left = 1
-      Height = 44
-      Top = 316
-      Width = 239
-      Align = alBottom
-      Anchors = []
-      ClientHeight = 44
-      ClientWidth = 239
-      TabOrder = 1
-      object btnEnviar: TButton
-        Left = 160
-        Height = 25
-        Top = 8
-        Width = 75
-        Caption = '&Enviar'
-        OnClick = btnEnviarClick
+    TabIndex = 1
+    TabOrder = 0
+    object tabSerial: TTabSheet
+      Caption = 'Puerto Serial'
+      ClientHeight = 333
+      ClientWidth = 417
+      object Panel2: TPanel
+        Left = 0
+        Height = 333
+        Top = 0
+        Width = 184
+        Align = alLeft
+        ClientHeight = 333
+        ClientWidth = 184
         TabOrder = 0
+        object Label1: TLabel
+          Left = 8
+          Height = 15
+          Top = 16
+          Width = 108
+          Caption = 'Puerto Serial (COM):'
+          ParentColor = False
+        end
+        object btnConect: TButton
+          Left = 8
+          Height = 25
+          Top = 48
+          Width = 75
+          Caption = 'Ab&rir'
+          OnClick = btnConectClick
+          TabOrder = 0
+        end
+        object btnDescon: TButton
+          Left = 96
+          Height = 25
+          Top = 48
+          Width = 75
+          Caption = 'Cer&rar'
+          OnClick = btnDesconClick
+          TabOrder = 1
+        end
+        object btnAceptar: TBitBtn
+          Left = 8
+          Height = 30
+          Top = 296
+          Width = 75
+          DefaultCaption = True
+          Kind = bkOK
+          ModalResult = 1
+          OnClick = btnAceptarClick
+          TabOrder = 2
+        end
+        object btnCancelar: TBitBtn
+          Left = 96
+          Height = 30
+          Top = 296
+          Width = 75
+          Cancel = True
+          DefaultCaption = True
+          Kind = bkCancel
+          ModalResult = 2
+          OnClick = btnCancelarClick
+          TabOrder = 3
+        end
+        object cmbPuerto: TComboBox
+          Left = 128
+          Height = 23
+          Top = 16
+          Width = 43
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            '1'
+            '2'
+            '3'
+            '4'
+            '5'
+            '6'
+            '7'
+            '8'
+            '9'
+            '10'
+            '11'
+            '12'
+          )
+          OnChange = cmbPuertoChange
+          TabOrder = 4
+          Text = '1'
+        end
+        object btnAplicar: TBitBtn
+          Left = 48
+          Height = 30
+          Top = 256
+          Width = 75
+          Caption = '&A&plicar'
+          Default = True
+          Kind = bkYes
+          ModalResult = 6
+          OnClick = btnAplicarClick
+          TabOrder = 5
+        end
+        object btnEnviar: TButton
+          Left = 8
+          Height = 25
+          Top = 168
+          Width = 147
+          Caption = '&Enviar Comando:'
+          OnClick = btnEnviarClick
+          TabOrder = 6
+        end
+        object txtComando: TEdit
+          Left = 8
+          Height = 23
+          Top = 192
+          Width = 144
+          TabOrder = 7
+        end
       end
-      object txtComando: TEdit
-        Left = 8
-        Height = 23
-        Top = 8
-        Width = 144
+      object Memo1: TMemo
+        Left = 184
+        Height = 333
+        Top = 0
+        Width = 233
+        Align = alClient
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -12
+        Font.Name = 'Courier New'
+        Font.Pitch = fpFixed
+        Font.Quality = fqDraft
+        Lines.Strings = (
+          ''
+        )
+        ParentFont = False
+        ScrollBars = ssAutoBoth
         TabOrder = 1
+        WordWrap = False
       end
+    end
+    object tabConexiones: TTabSheet
+      Caption = '&Conexiones'
     end
   end
   object Timer1: TTimer
