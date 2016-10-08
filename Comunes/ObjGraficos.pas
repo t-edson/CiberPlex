@@ -459,23 +459,38 @@ begin
 end;
 { TogNiloM }
 procedure TogNiloM.DibujarDatosLlam;
-var
-  tmp: string;
+  procedure MensajeNllamadas;
+  {Muestar el mensaje tres líneea, que indica que está esperando llamadas }
+  begin
+    v2d.FijaRelleno(TColor($D0D0D0));
+//    v2d.FijaRelleno(TColor($80ff80));
+    v2d.RectangR(x-3, y-2, x+97, y+50);
+    v2d.Texto(x+1,y   , 'Esperando');
+    v2d.Texto(x+1,y+16, 'marcación...');
+    if loc.llamadas.Count = 1 then v2d.Texto(x+1,y+32, '<1 llamada.>')
+    else v2d.Texto(x+1,y+32, '<'+ IntToStr(loc.llamadas.Count) +' llamadas>');
+//    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
+//    v2d.Texto(x+1,y+16,tmp);
+  end;
 begin
   //dibuja cuadro de estado
-  v2d.SetText(clBlack, 10,'',false);
   if loc.descolg then begin    //Está descolgado
-    v2d.FijaRelleno(TColor($D0D0D0));
-  //  v2d.FijaRelleno(TColor($80ff80));
-    v2d.RectangR(x, y, x+85, y+48);
-    //muestra tiempo transcurrido
-  //  DateTimeToString(tmp, 'hh:mm:ss', now-Fac.hor_ini);  //convierte
-    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
-    v2d.Texto(x+4,y+1,tmp);
-    //Genera Tiempo solicitado en texto descriptivo.
-    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
-    //escribe tiempo
-    v2d.Texto(x+4,y+17,tmp);
+    if loc.llam.NUM_DIG<> '' then begin  //Hay llamadas
+      if loc.llam.CONTES then v2d.SetText(clRed, 10,'',false)
+      else v2d.SetText(clBlack, 10,'',false);
+      v2d.FijaRelleno(TColor($D0D0D0));
+      v2d.RectangR(x-3, y-2, x+97, y+50);
+      //muestra tiempo transcurrido
+      v2d.Texto(x+1,y   , loc.llam.NUM_DIG);
+      v2d.Texto(x+1,y+16, loc.llam.DESCR_);
+      if loc.llam.CONTES then
+        v2d.Texto(x+1,y+32, loc.llam.DURAC_ + ' ' + CadMoneda(loc.llam.COST_NTER))
+      else
+        v2d.Texto(x+1,y+32, 'Cto.Paso=' + loc.llam.COSTOP_);
+    end else begin  //Hay llamadas
+      v2d.SetText(clBlack, 10,'',false);
+      MensajeNllamadas;
+    end;
   end else begin    //Está colgado
     //No muestra cuadro
   end;
@@ -505,7 +520,11 @@ begin
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, nombre);
   //dibuja íconos de teléfono
-  v2d.DibujarImagenN(icoTelCol, x+25, y+40);
+  if loc.descolg then begin
+    v2d.DibujarImagenN(icoTelDes, x+28, y+52);
+  end else begin
+     v2d.DibujarImagenN(icoTelCol, x+28, y+52);
+  end;
   //Dibuja datos de llamada
   DibujarDatosLlam;
   //muestra consumo
@@ -529,7 +548,7 @@ var
 begin
   inherited;
   x2 := x + width;
-  Buttons[0].Ubicar(x + 30, y + 50);
+  Buttons[0].Ubicar(x + 64, y + 60);
 //   Botones[2].Ubicar(x2 - 20, y + 3);  //Botón Cerrar
   //ubica boleta
   Boleta.Ubicar(x+5,y+110);
@@ -552,7 +571,7 @@ begin
   pc_SUP_CEN.visible:=false;  //oculta punto de control
   nombre := 'Locutorio';
   Self.Ubicar(100,100);
-  width := 85;
+  width := 94;
   height := 130;
   ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 

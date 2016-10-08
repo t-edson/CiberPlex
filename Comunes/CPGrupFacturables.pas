@@ -18,25 +18,30 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
-    function gf_ReqCadMoneda(valor: double): string;
-    procedure gf_CambiaPropied;
-    procedure gf_LogInfo(cab: TCibFac; msj: string);
+    function gof_LogError(msj: string): integer;
+    function gof_LogVenta(ident: char; msje: string; dCosto: Double): integer;
+    procedure gof_ActualizStock(const codPro: string; const Ctdad: double);
+    function gof_ReqCadMoneda(valor: double): string;
+    procedure gof_CambiaPropied;
+    function gof_LogInfo(msj: string): integer;
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
     function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
       var tipo: TCibTipFact): boolean;
-    procedure gf_DetenConteo(cab: TCibFacCabina);
-    procedure gf_RequiereInfo(var NombProg, NombLocal, Usuario: string);
+    procedure gof_RequiereInfo(var NombProg, NombLocal, Usuario: string);
   public  //Eventos.
     {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
     para leer información o ejecutar acciones. Para esto se usan los eventos.}
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad de algun grupo
-    OnLogInfo      : TEvCabLogInfo;       //Indica que se quiere registrar un mensaje en el registro
+    OnLogInfo      : TEvFacLogInfo;       //Se quiere registrar un mensaje en el registro
+    OnLogVenta     : TEvBolLogVenta;      //Se quiere registrar una venta en el registro
+    OnLogError     : TEvFacLogError;    //Requiere escribir un Msje de error en el registro
 //    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
 //    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
     OnGuardarEstado: procedure of object;
-    OnReqConfigGen: TEvReqConfigGen; //Se requiere información de configruación
-    OnReqCadMoneda: TevReqCadMoneda; //Se requiere convertir a formato de moneda
+    OnReqConfigGen : TEvReqConfigGen; //Se requiere información de configruación
+    OnReqCadMoneda : TevReqCadMoneda; //Se requiere convertir a formato de moneda
+    OnActualizStock: TEvBolActStock;  //Se requiere actualizar el stock
   public
     nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
@@ -48,9 +53,9 @@ type
     property CadEstado: string read GetCadEstado write SetCadEstado;
     function NumGrupos: integer;
     function BuscarPorNombre(nomb: string): TCibGFac;
-    procedure Agregar(gf: TCibGFac);
+    procedure Agregar(gof: TCibGFac);
     procedure Eliminar(gf: TCibGFac);
-    procedure gf_TramaLista(facOri: TCibFac; tram: TCPTrama;
+    procedure gof_TramaLista(facOri: TCibFac; tram: TCPTrama;
       tramaLocal: boolean);
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean=false);
@@ -110,49 +115,25 @@ begin
     exit(true);    //Sale sin error
   end;
 end;
-procedure TCibGruposFacturables.gf_CambiaPropied;
+procedure TCibGruposFacturables.gof_CambiaPropied;
 begin
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
-procedure TCibGruposFacturables.gf_LogInfo(cab: TCibFac; msj: string);
+function TCibGruposFacturables.gof_LogInfo(msj: string): integer;
 begin
-  if not DeshabEven and (OnLogInfo<>nil) then OnLogInfo(cab, msj);
+  if not DeshabEven and (OnLogInfo<>nil) then OnLogInfo(msj);
 end;
-procedure TCibGruposFacturables.gf_DetenConteo(cab: TCibFacCabina);
-{Se usa este evento para guardar información en el registro, y actualizar la boleta.
-Se hace desde fuera de CPGrupoCabinas, porque para estas acciones se requiere acceso a
-campos de configuración propios de esta aplicación, que no corresponden a CPGRupoCabinas
-que es usada también en el Ciberplex-Visor.}
-var
-  nser: Integer;
-  r: TCibItemBoleta;
+function TCibGruposFacturables.gof_LogVenta(ident:char; msje:string; dCosto:Double): integer;
 begin
-  //Registra la venta en el archivo de registro
-  if cab.horGra Then { TODO : Revisar si este código se puede uniformizar con las otras llamadas a VentaItem() }
-    nser := PLogIntD(cab.RegVenta, cab.Costo)
-  else
-    nser := PLogInt(cab.RegVenta, cab.Costo);
-  If msjError <> '' Then MsgErr(msjError);
-  //agrega item a boleta
-  r := TCibItemBoleta.Create;   //crea elemento
-  r.vser := nser;
-  r.Cant := 1;
-  r.pUnit := cab.Costo;
-  r.subtot := cab.Costo;
-  r.cat := cab.Grupo.CategVenta;
-  r.subcat := 'INTERNET';
-  r.descr := 'Alquiler PC: ' + IntToStr(cab.tSolicMin) + 'm(' +
-             TimeToStr(cab.TranscDat) + ')';
-  r.vfec := date + Time;
-  r.estado := IT_EST_NORMAL;
-  r.fragmen := 0;
-  r.conStk := False;     //No se descuenta stock
-  cab.Boleta.VentaItem(r, False);
-  //fBol.actConBoleta;   //Actualiza la boleta porque se hace "VentaItem" sin mostrar
-  { TODO : Debería modificarse para generar eventos para escribir en el registro.
-No parece buena idea acceder a lso registros desde aquí. }
+  if not DeshabEven and (OnLogVenta<>nil) then
+    Result := OnLogVenta(ident, msje, dCosto);
 end;
-procedure TCibGruposFacturables.gf_TramaLista(facOri: TCibFac;
+function TCibGruposFacturables.gof_LogError(msj: string): integer;
+begin
+  if not DeshabEven and (OnLogError<>nil) then
+    Result := OnLogError(msj);
+end;
+procedure TCibGruposFacturables.gof_TramaLista(facOri: TCibFac;
   tram: TCPTrama; tramaLocal: boolean);
 {Rutina de respuesta al mensaje OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
 También se usa para ejecutar los comandos generados a través de un visor(tramaLocal=TRUE).
@@ -399,7 +380,7 @@ begin
     if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
   end;
 end;
-procedure TCibGruposFacturables.gf_RequiereInfo(var NombProg,
+procedure TCibGruposFacturables.gof_RequiereInfo(var NombProg,
   NombLocal, Usuario: string);
 begin
   if OnReqConfigGen<>nil then begin
@@ -410,10 +391,16 @@ begin
     Usuario := '';
   end;
 end;
-function TCibGruposFacturables.gf_ReqCadMoneda(valor: double): string;
+function TCibGruposFacturables.gof_ReqCadMoneda(valor: double): string;
 begin
   if OnReqCadMoneda=nil then Result := ''
   else Result := OnReqCadMoneda(valor);
+end;
+procedure TCibGruposFacturables.gof_ActualizStock(const codPro: string;
+  const Ctdad: double);
+begin
+  {Porpaga el evento, ya que se supone que no se tiene acceso al alamacén desde aquí}
+  if not DeshabEven and (OnActualizStock<>nil) then OnActualizStock(codPro, Ctdad);
 end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
@@ -530,33 +517,35 @@ begin
   //no encontró
   exit(nil);
 end;
-procedure TCibGruposFacturables.Agregar(gf: TCibGFac);
+procedure TCibGruposFacturables.Agregar(gof: TCibGFac);
 {Agrega un grupo de facturables al objeto. Notar que esta rutina solo configura
 los eventos, antes de agregar.}
 begin
   //Configura eventos
-  gf.OnCambiaPropied := @gf_CambiaPropied;
-  gf.OnLogInfo:=@gf_LogInfo;
-  gf.OnReqConfigGen:=@gf_RequiereInfo;
-  gf.OnReqCadMoneda:=@gf_ReqCadMoneda;
-  case gf.tipo of
+  gof.OnCambiaPropied:= @gof_CambiaPropied;
+  gof.OnLogInfo      := @gof_LogInfo;
+  gof.OnLogVenta     := @gof_LogVenta;
+  gof.OnLogError     := @gof_LogError;
+  gof.OnReqConfigGen := @gof_RequiereInfo;
+  gof.OnReqCadMoneda := @gof_ReqCadMoneda;
+  gof.OnActualizStock:= @gof_ActualizStock;
+  case gof.tipo of
   ctfCabinas: begin
-    TCibGFacCabinas(gf).OnDetenConteo:=@gf_DetenConteo;
-    TCibGFacCabinas(gf).OnTramaLista:=@gf_TramaLista;
+    TCibGFacCabinas(gof).OnTramaLista:=@gof_TramaLista;
   end;
   ctfNiloM: begin
     {Se aprovecha aquí para leer los archivos de configuración. No se encontró un mejor
     lugar, ya que lo que se desea, es que los archivos de configuración se carguen solo
     una vez, sea que el NILO-m se agrege por el  menú principal o se carge del archivo
     de configuración.}
-    if not TCibGFacNiloM(gf).ModoCopia then begin
+    if not TCibGFacNiloM(gof).ModoCopia then begin
       //En modo copia, no se cargan las configuraciones
-      TCibGFacNiloM(gf).LeerArchivosConfig;   //si genera error, muestra su mensaje
+      TCibGFacNiloM(gof).LeerArchivosConfig;   //si genera error, muestra su mensaje
     end;
   end;
   end;
   //Agrega
-  items.Add(gf);
+  items.Add(gof);
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 procedure TCibGruposFacturables.Eliminar(gf: TCibGFac);

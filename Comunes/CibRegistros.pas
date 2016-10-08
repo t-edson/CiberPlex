@@ -3,10 +3,11 @@ unit CibRegistros;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dos, MisUtils;
+  Classes, SysUtils, dos, MisUtils, CibFacturables;
 var
   ArcLog   : string;      //Archivo de registro arctual (*.log)
   nSerV    : integer;     //número de serie de rergitro en "log"
+  msjError : string;      //Mensaje de error. { TODO : Debería evitarse usar variables globales }
   //contadores internos
   CVniloter: double;      //valor del contador de Ventas de Ciberplex
   CIniloter: Double;      //valor del contador de Ingresos de CiberPlex
@@ -15,9 +16,8 @@ Function NombFinal(camino : string; nom_loc: string; extension : String): String
 function EscribReg(archivo: String; lin: String): string;
 procedure AbrirPLog(rutDatos, local: string);
 function NombDifArc(nomBase: String): String;
-function PLogInt(mensaje: string; dCosto: Single): integer;
-function PLogIntD(mensaje: string; dCosto: Single): integer;
-function PLogLlam(mensaje: String; dCosto: Single): integer;
+function PLogVenta(identif: char; mensaje : String; dCosto : Double): integer;
+
 function PLogIBol(mensaje: String): integer;
 function PLogIBolD(mensaje: String): integer;
 function PLogBol(mensaje: string; dCosto: Single): integer;
@@ -109,27 +109,15 @@ begin
     MsgErr('Error escribiendo en archivo de registro:' + msjError);
   end
 end;
-function PLogInt(mensaje: string; dCosto: Single): integer;
-{Escribe una línea de alquiler de pc en el registro del programa.
+function PLogVenta(identif: char; mensaje: String; dCosto: Double): integer;
+{Escribe una línea de venta en el registro del programa. Se considera un registro de
+venta, a aquel que incrementa "CVniloter".
 "dCosto" es el incremento de costo para actualizar ingreso}
 begin
-  PLogInt := PLogEscr('p', mensaje);
-  CVniloter := CVniloter + dCosto;  //actualiza venta
+    Result := PLogEscr(identif, mensaje);
+    CVniloter := CVniloter + dCosto;  //actualiza venta
 end;
-function PLogIntD(mensaje: string; dCosto: Single): integer;
-{Escribe una línea de alquiler de pc en el registro del programa.
-"dCosto" es el incremento de costo para actualizar ingreso}
-begin
-  PLogIntD := PLogEscr('q', mensaje);
-  CVniloter := CVniloter + dCosto;  //actualiza venta
-end;
-function PLogLlam(mensaje: String; dCosto: Single): integer;
-{Escribe una línea de llamada en el registro del programa.
-"dCosto" es el incremento de costo para actualizar ingreso}
-begin
-    PLogLlam := PLogEscr('l', mensaje);  //devuelve
-    CVniloter := CVniloter + dCosto;    //actualiza venta
-end;
+
 function PLogIBol(mensaje: String): integer;
 {Escribe un ítem de boleta en el registro del programa.
 "dCosto" es el incremento de costo para actualizar ingreso}
@@ -177,7 +165,7 @@ var
 begin
   tmp := msjError;  //salva mensaje de error
   //Escribe mensaje. Si hubo error, ya se ha mostrado com MsgBox()
-  PLogErr := PLogEscr('e', usu + #9+ mensaje);
+  PLogErr := PLogEscr(IDE_REG_ERR, usu + #9+ mensaje);
   msjError := tmp;  //restaura
 end;
 

@@ -8,8 +8,21 @@ unit CibFacturables;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, LCLProc, dateutils, CPProductos, MisUtils,
-  CibRegistros, FormInicio;
+  Classes, SysUtils, fgl, types, LCLProc, dateutils, MisUtils,
+  FormInicio;
+type
+  //Tipos de objetos Grupos Facturables
+  TCibTipFact = (
+    ctfCabinas = 0,   //Grupo de Cabinas
+    ctfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
+  );
+const
+  //Caracteres identificadores de registros de ventas
+  IDE_REG_ERR = 'e';     //registro de error
+  IDE_REG_VEN = 'v';     //registro de venta común
+  IDE_INT_GRA = 'q';     //registro de alquiler de cabina - hora gratis
+  IDE_INT_NOR = 'p';     //registro de alquiler de cabina normal
+  IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m
 type
   TItemBoletaEstado = (
     IT_EST_NORMAL = 0,    //Item en estado normal
@@ -51,6 +64,10 @@ type
   end;
   TCibItemBoleta_list = specialize TFPGObjectList<TCibItemBoleta>;   //lista de ítems
 
+  //Se requiere actualizar el stock de un producto, porque se ha agregado a la boleta
+  TEvBolLogVenta = function(ident:char; msje:string; dCosto:Double): integer of object;
+  TEvBolActStock = procedure(const codPro: string; const Ctdad: double) of object;
+
   { TCibBoleta }
   TCibBoleta = class
     //propiedades del formulario
@@ -67,11 +84,12 @@ type
   private
     //lista de ítems
     Fitems  : TCibItemBoleta_list;
-    arcProduc: string;     //Archivo de producto.
     procedure AgregarItemR(r: TCibItemBoleta);
     function GetCadEstado: string;
   public
-    OnVentaAgregada: procedure of object;  //evento de venta agregada
+    msjError: string;
+    OnLogVenta     : TEvBolLogVenta;
+    OnActualizStock: TEvBolActStock;
     property items: TCibItemBoleta_list read Fitems;
     procedure Recalcula;
     function RegVenta: string;
@@ -88,17 +106,20 @@ type
     destructor Destroy; override;
   end;
 
-  //Tipos de objetos Grupos Facturables
-  TCibTipFact = (
-    ctfCabinas = 0,   //Grupo de Cabinas
-    ctfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
-  );
+  TCibFac = class;
+
+  TEvFacLogInfo = function(msj: string): integer of object;
+  TevFacLogError = function(msj: string): integer of object;
 
   TCibGFac = class;
   { TCibFac }
   { Define a la clase abstracta que sirve de base a objetos que pueden generar consumo
    (boletas), como puede ser una cabina de internet, o un locutorio.}
   TCibFac = class
+  private
+    procedure BoletaActualizarStock(const codPro: string; const Ctdad: double);
+    function BoletaLogVenta(ident: char; mensaje: string; dCosto: Double
+      ): integer;
   protected
     FNombre: string;
     Fx: double;
@@ -112,8 +133,11 @@ type
     procedure Sety(AValue: double);
     procedure LeerEstadoBoleta(var lineas: TStringDynArray);
   public  //eventos generales
-    OnCambiaEstado: procedure of object;  //cuando cambia alguna variable de estado
+    OnCambiaEstado : procedure of object; //cuando cambia alguna variable de estado
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
+    OnLogInfo      : TEvFacLogInfo;      //Indica que se quiere registrar un mensaje en el registro
+    OnLogVenta     : TEvBolLogVenta;      //requiere escribir en registro de ventas
+    OnActualizStock: TEvBolActStock;      //cuando se requiere actualizar el stock
   public
     tipo    : TCibTipFact; //tipo de grupo facturable
     Boleta  : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
@@ -126,13 +150,13 @@ type
     property x: double read Fx write Setx;   //coordenada X
     property y: double read Fy write Sety;  //coordenada Y
     procedure LimpiarBol;      //Limpia la boleta
+    function RegVenta(usu: string): string; virtual;
   public //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
   end;
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
 
-  TEvCabLogInfo = procedure(cab: TCibFac; msj: string) of object;
   //Para requerir información de configuración general a la aplicaicón
   TEvReqConfigGen = procedure(var NombProg, NombLocal, Usuario: string) of object;
   //Para requerir información de configuración de moneda a la aplicaicón
@@ -160,6 +184,10 @@ type
    Facturbale. Un grupo facturable es un objeto que contiene un conjunto (lista) de
    objetos facturables.}
   TCibGFac = class
+  private
+    procedure fac_ActualizStock(const codPro: string; const Ctdad: double);
+    function fac_LogVenta(ident: char; mensaje: string; dCosto: Double): integer;
+    function fac_LogInfo(msj: string): integer;
   protected
     Fx: double;
     Fy: double;
@@ -167,10 +195,12 @@ type
     decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
     function GetCadPropied: string; virtual; abstract;
     procedure SetCadPropied(AValue: string); virtual; abstract;
-    function GetCadEstado: string; virtual; abstract;
-    procedure SetCadEstado(AValue: string); virtual; abstract;
+    function GetCadEstado: string; virtual;
+    procedure SetCadEstado(AValue: string); virtual;
     procedure Setx(AValue: double);
     procedure Sety(AValue: double);
+    procedure AgregarItem(fac: TCibFac);
+    procedure fac_CambiaPropied;
   public
     Nombre : string;          //Nombre de grupo facturable
     tipo   : TCibTipFact;   //tipo de grupo facturable
@@ -192,10 +222,13 @@ type
     procedure SetXY(x0, y0: double);
   public  //Eventos para que el grupo se comunique con la apliación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
-    OnLogInfo      : TEvCabLogInfo;   //Indica que se quiere registrar un mensaje en el registro
-    OnReqConfigGen : TEvReqConfigGen; //Se requiere información general
-    OnReqConfigMon : TEvReqConfigMon; //Se requiere información de moneda
-    OnReqCadMoneda : TevReqCadMoneda; //Se requiere convertir a foramto de moneda
+    OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
+    OnReqConfigMon : TEvReqConfigMon;   //Se requiere información de moneda
+    OnReqCadMoneda : TevReqCadMoneda;   //Se requiere convertir a foramto de moneda
+    OnLogInfo      : TEvFacLogInfo;     //se quiere registrar un mensaje en el registro
+    OnLogVenta     : TEvBolLogVenta;    //Requiere escribir una venta en el registro
+    OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
+    OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
   public  //Constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipFact);
     destructor Destroy; override;
@@ -370,22 +403,24 @@ var
   nser: integer;
 begin
     //Actualiza stock
-    if r.conStk Then ActualizarStock(arcProduc, r.codPro, r.Cant);
-    //Puede devolver error después de ActualizarStock()
-    if msjError <> '' Then begin
-        //Se muestra aquí porque no se va a detener el flujo del programa por
-        //un error, porque es prioritario registrar la venta.
-        MsgBox(msjError);
+    if r.conStk then begin
+      {Se debe actualizar stcok, pero desde aquí no se tiene acceso a la maquinaria de
+       almacén, así que usamos este evento (que se supone, debe estar siempre definido)
+       que se propagará, hasta llegar a la aplicación principal.}
+      OnActualizStock(r.codPro, r.Cant);  //Debería mostrar mensaje de error si amerita
     end;
     //Guarda registro de la Venta, si se indica
     if RegisVenta Then begin
-        nser := PLogVen(r.regIBol_ARegVen, r.subtot);
+        if OnLogVenta<>nil then
+          nser := OnLogVenta(IDE_REG_VEN, r.regIBol_ARegVen, r.subtot)
+        else
+          nser := 0;
         r.vser := nser;   //actualiza referencia a la venta
     end;
     //Agrega a la Boleta
     AgregarItemR(r);
     Recalcula;  //Actualiza subtotales
-    if OnVentaAgregada<>nil then OnVentaAgregada;
+//    if OnVentaAgregada<>nil then OnVentaAgregada;
     If msjError <> '' then exit;
 end;
 procedure TCibBoleta.ItemClear;
@@ -448,6 +483,14 @@ begin
   inherited Destroy;
 end;
 { TCibFac }
+procedure TCibFac.BoletaActualizarStock(const codPro: string; const Ctdad: double);
+begin
+  if OnActualizStock<>nil then OnActualizStock(codPro, Ctdad);
+end;
+function TCibFac.BoletaLogVenta(ident:char; mensaje:string; dCosto:Double): integer;
+begin
+  if OnLogVenta<>nil then Result := OnLogVenta(ident, mensaje, dCosto);
+end;
 procedure TCibFac.SetNombre(AValue: string);
 begin
   if FNombre = AValue then exit;
@@ -503,10 +546,20 @@ begin
   boleta.TotPag := 0;   //totales a cero
   boleta.Recalcula;     //Actualiza totales
 end;
+function TCibFac.RegVenta(usu: string): string;
+{Debe devolver la cadena (registro de ventas) que se debe escribir en el registro.
+Cada tipo de facturable puede generar su formato de cadena, pero debe tratar de
+uniformizarse. "usu" se incluye como parámetro, para indicar al Usuario actual, del
+sistema, ya que es un campo usado comúnmente para generar el registro de ventas.}
+begin
+  Result := '<sin información>'
+end;
 //Constructor y destructor
 constructor TCibFac.Create;
 begin
   Boleta := TCibBoleta.Create;
+  Boleta.OnActualizStock:=@BoletaActualizarStock;
+  Boleta.OnLogVenta:=@BoletaLogVenta;
 end;
 destructor TCibFac.Destroy;
 begin
@@ -514,6 +567,62 @@ begin
   inherited Destroy;
 end;
 { TCibGFac }
+procedure TCibGFac.fac_CambiaPropied;
+begin
+  if OnCambiaPropied<>nil then OnCambiaPropied;
+end;
+procedure TCibGFac.fac_ActualizStock(const codPro: string; const Ctdad: double);
+begin
+  if OnActualizStock<>nil then OnActualizStock(codPro, Ctdad);
+end;
+function TCibGFac.fac_LogVenta(ident:char; mensaje:string; dCosto:Double): integer;
+begin
+  if OnLogVenta<>nil then Result := OnLogVenta(ident, mensaje, dCosto);
+end;
+function TCibGFac.fac_LogInfo(msj: string): integer;
+begin
+  if OnLogInfo<>nil then OnLogInfo(msj);
+end;
+function TCibGFac.GetCadEstado: string;
+{Devuelve la cadena de estado. Esta es una implementación general. Notar que no se
+guardan campos de estado del GFac, excepto el Tipo y Nombre, que son necesarios para la
+identificación. De requerir guardar campos adicionales del GFac, no se podría usar este
+código directamente.
+La cadena de estado tiene el siguiente formato:
+<1	NILO-m            <----- Línea inicial. Campos de estado del GFac
+.LOC1	F                 <----- Líneas siguiente. Estado de objeto facturables.
+.LOC2	F                 <----- Estado de objeto facturables (dos líneas).
+ [b]0	1003220344996..
+.LOC3	F
+.LOC4	F
+>                         <----- Línea final.
+}
+var
+  c : TCibFac;
+begin
+  //Delimitador inicial y propiedades de objeto.
+  Result := '<' + I2f(ord(self.tipo)) + #9 + Nombre + LineEnding;
+  for c in items do begin
+    Result += c.CadEstado + LineEnding;
+  end;
+  Result += '>';  //delimitador final.
+end;
+procedure TCibGFac.SetCadEstado(AValue: string);
+{Hace el trabajo inverso de GetCadEstado(). De la misma forma, no lee campos de estado,
+adicionales. De hecho no lee ninguno, ya que los campos Tipo y Nombre, ya fueron usados
+para identificar a este GFac.}
+var
+  nomb, cad: string;
+  car: char;
+  it: TCibFac;
+begin
+  decod.Inic(AValue);
+  while decod.Extraer(car, nomb, cad) do begin
+    if cad = '' then continue;
+    it := ItemPorNombre(nomb);
+    if it<>nil then it.CadEstado := cad;
+  end;
+end;
 procedure TCibGFac.Setx(AValue: double);
 begin
   if Fx=AValue then exit;
@@ -532,6 +641,19 @@ begin
   if Fy=AValue then exit;
   Fy:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
+end;
+procedure TCibGFac.AgregarItem(fac: TCibFac);
+{Agrega un ítem, a la lista de facturables. Esta función debe ser usada siempre que se
+requiere agregar un ítem nuevo a la lista, para que se realicen las configuraciones
+necesarias, en el ítem a agregar}
+begin
+  fac.Grupo := self;
+//  fac.OnCambiaEstado :=@fac_CambiaEstado;  No se intercepta
+  fac.OnLogInfo:=@fac_LogInfo;
+  fac.OnLogVenta:=@fac_LogVenta;
+  fac.OnCambiaPropied:=@fac_CambiaPropied;
+  fac.OnActualizStock:=@fac_ActualizStock;
+  items.Add(fac);
 end;
 function TCibGFac.ItemPorNombre(nom: string): TCibFac;
 {Devuelve la referencia a un ítem, ubicándola por su nombre. Si no lo enuentra

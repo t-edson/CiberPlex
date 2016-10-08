@@ -6,6 +6,7 @@ uses
   Classes, SysUtils, fgl, types, MisUtils, CibRegistros, FormInicio;
 type
   //Define el tipo que almacena un producto (Una línea del archivo de productos)
+  TevProLogError = function(msj: string): integer of object;
 
   { regProdu }
   TregProdu = class
@@ -26,6 +27,7 @@ type
       //fMod  : date      'FECHA. fecha de modificación.
       ind     : Integer;  //NUMÉRICO. Posición dentro de la matriz
   public
+    OnLogError     : TevProLogError;    //Requiere escribir un Msje de error en el registro
     function regProd_ADisco: String;
     procedure regProd_DeDisco(cad: String);
   end;

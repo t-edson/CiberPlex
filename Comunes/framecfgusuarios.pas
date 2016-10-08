@@ -24,6 +24,7 @@ type
     procedure StringGrid1SelectEditor(Sender: TObject; aCol, aRow: Integer;
       var Editor: TWinControl);
   public
+    msjError : string;
     //variables de propiedades
     numero  : integer;
     listaUsu: TStringList;
@@ -37,10 +38,98 @@ type
     destructor Destroy; override;
   end;
 
+//function CreaUsuario(usuar, clave: String; perfil: TUsuPerfil = PER_OPER): TregUsuario;
 function CreaUsuario(usuar, clave: String; perfil: TUsuPerfil = PER_OPER): TregUsuario;
-
+var
+  msjError: string;   { TODO : Se debería evitar el uso de variables globales }
 implementation
 {$R *.lfm}
+
+//instrucciones de administración de usuarios
+function CreaUsuario(usuar, clave: String; perfil: TUsuPerfil = PER_OPER): TregUsuario;
+{Crea a un usuario nuevo. Devuelve la referencia.}
+var
+  u : TregUsuario;
+begin
+  msjError := '';
+  If usuar = '' Then begin
+      msjError := 'Nombre de usuario no puede ser nulo.';
+      exit;
+  end;
+  //Verifica existencia de usuario
+  for u in usuarios do begin
+      If u.usu = usuar Then begin
+          msjError := 'Usuario Ya existe.';
+          exit;
+      end;
+  end;
+  u := TregUsuario.Create;
+  u.usu := usuar;
+  u.cla := clave;
+  u.per := perfil;
+  usuarios.Add(u);
+  Result := u;
+end;
+procedure ModificaUsuario(ant_usua: String; usuar, clave: String; perfil: TUsuPerfil);
+//Modifica los datos de un usuario en la matriz de usuarios
+var
+  u  : TregUsuario;
+  pos: TregUsuario;
+begin
+  msjError := '';
+  //Busca usuar
+  pos := nil;
+  for u in usuarios do begin
+    If u.usu = ant_usua Then begin
+        pos := u;
+        break;
+    end;
+  end;
+  //Validación
+  If pos = nil Then begin //No existe usuar
+      msjError := 'No existe usuario: ' + usuar;
+      exit;
+  end;
+  //Modifica
+  pos.usu := usuar;
+  pos.cla := clave;
+  pos.per := perfil;
+end;
+procedure EliminaUsuario(usuar: string);
+//ELimina un usuario en la matriz de usuarios
+var
+  u  : TregUsuario;
+  pos: TregUsuario;
+begin
+  msjError := '';
+  //Busca posición de usuario
+  pos := nil;
+  for u in usuarios do begin
+    If u.usu = usuar Then begin
+        pos := u;
+        break;
+    end;
+  end;
+  //Validación
+  If pos = nil Then begin  //No existe usuario
+      msjError := 'No existe usuario: ' + usuario;
+      exit;
+  end;
+  If usuar = 'admin' Then begin
+      msjError := 'No se puede eliminar usuario: admin';
+      exit;
+  end;
+  If usuarios.Count = 1 Then begin
+      msjError := 'No se puede eliminar todos los usuarios';
+      exit;
+  end;
+  If usuar = usuario Then begin
+      msjError := 'No se puede eliminar al usuario actual';
+      exit;
+  end;
+  //Si hay usuario para eliminar en 'pos'
+  usuarios.Remove(pos);
+end;
 
 procedure TFraUsuarios.FileToProperty;
 var
@@ -222,92 +311,6 @@ destructor TFraUsuarios.Destroy;
 begin
   listaUsu.Destroy;
   inherited Destroy;
-end;
-
-//instrucciones de administración de usuarios
-function CreaUsuario(usuar, clave: String; perfil: TUsuPerfil = PER_OPER): TregUsuario;
-{Crea a un usuario nuevo. Devuelve la referencia.}
-var
-  u : TregUsuario;
-begin
-  msjError := '';
-  If usuar = '' Then begin
-      msjError := 'Nombre de usuario no puede ser nulo.';
-      exit;
-  end;
-  //Verifica existencia de usuario
-  for u in usuarios do begin
-      If u.usu = usuar Then begin
-          msjError := 'Usuario Ya existe.';
-          exit;
-      end;
-  end;
-  u := TregUsuario.Create;
-  u.usu := usuar;
-  u.cla := clave;
-  u.per := perfil;
-  usuarios.Add(u);
-  Result := u;
-end;
-procedure ModificaUsuario(ant_usua: String; usuar, clave: String; perfil: TUsuPerfil);
-//Modifica los datos de un usuario en la matriz de usuarios
-var
-  u  : TregUsuario;
-  pos: TregUsuario;
-begin
-  msjError := '';
-  //Busca usuar
-  pos := nil;
-  for u in usuarios do begin
-    If u.usu = ant_usua Then begin
-        pos := u;
-        break;
-    end;
-  end;
-  //Validación
-  If pos = nil Then begin //No existe usuar
-      msjError := 'No existe usuario: ' + usuar;
-      exit;
-  end;
-  //Modifica
-  pos.usu := usuar;
-  pos.cla := clave;
-  pos.per := perfil;
-end;
-procedure EliminaUsuario(usuar: string);
-//ELimina un usuario en la matriz de usuarios
-var
-  u  : TregUsuario;
-  pos: TregUsuario;
-begin
-  msjError := '';
-  //Busca posición de usuario
-  pos := nil;
-  for u in usuarios do begin
-    If u.usu = usuar Then begin
-        pos := u;
-        break;
-    end;
-  end;
-  //Validación
-  If pos = nil Then begin  //No existe usuario
-      msjError := 'No existe usuario: ' + usuario;
-      exit;
-  end;
-  If usuar = 'admin' Then begin
-      msjError := 'No se puede eliminar usuario: admin';
-      exit;
-  end;
-  If usuarios.Count = 1 Then begin
-      msjError := 'No se puede eliminar todos los usuarios';
-      exit;
-  end;
-  If usuar = usuario Then begin
-      msjError := 'No se puede eliminar al usuario actual';
-      exit;
-  end;
-  //Si hay usuario para eliminar en 'pos'
-  usuarios.Remove(pos);
 end;
 
 end.
