@@ -32,32 +32,6 @@ uses
   Classes, SysUtils, Types, fgl, strutils, synaser, MisUtils;
 type
 
-  //Define la instancia de llamada para la ventana frmCabina
-  regLlamada = class
-    //Campos que genera el CDR del NILO
-    serie    : String;  //Número de serie de la llamada
-    canal    : String;  //Canal de entrada de llamada
-    durac    : String;
-    Costo    : String;
-    costoA   : String;  //Costo Global
-    canalS   : String;  //Canal de salida de la llamada
-    digitado : String;
-    descripc : String;  //Descripción de llamada
-    //datos generales de la llamada (campos calculados)
-    //Son necesarios para el correcto procesamiento en frmCabina
-    HORA_INI : TDateTime; //Hora de inicio de llamada
-    HORA_CON : TDateTime; //hora de inicio de contestación
-    NUM_DIG : String;     //numero digitado
-    CONTES  : Boolean;    //Bandera de contestación
-    DESCR_  : String ;    //descripción de llamada
-    DURAC_  : String ;    //duración de la llamada hh:nn:ss
-    PASO_   : String ;    //paso de llamada
-    COSTOP_ : String;     //costo por paso
-    COST_NTER: Double;    //costo de una llamada (visto por el NILOTER)
-    CATEG_  : String;     //tipo o categoria de la llamada
-  end;
-  regLlamada_list = specialize TFPGObjectList<regLlamada>;   //lista de bloques
-
   // Estados de la conexión de la cabina.
   TNilEstadoConex = (
     cecConectando,    //conectando

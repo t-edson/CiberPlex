@@ -14,9 +14,9 @@ object frmNiloMConex: TfrmNiloMConex
     Height = 361
     Top = 0
     Width = 425
-    ActivePage = tabConexiones
+    ActivePage = tabSerial
     Align = alClient
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 0
     object tabSerial: TTabSheet
       Caption = 'Puerto Serial'

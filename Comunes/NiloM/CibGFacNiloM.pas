@@ -9,30 +9,67 @@ unit CibGFacNiloM;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Types, LCLProc, MisUtils, crt, strutils, CibFacturables,
-  CibNiloMConex, CibRegistros, FormNiloMConex, FormNiloMProp,
+  Classes, SysUtils, dos, Types, fgl, LCLProc, MisUtils, crt, strutils,
+  CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
   CibNiloMTarifRut, Globales;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 type
+  //Define la instancia de llamada para la ventana frmCabina
+
+  { regLlamada }
+
+  regLlamada = class
+    //Campos que se leen del CDR del NILO
+    serie    : String;  //Número de serie de la llamada
+    canal    : String;  //Canal de entrada de llamada
+    durac    : String;
+    Costo    : String;
+    costoA   : String;  //Costo Global
+    canalS   : String;  //Canal de salida de la llamada
+    digitado : String;
+    descripc : String;  //Descripción de llamada
+    //datos generales de la llamada (campos calculados)
+    //Son necesarios para el correcto procesamiento en frmCabina
+    HORA_INI : TDateTime; //Hora de inicio de llamada
+    HORA_CON : TDateTime; //hora de inicio de contestación
+    NUM_DIG : String;     //numero digitado
+    CONTES  : Boolean;    //Bandera de contestación
+    DESCR_  : String ;    //descripción de llamada
+    DURAC_  : String ;    //duración de la llamada hh:nn:ss
+    PASO_   : String ;    //paso de llamada
+    COSTOP_ : String;     //costo por paso
+    COST_NTER: Double;    //costo de una llamada (visto por el NILOTER)
+    CATEG_  : String;     //tipo o categoria de la llamada
+  protected
+    const SEP = '|';  //separador de campos
+    function GetCadEstado: string;
+    procedure SetCadEstado(AValue: string);
+  public
+    property CadEstado: string read GetCadEstado write SetCadEstado;
+  end;
+  regLlamada_list = specialize TFPGObjectList<regLlamada>;   //lista de bloques
+
   TCibGFacNiloM = class;
 
   { TCibFacLocutor }
-
   TCibFacLocutor = class(TCibFac)
-  public  //Campos de Propiedades (No cambian frecuentemente)
-    num_can : char;     //canal del NILO asociado a este locutorio '0', '1', '2', '3'
-    //variables de control de limitacion
-    tpoLimitado : integer; //Bandera de Tiempo limitado
-    ctoLimitado : Double;  //costo limitado
   private //Variables actualizadas automáticamente
     trm     : TCibGFacNiloM;  //Referencia al enrutador.
     //variables de acumulación
     costo_tot: Double;  //costo acumulado de todas las llamadas
     num_llam : Double;  //número de llamadas acumuladas
+  protected  //"Getter" and "Setter"
+    function GetCadEstado: string; override;
+    procedure SetCadEstado(AValue: string); override;
+    function GetCadPropied: string; override;
+    procedure SetCadPropied(AValue: string); override;
+  public  //Campos de Propiedades (No cambian frecuentemente)
+    num_can : char;     //canal del NILO asociado a este locutorio '0', '1', '2', '3'
+    //variables de control de limitacion
+    tpoLimitado : integer; //Bandera de Tiempo limitado
+    ctoLimitado : Double;  //costo limitado
   protected
-    llam    : regLlamada; //llamada en curso
-    llamadas: regLlamada_list;  //lista de llamadas
     PosLlam : integer;
     tic_con : Integer;    //Contador para contestación automática
     procedure LeeListaLlamadas;
@@ -40,16 +77,15 @@ type
     procedure ProcesaDescolgado;
     procedure ProcesaDigitado(dig: String; tarif: TNiloMTabTar);
     procedure ProcesarContestada(cansal: String);
-    function GetCadEstado: string; override;
-    procedure SetCadEstado(AValue: string); override;
-    function GetCadPropied: string; override;
-    procedure SetCadPropied(AValue: string); override;
   Public
+    llamadas: regLlamada_list;  //lista de llamadas
     col_costo: Integer;  //indica cual es la columna que contiene el costo
-    r       : regTarifa;
+    tar     : regTarifa;
     trama_tmp: String;    //bolsa temporal para la trama
     fBol    : TCibBoleta;
     descolg : Boolean;    //Bandera de descolgado
+    llam    : regLlamada; //llamada en curso
+    function RegVenta(usu: string): string; override; //línea para registro de venta
     function AgregarFila: integer;
     procedure EscribeDatosAdicionales;
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
@@ -71,7 +107,6 @@ type
     procedure AbrirRegistro;
     procedure CerrarRegistro;
     procedure frmNilomProp_CambiaProp;
-    procedure loc_CambiaPropied;
     procedure ErrorLog(mensaje: string);
   private //Funciones para escribir en los archivos de registros
     procedure VolcarErrorLog;
@@ -84,10 +119,8 @@ type
     procedure SetPuertoN(AValue: string);
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
-    function GetCadEstado: string; override;
-    procedure SetCadEstado(AValue: string); override;
   public
-    ArcReg    : string;  //Archivo de registro para el registr propio del enrutador
+    ArcReg    : string;  //Archivo de registro para el registro propio del enrutador
     ArcTarif  : string;  //Archivo de configuración de tarifas
     ArcRutas  : string;  //Archivo de configuración de rutas
     MsjError  : string;  //Bandera - Mensaje de error
@@ -296,6 +329,103 @@ begin
     If costopaso1 <> -1 Then tmp := tmp + costopaso1;    //Había
     Result := tmp;
 End;
+procedure ActualizaLista();
+//Actualiza la fila del listbox que representa a la llamada
+begin
+  //No se implementa la parte visual aquí
+end;
+function NombFinal(camino : string; nom_loc: string; extension : String): String;
+{Devuelve el nombre final con el que se genera un archivo de registro.
+El nombre final depende del mes actual y del local.
+También se verifica si es accesible el archivo para escritura.
+Si hay problemas se devolverá el error en la variable "MsjError".
+NOTA: Esta función es una copia de la existente en la unidad CibRegistros. Se copia
+aquí para no tener que incluir a CibRegistros, y mantener a esta unidad sin
+dependencias.}
+var
+  mes : String;
+  arc : TextFile;
+  tmp : String;
+  Attr: word;
+begin
+    msjError := '';
+    mes := FormatDateTime('_yyyy_mm', now);  //año-mes
+    tmp := camino + '\' + nom_loc + mes + extension;
+    //Verifica disponibilidad de archivo
+    try
+      if FileExists(tmp) then begin   //ve si existe
+        //Abre y cierra para probar si hay problemas
+        AssignFile(arc, tmp);
+        GetFAttr(arc, Attr);  //verifica atributos
+        if (Attr and readonly)<>0 then begin
+          msjError := 'El archivo de registro: ' + tmp + ' es de sólo lectura';
+          exit;
+        end;
+        Append(arc);    //intenta abrir para agregar
+        CloseFile(arc);
+      end else begin
+        //No existe aún, lo crea
+        StringToFile('',tmp);
+      end;
+      //toma el nombre final y sale
+      NombFinal := tmp;
+    except
+      on E : Exception do
+      begin
+        msjError := 'Error accediendo a: ' + tmp + ' (' + E.Message + ')';
+      end;
+    end;
+end;
+
+{ regLlamada }
+function regLlamada.GetCadEstado: string;
+begin
+  Result :=
+    serie   + SEP +
+    canal   + SEP +
+    durac   + SEP +
+    Costo   + SEP +
+    costoA  + SEP +
+    canalS  + SEP +
+    digitado + SEP +
+    descripc + SEP +
+    T2f(HORA_INI) + SEP +
+    T2f(HORA_CON) + SEP +
+    NUM_DIG  + SEP +
+    B2f(CONTES) + SEP +
+    DESCR_   + SEP +
+    DURAC_   + SEP +
+    PASO_    + SEP +
+    COSTOP_  + SEP +
+    N2f(COST_NTER) + SEP +
+    CATEG_ ;
+end;
+procedure regLlamada.SetCadEstado(AValue: string);
+var
+  a: TStringDynArray;
+begin
+  a := explode(SEP, AValue);
+  serie    := a[0];
+  canal    := a[1];
+  durac    := a[2];
+  Costo    := a[3];
+  costoA   := a[4];
+  canalS   := a[5];
+  digitado := a[6];
+  descripc := a[7];
+  HORA_INI := f2T(a[8]);
+  HORA_CON := f2T(a[9]);
+  NUM_DIG  := a[10];
+  CONTES   := f2B(a[11]);
+  DESCR_   := a[12];
+  DURAC_   := a[13];
+  PASO_    := a[14];
+  COSTOP_  := a[15];
+  COST_NTER:= f2N(a[16]);
+  CATEG_   := a[17];;
+end;
+
+{ TCibFacLocutor }
 function TCibFacLocutor.AgregarFila: integer;
 {Agrega un registro, a la lista de llamadas. Devuelve índice al último registro.}
 var
@@ -305,13 +435,6 @@ begin
   llamadas.Add(l);
   Result := llamadas.Count-1;
 end;
-procedure ActualizaLista();
-//Actualiza la fila del listbox que representa a la llamada
-begin
-  //No se implementa la parte visual aquí
-end;
-
-{ TCibFacLocutor }
 procedure TCibFacLocutor.LeeListaLlamadas();
 //Actualiza las variables "costo_tot" y "num_llam"
 var
@@ -336,8 +459,8 @@ function TCibFacLocutor.GetCadEstado: string;
 los campos que deban ser actualizados}
 begin
   Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
-         nombre + #9 +    {el nombre es obligatorio para identificarLO unívocamente}
-         B2f(descolg);
+         nombre + #9 +    {el nombre es obligatorio para identificarlo unívocamente}
+         B2f(descolg) + #9 + llam.CadEstado + #9 + #9;
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -352,6 +475,7 @@ begin
   delete(lin, 1, 1);  //recorta identificador
   campos := Explode(#9, lin);
   descolg   := f2B(campos[1]);
+  llam.CadEstado:=campos[2];
 
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
@@ -453,7 +577,6 @@ begin
     descolg := True;     //La llamada está colgada
     tic_con := 0;        //Inicia contador
 end;
-
 procedure TCibFacLocutor.ProcesarContestada(cansal: String);
 //Procesa una llamada contestada. "cansal" es el canal de salida actual de la
 //llamada
@@ -473,6 +596,18 @@ begin
     descolg := True;     //La llamada está descolgada
     llam.HORA_CON := now;      //toma hora de contestación
 end;
+function TCibFacLocutor.RegVenta(usu: string): string;
+begin
+  Result  := llam.serie + #9 + FormatDateTime('dd/mm/yyyy', now) + #9 +
+             FormatDateTime('hh:nn:ss', now) + #9 + llam.digitado + #9 +
+             llam.durac + #9 + I2F(duracN(llam.durac)) + #9 +
+             N2f(StrToFloat(llam.Costo) * trm.facCmoneda) + #9 +
+             N2f(llam.COST_NTER) + #9 +
+             llam.canal + #9 + llam.canalS + #9 +
+             llam.descripc + #9 + llam.CATEG_ + #9 + USU + #9 +
+             nombre + #9 + trm.PuertoN + #9 + trm.CategVenta + #9 +
+             #9 + #9 + #9; //campos ampliados
+end;
 procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
   CategLocu{categoría de venta para lcoutorios}: string; tarif: TNiloMTabTar);
   function EsLineaCDR: boolean;
@@ -490,7 +625,7 @@ procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double; usuari
 var
   tmp : String;
   nser : Integer;
-  rr : TCibItemBoleta;
+  r : TCibItemBoleta;
   L : regTarifa;
 begin
     If linea = 'Ctda' + num_can then begin
@@ -539,32 +674,23 @@ begin
         bloquear_rx := False;  //libera el bloqueo
         ActualizaLista();  //Actualiza lista
         LeeListaLlamadas;               //Actualiza costo
-//        lblCosto := ForCosto(costo_tot);      //Actualiza costo
-//        lblNumLlam := MiLista1.ListCount + ' LLAMADAS';
+        //Registra la venta en el archivo de registro
+        nser := OnLogVenta(IDE_NIL_LLA, RegVenta(usuario), llam.COST_NTER);    //toma serie
+        //Si hubo error, ya se mostró en OnLogVenta()
 
-        //Registra en el registro del programa
-        tmp := llam.serie + #9 + FormatDateTime('dd/mm/yyyy', now) + #9 +
-              FormatDateTime('hh:nn:ss', now) + #9 + llam.digitado + #9 +
-              llam.durac + #9 + I2F(duracN(llam.durac)) + #9 +
-              N2f(StrToFloat(llam.Costo) * facCmoneda) + #9 + N2f(llam.COST_NTER) + #9 +
-              llam.canal + #9 + llam.canalS + #9 +
-              llam.descripc + #9 + llam.CATEG_ + #9 + USUARIO + #9 +
-              nombre + #9 + trm.PuertoN + #9 + CategLocu + #9 + #9 + #9 + #9; //campos ampliados
-        { TODO : Ver si es corrrecto acceder al registro desde aquí }
-        nser := PLogLlam(tmp, llam.COST_NTER);    //toma serie
-        If msjError <> '' Then MsgErr(msjError);
         //agrega item a boleta
-        rr.vser := nser;
-        rr.descr := 'Llam: ' + llam.NUM_DIG + '(' + llam.descripc + ')';
-        rr.pUnit := llam.COST_NTER;
-        rr.subtot := llam.COST_NTER;
-        rr.cat := CategLocu;
-        rr.subcat := 'LLAMADA';
-        rr.vfec := now;
-        rr.estado := IT_EST_NORMAL;
-        rr.fragmen := 0;
-        rr.conStk := False;    //no se maneja stock
-        fBol.VentaItem(rr, False);
+        r := TCibItemBoleta.Create;   //crea elemento
+        r.vser := nser;
+        r.descr := 'Llam: ' + llam.NUM_DIG + '(' + llam.descripc + ')';
+        r.pUnit := llam.COST_NTER;
+        r.subtot := llam.COST_NTER;
+        r.cat := CategLocu;
+        r.subcat := 'LLAMADA';
+        r.vfec := now;
+        r.estado := IT_EST_NORMAL;
+        r.fragmen := 0;
+        r.conStk := False;    //no se maneja stock
+        fBol.VentaItem(r, False);
     end;
 
     if copy(linea, 1, 2)  = 'n' + num_can then  //Procesamiento de número digitado
@@ -618,11 +744,6 @@ procedure TCibGFacNiloM.frmNilomProp_CambiaProp;
 begin
   if OnCambiaPropied<>nil then OnCambiaPropied;
 end;
-procedure TCibGFacNiloM.loc_CambiaPropied;
-begin
-  //dispara evento
-  if OnCambiaPropied<>nil then OnCambiaPropied();
-end;
 procedure TCibGFacNiloM.ErrorLog(mensaje: string);
 {Escribe un mensaje de error en el archivo de registro de llamadas.
 En realidad los guarda en una lista hasta que se vuelcan de golpe}
@@ -633,21 +754,13 @@ begin
 end;
 function TCibGFacNiloM.tarif_LogErr(mensaje: string): integer;
 //Se solicita registrar un mensaje de error
-var
-  NombProg, NombLocal, Usuario: string;
 begin
-  if OnReqConfigGen<>nil then  //Pide información global
-      OnReqConfigGen(NombProg, NombLocal, Usuario);
-  Result := PLogErr(usuario, mensaje);
+  Result := OnLogError(mensaje);
 end;
 function TCibGFacNiloM.tarif_LogInf(mensaje: string): integer;
 //Se solicita registrar un mensaje informativo
-var
-  NombProg, NombLocal, Usuario: string;
 begin
-  if OnReqConfigGen<>nil then  //Pide información global
-      OnReqConfigGen(NombProg, NombLocal, Usuario);
-  Result := PLogInf(usuario, mensaje);
+  Result := OnLogInfo(mensaje);
 end;
 //Funciones para escribir en los archivos de registros
 procedure TCibGFacNiloM.VolcarErrorLog;
@@ -714,11 +827,11 @@ var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 +
-            N2f(Fy) + #9 + PuertoN + #9 + N2f(facCmoneda) + #9 + #9;
+  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
+            PuertoN + #9 + N2f(facCmoneda) + #9 + #9;
   //Información de las cabinas en las demás líneas
   for c in items do begin
-    Result := Result + LineEnding + TCibFacLocutor(c).CadPropied;
+    Result := Result + LineEnding + c.CadPropied;
   end;
 end;
 procedure TCibGFacNiloM.SetCadPropied(AValue: string);
@@ -748,38 +861,6 @@ begin
     loc.CadPropied := lin;
   end;
   lineas.Destroy;
-end;
-function TCibGFacNiloM.GetCadEstado: string;
-{Devuelve el estado del enrutador y de los locutorios que contiene, en una cadena. La
-idea es que esta información se lea frecuéntemente, porque contiene propiedades que
-cambian frecuéntemente. }
-var
-  loc : TCibFac;
-begin
-  {No se incluye el estadoCnx del enrutador, por ahora. Se asume que no tene variables que
-  cambien continuamente, aunque se puede asumir que las llamadas cursadas alteran el
-  estadoCnx del enrtador, pudiendo generar un efecto gráfico como en CIBERPLEX de VB.}
-  //Delimitador inicial y propiedades de objeto.
-  Result := '<' + I2f(ord(self.tipo)) + #9 + Nombre + LineEnding;
-  for loc in items do begin
-    Result += loc.CadEstado + LineEnding;  //estadoCnx de locutorio
-  end;
-  Result += '>';  //delimitador final.
-end;
-procedure TCibGFacNiloM.SetCadEstado(AValue: string);
-{Fija el estado de los locutorios, a partir de una lista de cadenas}
-{ TODO : Se debe ver si este método se puede pasar como método de la clase CibGFac, para evitar repetirlae en todos los grupos de facurables }
-var
-  nomb, cad: string;
-  car: char;
-  it: TCibFac;
-begin
-  decod.Inic(AValue);
-  while decod.Extraer(car, nomb, cad) do begin
-    if cad = '' then continue;
-    it := ItemPorNombre(nomb);
-    if it<>nil then it.CadEstado := cad;
-  end;
 end;
 procedure TCibGFacNiloM.LeerArchivosConfig;
 {Lee el contenido de los archivos de tarifas y rutas y los carga en "tarif" y "rutas".
@@ -889,9 +970,7 @@ begin
   loc.Nombre:= nomLoc;
   loc.num_can:=num_can;
   loc.trm := self;
-  loc.OnCambiaPropied:=@loc_CambiaPropied;
-  loc.Grupo := self;
-  items.Add(loc);  //agrega
+  AgregarItem(loc);   //aquí se configuran algunos eventos
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := loc;
 end;
