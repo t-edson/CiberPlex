@@ -141,6 +141,10 @@ type
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
+    function grupos_LogError(msj: string): integer;
+    function grupos_LogVenta(ident:char; msje:string; dCosto:Double): integer;
+    procedure grupos_ActualizStock(const codPro: string;
+      const Ctdad: double);
     procedure grupos_ReqConfigGen(var NombProg, NombLocal, Usuario: string);
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
@@ -150,7 +154,7 @@ type
     procedure frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string);
-    procedure grupos_LogInfo(cab: TCibFac; msj: string);
+    function grupos_LogInfo(msj: string): integer;
     procedure grupos_EstadoArchivo;
     procedure LeerEstadoDeArchivo;
     procedure NiloM_RegMsjError(NomObj: string; msj: string);
@@ -175,9 +179,18 @@ begin
   Config.escribirArchivoIni;  //guarda cambios
   VisorCabinas.ActualizarPropiedades(Config.grupos.CadPropiedades);
 end;
-procedure TfrmPrincipal.grupos_LogInfo(cab: TCibFac; msj: string);
+function TfrmPrincipal.grupos_LogInfo(msj: string): integer;
 begin
-  PLogInf(usuario, msj);
+  Result := PLogInf(usuario, msj);
+end;
+function TfrmPrincipal.grupos_LogVenta(ident: char; msje: string; dCosto: Double
+  ): integer;
+begin
+  Result := PLogVenta(ident, msje, dCosto);
+end;
+function TfrmPrincipal.grupos_LogError(msj: string): integer;
+begin
+  Result := PLogErr(usuario, msj);
 end;
 procedure TfrmPrincipal.grupos_EstadoArchivo;
 {Guarda el estado de los objetos al archivo de estado}
@@ -195,6 +208,18 @@ begin
   NombProg  := NOM_PROG;
   NombLocal := Config.Local;
   Usuario   := FormInicio.usuario;
+end;
+procedure TfrmPrincipal.grupos_ActualizStock(const codPro: string;
+  const Ctdad: double);
+{Se está solicitando actualizar el stock. Esta petición usualmente viene desde una
+boleta.}
+begin
+  ActualizarStock(arcProduc, codPro, Ctdad);
+  if msjError <> '' Then begin
+      //Se muestra aquí porque no se va a detener el flujo del programa por
+      //un error, porque es prioritario registrar la venta.
+      MsgBox(msjError);
+  end;
 end;
 procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
@@ -222,11 +247,14 @@ begin
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
   LeerEstadoDeArchivo;   //Lee después de leer la configuración
   //Inicializa Grupos
-  Config.grupos.OnCambiaPropied:=@grupos_CambiaPropied;
-  Config.grupos.OnLogInfo      :=@grupos_LogInfo;
-  Config.grupos.OnGuardarEstado:=@grupos_EstadoArchivo;
+  Config.grupos.OnCambiaPropied:= @grupos_CambiaPropied;
+  Config.grupos.OnLogInfo      := @grupos_LogInfo;
+  Config.grupos.OnLogVenta     := @grupos_LogVenta;
+  Config.grupos.OnLogError     := @grupos_LogError;
+  Config.grupos.OnGuardarEstado:= @grupos_EstadoArchivo;
   Config.grupos.OnReqConfigGen := @grupos_ReqConfigGen;
   Config.grupos.OnReqCadMoneda := @Config.CadMon;
+  Config.grupos.OnActualizStock:=@grupos_ActualizStock;
   //Crea los objetos gráficos de cabina de acuerdo.
   VisorCabinas.ActualizarPropiedades(config.grupos.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
@@ -447,7 +475,7 @@ procedure TfrmPrincipal.PonerComando(facOrig: TCibFac; comando: TCPTipCom; Param
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
   //llama como evento, indicando que es una trama local
-  Config.grupos.gf_TramaLista(facOrig, TramaTmp, true);
+  Config.grupos.gof_TramaLista(facOrig, TramaTmp, true);
 end;
 procedure TfrmPrincipal.VisorCabinasObjectsMoved;
 {Se ha producido el movimiento de objetos en el editor. Se actualiza en el modelo.}

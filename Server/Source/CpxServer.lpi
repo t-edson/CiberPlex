@@ -224,7 +224,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.4;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes"/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.5b;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
