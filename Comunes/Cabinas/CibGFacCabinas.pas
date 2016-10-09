@@ -13,7 +13,7 @@ unit CibGFacCabinas;
 interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
-  MisUtils, CibTramas, FormInicio, CibFacturables,
+  MisUtils, CibTramas, CibFacturables,
   CibCabinaBase, CibCabinaTarifas, FormVisorMsjRed, FormAdminTarCab, FormAdminCabinas;
 
 type
@@ -32,6 +32,16 @@ type
   { TCibFacCabina }
   {Define al objeto Cabina de Ciberplex}
   TCibFacCabina = class(TCibFac)
+  private  //campos privados
+    cabCuenta: TCabCuenta;    //campos de conteo de la cabina
+    cabConex : TCabConexion;  //campos de conexión de la cabina
+    FNombrePC: string;
+    PausadS: integer;  {tiempo pausado en segundos (Contador de
+                        tiempo que la cabina se encuentra en pausa)}
+    tic    : integer;   //contador para temporización
+    SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
+                        por Socket.}
+    function VerCorteAutomatico: boolean;
     procedure cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
   protected  //"Getter" and "Setter"
     FConConexion: boolean;
@@ -48,30 +58,18 @@ type
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
     procedure SetNombrePC(AValue: string);
-  private  //campos privados
-    cabCuenta: TCabCuenta;    //campos de conteo de la cabina
-    cabConex : TCabConexion;  //campos de conexión de la cabina
-    FNombrePC: string;
-    PausadS: integer;  {tiempo pausado en segundos (Contador de
-                        tiempo que la cabina se encuentra en pausa)}
-    tic    : integer;   //contador para temporización
-    SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
-                        por Socket.}
-    function VerCorteAutomatico: boolean;
-  public  //campos diversos
-    OnTramaLista  : TEvCabTramaLista;   //indica que hay una trama lista esperando
-    OnRegMensaje  : TEvCabRegMensaje;   //indica que se ha generado un mensaje de la conexión
-    OnDetenConteo : TEVCabAccionCab;    //Cuando se detiene el conteo de una cabina
-    OnLogInfo     : TEvCabLogInfo;      //Indica que se quiere registrar un mensaje en el registro
-    //OnGrabBoleta  : TEvCabAccionCab;    //Indica que se ha grabado la boleta
-    function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
-    function RegVenta: string; //línea para registro de venta
-    procedure Contar1seg;      //usado para temporización
-  public  //campos de propiedades
+  public  //Campos de propiedades
     property NombrePC : string read FNombrePC write SetNombrePC;  //Nombre de Red que tiene la PC cliente
     property IP: string read GetIP write SetIP;
     property Mac: string read cabConex.mac write SetMac;
     property ConConexion: boolean read FConConexion write SetConConexion;
+  public  //campos diversos
+    OnTramaLista  : TEvCabTramaLista;   //indica que hay una trama lista esperando
+    OnRegMensaje  : TEvCabRegMensaje;   //indica que se ha generado un mensaje de la conexión
+    //OnGrabBoleta  : TEvCabAccionCab;    //Indica que se ha grabado la boleta
+    function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
+    function RegVenta(usu: string): string; override; //línea para registro de venta
+    procedure Contar1seg;      //usado para temporización
   public  //campos de estado
     HoraPC : TDateTime;  //Fecha-hora que tiene la PC cliente, localmente.
     PantBloq: Boolean;   //Indica si la PC cliente tiene la pantalla bloqueada
@@ -122,25 +120,19 @@ type
   control en un solo objeto, con la posibilidad de tener múltiples interfaces
   (pantallas) de la aplicación. }
   TCibGFacCabinas = class(TCibGFac)
-    procedure cab_CambiaPropied;
     procedure timer1Timer(Sender: TObject);
   private
     timer1 : TTimer;
     ventMsjes: TForm_list;     //Ventanas de mensajes de red
-    procedure cab_LogInfo(cab: TCibFac; msj: string);
-    procedure cab_DetenConteo(cab: TCibFacCabina);
     procedure cab_RegMensaje(NomCab: string; msj: string);
     procedure cab_TramaLista(facOri: TCibFac; tram: TCPTrama; tramaLocal: boolean);
   public  //Eventos.
     {Acciones que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
     OnRegMensaje   : TEvCabRegMensaje; //indica que se ha generado un mensaje de la conexión
-    OnDetenConteo  : TEVCabAccionCab;  //indica que se ha detenido la cuenta en alguna cabina
   protected //Getters and Setters
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
-    function GetCadEstado: string; override;
-    procedure SetCadEstado(AValue: string); override;
   public
     tarif: TCPTarifCabinas; //tarifas de cabina
     GrupTarAlquiler: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
@@ -265,7 +257,7 @@ begin
   FNombrePC:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-function TCibFacCabina.RegVenta: string;
+function TCibFacCabina.RegVenta(usu: string): string;
 {Devuelve la línea que debe escribirse en el registro de venta al desactivarse la cabina}
 var
   estConex: String;
@@ -278,7 +270,7 @@ begin
   else
       categ := 'NORMAL';
   estConex := IntToStr(EstadoConexN);
-  Result := usuario + #9 + 'INT01' + #9 +
+  Result := usu + #9 + 'INT01' + #9 +
            'INTERNET' + #9 +
            IntToStr(TranscSegTol) + #9 +
            N2f(FCosto) + #9 + N2f(FCosto) + #9 +
@@ -397,13 +389,13 @@ begin
          Nombre + #9 +    {el nombre es obligatorio para identificar unívocamente a la cabina}
          I2f(cabConex.estadoN)+ #9 + {se coloca primero el Estado de la conexión, porque
              es el campo que siempre debe actualizarse, cuando hay conexión remota activada}
-         D2f(HoraPC);  //Este campo no tiene significado si no hay conexión
+         T2f(HoraPC);  //Este campo no tiene significado si no hay conexión
   if cabCuenta.estado <> EST_NORMAL then begin
     // En el estado EST_NORMAL, no es necesario enviar los demás campos
     Result += #9 +
          I2f(cabCuenta.estadoN) + #9 +
-         D2f(cabCuenta.hor_ini) + #9 +
-         D2f(cabCuenta.tSolic) + #9 +
+         T2f(cabCuenta.hor_ini) + #9 +
+         T2f(cabCuenta.tSolic) + #9 +
          B2f(cabCuenta.tLibre) + #9 +
          B2f(cabCuenta.horGra) + #9 +
        { Estos campos son calculados, pero se devuelven como ayuda, para la implementación
@@ -422,8 +414,6 @@ procedure TCibFacCabina.SetCadEstado(AValue: string);
 var
   lin: String;
   campos, lineas: TStringDynArray;
-  i: Integer;
-  it: TCibItemBoleta;
 begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
@@ -433,12 +423,12 @@ begin
   if SinRed then begin  //Cuando hay red, esta propiedad se actualiza sola
     cabConex.estadoN  := f2I(campos[1]);
   end;
-  HoraPC := f2D(campos[2]);
+  HoraPC := f2T(campos[2]);
   if high(campos)>=3 then begin
     //Hay información de campos adicionaleas
     cabCuenta.estadoN := f2I(campos[3]);
-    cabCuenta.hor_ini := f2D(campos[4]);
-    cabCuenta.tSolic  := f2D(campos[5]);
+    cabCuenta.hor_ini := f2T(campos[4]);
+    cabCuenta.tSolic  := f2T(campos[5]);
     cabCuenta.tLibre  := f2B(campos[6]);
     cabCuenta.horGra  := f2B(campos[7]);
     FTransc           := f2I(campos[8]);   //el tiempo transcurrido se lee directamente
@@ -580,6 +570,9 @@ begin
   if OnCambiaEstado<>nil then OnCambiaEstado();
 end;
 procedure TCibFacCabina.DetenConteo;
+var
+  nser: integer;
+  r: TCibItemBoleta;
 begin
   if not Contando then
     exit;   //No se puede detener cuenta en este Estado
@@ -591,7 +584,30 @@ begin
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
   cabConex.TCP_envComando(C_BLOQ_PC, 0, 0);    //bloquea, si hay conexión
-  if OnDetenConteo<>nil then OnDetenConteo(self);
+
+  //Registra la venta en el archivo de registro
+  if horGra then begin
+    nser := OnLogVenta(IDE_INT_GRA, RegVenta('XXX'), Costo);
+  end else begin
+    nser := OnLogVenta(IDE_INT_NOR, RegVenta('XXX'), Costo);
+  end;
+  //Si hubo error, ya se mostró en OnLogVenta()
+
+  //agrega item a boleta
+  r := TCibItemBoleta.Create;   //crea elemento
+  r.vser := nser;
+  r.Cant := 1;
+  r.pUnit := Costo;
+  r.subtot := Costo;
+  r.cat := Grupo.CategVenta;
+  r.subcat := 'INTERNET';
+  r.descr := 'Alquiler PC: ' + IntToStr(tSolicMin) + 'm(' +
+             TimeToStr(TranscDat) + ')';
+  r.vfec := date + Time;
+  r.estado := IT_EST_NORMAL;
+  r.fragmen := 0;
+  r.conStk := False;     //No se descuenta stock
+  Boleta.VentaItem(r, False);
 end;
 procedure TCibFacCabina.PonerManten;
 {Pone a la cabina en mantenimiento. }
@@ -607,7 +623,7 @@ begin
     //Se considera un cambio de Estado
     if OnCambiaEstado<>nil then OnCambiaEstado();
     //cabConex.TCP_envComando(C_BLOQ_PC, 0, 0);    //bloquea, si hay conexión
-    if OnLogInfo<>nil then OnLogInfo(self, 'Pone cabina: ' + self.Nombre + ' a mantenimiento.');
+    if OnLogInfo<>nil then OnLogInfo('Pone cabina: ' + Nombre + ' a mantenimiento.');
   end;
 end;
 procedure TCibFacCabina.SacarManten;
@@ -663,11 +679,6 @@ begin
   if (frmAdminCabs<>nil) and frmAdminCabs.Visible then
     frmAdminCabs.RefrescarGrilla;  //actualiza
 end;
-procedure TCibGFacCabinas.cab_CambiaPropied;
-begin
-  //dispara evento
-  if OnCambiaPropied<>nil then OnCambiaPropied();
-end;
 procedure TCibGFacCabinas.cab_TramaLista(facOri: TCibFac; tram: TCPTrama;
   tramaLocal: boolean);
 begin
@@ -683,15 +694,6 @@ begin
   frm := BuscarVisorMensajes(NomCab);  //Ve si hay un formulario de mensajes para esta cabina
   if frm<>nil then frm.PonerMsje(msj);  //Envía mensaje a su formaulario
 end;
-procedure TCibGFacCabinas.cab_DetenConteo(cab: TCibFacCabina);
-{Se ha detenido la cuenta de la cabina.}
-begin
-  if OnDetenConteo<>nil then OnDetenConteo(cab);
-end;
-procedure TCibGFacCabinas.cab_LogInfo(cab: TCibFac; msj: string);
-begin
-  if OnLogInfo<>nil then OnLogInfo(cab, msj);
-end;
 function TCibGFacCabinas.Agregar(nombre0: string; ip0: string): TCibFacCabina;
 var
   cab: TCibFacCabina;
@@ -704,13 +706,9 @@ begin
   end else begin  //Se crean normalmente
     cab := TCibFacCabina.Create(nombre0, ip0);
   end;
-  cab.OnCambiaPropied:=@cab_CambiaPropied;
   cab.OnTramaLista :=@cab_TramaLista;
   cab.OnRegMensaje :=@cab_RegMensaje;
-  cab.OnDetenConteo:=@cab_DetenConteo;
-  cab.OnLogInfo    :=@cab_LogInfo;
-  cab.Grupo := self;
-  items.Add(cab);
+  AgregarItem(cab);   //aquí se configuran algunos  eventos
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := cab;
 end;
@@ -741,10 +739,11 @@ var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9  + #9 ;
+  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
+            #9 ;
   //Información de las cabinas en las demás líneas
   for c in items do begin
-    Result := Result + LineEnding + TCibFacCabina(c).CadPropied ;
+    Result := Result + LineEnding + c.CadPropied ;
   end;
 end;
 procedure TCibGFacCabinas.SetCadPropied(AValue: string);
@@ -772,33 +771,6 @@ begin
     cab.CadPropied := lin;
   end;
   lineas.Destroy;
-end;
-function TCibGFacCabinas.GetCadEstado: string;
-{Devuelve el estado de las cabinas creadas, en una cadena. La idea es que esta información
- se lea frecuéntemente, porque contiene propiedades que cambian frecuéntemente. }
-var
-  c : TCibFac;
-begin
-  //Delimitador inicial y propiedades de objeto.
-  Result := '<' + I2f(ord(self.tipo)) + #9 + Nombre + LineEnding;
-  for c in items do begin
-    Result += c.CadEstado + LineEnding;
-  end;
-  Result += '>';  //delimitador final.
-end;
-procedure TCibGFacCabinas.SetCadEstado(AValue: string);
-{Fija el estado de las cabinas, a partir de una lista de cadenas}
-var
-  nomb, cad: string;
-  car: char;
-  it: TCibFac;
-begin
-  decod.Inic(AValue);
-  while decod.Extraer(car, nomb, cad) do begin
-    if cad = '' then continue;
-    it := ItemPorNombre(nomb);
-    if it<>nil then it.CadEstado := cad;
-  end;
 end;
 function TCibGFacCabinas.ListaCabinas: string;
 {Devuelve la lista de cabinas creadas. La idea es leer con poca frecuencia, esta
@@ -882,7 +854,7 @@ begin
   frmAdminTar:= TfrmAdminTarCab.Create(nil);
   frmAdminTar.grpTarAlq := GrupTarAlquiler;
   frmAdminTar.tarCabinas := tarif;
-  frmAdminTar.OnModificado:=@cab_CambiaPropied;  //para actualizar cambios
+  frmAdminTar.OnModificado:=@fac_CambiaPropied;  //para actualizar cambios
   if GrupTarAlquiler.items.Count=0 then begin
     //agrega una tarifa de alquiler por defecto
     frmAdminTar.IniciarPorDefecto;  { TODO : Ver si es necesario }
@@ -903,11 +875,16 @@ begin
   ventMsjes.Destroy;
   frmAdminCabs.Destroy;
   frmAdminTar.Destroy;
+  //Detiene eventos
   OnCambiaPropied:= nil;  //para evitar refrescar controles en este estado
+  OnReqConfigGen := nil;
+  OnReqConfigMon := nil;
+  OnReqCadMoneda := nil;
+  OnLogInfo      := nil;
+  OnLogVenta     := nil;
+  OnActualizStock:= nil;
   OnTramaLista   := nil;   { TODO : Tal vez estas rutinas de limpieza se deban hacer en directamente en TCibFacCabina }
   OnRegMensaje   := nil;
-  OnDetenConteo  := nil;
-  OnLogInfo      := nil;
   timer1.OnTimer:=nil;
   timer1.Destroy;
   tarif.Destroy;
