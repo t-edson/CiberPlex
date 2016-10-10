@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, dos, Types, fgl, LCLProc, MisUtils, crt, strutils,
   CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
-  CibNiloMTarifRut, Globales;
+  CibNiloMTarifRut, Globales, CibRegistros;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 type
@@ -55,7 +55,6 @@ type
   { TCibFacLocutor }
   TCibFacLocutor = class(TCibFac)
   private //Variables actualizadas automáticamente
-    trm     : TCibGFacNiloM;  //Referencia al enrutador.
     //variables de acumulación
     costo_tot: Double;  //costo acumulado de todas las llamadas
     num_llam : Double;  //número de llamadas acumuladas
@@ -78,13 +77,12 @@ type
     procedure ProcesaDigitado(dig: String; tarif: TNiloMTabTar);
     procedure ProcesarContestada(cansal: String);
   Public
-    llamadas: regLlamada_list;  //lista de llamadas
-    col_costo: Integer;  //indica cual es la columna que contiene el costo
-    tar     : regTarifa;
-    trama_tmp: String;    //bolsa temporal para la trama
-    fBol    : TCibBoleta;
-    descolg : Boolean;    //Bandera de descolgado
-    llam    : regLlamada; //llamada en curso
+    llamadas : regLlamada_list;  //lista de llamadas
+    col_costo: Integer;    //indica cual es la columna que contiene el costo
+    tar      : regTarifa;
+    trama_tmp: string;     //bolsa temporal para la trama
+    descolg  : Boolean;    //Bandera de descolgado
+    llam     : regLlamada; //llamada en curso
     function RegVenta(usu: string): string; override; //línea para registro de venta
     function AgregarFila: integer;
     procedure EscribeDatosAdicionales;
@@ -103,6 +101,7 @@ type
     FestadoCnx: TNilEstadoConex;
     mens_error: TStringList;  //acumula los mensajes de error
     lin_serial: string;     //acumula los datos recibidos hasta completar la línea
+    arcLog    : TCibArcReg;
     //Funciones para manejo del registro
     procedure AbrirRegistro;
     procedure CerrarRegistro;
@@ -154,8 +153,6 @@ type
     //Manejo del terminal
     OnTermWrite   : TEvProcesarCad;
     OnTermWriteLn : TEvProcesarCad;
-    //Eventos propios de la clase
-    OnRegMsjError : TEvRegMensaje;   //Se solicita registrar un mensaje de error
     procedure Conectar;
     procedure Desconectar;
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
@@ -507,16 +504,18 @@ procedure TCibFacLocutor.EscribeDatosAdicionales;
 //Escribe datos en el registro y en el terminal
 var
   linea: string;
+  nilo: TCibGFacNiloM;
 begin
-    linea := FormatDateTime('yyyy/mm/dd hh:nn:ss', now) +
-             ' COST:' + FormatFloat('000.00', llam.COST_NTER) +
-             ' DESC:' + llam.DESCR_ +
-             ' CAT:' + llam.CATEG_;
-    trm.EscribeTer(linea);
-    trm.EscribeTerPrompt;      //Se escribe prompt para no alterar el formato de log
-    trm.EscribeLog(linea);
-    trm.VolcarErrorLog;        //Vuelca también los mensajes de error
-    trm.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
+  nilo := TCibGFacNiloM(self.Grupo);
+  linea := FormatDateTime('yyyy/mm/dd hh:nn:ss', now) +
+           ' COST:' + FormatFloat('000.00', llam.COST_NTER) +
+           ' DESC:' + llam.DESCR_ +
+           ' CAT:' + llam.CATEG_;
+  nilo.EscribeTer(linea);
+  nilo.EscribeTerPrompt;      //Se escribe prompt para no alterar el formato de log
+  nilo.EscribeLog(linea);
+  nilo.VolcarErrorLog;        //Vuelca también los mensajes de error
+  nilo.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
 end;
 procedure TCibFacLocutor.ProcesaDigitado(dig : String; tarif: TNiloMTabTar);
 var
@@ -597,15 +596,18 @@ begin
     llam.HORA_CON := now;      //toma hora de contestación
 end;
 function TCibFacLocutor.RegVenta(usu: string): string;
+var
+  nilo: TCibGFacNiloM;
 begin
+  nilo := TCibGFacNiloM(self.Grupo);
   Result  := llam.serie + #9 + FormatDateTime('dd/mm/yyyy', now) + #9 +
              FormatDateTime('hh:nn:ss', now) + #9 + llam.digitado + #9 +
              llam.durac + #9 + I2F(duracN(llam.durac)) + #9 +
-             N2f(StrToFloat(llam.Costo) * trm.facCmoneda) + #9 +
+             N2f(StrToFloat(llam.Costo) * nilo.facCmoneda) + #9 +
              N2f(llam.COST_NTER) + #9 +
              llam.canal + #9 + llam.canalS + #9 +
              llam.descripc + #9 + llam.CATEG_ + #9 + USU + #9 +
-             nombre + #9 + trm.PuertoN + #9 + trm.CategVenta + #9 +
+             nombre + #9 + nilo.PuertoN + #9 + nilo.CategVenta + #9 +
              #9 + #9 + #9; //campos ampliados
 end;
 procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
@@ -646,8 +648,7 @@ begin
         if llam.NUM_DIG = '' then begin
             //No se ha registrado el inicio de la llamada
             //Puede que haya estado cerrado el SW
-            if trm.OnRegMsjError<>nil then
-              trm.OnRegMsjError(trm.Nombre, 'Llamada registrada sin datos de inicio');
+            OnLogError('Llamada registrada sin datos de inicio');
             PosLlam := AgregarFila;       //agrega fila
 //            MiLista1.Refrescar;           //fuerza actualización
             llam.HORA_INI := now;         //asume la hora de inicio
@@ -660,9 +661,9 @@ begin
         end;
         tmp := MidStr(linea, 8, 5);     //tmp = 'MMMSS'
         llam.DURAC_ := verTiempo(tmp);     //Sincroniza tiempo, sobreescribe.
-        If msjError <> '' then trm.ErrorLog(msjError);
+        If msjError <> '' then TCibGFacNiloM(grupo).ErrorLog(msjError);
         llam.COST_NTER := verCosto(tmp, llam.PASO_, llam.COSTOP_);    //Sincroniza costo
-        If msjError <> '' then trm.ErrorLog(msjError);
+        If msjError <> '' then TCibGFacNiloM(grupo).ErrorLog(msjError);
 
         bloquear_rx := True;  //para evitar que se escriban datos en el log, mientras escribimos los datos adicionales
         EscribeDatosAdicionales;
@@ -681,16 +682,17 @@ begin
         //agrega item a boleta
         r := TCibItemBoleta.Create;   //crea elemento
         r.vser := nser;
-        r.descr := 'Llam: ' + llam.NUM_DIG + '(' + llam.descripc + ')';
+        r.Cant := 1;
         r.pUnit := llam.COST_NTER;
         r.subtot := llam.COST_NTER;
+        r.descr := 'Llam: ' + llam.NUM_DIG + '(' + llam.descripc + ')';
         r.cat := CategLocu;
         r.subcat := 'LLAMADA';
         r.vfec := now;
         r.estado := IT_EST_NORMAL;
         r.fragmen := 0;
         r.conStk := False;    //no se maneja stock
-        fBol.VentaItem(r, False);
+        Boleta.VentaItem(r, False);
     end;
 
     if copy(linea, 1, 2)  = 'n' + num_can then  //Procesamiento de número digitado
@@ -787,7 +789,7 @@ procedure TCibGFacNiloM.EscribeLog(mensaje: string);
 {Escribe una línea, solamente en el registro. El mensaje debe ser de una sola línea.
 Aprovecha también para volcar lo que haya quedado en "lin_serial"}
 begin
-    EscribReg(ArcReg, lin_serial + '---CIBERPX: ' + mensaje);
+    arcLog.EscribReg(ArcReg, lin_serial + '---CIBERPX: ' + mensaje);
     If msjError <> '' Then MsgErr(msjError);
     lin_serial := '';     //inicia nueva línea
 end;
@@ -888,7 +890,7 @@ var
   NombProg, NombLocal, Usuario: string;
 begin
   lin_serial := lin_serial + subcad;
-  msjError := EscribReg(ArcReg, lin_serial);  //en el registro, escibe la línea completa.
+  msjError := arcLog.EscribReg(ArcReg, lin_serial);  //en el registro, escibe la línea completa.
   lin_serial := '';   //limpia para acumular de nuevo
   if msjError<>'' then MsgErr(msjError);
   if OnTermWriteLn<>nil then OnTermWriteLn(subcad);  //al terminal envía lo que falta
@@ -969,7 +971,6 @@ begin
   loc := TCibFacLocutor.Create;   //crea cabina
   loc.Nombre:= nomLoc;
   loc.num_can:=num_can;
-  loc.trm := self;
   AgregarItem(loc);   //aquí se configuran algunos eventos
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := loc;
@@ -978,6 +979,7 @@ end;
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
 begin
   inherited Create(nombre0, ctfNiloM);
+  arcLog    := TCibArcReg.Create;  //crea su propio archivo de registro
   FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 debugln('-Creando: '+ nombre0);
   tipo       := ctfNiloM;
@@ -1032,6 +1034,7 @@ debugln('-destruyendo: '+ self.Nombre);
     frmNilomProp.Destroy;
     frmNilomConex.Destroy;
   end;
+  arcLog.Destroy;
   inherited Destroy;
 end;
 
