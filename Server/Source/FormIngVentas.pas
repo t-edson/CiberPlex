@@ -1,14 +1,10 @@
 unit FormIngVentas;
-
 {$mode objfpc}{$H+}
-
 interface
-
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   ButtonPanel, StdCtrls, Grids, ActnList, Menus, Buttons,
   FrameUtilsGrilla, UtilsGrilla, MisUtils, CibFacturables, CPProductos, FormConfig;
-
 type
   //Evento para agregar una venta
   TevAgregarVenta = procedure(CibFac: TCibFac; itBol: string) of object;
@@ -46,13 +42,14 @@ type
     procedure txtCantidadChange(Sender: TObject);
     procedure txtPrecUnitChange(Sender: TObject);
   private
-    CibFac: TCibFac;   //nombre del objeto de trabajo (cabina, lcoutorio, ...)
+    CibFac: TCibFac;        //Objeto de trabajo (cabina, lcoutorio, ...)
     function ActualizarTotal(mostrarError: boolean): boolean;
     procedure grillaEnter(Sender: TObject);
     function ProdSeleccionado: TregProdu;
   public
     gri : TUtilGrilla;
     OnAgregarVenta: TevAgregarVenta;
+    TabPro: TCibTabProduc;  //Tabla de productos
     procedure Exec(CibFac0: TCibFac);
     procedure LeerDatos;
   end;
@@ -61,23 +58,21 @@ var
   frmIngVentas: TfrmIngVentas;
 
 implementation
-
 {$R *.lfm}
-
 { TfrmIngVentas }
-
 procedure TfrmIngVentas.txtCantidadChange(Sender: TObject);
 begin
   ActualizarTotal(false);
 end;
-
 procedure TfrmIngVentas.txtPrecUnitChange(Sender: TObject);
 begin
   ActualizarTotal(false);
 end;
 procedure TfrmIngVentas.Exec(CibFac0: TCibFac);
+{Abre, la ventana. Se supone que la propiedad "TabPro", ya debe haber sido fijada.}
 begin
   CibFac := CibFac0;   //referencia al objeto origen
+//  TabPro := TabPro0;
   fraUtilsGrilla1.Edit1.Clear;
   self.Show;
   if fraUtilsGrilla1.Edit1.Visible then fraUtilsGrilla1.Edit1.SetFocus;
@@ -89,9 +84,9 @@ var
 begin
   grilla.BeginUpdate;
   grilla.RowCount:=1;  //limpia datos
-  grilla.RowCount:=Productos.Count+1;
+  grilla.RowCount:= TabPro.Productos.Count+1;
   f := 1;
-  for reg in Productos do begin
+  for reg in TabPro.Productos do begin
     grilla.Cells[1,f] := reg.cod;
     grilla.Cells[2,f] := reg.cat;
     grilla.Cells[3,f] := reg.subcat;
@@ -148,7 +143,7 @@ function TfrmIngVentas.ProdSeleccionado: TregProdu;
 {Devuelve el producto seleccionado. Si no hay ninguno seleccioando, devuelve NIL.}
 begin
   if grilla.Row<1 then exit(nil);
-  Result := Productos[grilla.Row-1];  //funcioan porque se llena en orden
+  Result := TabPro.Productos[grilla.Row-1];  //funcioan porque se llena en orden
   //cod := grilla.Cells[1, grilla.Row];  //lee código de producto
 end;
 function TfrmIngVentas.ActualizarTotal(mostrarError: boolean): boolean;

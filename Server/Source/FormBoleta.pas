@@ -13,7 +13,7 @@ interface
 uses
   Classes, SysUtils, strutils, FileUtil, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, Buttons, Grids, StdCtrls, ActnList, Menus, LCLProc, UtilsGrilla,
-  MisUtils, CibFacturables, FormConfig, FormIngVentas;
+  MisUtils, CibFacturables, CPProductos, FormConfig, FormIngVentas;
 type
   TevAccionItemBol = procedure(CibFac: TCibFac; idItemtBol, coment: string) of object;
   TevAccionBoleta = procedure(CibFac: TCibFac; coment: string) of object;
@@ -54,7 +54,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    CibFac: TCibFac;
+    CibFac: TCibFac;    //referencia al facturable
+    TabPro: TCibTabProduc;  //referecnia a la tabla de productos
     gri: TUtilGrillaFil;
     function HayCambios(bol: TCibBoleta): boolean;
     function ItemSeleccionado: TCibItemBoleta;
@@ -71,7 +72,7 @@ type
     OnDividirItem : TevAccionItemBol;
     OnGrabarItem  : TevAccionItemBol;
     procedure ActualizarDatos;
-    procedure Exec(CibFac0: TCibFac);
+    procedure Exec(CibFac0: TCibFac; TabPro0: TCibTabProduc);
   end;
 
 var
@@ -161,9 +162,10 @@ begin
   grilla.EndUpdate();
   txtTotal.Text := CadMoneda(CibFac.Boleta.TotPag);
 end;
-procedure TfrmBoleta.Exec(CibFac0: TCibFac);
+procedure TfrmBoleta.Exec(CibFac0: TCibFac; TabPro0: TCibTabProduc);
 begin
-  CibFac := CibFac0;  //OJO que esta es la cabina de la interfaz gráfica, que es de solo lectura
+  CibFac := CibFac0;  //OJO que este es el facturable de la interfaz gráfica, que es de solo lectura
+  TabPro := TabPro0;
   Caption := 'BOLETA DE: ' + CibFac.Nombre;
   ActualizarDatos;
   self.Show;

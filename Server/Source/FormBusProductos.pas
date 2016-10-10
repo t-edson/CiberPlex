@@ -32,9 +32,10 @@ type
     procedure FormShow(Sender: TObject);
   private
     gri : TUtilGrilla;
+    TabPro: TCibTabProduc;
     procedure fraUtilsGrilla1Filtrado;
   public
-    { public declarations }
+    procedure Exec(TabPro0: TCibTabProduc);
   end;
 
 var
@@ -71,6 +72,11 @@ procedure TfrmBusProductos.fraUtilsGrilla1Filtrado;
 begin
   Label1.Caption := IntToStr(fraUtilsGrilla1.filVisibles) + ' registros visibles.';
 end;
+procedure TfrmBusProductos.Exec(TabPro0: TCibTabProduc);
+begin
+  TabPro := TabPro0;
+  self.Show;
+end;
 procedure TfrmBusProductos.FormDestroy(Sender: TObject);
 begin
   gri.Destroy;
@@ -79,12 +85,14 @@ procedure TfrmBusProductos.FormShow(Sender: TObject);
 var
   f: Integer;
   reg: TregProdu;
+  n: LongInt;
 begin
   grilla.BeginUpdate;
   grilla.RowCount:=1;  //limpia datos
-  grilla.RowCount:=Productos.Count+1;
+  n := TabPro.Productos.Count+1;
+  grilla.RowCount:= n;
   f := 1;
-  for reg in Productos do begin
+  for reg in TabPro.Productos do begin
     grilla.Cells[1,f] := reg.cod;
     grilla.Cells[2,f] := reg.cat;
     grilla.Cells[3,f] := reg.subcat;

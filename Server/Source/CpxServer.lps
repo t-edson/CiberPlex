@@ -4,12 +4,13 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug"/>
-    <Units Count="74">
+    <Units Count="70">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="85" Y="14"/>
+        <WindowIndex Value="1"/>
+        <CursorPos X="26" Y="26"/>
         <UsageCount Value="200"/>
       </Unit0>
       <Unit1>
@@ -18,16 +19,17 @@
         <ComponentName Value="frmPrincipal"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="155"/>
-        <CursorPos X="13" Y="184"/>
-        <FoldState Value=" T8D2{f011 TMp803092 T5kd0]73l206]R1518 piYm1059 pjGjW03B]IbjD0G[R4ejM0B]o6lO01Q TLn12]qT0n6P401I]Zaq3T3 THpM2DY"/>
+        <TopLine Value="359"/>
+        <CursorPos X="6" Y="590"/>
+        <FoldState Value=" T4306 T5A0{^1 T7CI{( T8D2{f2 TMmC610E19]C3l606918 piamD059 pjGjW03718]B0kZ0D]?6lX01Q TLm7019 T0mBP4G]rYqHP14 THpc2Du"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
-          <WindowIndex Value="-1"/>
-          <TopLine Value="482"/>
-          <CursorPos X="48" Y="510"/>
+          <WindowIndex Value="1"/>
+          <TopLine Value="265"/>
+          <CursorPos X="46" Y="296"/>
         </ExtraEditor1>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -48,18 +50,15 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="92"/>
-        <CursorPos X="27" Y="211"/>
         <FoldState Value=" T4703 T5j102 T8H2Z1 TMkM0]73jB049 pibjE0331]J6jI0[840k4T33R"/>
         <UsageCount Value="202"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\Comunes\CPProductos.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="14"/>
-        <CursorPos X="9" Y="44"/>
-        <FoldState Value=" TMH222B1 T3i10E023 TLi2014 T6i4015 T0i8O421119 TDkJ2cg"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="73" Y="215"/>
+        <FoldState Value=" TMH222Q"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit4>
@@ -67,9 +66,8 @@
         <Filename Value="..\..\Comunes\CibFacturables.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="191"/>
-        <CursorPos X="20" Y="273"/>
-        <FoldState Value=" TL005813 p0uR0C1 TMpc0208]A7WJV02]98i72423153121]G3mP039 pjDjT0521915142516 T6oS01B T0pSW822DV"/>
+        <CursorPos X="3" Y="694"/>
+        <FoldState Value=" TL0051142111]39 T5B]H TMq2020G]A7l5MB T8iH240212233]k]P3mb033112534171[94516 pj0tS03]X6oZ012]Y7 T0pZW824D^"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -95,11 +93,9 @@
       <Unit7>
         <Filename Value="..\..\Comunes\CPUtils.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="-1"/>
         <CursorPos Y="75"/>
-        <FoldState Value=" T4401 T3E0I3 T6G032 T0iMR3k"/>
         <UsageCount Value="200"/>
-        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="FormBoleta.pas"/>
@@ -108,8 +104,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="52" Y="16"/>
-        <FoldState Value=" T5iX02 T3ie06413 TMlL21 TLj5014 T0j9d3C1]I6j]g6f"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="171"/>
+        <CursorPos X="4" Y="326"/>
+        <FoldState Value=" T5iY02 T3if0641325 TMlN21 TLj6014 T0jAd3C1]I6j]i6c"/>
         <UsageCount Value="201"/>
       </Unit8>
       <Unit9>
@@ -142,10 +140,13 @@
         <ComponentName Value="frmBusProductos"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="62"/>
-        <CursorPos X="15" Y="76"/>
+        <EditorIndex Value="2"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="71"/>
+        <CursorPos X="7" Y="77"/>
+        <FoldState Value=" T3ia03L"/>
         <UsageCount Value="200"/>
+        <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="FormIngVentas.pas"/>
@@ -154,8 +155,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="81"/>
-        <CursorPos X="32" Y="94"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="46"/>
+        <CursorPos Y="71"/>
+        <FoldState Value=" T3iJ0312316 TMja21]E T6ib024 T0j2X8]QDkP2A3p"/>
         <UsageCount Value="200"/>
       </Unit12>
       <Unit13>
@@ -172,13 +175,15 @@
       <Unit14>
         <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="9"/>
-        <CursorPos X="28" Y="13"/>
-        <FoldState Value=" TL002C TMc010K2 T8iG2]73iO0n11126 pj3q40H313 T6if027 T0j5c371C piflCFB6]9gjOU[I5YjML411]*HrA6Bc"/>
+        <TopLine Value="133"/>
+        <CursorPos X="41" Y="212"/>
+        <FoldState Value=" TL0028 TMe010K1 T8iI22 T3iQ0n516 pj3q40H313 T6j]j6 T0j7c342219441D THrC6B1%"/>
         <UsageCount Value="200"/>
+        <Bookmarks Count="1">
+          <Item0 Y="284" ID="3"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit14>
       <Unit15>
@@ -219,9 +224,9 @@
       <Unit19>
         <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="764"/>
-        <CursorPos X="5" Y="790"/>
-        <FoldState Value=" TL006311 T5E01012 TMV41092H p0sT45]R8i02]a1]4213 T3l70J3 pk0kN04015 pibk70E323]b321]j8 pjIrO05711 T6l902B1 p0tQ0[@40lIt4M4136196"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos Y="974"/>
+        <FoldState Value=" TL0065 T5E01012 TMV4108]97LFS T8i0231111[44411 T3l40J3 pk0kN04]9igjB08514261B pjCrB0A T6l6029]s7 T0lFt4N]hZked3C2C TDp74Mz"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -230,12 +235,11 @@
           <CursorPos X="17" Y="374"/>
         </ExtraEditor1>
         <UsageCount Value="201"/>
-        <Bookmarks Count="5">
-          <Item0 X="56" Y="925" ID="6"/>
+        <Bookmarks Count="4">
+          <Item0 X="56" Y="926" ID="6"/>
           <Item1 Y="657" ID="5"/>
-          <Item2 X="24" Y="543" ID="4"/>
+          <Item2 X="24" Y="541" ID="4"/>
           <Item3 X="41" Y="678" ID="2"/>
-          <Item4 X="24" Y="763" ID="3"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit19>
@@ -291,7 +295,7 @@
           <TopLine Value="235"/>
           <CursorPos X="49" Y="251"/>
         </ExtraEditor1>
-        <UsageCount Value="150"/>
+        <UsageCount Value="178"/>
         <Bookmarks Count="1">
           <Item0 X="10" Y="526" ID="2"/>
         </Bookmarks>
@@ -310,47 +314,46 @@
           <CursorPos X="62" Y="11"/>
           <FoldState Value=" TL0049 T5C051 T7KHf T8L2C4 T3iM093 piXj3035]9giI2L2121]h6iN01B T0iRU2F]TbkR{15]%MmI4]XHid2Q1}"/>
         </ExtraEditor1>
-        <UsageCount Value="143"/>
+        <UsageCount Value="171"/>
       </Unit25>
       <Unit26>
         <Filename Value="..\..\Comunes\ObjGraficos.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="5"/>
-        <TopLine Value="433"/>
-        <CursorPos Y="487"/>
-        <FoldState Value=" TL0019 T590L2 TMiBR10218142623]65]M7i0AE41]A8iK05B17 T3lF076 piZj7035 pjPja0C711['46mF0[c40mJM7C24("/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="506"/>
+        <CursorPos X="21" Y="510"/>
+        <FoldState Value=" T590L TMiBR1021 T7i0AEF"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
-          <TopLine Value="506"/>
-          <CursorPos X="21" Y="510"/>
-          <FoldState Value=" T590L TMiBR1021 T7i0AEF"/>
+          <TopLine Value="515"/>
+          <CursorPos X="24" Y="535"/>
         </ExtraEditor1>
-        <UsageCount Value="138"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="166"/>
       </Unit26>
       <Unit27>
         <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <CursorPos Y="626"/>
-        <FoldState Value=" TL009H TMng01151G1 T7jZKY T8Y2A12524 T3kW0CA16 piYlY035 pj2jD0GC27[M5XoT03013 T6kY014111 p0s]BC T0kcE2B]cZl1h2E2]T2Dk"/>
+        <TopLine Value="221"/>
+        <CursorPos X="26" Y="278"/>
+        <FoldState Value=" TL009J T4D03 T5I0{w TMng01151G1R p0tS01041 T7XI^]78Y2AC picjS22]G3kW0CA16]JYlY035 pj2jD0GC19]B6mX0C7]91jM083 T6kY01K T0kcE2B]sZl1h2E2I}"/>
         <ExtraEditorCount Value="2"/>
         <ExtraEditor1>
-          <EditorIndex Value="-1"/>
-          <TopLine Value="168"/>
-          <CursorPos X="17" Y="186"/>
-          <FoldState Value=" T4D03 T5H06 TMoV01151I1 T7dI{1]88f2ED12 T3lL0CB pjCjb0W9 pifje0pB]9ZkF046]9Xj205[,4[D4bkZ0A514 T6lN01N T0lRE2[n5l1h2H[n4oLM202L[B5BD31/"/>
-        </ExtraEditor1>
-        <ExtraEditor2>
           <EditorIndex Value="-1"/>
           <WindowIndex Value="1"/>
           <TopLine Value="674"/>
           <CursorPos X="48" Y="742"/>
           <FoldState Value=" TL009J T4D03 T5I0{; TMo501151G1P p0tM01041 T7XI{1]88Z2EC picjX22]G3kc0CB pjCjb0W9]Qfje0dB]9Zk3046]9Xj205A27]BgmH0O T6ke01]j0u1018 T0l1E2[q5l1h2J[q4pWV211Aw"/>
+        </ExtraEditor1>
+        <ExtraEditor2>
+          <EditorIndex Value="-1"/>
+          <WindowIndex Value="1"/>
+          <TopLine Value="580"/>
+          <CursorPos Y="604"/>
         </ExtraEditor2>
-        <UsageCount Value="129"/>
+        <UsageCount Value="157"/>
         <Bookmarks Count="1">
           <Item0 X="21" Y="596" ID="1"/>
         </Bookmarks>
@@ -361,7 +364,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="99"/>
         <CursorPos X="51" Y="101"/>
-        <UsageCount Value="164"/>
+        <UsageCount Value="162"/>
       </Unit28>
       <Unit29>
         <Filename Value="FormVisorMsjRed.pas"/>
@@ -371,7 +374,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="23"/>
         <CursorPos X="3" Y="45"/>
-        <UsageCount Value="188"/>
+        <UsageCount Value="186"/>
       </Unit29>
       <Unit30>
         <Filename Value="..\..\Comunes\NiloM\FormNiloTarifario.pas"/>
@@ -393,7 +396,7 @@
           <TopLine Value="13"/>
           <CursorPos Y="33"/>
         </ExtraEditor2>
-        <UsageCount Value="148"/>
+        <UsageCount Value="146"/>
       </Unit30>
       <Unit31>
         <Filename Value="FormAdminCabinas.pas"/>
@@ -403,7 +406,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="220"/>
         <CursorPos X="25" Y="249"/>
-        <UsageCount Value="180"/>
+        <UsageCount Value="178"/>
       </Unit31>
       <Unit32>
         <Filename Value="FormAdminTarCab.pas"/>
@@ -412,7 +415,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="29" Y="7"/>
-        <UsageCount Value="184"/>
+        <UsageCount Value="182"/>
       </Unit32>
       <Unit33>
         <Filename Value="framecptarifdia.pas"/>
@@ -423,7 +426,7 @@
         <EditorIndex Value="-1"/>
         <CursorPos X="55" Y="7"/>
         <FoldState Value=" T3id0D61113123212%"/>
-        <UsageCount Value="185"/>
+        <UsageCount Value="183"/>
       </Unit33>
       <Unit34>
         <Filename Value="..\..\Comunes\CPNiloM.pas"/>
@@ -435,7 +438,7 @@
           <TopLine Value="17"/>
           <CursorPos Y="24"/>
         </ExtraEditor1>
-        <UsageCount Value="176"/>
+        <UsageCount Value="174"/>
         <Bookmarks Count="1">
           <Item0 X="60" Y="668" ID="4"/>
         </Bookmarks>
@@ -448,7 +451,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="47"/>
         <CursorPos X="21" Y="68"/>
-        <UsageCount Value="176"/>
+        <UsageCount Value="174"/>
       </Unit35>
       <Unit36>
         <Filename Value="..\..\Comunes\CPNiloMBase.pas"/>
@@ -462,21 +465,21 @@
           <TopLine Value="435"/>
           <CursorPos X="18" Y="444"/>
         </ExtraEditor1>
-        <UsageCount Value="176"/>
+        <UsageCount Value="174"/>
       </Unit36>
       <Unit37>
         <Filename Value="FormNiloTarifario.pas"/>
         <ComponentName Value="frmNiloTarifario"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UsageCount Value="47"/>
+        <UsageCount Value="45"/>
       </Unit37>
       <Unit38>
         <Filename Value="..\..\Comunes\CPPreproc.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="44"/>
         <CursorPos X="18" Y="65"/>
-        <UsageCount Value="160"/>
+        <UsageCount Value="158"/>
       </Unit38>
       <Unit39>
         <Filename Value="..\..\Comunes\FormFijTiempo.pas"/>
@@ -486,7 +489,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="81"/>
         <CursorPos X="64" Y="98"/>
-        <UsageCount Value="178"/>
+        <UsageCount Value="176"/>
       </Unit39>
       <Unit40>
         <Filename Value="..\..\Comunes\CPCabinaBase.pas"/>
@@ -499,7 +502,7 @@
           <TopLine Value="281"/>
           <CursorPos Y="298"/>
         </ExtraEditor1>
-        <UsageCount Value="177"/>
+        <UsageCount Value="175"/>
       </Unit40>
       <Unit41>
         <Filename Value="..\..\Comunes\CPCabinaTarifas.pas"/>
@@ -507,7 +510,7 @@
         <TopLine Value="123"/>
         <CursorPos Y="134"/>
         <FoldState Value=" T4D01 T5F04]77QDB T8R22]DLj]K3 T3kD0A9181]K6kY01H T0lPM24261Bt"/>
-        <UsageCount Value="180"/>
+        <UsageCount Value="178"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\..\Comunes\FormExplorCab.pas"/>
@@ -516,7 +519,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="12"/>
-        <UsageCount Value="176"/>
+        <UsageCount Value="174"/>
       </Unit42>
       <Unit43>
         <Filename Value="..\..\Comunes\FormNiloTarifario.pas"/>
@@ -531,7 +534,7 @@
           <TopLine Value="263"/>
           <CursorPos Y="277"/>
         </ExtraEditor1>
-        <UsageCount Value="106"/>
+        <UsageCount Value="104"/>
       </Unit43>
       <Unit44>
         <Filename Value="..\..\Comunes\ModProductos.pas"/>
@@ -545,7 +548,7 @@
           <TopLine Value="7"/>
           <CursorPos X="3" Y="37"/>
         </ExtraEditor1>
-        <UsageCount Value="99"/>
+        <UsageCount Value="97"/>
       </Unit44>
       <Unit45>
         <Filename Value="..\..\..\_Librerias\UtilsGrilla 0.3b\FrameUtilsGrilla.pas"/>
@@ -555,7 +558,7 @@
         <EditorIndex Value="-1"/>
         <CursorPos Y="161"/>
         <FoldState Value=" TL00J111 T4N02 T5Q0l T7RI3]J8i729]L3iY0C9 piXjC055 T0iaJ361]R6jO0118"/>
-        <UsageCount Value="93"/>
+        <UsageCount Value="91"/>
       </Unit45>
       <Unit46>
         <Filename Value="cpgrupocabinas.pas"/>
@@ -564,7 +567,7 @@
         <TopLine Value="392"/>
         <CursorPos X="25" Y="404"/>
         <FoldState Value=" TLjH23031 T3k70F011471134 T6t001[G411"/>
-        <UsageCount Value="93"/>
+        <UsageCount Value="91"/>
         <Bookmarks Count="1">
           <Item0 X="6" Y="489" ID="1"/>
         </Bookmarks>
@@ -575,7 +578,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="22"/>
         <CursorPos X="21" Y="44"/>
-        <UsageCount Value="79"/>
+        <UsageCount Value="77"/>
       </Unit47>
       <Unit48>
         <Filename Value="..\..\Comunes\forminicio.pas"/>
@@ -588,7 +591,7 @@
         <TopLine Value="42"/>
         <CursorPos X="3" Y="59"/>
         <FoldState Value=" T3iO0Y016#"/>
-        <UsageCount Value="49"/>
+        <UsageCount Value="47"/>
       </Unit48>
       <Unit49>
         <Filename Value="CabinaConexion.pas"/>
@@ -596,7 +599,7 @@
         <TopLine Value="3"/>
         <CursorPos X="37" Y="20"/>
         <FoldState Value=" T3jM0644111_"/>
-        <UsageCount Value="56"/>
+        <UsageCount Value="54"/>
       </Unit49>
       <Unit50>
         <Filename Value="..\..\Comunes\CPGrupoCabinas.pas"/>
@@ -610,7 +613,7 @@
           <CursorPos X="27" Y="19"/>
           <FoldState Value=" T5906 T8V2E0271114 T3lF0C812 T6lH018 T0lLE242211]YC21D"/>
         </ExtraEditor1>
-        <UsageCount Value="75"/>
+        <UsageCount Value="73"/>
         <Bookmarks Count="3">
           <Item0 Y="836" ID="4"/>
           <Item1 X="9" Y="901" ID="3"/>
@@ -619,11 +622,10 @@
       </Unit50>
       <Unit51>
         <Filename Value="..\..\Comunes\CibRegistros.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <CursorPos X="19" Y="21"/>
-        <FoldState Value=" TLj201 T0jKP32 T6l203("/>
-        <UsageCount Value="34"/>
+        <CursorPos X="22" Y="141"/>
+        <FoldState Value=" T3W0Q0140"/>
+        <UsageCount Value="48"/>
         <Loaded Value="True"/>
       </Unit51>
       <Unit52>
@@ -631,28 +633,28 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1828"/>
         <CursorPos Y="1844"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="8"/>
       </Unit52>
       <Unit53>
         <Filename Value="..\..\..\_Librerias\MisUtils 0.4\MisUtils.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="419"/>
         <CursorPos X="30" Y="440"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="4"/>
       </Unit53>
       <Unit54>
         <Filename Value="..\..\..\_Librerias\Xpres 0.8b\XpresBas.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="122"/>
         <CursorPos X="15" Y="137"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="1"/>
       </Unit54>
       <Unit55>
         <Filename Value="..\..\..\_Librerias\SynFacilUtils 0.8\SynFacilHighlighter.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1163"/>
         <CursorPos X="41" Y="1181"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="7"/>
       </Unit55>
       <Unit56>
         <Filename Value="C:\lazarus\components\lazutils\lazloggerbase.pas"/>
@@ -660,49 +662,39 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="731"/>
         <CursorPos Y="748"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="8"/>
       </Unit56>
       <Unit57>
-        <Filename Value="config_frames\framecfgusuarios.pas"/>
-        <ComponentName Value="FraUsuarios"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Frame"/>
-        <UnitName Value="frameCfgUsuarios"/>
-        <EditorIndex Value="-1"/>
-        <CursorPos X="40" Y="6"/>
-        <UsageCount Value="2"/>
-      </Unit57>
-      <Unit58>
         <Filename Value="..\..\..\_Librerias\MiConfig 0.2b\MiConfigBasic.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="93"/>
         <CursorPos X="9" Y="102"/>
         <FoldState Value=" T4Y02 TMqb010M1312]4 T8jX2402]Q3l703C221518 pict908113 TLmH01]X6mJ05E THmQ2}D T0mTP2N]hbj8dBF]9aiNb232612F"/>
-        <UsageCount Value="5"/>
-      </Unit58>
-      <Unit59>
+        <UsageCount Value="3"/>
+      </Unit57>
+      <Unit58>
         <Filename Value="..\..\..\_Librerias\MiConfig 0.3b\MiConfigBasic.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="120"/>
         <CursorPos X="54" Y="139"/>
         <FoldState Value=" T3mI0}P3"/>
-        <UsageCount Value="4"/>
-      </Unit59>
-      <Unit60>
+        <UsageCount Value="2"/>
+      </Unit58>
+      <Unit59>
         <Filename Value="..\..\Comunes\Synapse\synautil.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="592"/>
         <CursorPos X="33" Y="609"/>
-        <UsageCount Value="5"/>
-      </Unit60>
-      <Unit61>
+        <UsageCount Value="3"/>
+      </Unit59>
+      <Unit60>
         <Filename Value="..\..\Comunes\NiloM\CibNiloMConex.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="30"/>
         <CursorPos Y="37"/>
-        <UsageCount Value="20"/>
-      </Unit61>
-      <Unit62>
+        <UsageCount Value="18"/>
+      </Unit60>
+      <Unit61>
         <Filename Value="..\..\Comunes\NiloM\FormNiloMProp.pas"/>
         <ComponentName Value="frmNiloMProp"/>
         <HasResources Value="True"/>
@@ -711,70 +703,49 @@
         <TopLine Value="226"/>
         <CursorPos X="31" Y="297"/>
         <FoldState Value=" T5j502 T3jD054 pifj803214 T0maI2]RHmZ4Al"/>
-        <UsageCount Value="53"/>
-      </Unit62>
-      <Unit63>
+        <UsageCount Value="51"/>
+      </Unit61>
+      <Unit62>
         <Filename Value="..\..\..\_Librerias\SynFacilUtils 0.8\SynFacilUtils.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="10" Y="28"/>
-        <UsageCount Value="9"/>
-      </Unit63>
-      <Unit64>
+        <UsageCount Value="7"/>
+      </Unit62>
+      <Unit63>
         <Filename Value="..\..\..\_Librerias\SynFacilUtils 0.8\SynFacilCompletion.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="70"/>
         <CursorPos X="3" Y="73"/>
-        <UsageCount Value="9"/>
-      </Unit64>
-      <Unit65>
-        <Filename Value="C:\lazarus\fpc\3.0.0\source\rtl\objpas\math.pp"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="110"/>
-        <CursorPos X="10" Y="127"/>
-        <UsageCount Value="1"/>
-      </Unit65>
-      <Unit66>
-        <Filename Value="C:\lazarus\fpc\3.0.0\source\rtl\objpas\objpas.pp"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="23"/>
-        <CursorPos X="27" Y="33"/>
-        <UsageCount Value="1"/>
-      </Unit66>
-      <Unit67>
-        <Filename Value="C:\lazarus\fpc\3.0.0\source\rtl\inc\systemh.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="557"/>
-        <CursorPos X="3" Y="574"/>
-        <UsageCount Value="1"/>
-      </Unit67>
-      <Unit68>
+        <UsageCount Value="7"/>
+      </Unit63>
+      <Unit64>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32winapi.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1817"/>
         <CursorPos Y="1834"/>
-        <UsageCount Value="5"/>
-      </Unit68>
-      <Unit69>
+        <UsageCount Value="3"/>
+      </Unit64>
+      <Unit65>
         <Filename Value="..\..\Comunes\Cabinas\framecptarifdia.pas"/>
         <UnitName Value="FrameCPTarifDia"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="16"/>
-      </Unit69>
-      <Unit70>
+        <UsageCount Value="14"/>
+      </Unit65>
+      <Unit66>
         <Filename Value="..\..\..\_Librerias\ogEditGraf 1.5b\ogMotGraf2d.pas"/>
         <UnitName Value="ogMotGraf2D"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="202"/>
         <CursorPos X="13" Y="203"/>
-        <UsageCount Value="6"/>
-      </Unit70>
-      <Unit71>
+        <UsageCount Value="4"/>
+      </Unit66>
+      <Unit67>
         <Filename Value="..\..\..\_Librerias\MisUtils 0.5b\MisUtils.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="20" Y="7"/>
-        <UsageCount Value="11"/>
-      </Unit71>
-      <Unit72>
+        <UsageCount Value="9"/>
+      </Unit67>
+      <Unit68>
         <Filename Value="..\..\Comunes\framecfgusuarios.pas"/>
         <ComponentName Value="FraUsuarios"/>
         <HasResources Value="True"/>
@@ -784,137 +755,135 @@
         <TopLine Value="3"/>
         <CursorPos X="7" Y="70"/>
         <FoldState Value=" T580W T7CHQ T8P291 T3iT0O5 pj6jc08[94BjR04 T6i701A T0iBL3J piel3BS5r"/>
-        <UsageCount Value="9"/>
-      </Unit72>
-      <Unit73>
+        <UsageCount Value="7"/>
+      </Unit68>
+      <Unit69>
         <Filename Value="C:\lazarus\fpc\3.0.0\source\rtl\inc\dosh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="88"/>
         <CursorPos X="11" Y="105"/>
-        <UsageCount Value="10"/>
-      </Unit73>
+        <UsageCount Value="8"/>
+      </Unit69>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <General>
+      <ActiveWindowIndexAtStart Value="1"/>
+    </General>
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
         <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <Caret Line="790" Column="5" TopLine="766"/>
+        <Caret Line="667" Column="36" TopLine="643"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <Caret Line="789" Column="5" TopLine="761"/>
+        <Caret Line="97" Column="15" TopLine="85"/>
       </Position2>
       <Position3>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="528" Column="25" TopLine="136"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="752" Column="25" TopLine="705"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="36" Column="35" TopLine="20"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="653" Column="33" TopLine="613"/>
       </Position4>
       <Position5>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="124" Column="57" TopLine="55"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="98" TopLine="83"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="132" Column="6" TopLine="68"/>
+        <Caret Line="295" Column="31" TopLine="289"/>
       </Position6>
       <Position7>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="134" Column="29" TopLine="68"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="110" Column="14" TopLine="95"/>
       </Position7>
       <Position8>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="528" Column="8" TopLine="399"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="157" Column="18" TopLine="95"/>
       </Position8>
       <Position9>
-        <Filename Value="..\..\Comunes\CibFacturables.pas"/>
-        <Caret Line="230" Column="22" TopLine="204"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="653" Column="33" TopLine="604"/>
       </Position9>
       <Position10>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="527" Column="39" TopLine="399"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="654" Column="32" TopLine="605"/>
       </Position10>
       <Position11>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="526" Column="35" TopLine="399"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="653" Column="20" TopLine="605"/>
       </Position11>
       <Position12>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="26" Column="15" TopLine="9"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="157" Column="5" TopLine="108"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="526" Column="26" TopLine="399"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="653" Column="33" TopLine="604"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="26" Column="47" TopLine="9"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="654" Column="26" TopLine="605"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="122" Column="33" TopLine="68"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
       </Position15>
       <Position16>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="174" TopLine="143"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="156" TopLine="95"/>
       </Position16>
       <Position17>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="251" Column="36" TopLine="228"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="89" Column="15" TopLine="71"/>
       </Position17>
       <Position18>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="157" Column="30" TopLine="142"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="651" Column="26" TopLine="633"/>
       </Position18>
       <Position19>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="251" Column="36" TopLine="228"/>
+        <Filename Value="..\..\Comunes\CibFacturables.pas"/>
+        <Caret Line="701" Column="32" TopLine="617"/>
       </Position19>
       <Position20>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="157" Column="50" TopLine="142"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="651" Column="24" TopLine="633"/>
       </Position20>
       <Position21>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="182" Column="25" TopLine="165"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="664" Column="36" TopLine="612"/>
       </Position21>
       <Position22>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="26" Column="38" TopLine="26"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="109" Column="16" TopLine="83"/>
       </Position22>
       <Position23>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
-        <Caret Line="10" Column="68"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="663" Column="78" TopLine="648"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\Comunes\CPUtils.pas"/>
-        <Caret Line="9" Column="13"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <Caret Line="975" Column="3" TopLine="955"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <Caret Line="803" Column="43" TopLine="788"/>
+        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
+        <Caret Line="13" Column="28"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\Comunes\CibRegistros.pas"/>
-        <Caret Line="15"/>
+        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
+        <Caret Line="210" Column="59" TopLine="56"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\Comunes\CPUtils.pas"/>
-        <Caret Line="13" Column="23"/>
+        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
+        <Caret Line="212" Column="41" TopLine="133"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <Caret Line="14" Column="29"/>
+        <Filename Value="FormBusProductos.pas"/>
+        <Caret Line="91" Column="33" TopLine="70"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <Caret Line="790" Column="5" TopLine="759"/>
+        <Filename Value="FormBusProductos.pas"/>
+        <Caret Line="92" Column="3" TopLine="71"/>
       </Position29>
-      <Position30>
-        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <Caret Line="14" Column="30"/>
-      </Position30>
     </JumpHistory>
   </ProjectSession>
 </CONFIG>

@@ -135,12 +135,16 @@ type
     procedure grupos_CambiaPropied;
     procedure Timer1Timer(Sender: TObject);
   private
+    log : TCibArcReg;
+    tabPro: TCibTabProduc;
     VisorCabinas: TfraVisCPlex;     //Visor de cabinas
     TramaTmp    : TCPTrama;    //Trama temporal
 //    fallasesion : boolean;  //indica si se cancela el inicio de sesión
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
+    function grupos_LogIngre(ident: char; msje: string; dCosto: Double
+      ): integer;
     function grupos_LogError(msj: string): integer;
     function grupos_LogVenta(ident:char; msje:string; dCosto:Double): integer;
     procedure grupos_ActualizStock(const codPro: string;
@@ -181,16 +185,21 @@ begin
 end;
 function TfrmPrincipal.grupos_LogInfo(msj: string): integer;
 begin
-  Result := PLogInf(usuario, msj);
+  Result := log.PLogInf(usuario, msj);
 end;
 function TfrmPrincipal.grupos_LogVenta(ident: char; msje: string; dCosto: Double
   ): integer;
 begin
-  Result := PLogVenta(ident, msje, dCosto);
+  Result := log.PLogVenta(ident, msje, dCosto);
+end;
+function TfrmPrincipal.grupos_LogIngre(ident: char; msje: string;
+  dCosto: Double): integer;
+begin
+  Result := log.PLogIngre(ident, msje, dCosto);
 end;
 function TfrmPrincipal.grupos_LogError(msj: string): integer;
 begin
-  Result := PLogErr(usuario, msj);
+  Result := log.PLogErr(usuario, msj);
 end;
 procedure TfrmPrincipal.grupos_EstadoArchivo;
 {Guarda el estado de los objetos al archivo de estado}
@@ -214,7 +223,7 @@ procedure TfrmPrincipal.grupos_ActualizStock(const codPro: string;
 {Se está solicitando actualizar el stock. Esta petición usualmente viene desde una
 boleta.}
 begin
-  ActualizarStock(arcProduc, codPro, Ctdad);
+  tabPro.ActualizarStock(arcProduc, codPro, Ctdad);
   if msjError <> '' Then begin
       //Se muestra aquí porque no se va a detener el flujo del programa por
       //un error, porque es prioritario registrar la venta.
@@ -223,13 +232,15 @@ begin
 end;
 procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
-  PLogErr(usuario, msj);
+  log.PLogErr(usuario, msj);
 end;
 procedure TfrmPrincipal.FormCreate(Sender: TObject);
 begin
   Caption := NOM_PROG + ' ' + VER_PROG;
   //Crea un grupo de cabinas
   TramaTmp := TCPTrama.Create;
+  log := TCibArcReg.Create;
+  tabPro:= TCibTabProduc.Create;
   {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
   VisorCabinas := TfraVisCPlex.Create(self);
   VisorCabinas.Parent := self;
@@ -250,6 +261,7 @@ begin
   Config.grupos.OnCambiaPropied:= @grupos_CambiaPropied;
   Config.grupos.OnLogInfo      := @grupos_LogInfo;
   Config.grupos.OnLogVenta     := @grupos_LogVenta;
+  Config.grupos.OnLogIngre     := @grupos_LogIngre;
   Config.grupos.OnLogError     := @grupos_LogError;
   Config.grupos.OnGuardarEstado:= @grupos_EstadoArchivo;
   Config.grupos.OnReqConfigGen := @grupos_ReqConfigGen;
@@ -261,7 +273,7 @@ begin
    de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
   ConfigfcVistaUpdateChanges;
   //Verifica si se puede abrir el archivo de registro principal
-  AbrirPLog(rutDatos, Config.Local);
+  log.AbrirPLog(rutDatos, Config.Local);
   If msjError <> '' then begin
      MsgErr(msjError);
      //No tiene sentido seguir, si no se puede abrir registro
@@ -275,12 +287,14 @@ begin
     CreaUsuario('oper', '', PER_OPER);    //Usuario por defecto
   end;
 
-  PLogInf(usuario, '----------------- Inicio de Programa ---------------');
-  Err := CargarProductos(arcProduc);
+  log.PLogInf(usuario, '----------------- Inicio de Programa ---------------');
+  Err := tabPro.CargarProductos(arcProduc);
   if Err<>'' then begin
-    PLogErr(usuario, Err);
+    log.PLogErr(usuario, Err);
     MsgErr(Err);
   end;
+  //Configura formulario de ingreso de ventas
+  frmIngVentas.TabPro := tabPro;
   frmIngVentas.LeerDatos;
   frmIngVentas.OnAgregarVenta:=@frmIngVentas_AgregarVenta;
   frmBoleta.OnGrabarBoleta:=@frmBoleta_GrabarBoleta;
@@ -290,7 +304,7 @@ begin
   frmBoleta.OnComentarItem:=@frmBoleta_ComentarItem;
   frmBoleta.OnDividirItem:=@frmBoleta_DividirItem;
   frmBoleta.OnGrabarItem:=@frmBoletaGrabarItem;
-  PLogInf(usuario, IntToStr(Productos.Count) + ' productos cargados');
+  log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados');
   {frmInicio.edUsu.Text := 'admin';
   frmInicio.ShowModal;
   if frmInicio.cancelo then begin
@@ -310,8 +324,10 @@ begin
 end;
 procedure TfrmPrincipal.FormDestroy(Sender: TObject);
 begin
-  PLogInf(usuario, '----------------- Fin de Programa ---------------');
+  log.PLogInf(usuario, '----------------- Fin de Programa ---------------');
   Debugln('Terminando ... ');
+  tabPro.Destroy;
+  log.Destroy;
   TramaTmp.Destroy;
   //Matar a los hilos de ejecución, puede tomar tiempo
 end;
@@ -572,7 +588,7 @@ begin
 end;
 procedure TfrmPrincipal.acBusProducExecute(Sender: TObject);
 begin
-  frmBusProductos.Show;
+  frmBusProductos.Exec(tabPro);
 end;
 procedure TfrmPrincipal.acBusGastosExecute(Sender: TObject);
 begin
@@ -699,7 +715,7 @@ var
 begin
   ogCab := VisorCabinas.CabSeleccionada;
   if ogCab = nil then exit;
-  frmBoleta.Exec(ogCab.Fac);
+  frmBoleta.Exec(ogCab.Fac, tabPro);
 end;
 procedure TfrmPrincipal.acNilConexExecute(Sender: TObject);
 var
