@@ -8,21 +8,31 @@ unit CibFacturables;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, LCLProc, dateutils, MisUtils,
-  FormInicio;
+  Classes, SysUtils, fgl, types, LCLProc, dateutils, MisUtils;
 type
   //Tipos de objetos Grupos Facturables
   TCibTipFact = (
     ctfCabinas = 0,   //Grupo de Cabinas
     ctfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
   );
-const
-  //Caracteres identificadores de registros de ventas
+const  //Caracteres identificadores para el archivo registros
+  {Estos identificadores se usan para poder facilitar rápidamente el tipo de registro
+   escrito, en el archivo de registro. Esta es la forma como trabaja el NILOTER-m y por
+   eso se ha mantenido, pero Ciberplex, bien podría decidir usar base de datos.}
   IDE_REG_ERR = 'e';     //registro de error
+  IDE_REG_INF = 'i';     //registro de información
+  //Identificadores para ventas e ingresos
   IDE_REG_VEN = 'v';     //registro de venta común
+  IDE_REG_VEND= 'y';     //registro de venta descartada
+  IDE_CIB_IBO = 'b';     //registro de ítem de boleta
+  IDE_CIB_IBOD= 'x';     //registro de ítem de boleta descartado
+  IDE_CIB_BOL = 'B';     //registro de boleta
+  //Identificadores para cabinas
   IDE_INT_GRA = 'q';     //registro de alquiler de cabina - hora gratis
   IDE_INT_NOR = 'p';     //registro de alquiler de cabina normal
+  //Identificadores para llamadas
   IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m
+
 type
   TItemBoletaEstado = (
     IT_EST_NORMAL = 0,    //Item en estado normal
@@ -59,16 +69,16 @@ type
   public
     procedure Assign(src: TCibItemBoleta);
     property CadEstado: string read GetCadEstado write SetCadEstado;
-    function regIBol_AReg: string;
-    function regIBol_ARegVen: string;
+    function RegVenta: string;
+    function RegIngres: string;
   end;
   TCibItemBoleta_list = specialize TFPGObjectList<TCibItemBoleta>;   //lista de ítems
 
-  //Se requiere actualizar el stock de un producto, porque se ha agregado a la boleta
-  TEvBolLogVenta = function(ident:char; msje:string; dCosto:Double): integer of object;
-  TEvBolActStock = procedure(const codPro: string; const Ctdad: double) of object;
-
+  TCibFac = class;
   { TCibBoleta }
+  {Modela a una boleta de venta, que debe pertenecer siempre a un OF.
+  Notar que TCibBoleta no maneja eventos propios para acceder a información global,
+  sino que hace uso de los eventos del OF que lo contiene.}
   TCibBoleta = class
     //propiedades del formulario
     nBole  : Integer;    //Número de Serie de la Boleta
@@ -87,16 +97,17 @@ type
     procedure AgregarItemR(r: TCibItemBoleta);
     function GetCadEstado: string;
   public
-    msjError: string;
-    OnLogVenta     : TEvBolLogVenta;
-    OnActualizStock: TEvBolActStock;
+    msjError : string;
+    padre    : TCibFac;   //referencia al facturable que lo contiene
     property items: TCibItemBoleta_list read Fitems;
     procedure Recalcula;
     function RegVenta: string;
     property CadEstado: string read GetCadEstado;
   public  //Información y Operaciones con ítems
     function BuscaItem(const id: string): TCibItemBoleta;
-    procedure VentaItem(r: TCibItemBoleta; RegisVenta: Boolean);
+    procedure VentaItem(it: TCibItemBoleta; RegisVenta: Boolean);
+    procedure DevolItem(it: TCibItemBoleta);
+    procedure IngresItem(it: TCibItemBoleta; recalcular: boolean=true);
     procedure ItemClear;
     procedure ItemAdd(it: TCibItemBoleta; recalcular: boolean=true);
     procedure ItemDelete(id: string; recalcular: boolean=true);
@@ -106,8 +117,8 @@ type
     destructor Destroy; override;
   end;
 
-  TCibFac = class;
-
+  TEvBolLogVenta = function(ident:char; msje:string; dCosto:Double): integer of object;
+  TEvBolActStock = procedure(const codPro: string; const Ctdad: double) of object;
   TEvFacLogInfo = function(msj: string): integer of object;
   TevFacLogError = function(msj: string): integer of object;
 
@@ -116,10 +127,6 @@ type
   { Define a la clase abstracta que sirve de base a objetos que pueden generar consumo
    (boletas), como puede ser una cabina de internet, o un locutorio.}
   TCibFac = class
-  private
-    procedure BoletaActualizarStock(const codPro: string; const Ctdad: double);
-    function BoletaLogVenta(ident: char; mensaje: string; dCosto: Double
-      ): integer;
   protected
     FNombre: string;
     Fx: double;
@@ -136,7 +143,9 @@ type
     OnCambiaEstado : procedure of object; //cuando cambia alguna variable de estado
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnLogInfo      : TEvFacLogInfo;      //Indica que se quiere registrar un mensaje en el registro
-    OnLogVenta     : TEvBolLogVenta;      //requiere escribir en registro de ventas
+    OnLogVenta     : TEvBolLogVenta;      //Requiere escribir una venta en registro
+    OnLogIngre     : TEvBolLogVenta;      //Requiere escribir un ingreso en registro
+    OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;      //cuando se requiere actualizar el stock
   public
     tipo    : TCibTipFact; //tipo de grupo facturable
@@ -185,8 +194,10 @@ type
    objetos facturables.}
   TCibGFac = class
   private
+    function fac_LogError(msj: string): integer;
+    function fac_LogIngre(ident: char; msje: string; dCosto: Double): integer;
     procedure fac_ActualizStock(const codPro: string; const Ctdad: double);
-    function fac_LogVenta(ident: char; mensaje: string; dCosto: Double): integer;
+    function fac_LogVenta(ident: char; msje: string; dCosto: Double): integer;
     function fac_LogInfo(msj: string): integer;
   protected
     Fx: double;
@@ -227,6 +238,7 @@ type
     OnReqCadMoneda : TevReqCadMoneda;   //Se requiere convertir a foramto de moneda
     OnLogInfo      : TEvFacLogInfo;     //se quiere registrar un mensaje en el registro
     OnLogVenta     : TEvBolLogVenta;    //Requiere escribir una venta en el registro
+    OnLogIngre     : TEvBolLogVenta;    //Requiere escribir un ingreso en el registro
     OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
   public  //Constructor y destructor
@@ -290,33 +302,28 @@ begin
   coment :=src.coment;
   pVen   :=src.pVen;
 end;
-function TCibItemBoleta.regIBol_AReg: string;
-{Convierte registro IBol en cadena, para escribir en el archivo de registro.
-Se mantiene estructura base del registro para mantener la compatibilidad
-con las versiones anteriores. En esta versión solo se han agregado nuevos
-campos y se ha aplciado las funciones de conversión para guardar datoa a
-archivo.}
+function TCibItemBoleta.RegVenta: string;
+{Devuelve cadena, para escribir en el archivo de registro, como un registro de Venta.
+Se ha tratado de uniformizar con "regIBol_AReg".}
 begin
-  Result := USUARIO + #9 + I2f(vser) + #9 + subcat + #9 +
-        N2f(Cant) + #9 + N2f(pUnit) + #9 + N2f(subtot) + #9 +
-        D2f(vfec) + #9 + I2f(estadoN) + #9 + I2f(Index) + #9 +
-        S2f(descr) + #9 + S2f(coment) + #9 + I2f(fragmen) + #9 +
-        cat + #9 + codPro + #9 + pVen + #9 +
-        B2f(conStk) + #9 + #9 + N2f(pUnitR) + #9 + #9 + #9;
-end;
-function TCibItemBoleta.regIBol_ARegVen: string;
-{Convierte registro IBol en cadena, para escribir en el archivo de registro,
-como un registro de Venta. Se ha tratado de uniformizar con "regIBol_AReg"
-Hay un cambio an la posición del campo "stckIni" con respecto a las versiones
-NILOTER-m 1.X. En su lugar ahora se pone "vFec" y "stckIni" se desplaza. Además
-aparecen nuevos campos.}
-begin
-  Result := USUARIO + #9 + '' + #9 + subcat + #9 +
+  Result := '' + #9 + subcat + #9 +
           N2f(Cant) + #9 + N2f(pUnit) + #9 + N2f(subtot) + #9 +
           D2f(vfec) + #9 + '' + #9 + '' + #9 +
           S2f(descr) + #9 + S2f(coment) + #9 + #9 +
           cat + #9 + codPro + #9 + '' + #9 +
           '' + #9 + N2f(stkIni) + #9 + N2f(pUnitR) + #9 + #9 + #9 + #9;
+end;
+function TCibItemBoleta.RegIngres: string;
+{Devuelve cadena para escribir en el archivo de registro como registro de Ingreso.
+Se mantiene estructura base del registro para mantener la compatibilidad
+con el NILOTER-m.}
+begin
+  Result := I2f(vser) + #9 + subcat + #9 +
+        N2f(Cant) + #9 + N2f(pUnit) + #9 + N2f(subtot) + #9 +
+        D2f(vfec) + #9 + I2f(estadoN) + #9 + I2f(Index) + #9 +
+        S2f(descr) + #9 + S2f(coment) + #9 + I2f(fragmen) + #9 +
+        cat + #9 + codPro + #9 + pVen + #9 +
+        B2f(conStk) + #9 + #9 + N2f(pUnitR) + #9 + #9 + #9;
 end;
 function TCibItemBoleta.GetCadEstado: string;
 begin
@@ -396,32 +403,66 @@ begin
   end;
   exit(nil);
 end;
-procedure TCibBoleta.VentaItem(r: TCibItemBoleta; RegisVenta: Boolean);
+procedure TCibBoleta.VentaItem(it: TCibItemBoleta; RegisVenta: Boolean);
 {Realiza la venta de un ítem agregándolo a la boleta.
 Este debe ser el punto de entrada único para agregar una venta a la boleta.}
 var
   nser: integer;
+  NombProg, NombLocal, Usuario: string;
 begin
     //Actualiza stock
-    if r.conStk then begin
+    if it.conStk then begin
       {Se debe actualizar stcok, pero desde aquí no se tiene acceso a la maquinaria de
        almacén, así que usamos este evento (que se supone, debe estar siempre definido)
        que se propagará, hasta llegar a la aplicación principal.}
-      OnActualizStock(r.codPro, r.Cant);  //Debería mostrar mensaje de error si amerita
+      padre.OnActualizStock(it.codPro, it.Cant);  //Debería mostrar mensaje de error si amerita
     end;
+    //Recupera información de configuración
+    padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
     //Guarda registro de la Venta, si se indica
+    {Notar que el registro de la venta se agrega siempre, independientemente de si se
+    grabará o no. El ítem también se podrá devolver, pero el registro se mantiene.}
     if RegisVenta Then begin
-        if OnLogVenta<>nil then
-          nser := OnLogVenta(IDE_REG_VEN, r.regIBol_ARegVen, r.subtot)
-        else
-          nser := 0;
-        r.vser := nser;   //actualiza referencia a la venta
+        nser := padre.OnLogVenta(IDE_REG_VEN, Usuario+ #9 + it.RegVenta, it.subtot);
+        it.vser := nser;   //actualiza referencia a la venta
     end;
     //Agrega a la Boleta
-    AgregarItemR(r);
+    AgregarItemR(it);
     Recalcula;  //Actualiza subtotales
 //    if OnVentaAgregada<>nil then OnVentaAgregada;
     If msjError <> '' then exit;
+end;
+procedure TCibBoleta.DevolItem(it: TCibItemBoleta);
+{Realiza la devolución de un ítem. Básicamente lo que se hace es quitar el ítem de la
+lista y escribir en el registro, el ítem con costo y cantidad negativos.}
+var
+  NombProg, NombLocal, Usuario: string;
+begin
+  it.Cant   := -it.Cant;   //pone cantidad negativa
+  it.subtot := -it.subtot; //pone total negativo
+  //Recupera información de configuración
+  padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+  //registra mensaje
+  padre.OnLogVenta(IDE_REG_VEND, Usuario + #9 + it.RegVenta, -it.subtot);
+  ItemDelete(it.Id);  //quita de la lista
+end;
+procedure TCibBoleta.IngresItem(it: TCibItemBoleta; recalcular: boolean=true);
+{Realiza el ingreso del ítem de la boleta, eliminándolo de la boleta. Esto se hace cada
+vez que se pide grabar un ítem de la boleta o cuando se graban todos los ítems.}
+var
+  NombProg, NombLocal, Usuario: string;
+begin
+  //Recupera información de configuración
+  padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+  //Registra el ingreso en el archivo de registro
+  If it.estado = IT_EST_NORMAL Then begin
+    //Ítem normal
+    padre.OnLogIngre(IDE_CIB_IBO, Usuario + #9 + it.RegIngres, 0);
+  end else begin
+    //Ítem descartado
+    padre.OnLogIngre(IDE_CIB_IBOD, Usuario + #9 + it.RegIngres, 0);
+  end;
+  ItemDelete(it.Id, recalcular);  //quita el ítem de la boleta
 end;
 procedure TCibBoleta.ItemClear;
 begin
@@ -450,7 +491,11 @@ end;
 function TCibBoleta.RegVenta: string;
 {Devuelve la cadena que debe ser grabada en el registro. Se define para que sea
  compatible con el NILOTER-m}
+var
+  NombProg, NombLocal, Usuario: string;
 begin
+  //Recupera información de configuración
+  padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
   Result := usuario + #9 +
          B2f(usarIGV) + #9 + N2f(subtot) + #9 +
          N2f(TotPag) + #9 + nombre + #9 +
@@ -483,14 +528,6 @@ begin
   inherited Destroy;
 end;
 { TCibFac }
-procedure TCibFac.BoletaActualizarStock(const codPro: string; const Ctdad: double);
-begin
-  if OnActualizStock<>nil then OnActualizStock(codPro, Ctdad);
-end;
-function TCibFac.BoletaLogVenta(ident:char; mensaje:string; dCosto:Double): integer;
-begin
-  if OnLogVenta<>nil then Result := OnLogVenta(ident, mensaje, dCosto);
-end;
 procedure TCibFac.SetNombre(AValue: string);
 begin
   if FNombre = AValue then exit;
@@ -558,8 +595,7 @@ end;
 constructor TCibFac.Create;
 begin
   Boleta := TCibBoleta.Create;
-  Boleta.OnActualizStock:=@BoletaActualizarStock;
-  Boleta.OnLogVenta:=@BoletaLogVenta;
+  Boleta.padre    :=self;
 end;
 destructor TCibFac.Destroy;
 begin
@@ -573,15 +609,23 @@ begin
 end;
 procedure TCibGFac.fac_ActualizStock(const codPro: string; const Ctdad: double);
 begin
-  if OnActualizStock<>nil then OnActualizStock(codPro, Ctdad);
-end;
-function TCibGFac.fac_LogVenta(ident:char; mensaje:string; dCosto:Double): integer;
-begin
-  if OnLogVenta<>nil then Result := OnLogVenta(ident, mensaje, dCosto);
+  OnActualizStock(codPro, Ctdad);
 end;
 function TCibGFac.fac_LogInfo(msj: string): integer;
 begin
-  if OnLogInfo<>nil then OnLogInfo(msj);
+  Result := OnLogInfo(msj);
+end;
+function TCibGFac.fac_LogVenta(ident:char; msje:string; dCosto:Double): integer;
+begin
+  Result := OnLogVenta(ident, msje, dCosto);
+end;
+function TCibGFac.fac_LogIngre(ident: char; msje: string; dCosto: Double): integer;
+begin
+  Result := OnLogIngre(ident, msje, dCosto);
+end;
+function TCibGFac.fac_LogError(msj: string): integer;
+begin
+  Result := OnLogError(msj);
 end;
 function TCibGFac.GetCadEstado: string;
 {Devuelve la cadena de estado. Esta es una implementación general. Notar que no se
@@ -649,10 +693,12 @@ necesarias, en el ítem a agregar}
 begin
   fac.Grupo := self;
 //  fac.OnCambiaEstado :=@fac_CambiaEstado;  No se intercepta
-  fac.OnLogInfo:=@fac_LogInfo;
-  fac.OnLogVenta:=@fac_LogVenta;
-  fac.OnCambiaPropied:=@fac_CambiaPropied;
-  fac.OnActualizStock:=@fac_ActualizStock;
+  fac.OnLogInfo      := @fac_LogInfo;
+  fac.OnLogVenta     := @fac_LogVenta;
+  fac.OnLogIngre     := @fac_LogIngre;
+  fac.OnLogError     := @fac_LogError;
+  fac.OnCambiaPropied:= @fac_CambiaPropied;
+  fac.OnActualizStock:= @fac_ActualizStock;
   items.Add(fac);
 end;
 function TCibGFac.ItemPorNombre(nom: string): TCibFac;

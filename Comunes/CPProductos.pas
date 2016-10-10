@@ -3,7 +3,7 @@ unit CPProductos;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, MisUtils, CibRegistros, FormInicio;
+  Classes, SysUtils, fgl, types, MisUtils;
 type
   //Define el tipo que almacena un producto (Una línea del archivo de productos)
   TevProLogError = function(msj: string): integer of object;
@@ -33,16 +33,55 @@ type
   end;
   TregProdu_list = specialize TFPGObjectList<TregProdu>;   //lista de ítems
 
-var
-  Productos: TregProdu_list;  //Almacena los productos
-
-  procedure ActualizarStock(arcProduc, codPro: string; Cant: Double);
-  function CargarProductos(archivo: string): string;
+  { TCibTabProduc }
+  {Define a una tabla de productos.}
+  TCibTabProduc = class
+  private
+    function BuscarProd(codigo: String): TregProdu;
+    procedure ProdADisco(arcProduc: string);
+    function VerificaProducto(r: TregProdu): string;
+  public
+    Productos: TregProdu_list;  //Almacena los productos
+    msjError: string;
+    OnLogError     : TevProLogError;    //Requiere escribir un Msje de error en el registro
+    procedure ActualizarStock(arcProduc, codPro: string; Cant: Double);
+    function CargarProductos(archivo: string): string;
+  public  //Constructor y detsructor
+    constructor Create;
+    destructor Destroy; override;
+  end;
 
 implementation
 
 //******************* FUNCIONES DE BÚSQUEDA *********************
-function BuscarProd(codigo: String): TregProdu;
+Function TRegProdu.regProd_ADisco: String;
+begin
+    Result := cod + #9 +
+              cat + #9 +
+              subcat + #9 + #9 +
+              S2f(desc) + #9 + #9 + #9 + #9 +
+              N2f(pUnit) + #9 +
+              N2f(stock) + #9 + #9 + #9 +
+              N2f(tPre) + #9 +
+              D2f(Time) + #9 + D2f(Time) + #9 + #9 + #9;
+end;
+procedure TRegProdu.regProd_DeDisco(cad: String);
+//Convierte cadena de texto en registro
+var
+  a: TStringDynArray;
+begin
+    a :=  explode(#9, cad);
+    cod := a[0];      //Carga código
+    cat := a[1];      //Carga categoría
+    subcat := a[2];   //Carga sub-categoría
+
+    desc := f2S(a[4]);   //Carga descripción
+
+    pUnit := f2N(a[8]);  //Carga precio unitario
+    stock := f2N(a[9]);  //Carga stock
+end;
+{ TCibTabProduc }
+function TCibTabProduc.BuscarProd(codigo: String): TregProdu;
 {Busca un producto por el código. Si no encuentra devuelve un
 registro en blanco.}
 var
@@ -57,7 +96,7 @@ begin
   //No encontró
   exit(nil);
 end;
-procedure ProdADisco(arcProduc: string);
+procedure TCibTabProduc.ProdADisco(arcProduc: string);
 {Vuelca la información de la tabla de productos a disco. Usa un archivo
 temporal para proteger los datos del archivo original.
 Actualiza la bandera "msjeError".}
@@ -82,35 +121,12 @@ begin
   except
     on e: Exception do begin
       msjError := 'Error actualizando productos: ' + e.Message;
-      PLogErr(usuario, msjError);
+      if OnLogError<>nil then OnLogError(msjError);
       CloseFile(arc);
     end;
   end;
 end;
-procedure ActualizarStock(arcProduc, codPro: string; Cant: Double);
-{Actualiza el stock del producto indicado en el archivo de productos
-Se crea una copia actualizada y luego se reemplaza la anterior}
-var
-  stock: Single;
-  pro: TregProdu;
-begin
-    pro := BuscarProd(codPro);
-    if pro = nil Then begin
-        MsgBox('Error en Código de producto');
-        exit;
-    end;
-    msjError := '';
-    //Verifica cambio de stock
-    stock := pro.stock;
-    stock := stock - Cant;   //actualiza
-    if stock < 0 Then begin
-        //Se genera mensaje de error
-        PLogErr(usuario, 'No hay disponibilidad de stock: ' + pro.cod);
-    end;
-    pro.stock := stock;     //actualiza estado en memoria
-    ProdADisco(arcProduc);     //Actualiza msjError
-end;
-Function VerificaProducto(r: TregProdu): string;
+function TCibTabProduc.VerificaProducto(r: TregProdu): string;
 {Verifica si el registro de producto cumple con la definición.
 El error se devuelve como cadena.}
 var
@@ -135,7 +151,31 @@ begin
         end;
     end;
 end;
-Function CargarProductos(archivo: string): string;
+procedure TCibTabProduc.ActualizarStock(arcProduc, codPro: string; Cant: Double);
+{Actualiza el stock del producto indicado en el archivo de productos
+Se crea una copia actualizada y luego se reemplaza la anterior}
+var
+  stock: Single;
+  pro: TregProdu;
+begin
+    pro := BuscarProd(codPro);
+    if pro = nil Then begin
+        MsgBox('Error en Código de producto');
+        exit;
+    end;
+    msjError := '';
+    //Verifica cambio de stock
+    stock := pro.stock;
+    stock := stock - Cant;   //actualiza
+    if stock < 0 Then begin
+        //Se genera mensaje de error
+        msjError := 'No hay disponibilidad de stock: ' + pro.cod;
+        if OnLogError<>nil then OnLogError(msjError);
+    end;
+    pro.stock := stock;     //actualiza estado en memoria
+    ProdADisco(arcProduc);     //Actualiza msjError
+end;
+function TCibTabProduc.CargarProductos(archivo: string): string;
 {Carga el archivo de productos indicado.
 Si encuentra error, devuelve una cadena con el mensaje de error.}
 var
@@ -186,39 +226,15 @@ begin
     end;
   end;
 end;
-
-Function TRegProdu.regProd_ADisco: String;
+constructor TCibTabProduc.Create;
 begin
-    Result := cod + #9 +
-              cat + #9 +
-              subcat + #9 + #9 +
-              S2f(desc) + #9 + #9 + #9 + #9 +
-              N2f(pUnit) + #9 +
-              N2f(stock) + #9 + #9 + #9 +
-              N2f(tPre) + #9 +
-              D2f(Time) + #9 + D2f(Time) + #9 + #9 + #9;
-end;
-procedure TRegProdu.regProd_DeDisco(cad: String);
-//Convierte cadena de texto en registro
-var
-  a: TStringDynArray;
-begin
-    a :=  explode(#9, cad);
-    cod := a[0];      //Carga código
-    cat := a[1];      //Carga categoría
-    subcat := a[2];   //Carga sub-categoría
-
-    desc := f2S(a[4]);   //Carga descripción
-
-    pUnit := f2N(a[8]);  //Carga precio unitario
-    stock := f2N(a[9]);  //Carga stock
-end;
-
-initialization
   Productos:= TregProdu_list.Create(true);
-
-finalization
+end;
+destructor TCibTabProduc.Destroy;
+begin
   Productos.Destroy;
+  inherited Destroy;
+end;
 
 end.
 

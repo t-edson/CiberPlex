@@ -6,7 +6,7 @@ interface
 uses
   Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
   MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase,
-  CibGFacCabinas, CibGFacNiloM, CibFacturables, FormConfig;
+  CibGFacCabinas, CibGFacNiloM, CibFacturables;
 const
   //Constantes de Colores
  COL_AZUL_CLARO = 230 * 256 *256 + 255 *256 + 255;
@@ -149,7 +149,7 @@ protected
   procedure ReubicElemen; override;
 private
   BotDes   : TogButton;          //Refrencia global al botón de Desactivar
-public  //constructor y detsructor
+public  //Constructor y detsructor
   constructor Create(mGraf: TMotGraf; loc0: TCibFacLocutor);
   destructor Destroy; override;
 end;
@@ -379,7 +379,7 @@ begin
   v2d.RectangR(x, y+88, x2, y+110);
   if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
     //solo muestra tiempo, en conteo
-    s := CadMoneda(cab.Costo);
+    s := cab.Grupo.OnReqCadMoneda(cab.Costo);  //convierte a moneda
     v2d.SetText(clBlue, 11,'',false);
     v2d.TextoR(x+2, y+88, width-4, 22, s);
     if cab.horGra then begin  //hora gratis
@@ -484,7 +484,7 @@ begin
       v2d.Texto(x+1,y   , loc.llam.NUM_DIG);
       v2d.Texto(x+1,y+16, loc.llam.DESCR_);
       if loc.llam.CONTES then
-        v2d.Texto(x+1,y+32, loc.llam.DURAC_ + ' ' + CadMoneda(loc.llam.COST_NTER))
+        v2d.Texto(x+1,y+32, loc.llam.DURAC_ + ' ' + loc.Grupo.OnReqCadMoneda(loc.llam.COST_NTER))
       else
         v2d.Texto(x+1,y+32, 'Cto.Paso=' + loc.llam.COSTOP_);
     end else begin  //Hay llamadas
@@ -532,7 +532,7 @@ begin
   v2d.FijaRelleno(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
   //solo muestra tiempo, en conteo
-  s := CadMoneda(0.1);
+  s := loc.Grupo.OnReqCadMoneda(0.1);
   v2d.SetText(clBlue, 11,'',false);
   v2d.TextoR(x+2, y+88, width-4, 22, s);
   BotDes.estado:= true;

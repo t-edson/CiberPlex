@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Types, LCLProc, Forms, CibFacturables,
   //Aquí se incluyen las unidades que definen clases descendientes de TCPFacturables
-  CibGFacCabinas, CibGFacNiloM, MisUtils, CibRegistros, CibTramas, CPUtils,
+  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CPUtils,
   FormVisorMsjRed;
 type
   { TCibGruposFacturables }
@@ -18,6 +18,7 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
+    function gof_LogIngre(ident: char; msje: string; dCosto: Double): integer;
     function gof_LogError(msj: string): integer;
     function gof_LogVenta(ident: char; msje: string; dCosto: Double): integer;
     procedure gof_ActualizStock(const codPro: string; const Ctdad: double);
@@ -35,6 +36,7 @@ type
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad de algun grupo
     OnLogInfo      : TEvFacLogInfo;       //Se quiere registrar un mensaje en el registro
     OnLogVenta     : TEvBolLogVenta;      //Se quiere registrar una venta en el registro
+    OnLogIngre     : TEvBolLogVenta;      //Se quiere registrar un ingreso en el registro
     OnLogError     : TEvFacLogError;    //Requiere escribir un Msje de error en el registro
 //    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
 //    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
@@ -121,12 +123,18 @@ begin
 end;
 function TCibGruposFacturables.gof_LogInfo(msj: string): integer;
 begin
-  if not DeshabEven and (OnLogInfo<>nil) then OnLogInfo(msj);
+  if not DeshabEven and (OnLogInfo<>nil) then Result := OnLogInfo(msj);
 end;
 function TCibGruposFacturables.gof_LogVenta(ident:char; msje:string; dCosto:Double): integer;
 begin
   if not DeshabEven and (OnLogVenta<>nil) then
     Result := OnLogVenta(ident, msje, dCosto);
+end;
+function TCibGruposFacturables.gof_LogIngre(ident: char; msje: string;
+  dCosto: Double): integer;
+begin
+  if not DeshabEven and (OnLogIngre<>nil) then
+    Result := OnLogIngre(ident, msje, dCosto);
 end;
 function TCibGruposFacturables.gof_LogError(msj: string): integer;
 begin
@@ -252,27 +260,6 @@ begin
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automático, o algún otro evento similar que requiera guardar el estado.}
     end;
-  C_GRA_BOLPC: begin  //Se pide grabar la boleta de una PC
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      cabDest := gru.CabPorNombre(tram.traDat);
-      if cabDest=nil then exit;
-      for itBol in cabDest.boleta.items do begin
-    {    If Pventa = '' Then //toma valor por defecto
-            itBol.pVen = PVentaDef
-        else    //escribe con punto de venta
-            itBol.pVen = Me.Pventa
-        end;}
-        tmp := itBol.regIBol_AReg;
-        If itBol.estado = IT_EST_NORMAL Then PLogIBol(tmp)        //item normal
-        else PLogIBolD(tmp);       //item descartado
-      end;
-      //Graba los campos de la boleta
-      cabDest.boleta.fec_grab := now;  //fecha de grabación
-      PLogBol(cabDest.Boleta.RegVenta, cabDest.boleta.TotPag);
-      //Config.escribirArchivoIni;
-    if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-      cabDest.LimpiarBol;          //Limpia los items
-    end;
   C_AGR_ITBOL: begin  //Se pide agregar una venta
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
       tmp := tram.traDat;
@@ -293,12 +280,29 @@ begin
       itBol := cabDest.Boleta.BuscaItem(a[1]);
       IF itBol=nil then exit;
       itBol.coment := a[2];         //escribe comentario
-      itBol.Cant   := -itBol.Cant;   //pone cantidad negativa
-      itBol.subtot := -itBol.subtot; //pone total negativo
-      PLogVenD(ItBol.regIBol_AReg, itBol.subtot);  //registra mensaje
-      cabDest.Boleta.ItemDelete(a[1]);  //quita de la lista
+      cabDest.Boleta.DevolItem(itBol);
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
+    end;
+  C_GRA_BOLPC: begin  //Se pide grabar la boleta de una PC
+      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
+      cabDest := gru.CabPorNombre(tram.traDat);
+      if cabDest=nil then exit;
+      for itBol in cabDest.boleta.items do begin
+    {    If Pventa = '' Then //toma valor por defecto
+            itBol.pVen = PVentaDef
+        else    //escribe con punto de venta
+            itBol.pVen = Me.Pventa
+        end;}
+        cabDest.boleta.IngresItem(itBol);   //ingresa el ítem
+      end;
+      //Graba los campos de la boleta
+      cabDest.boleta.fec_grab := now;  //fecha de grabación
+      if OnLogIngre<>nil then
+        OnLogIngre(IDE_CIB_BOL, cabDest.Boleta.RegVenta, cabDest.boleta.TotPag);
+      //Config.escribirArchivoIni;
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
+      cabDest.LimpiarBol;          //Limpia los items
     end;
   C_DES_ITBOL: begin  //Desechar ítem
       if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
@@ -370,9 +374,7 @@ begin
       if cabDest=nil then exit;
       itBol := cabDest.Boleta.BuscaItem(a[1]);
       if itBol=nil then exit;
-      If itBol.estado = IT_EST_NORMAL Then PLogIBol(tmp)        //item normal
-      else PLogIBolD(tmp);       //item descartado
-      cabDest.Boleta.ItemDelete(a[1]);
+      cabDest.boleta.IngresItem(itBol);   //ingresa el ítem
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
@@ -525,6 +527,7 @@ begin
   gof.OnCambiaPropied:= @gof_CambiaPropied;
   gof.OnLogInfo      := @gof_LogInfo;
   gof.OnLogVenta     := @gof_LogVenta;
+  gof.OnLogIngre     := @gof_LogIngre;
   gof.OnLogError     := @gof_LogError;
   gof.OnReqConfigGen := @gof_RequiereInfo;
   gof.OnReqCadMoneda := @gof_ReqCadMoneda;

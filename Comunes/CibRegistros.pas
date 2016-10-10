@@ -4,31 +4,60 @@ unit CibRegistros;
 interface
 uses
   Classes, SysUtils, dos, MisUtils, CibFacturables;
-var
-  ArcLog   : string;      //Archivo de registro arctual (*.log)
-  nSerV    : integer;     //número de serie de rergitro en "log"
-  msjError : string;      //Mensaje de error. { TODO : Debería evitarse usar variables globales }
-  //contadores internos
-  CVniloter: double;      //valor del contador de Ventas de Ciberplex
-  CIniloter: Double;      //valor del contador de Ingresos de CiberPlex
+type
 
-Function NombFinal(camino : string; nom_loc: string; extension : String): String;
-function EscribReg(archivo: String; lin: String): string;
-procedure AbrirPLog(rutDatos, local: string);
-function NombDifArc(nomBase: String): String;
-function PLogVenta(identif: char; mensaje : String; dCosto : Double): integer;
-
-function PLogIBol(mensaje: String): integer;
-function PLogIBolD(mensaje: String): integer;
-function PLogBol(mensaje: string; dCosto: Single): integer;
-function PLogVen(mensaje : String; dCosto : Single): integer;
-function PLogVenD(mensaje : String; dCosto : Single) : integer;
-function PLogInf(usu, mensaje: String): integer;
-function PLogErr(usu, mensaje: string): integer;
+  { TCibArcReg }
+  //Define a un archivo de registro
+  TCibArcReg = class
+  private
+    function PLogEscr(identif: String; lin: String): integer;
+    function NombDifArc(nomBase: String): String;
+  public
+    ArcLog   : string;      //Archivo de registro arctual (*.log)
+    nSerV    : integer;     //número de serie de rergitro en "log"
+    msjError : string;      //Mensaje de error. { TODO : Debería evitarse usar variables globales }
+    //contadores internos
+    CVniloter: double;      //valor del contador de Ventas de Ciberplex
+    CIniloter: Double;      //valor del contador de Ingresos de CiberPlex
+    Function NombFinal(camino : string; nom_loc: string; extension : String): String;
+    function EscribReg(archivo: String; lin: String): string;
+    procedure AbrirPLog(rutDatos, local: string);
+    function PLogVenta(identif: char; mensaje : String; dCosto : Double): integer;
+    function PLogIngre(identif: char; mensaje: String; dCosto: Double): integer;
+    function PLogInf(usu, mensaje: String): integer;
+    function PLogErr(usu, mensaje: string): integer;
+  end;
 
 implementation
 
-Function NombFinal(camino : string; nom_loc: string; extension : String): String;
+function TCibArcReg.NombDifArc(nomBase: String): String;
+{Genera un nombre diferente de archivo, tomando el nombre dado como raiz.}
+const MAX_ARCH = 10;
+var i : Integer;    //Número de intentos con el nombre de archivo de salida
+    cadBase : String;   //Cadena base del nombre base
+    extArc: string;    //extensión
+
+  function NombArchivo(i: integer): string;
+  begin
+    Result := cadBase + '-' + IntToStr(i) + extArc;
+  end;
+
+begin
+   Result := nomBase;  //nombre por defecto
+   extArc := ExtractFileExt(nomBase);
+   if ExtractFilePath(nomBase) = '' then exit;  //protección
+   //quita ruta y cambia extensión
+   cadBase := ChangeFileExt(nomBase,'');
+   //busca archivo libre
+   for i := 0 to MAX_ARCH-1 do begin
+      If not FileExists(NombArchivo(i)) then begin
+        //Se encontró nombre libre
+        Exit(NombArchivo(i));  //Sale con nombre
+      end;
+   end;
+   //todos los nombres estaban ocupados. Sale con el mismo nombre
+End;
+Function TCibArcReg.NombFinal(camino : string; nom_loc: string; extension : String): String;
 {Devuelve el nombre final con el que se genera un archivo de registro.
 El nombre final depende del mes actual y del local.
 También se verifica si es accesible el archivo para escritura.
@@ -67,7 +96,7 @@ begin
       end;
     end;
 end;
-function EscribReg(archivo: String; lin: String): string;
+function TCibArcReg.EscribReg(archivo: String; lin: String): string;
 {Escribe una línea en un archivo de registro. Si encuentra error, devuelve una cadena
 con el mensaje.} { TODO : No se ha implementado, toda la protección que implementa NILOTER-m
 en esta función }
@@ -85,7 +114,7 @@ begin
     CloseFile(arc);
   end;
 end;
-procedure AbrirPLog(rutDatos, local: string);
+procedure TCibArcReg.AbrirPLog(rutDatos, local: string);
 {Notar que si se cambia el local o la ruta de datos, se debe llamar nuevamente a este
 procedimiento. }
 begin
@@ -93,7 +122,7 @@ begin
   // Esta operación es crítica, para la aplicación
   If msjError <> '' then exit;
 end;
-Function PLogEscr(identif: String; lin: String): integer;
+Function TCibArcReg.PLogEscr(identif: String; lin: String): integer;
 {Rutina básica de escritura en el registro del programa. Devuelve el número de serie
  escrito. Debe haberse llamado primero a AbrirPLog}
 begin
@@ -109,56 +138,28 @@ begin
     MsgErr('Error escribiendo en archivo de registro:' + msjError);
   end
 end;
-function PLogVenta(identif: char; mensaje: String; dCosto: Double): integer;
+function TCibArcReg.PLogVenta(identif: char; mensaje: String; dCosto: Double): integer;
 {Escribe una línea de venta en el registro del programa. Se considera un registro de
-venta, a aquel que incrementa "CVniloter".
+venta, a aquel que puede incrementar "CVniloter".
 "dCosto" es el incremento de costo para actualizar ingreso}
 begin
     Result := PLogEscr(identif, mensaje);
     CVniloter := CVniloter + dCosto;  //actualiza venta
 end;
-
-function PLogIBol(mensaje: String): integer;
-{Escribe un ítem de boleta en el registro del programa.
+function TCibArcReg.PLogIngre(identif: char; mensaje: String; dCosto: Double): integer;
+{Escribe una línea de ingreso en el registro del programa. Se considera un registro de
+ingreso, a aquel que puede incrementar "CIniloter".
 "dCosto" es el incremento de costo para actualizar ingreso}
 begin
-    PLogIBol := PLogEscr('b', mensaje);    //devuelve
-//    CVniloter = CVniloter + dCosto
-end;
-function PLogIBolD(mensaje: String): integer;
-{Escribe un ítem de boleta descartado en el registro del programa.
-"dCosto" es el incremento de costo para actualizar ingreso}
-begin
-    PLogIBolD := PLogEscr('x', mensaje);    //devuelve
-//    CVniloter = CVniloter + dCosto
-end;
-function PLogBol(mensaje: string; dCosto: Single): integer;
-{Escribe campos de una boleta en el registro del programa.
-"dCosto" es el incremento de costo para actualizar ingreso}
-begin
-    PLogBol := PLogEscr('B', mensaje);    //devuelve
+    Result := PLogEscr(identif, mensaje);
     CIniloter := CIniloter + dCosto;      //actualiza ingresos
 end;
-function PLogVen(mensaje : String; dCosto : Single): integer;
-{Escribe una línea de venta en el registro del programa.
-"dCosto" es el incremento de costo para actualizar ingreso}
-begin
-    PLogVen := PLogEscr('v', mensaje);
-    CVniloter := CVniloter + dCosto;  //actualiza venta
-end;
-function PLogVenD(mensaje : String; dCosto : Single) : integer;
-{Escribe una línea de venta devuelta en el registro del programa.
-"dCosto" es el incremento de costo para actualizar ingreso}
-begin
-    PLogVenD := PLogEscr('y', mensaje);
-    CVniloter := CVniloter - dCosto;  //actualiza venta
-end;
-function PLogInf(usu, mensaje: string): integer;
+function TCibArcReg.PLogInf(usu, mensaje: string): integer;
 //Escribe una línea de información en el registro del programa.
 begin
-  PLogInf := PLogEscr('i', usu + #9+ mensaje);
+  PLogInf := PLogEscr(IDE_REG_INF, usu + #9+ mensaje);
 end;
-function PLogErr(usu, mensaje: string): integer;
+function TCibArcReg.PLogErr(usu, mensaje: string): integer;
 //Escribe una línea de error en el registro del programa. No modifica "MsjError"
 var
   tmp: string;
@@ -168,38 +169,6 @@ begin
   PLogErr := PLogEscr(IDE_REG_ERR, usu + #9+ mensaje);
   msjError := tmp;  //restaura
 end;
-
-function NombDifArc(nomBase: String): String;
-{Genera un nombre diferente de archivo, tomando el nombre dado como raiz.}
-const MAX_ARCH = 10;
-var i : Integer;    //Número de intentos con el nombre de archivo de salida
-    cadBase : String;   //Cadena base del nombre base
-    extArc: string;    //extensión
-
-  function NombArchivo(i: integer): string;
-  begin
-    Result := cadBase + '-' + IntToStr(i) + extArc;
-  end;
-
-begin
-   Result := nomBase;  //nombre por defecto
-   extArc := ExtractFileExt(nomBase);
-   if ExtractFilePath(nomBase) = '' then exit;  //protección
-   //quita ruta y cambia extensión
-   cadBase := ChangeFileExt(nomBase,'');
-   //busca archivo libre
-   for i := 0 to MAX_ARCH-1 do begin
-      If not FileExists(NombArchivo(i)) then begin
-        //Se encontró nombre libre
-        Exit(NombArchivo(i));  //Sale con nombre
-      end;
-   end;
-   //todos los nombres estaban ocupados. Sale con el mismo nombre
-End;
-
-initialization
-  nSerV := 0;
-  ArcLog := '';
 
 end.
 
