@@ -599,10 +599,10 @@ begin
   r.Cant := 1;
   r.pUnit := Costo;
   r.subtot := Costo;
-  r.cat := Grupo.CategVenta;
-  r.subcat := 'INTERNET';
   r.descr := 'Alquiler PC: ' + IntToStr(tSolicMin) + 'm(' +
              TimeToStr(TranscDat) + ')';
+  r.cat := Grupo.CategVenta;
+  r.subcat := 'INTERNET';
   r.vfec := date + Time;
   r.estado := IT_EST_NORMAL;
   r.fragmen := 0;
