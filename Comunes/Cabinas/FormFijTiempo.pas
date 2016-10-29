@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, Buttons, MisUtils, ObjGraficos, DateUtils, LCLType,
-  CibCabinaBase, CPUtils;
+  CibCabinaBase;
 
 type
 
@@ -229,7 +229,7 @@ End;
 function TfrmFijTiempo.CadActivacion: string;
 {Devuelve una cadena con información sobre la activación de la cabina}
 begin
-  Result := CodifActivCabina(ogCab.Nombre, tSolic, tLibre, horGra );
+  Result := ogCab.cab.CadActivacion(tSolic, tLibre, horGra );
 end;
 
 

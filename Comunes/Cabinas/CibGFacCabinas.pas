@@ -22,9 +22,10 @@ type
 
   //TEvCabCambiaEstado = procedure(nuevoEstado: TCabEstadoConex) of object;
   {El evento TEvCabTramaLista, se define con el primer parámetro como TCibFac, en lugar
-  de TCibFacCabina, porque el manejador de este evento se rsará como rutina general para
+  de TCibFacCabina, porque el manejador de este evento se usará como rutina general para
   el procesamiento de la mayoría de comandos de la aplicación.}
-  TEvCabTramaLista = procedure(facOri: TCibFac; tram: TCPTrama; tramaLocal: boolean) of object;
+  TEvCabTramaLista = procedure(nomOForig, nomGOForig: string; tram: TCPTrama;
+                               tramaLocal: boolean) of object;
   TEvCabRegMensaje = procedure(NomCab: string; msj: string) of object;
   TEvCabAccionCab = procedure(cab: TCibFacCabina) of object;
 //  TEvCabLogIBol = procedure(cab: TCPCabina; it: TCPItemBoleta; msj: string) of object;
@@ -102,6 +103,7 @@ type
     procedure SincBloqueo;       //sicroniza el bloqueo de la pantalla
     procedure TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string=
       '');
+    function CadActivacion(tSolic0: TDateTime; tLibre0, horGra0: boolean): string;
     procedure InicConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
     procedure ModifConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
     procedure DetenConteo;
@@ -125,7 +127,8 @@ type
     timer1 : TTimer;
     ventMsjes: TForm_list;     //Ventanas de mensajes de red
     procedure cab_RegMensaje(NomCab: string; msj: string);
-    procedure cab_TramaLista(facOri: TCibFac; tram: TCPTrama; tramaLocal: boolean);
+    procedure cab_TramaLista(nomOForig, nomGOForig: string; tram: TCPTrama;
+      tramaLocal: boolean);
   public  //Eventos.
     {Acciones que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
@@ -147,6 +150,10 @@ type
     function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
       ): TfrmVisorMsjRed;
   public  //Operaciones con cabinas
+    procedure InicConteo(traDat: string);
+    procedure ModifConteo(traDat: string);
+    procedure DetenConteo(traDat: string);
+    procedure PonerManten(traDat: string);
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
   public  //Constructor y destructor
@@ -197,7 +204,7 @@ begin
 end;
 procedure TCibFacCabina.cabConexTramaLista(NomCab: string; tram: TCPTrama);
 begin
-  if OnTramaLista<>nil then OnTramaLista(self, tram, false);
+  if OnTramaLista<>nil then OnTramaLista(Nombre, Grupo.Nombre , tram, false);
 end;
 procedure TCibFacCabina.cabConexRegMensaje(NomCab: string; msj: string);
 begin
@@ -543,6 +550,16 @@ procedure TCibFacCabina.TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word;
 begin
   cabConex.TCP_envComando(comando, ParamX, ParamY, cad);    //desbloquea, si hay conexión
 end;
+function TCibFacCabina.CadActivacion(tSolic0: TDateTime; tLibre0,
+  horGra0: boolean): string;
+{Devuelve cadena con información de los campos usuales, para la activación o
+ desactivación de la cabina.}
+begin
+  Result := Grupo.Nombre + #9 + Nombre + #9 +
+            D2f(tSolic0)+ #9 +
+            B2f(tLibre0)+ #9 +
+            B2f(horGra0);
+end;
 procedure TCibFacCabina.InicConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
 begin
   if Contando then
@@ -679,10 +696,10 @@ begin
   if (frmAdminCabs<>nil) and frmAdminCabs.Visible then
     frmAdminCabs.RefrescarGrilla;  //actualiza
 end;
-procedure TCibGFacCabinas.cab_TramaLista(facOri: TCibFac; tram: TCPTrama;
+procedure TCibGFacCabinas.cab_TramaLista(nomOForig, nomGOForig: string; tram: TCPTrama;
   tramaLocal: boolean);
 begin
-  if OnTramaLista<>nil then OnTramaLista(facOri, tram, tramaLocal);
+  if OnTramaLista<>nil then OnTramaLista(nomOForig, nomGOForig, tram, tramaLocal);
 end;
 procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
 var
@@ -820,6 +837,67 @@ begin
   end;
 end;
 //operaciones con cabinas
+procedure TCibGFacCabinas.InicConteo(traDat: string);
+{Inicia el conteo de una cabina, a partir de la parte de cadena de la trama}
+var
+  campos: TStringDynArray;
+  tSolic0: TDateTime;
+  tLibre0, horGra0: Boolean;
+  cab: TCibFacCabina;
+begin
+  campos := Explode(#9, traDat)  ;
+  if high(campos) < 4 then exit;
+//  nomGFac:= campos[0];
+  cab := CabPorNombre(campos[1]);
+  if cab = nil then exit;
+  tSolic0 := f2D(campos[2]);
+  tLibre0 := f2B(campos[3]);
+  horGra0 := f2B(campos[4]);
+  cab.InicConteo(tSolic0, tLibre0, horGra0);
+end;
+procedure TCibGFacCabinas.ModifConteo(traDat: string);
+{Modifica el conteo de una cabina, a partir de la parte de cadena de la trama}
+var
+  campos: TStringDynArray;
+  tSolic0: TDateTime;
+  tLibre0, horGra0: Boolean;
+  cab: TCibFacCabina;
+begin
+  campos := Explode(#9, traDat)  ;
+  if high(campos) < 4 then exit;
+//  nomGFac:= campos[0];
+  cab := CabPorNombre(campos[1]);
+  if cab = nil then exit;
+  tSolic0 := f2D(campos[2]);
+  tLibre0 := f2B(campos[3]);
+  horGra0 := f2B(campos[4]);
+  cab.ModifConteo(tSolic0, tLibre0, horGra0);
+end;
+procedure TCibGFacCabinas.DetenConteo(traDat: string);
+{Detiene el conteo de una cabina, a partir de la parte de cadena de la trama}
+var
+  campos: TStringDynArray;
+  cab: TCibFacCabina;
+begin
+  campos := Explode(#9, traDat)  ;
+//  nomGFac:= campos[0];
+  cab := CabPorNombre(campos[1]);
+  if cab = nil then exit;
+  cab.DetenConteo;
+end;
+procedure TCibGFacCabinas.PonerManten(traDat: string);
+{Pone una cabina en mantenimiento, a partir de la parte de cadena de la trama}
+var
+  campos: TStringDynArray;
+  cab: TCibFacCabina;
+begin
+  campos := Explode(#9, traDat)  ;
+  if high(campos) < 4 then exit;
+//  nomGFac:= campos[0];
+  cab := CabPorNombre(campos[1]);
+  if cab = nil then exit;
+  cab.PonerManten;
+end;
 procedure TCibGFacCabinas.TCP_envComando(nom: string; comando: TCPTipCom; ParamX,
   ParamY: word; cad: string = '');
 var
