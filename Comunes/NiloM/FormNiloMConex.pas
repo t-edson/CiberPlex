@@ -39,7 +39,7 @@ type
     procedure RefrescarEstado;
   public
     onEnviarCom: TEvCibNiloMEnviarCom;
-    padre      : TObject;   //referecnia genérica a la clase TCibGFacNiloM
+    padre      : TObject;   //referencia genérica a la clase TCibGFacNiloM
     procedure ProcesarCad(cad: string);
     procedure RegMensaje(NomCab: string; msj: string);
     procedure TermWrite(cad: string);
@@ -63,19 +63,19 @@ procedure TfrmNiloMConex.RefrescarEstado;
 {Refresca los controles, de acuerdo al estado de la conexión}
 begin
   case TCibGFacNiloM(padre).estadoCnx of
-  cecConectado: begin
+  necConectado: begin
     Memo1.Enabled:=true;
     btnConect.Enabled:=false;
     btnDescon.Enabled:=true;
     cmbPuerto.Enabled:=false;
   end;
-  cecConectando: begin
+  necConectando: begin
     Memo1.Enabled:=false;
     btnConect.Enabled:=false;
     btnDescon.Enabled:=true;
     cmbPuerto.Enabled:=false;
   end;
-  cecDetenido, cecMuerto: begin
+  necDetenido, necMuerto: begin
     Memo1.Enabled:=false;
     btnConect.Enabled:=true;
     btnDescon.Enabled:=false;
@@ -91,7 +91,7 @@ procedure TfrmNiloMConex.cmbPuertoChange(Sender: TObject);
 begin
   if TCibGFacNiloM(padre).PuertoN <> PuertoSeleccionado then begin
     //Se elije otro puerto del combo
-    if TCibGFacNiloM(padre).estadoCnx in [cecConectado, cecConectando] then begin
+    if TCibGFacNiloM(padre).estadoCnx in [necConectado, necConectando] then begin
       //El puerto actual está abierto
       MsgExc('Debe cerrar primero el puerto actual, antes de intentar cambiarlo.');
       cmbPuerto.Text:=TCibGFacNiloM(padre).PuertoN;  //retorna al puerto inicial
@@ -142,7 +142,7 @@ begin
   ///////////////  Asigna  //////////////////////
   if (TCibGFacNiloM(padre).PuertoN <> PuertoSeleccionado) then begin
     //Hay que cambiar el puerto
-    if TCibGFacNiloM(padre).estadoCnx = cecConectado then begin
+    if TCibGFacNiloM(padre).estadoCnx = necConectado then begin
      //estaba abierto
      TCibGFacNiloM(padre).Desconectar;   //lo cierra primero
     end;

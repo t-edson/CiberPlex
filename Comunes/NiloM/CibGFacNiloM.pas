@@ -9,11 +9,14 @@ unit CibGFacNiloM;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dos, Types, fgl, LCLProc, MisUtils, crt, strutils,
-  CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
-  CibNiloMTarifRut, Globales, CibRegistros;
+  Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, MisUtils, crt,
+  strutils, CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
+  CibNiloMTarifRut, Globales, CibRegistros, CibTramas, CibUtils;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
+const //Acciones
+  ACCLOC_CONEC = 1;
+  ACCLOC_DESCO = 2;
 type
   //Define la instancia de llamada para la ventana frmCabina
 
@@ -100,13 +103,16 @@ type
                                  TCPGrupoCabinas, aquí solo se maneja una conexión.}
     FestadoCnx: TNilEstadoConex;
     mens_error: TStringList;  //acumula los mensajes de error
-    lin_serial: string;     //acumula los datos recibidos hasta completar la línea
+    lin_serial: string;      //acumula los datos recibidos hasta completar la línea
     arcLog    : TCibArcReg;
+    timer1    : TTimer;      //temporizador
+    tic       : integer;     //contador
     //Funciones para manejo del registro
     procedure AbrirRegistro;
     procedure CerrarRegistro;
     procedure frmNilomProp_CambiaProp;
     procedure ErrorLog(mensaje: string);
+    procedure timer1Timer(Sender: TObject);
   private //Funciones para escribir en los archivos de registros
     procedure VolcarErrorLog;
     procedure EscribeLog(mensaje: string);
@@ -116,6 +122,8 @@ type
   protected //Getters and Setters
     function GetPuertoN: string;
     procedure SetPuertoN(AValue: string);
+    function GetCadEstado: string; override;
+    procedure SetCadEstado(AValue: string); override;
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
@@ -131,7 +139,6 @@ type
     property estadoCnx: TNilEstadoConex read FestadoCnx
              write FestadoCnx;   {"estadoCnx" es una propiedad de solo lectura, pero se
                                    habilita la escritura, para cuando se usa sin Red}
-//    property Puerto: string read nilConex.puerto;
     property PuertoN: string read GetPuertoN write SetPuertoN;
     //Rutinas para leer archivos de configuración
     procedure LeerArchivosConfig;  //Lee archivos de tarifas y rutas
@@ -157,6 +164,7 @@ type
     procedure Desconectar;
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
     function Agregar(nomLoc: string; num_can: char): TCibFacLocutor;
+    procedure Acciones(tram: TCPTrama); override;
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -754,6 +762,17 @@ begin
     //Se vuelca al archivo en el momento apropiado
     mens_error.Add('ERROR: ' + TimeToStr(Time) + '-' + mensaje);
 end;
+procedure TCibGFacNiloM.timer1Timer(Sender: TObject);
+{Temporiza el objeto, cada segundo}
+begin
+  tic := tic + 1;
+  if (tic+3) mod 5 = 0 then begin   //se suma 3 para que la primera vez se ejecute antes
+    if estadoCnx in [necMuerto, necDetenido] then begin
+      //Intenta conectarse
+      Conectar;
+    end;
+  end;
+end;
 function TCibGFacNiloM.tarif_LogErr(mensaje: string): integer;
 //Se solicita registrar un mensaje de error
 begin
@@ -823,6 +842,39 @@ procedure TCibGFacNiloM.SetPuertoN(AValue: string);
 begin
   if ModoCopia then exit;
   nilConex.puertoN:=AValue;
+end;
+function TCibGFacNiloM.GetCadEstado: string;
+{Se sobreescribe esta propiedad para incluir campos adicionales}
+var
+  c : TCibFac;
+begin
+  //Delimitador inicial y propiedades de objeto.
+  Result := '<' + I2f(ord(tipo)) + #9 + Nombre + #9 +
+                  I2f(ord(estadoCnx)) + #9 + LineEnding;
+  for c in items do begin
+    Result += c.CadEstado + LineEnding;
+  end;
+  Result += '>';  //delimitador final.
+end;
+procedure TCibGFacNiloM.SetCadEstado(AValue: string);
+{Se sobreescribe esta propiedad para incluir campos adicionales}
+var
+  cad, nomb, lin1: string;
+  car: char;
+  it: TCibFac;
+  a: TStringDynArray;
+begin
+  decod.Inic(AValue, lin1);  //iniica la decodificación
+  a := Explode(#9, lin1);     //separa campos
+  if ModoCopia then begin
+    //Solo cuando está en modo copia, se lee esta variable
+    estadoCnx := TNilEstadoConex(f2I(a[2]));
+  end;
+  while decod.Extraer(car, nomb, cad) do begin
+    if cad = '' then continue;
+    it := ItemPorNombre(nomb);
+    if it<>nil then it.CadEstado := cad;
+  end;
 end;
 function TCibGFacNiloM.GetCadPropied: string;
 var
@@ -975,15 +1027,42 @@ begin
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := loc;
 end;
+
+procedure TCibGFacNiloM.Acciones(tram: TCPTrama);
+var
+  traDat, nom, comando: String;
+  facDest: TCibFac;
+  Err: boolean;
+begin
+  traDat := tram.traDat;  //crea copia para modificar
+  ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+  facDest := ItemPorNombre(nom);
+  if facDest=nil then exit;
+  case tram.posX of  //Se usa el parámetro para ver la acción
+  ACCLOC_CONEC: begin  //Se pide grabar la boleta de una PC
+    comando := 'u'+TCibFacLocutor(facDest).num_can;
+    EnvComando(comando);
+    end;
+  ACCLOC_DESCO: begin  //Se pide grabar la boleta de una PC
+    comando := 'x'+TCibFacLocutor(facDest).num_can;
+    EnvComando(comando);
+    end;
+  end;
+end;
+
 //constructor y destructor
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
 begin
   inherited Create(nombre0, ctfNiloM);
+  timer1 := TTimer.Create(nil);
+  timer1.Interval:=1000;
   arcLog    := TCibArcReg.Create;  //crea su propio archivo de registro
   FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 debugln('-Creando: '+ nombre0);
   tipo       := ctfNiloM;
   if not FModoCopia then begin
+    timer1.OnTimer:=@timer1Timer;
     //Configura ventana de conexiones
     frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
     frmNilomConex.padre := self;  //referencia a la clase
@@ -1014,7 +1093,7 @@ debugln('-Creando: '+ nombre0);
   ArcTarif := rutApp + DirectorySeparator + 'tarifario.txt';  //valor fijo por ahora
   ArcRutas := rutApp + DirectorySeparator + 'rutas.txt';  //valor fijo por ahora
   facCmoneda  := 0.1;  //valor por defecto
-  FestadoCnx  := cecMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
+  FestadoCnx  := necMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
   //Conectar;  //No inicia la conexión
   mens_error:= TStringList.Create;
   Agregar('LOC1','0');
@@ -1035,6 +1114,8 @@ debugln('-destruyendo: '+ self.Nombre);
     frmNilomConex.Destroy;
   end;
   arcLog.Destroy;
+  timer1.OnTimer:=nil;
+  timer1.Destroy;
   inherited Destroy;
 end;
 

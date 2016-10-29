@@ -129,7 +129,7 @@ object frmNiloMConex: TfrmNiloMConex
         object txtComando: TEdit
           Left = 8
           Height = 23
-          Top = 192
+          Top = 144
           Width = 144
           TabOrder = 7
         end

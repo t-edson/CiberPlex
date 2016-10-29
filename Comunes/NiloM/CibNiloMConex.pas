@@ -34,10 +34,10 @@ type
 
   // Estados de la conexión de la cabina.
   TNilEstadoConex = (
-    cecConectando,    //conectando
-    cecConectado,     //conectado con socket
-    cecDetenido,      //el proceso se detuvo (no hay control)
-    cecMuerto         //proceso detenido
+    necConectando,    //conectando
+    necConectado,     //conectado con socket
+    necDetenido,      //el proceso se detuvo (no hay control)
+    necMuerto         //proceso detenido
   );
   TEvCambiaEstado = procedure(nuevoEstado: TNilEstadoConex) of object;
   TEvRegMensaje = procedure(NomObj: string; msj: string) of object;
@@ -141,7 +141,7 @@ const
 procedure TSocketNilo.Abrir;
 {Intenta abrir la conexión serial}
 begin
-  estado := cecConectando;
+  estado := necConectando;
   ser.Connect(puerto); //ComPort
   Sleep(500);
   ser.config(9600, 8, 'N', SB1, False, False);
@@ -152,14 +152,14 @@ begin
     sleep(1000);
     exit;          //falló
   end;
-  estado := cecConectado;
+  estado := necConectado;
 end;
 procedure TSocketNilo.AbrirConexion;
 begin
   RegMensaje('Abriendo puerto ...');
   repeat
     Abrir;  //puede tomar unos segundos
-  until (estado = cecConectado) or Terminated;
+  until (estado = necConectado) or Terminated;
 end;
 procedure TSocketNilo.EventoProcesarCad;
 begin
@@ -256,7 +256,7 @@ end;
 procedure TSocketNilo.EnvComando(com: string);
 {Envía una cadena al puerto serial. }
 begin
-  if estado <> cecConectado then
+  if estado <> necConectado then
     exit;
   //Se debe enviar una cadena
 //  RegMensaje('   Enviado: ' + com);
@@ -266,8 +266,8 @@ end;
 constructor TSocketNilo.Create(puerto0: string);
 begin
   puerto := puerto0;
-  Festado := cecConectando; {Estado inicial. Aún no está conectando, pero se asume que
-                             está en proceso de conexión. Además, no existe estado cecDetenido.
+  Festado := necConectando; {Estado inicial. Aún no está conectando, pero se asume que
+                             está en proceso de conexión. Además, no existe estado necDetenido.
                              Notar que esta asignación de estado, no generará el evento de
                              cambio de estado, porque estamos en el constructor}
   ser := TBlockSerial.Create;
@@ -280,7 +280,7 @@ begin
 //  ProcTrama.Destroy;
   ser.Destroy;
   RegMensaje('Proceso terminado.');
-  //estado := cecMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
+  //estado := necMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
   inherited Destroy;
 end;
 { TNiloConexion }
@@ -305,7 +305,7 @@ begin
   { Se ha salido del Execute() y el hilo ya no procesa la conexión. El hilo pasa a un
   estado suspendido, pero aún existe el objeto en memoria, porque no se le define con
   auto-destrucción.}
- hilo_CambiaEstado(cecDetenido);
+ hilo_CambiaEstado(necDetenido);
 end;
 procedure TNiloConexion.hilo_ProcesarCad(cad: string);
 var
@@ -350,20 +350,20 @@ end;
 procedure TNiloConexion.Conectar;
 {Crea el hilo con el puerto actual e inicia la conexión}
 begin
-  if Festado in [cecConectando, cecConectado] then begin
+  if Festado in [necConectando, necConectado] then begin
     // El hilo ya existe, y esta conectado o en proceso de conexión.
     { TODO : Para ser más precisos se debería ver si se le ha dado la orden de terminar
     el hilo mirando hilo.Terminated. De ser así, la muerte del hilo es solo cuestion
-    de tiempo, (milisegundos si está en estado cecConectado o segundos si está en
-    estado cecConectando)
+    de tiempo, (milisegundos si está en estado necConectado o segundos si está en
+    estado necConectando)
     }
     exit;
   end;
-  if estado = cecDetenido then begin
+  if estado = necDetenido then begin
     // El proceso fue terminado, tal vez porque dio error.
     hilo.Destroy;   //libera referencia
     hilo := nil;
-    //Festado := cecMuerto;  //No es muy útil, fijar este estado, porque seguidamente se cambiará
+    //Festado := necMuerto;  //No es muy útil, fijar este estado, porque seguidamente se cambiará
   end;
   hilo := TSocketNilo.Create(Fpuerto);
   hilo.OnCambiaEstado:=@hilo_CambiaEstado; //para detectar cambios de estado
@@ -376,18 +376,18 @@ begin
 end;
 procedure TNiloConexion.Desconectar;
 begin
-  if Festado = cecMuerto then begin
+  if Festado = necMuerto then begin
     exit;  //Ya está muerto el proceso, o está a punto de morir
   end;
   // La única forma de matar al proceso es dándole la señal
   hilo.Terminate;
   {puede tomar unos segundos hasta que el hilo pase a estado suspendido (milisegundos si está
-  en estado cecConectado o segundos si está en  estado cecConectando)
+  en estado necConectado o segundos si está en  estado necConectando)
   }
 end;
 procedure TNiloConexion.EnvComando(com: string; IncluirSalto: boolean);
 begin
-  if estado<>cecConectado then
+  if estado<>necConectado then
     exit;
   if IncluirSalto then
     hilo.EnvComando(com + #13)  //el salto de línea en el NILO-m es solo #13
@@ -398,7 +398,7 @@ constructor TNiloConexion.Create;
 begin
   MsjesCnx:= TstringList.Create;
   Fpuerto := '1';        //Puerto por deefcto
-  Festado := cecMuerto;  //este es el estado inicial, porque no se ha creado el hilo
+  Festado := necMuerto;  //este es el estado inicial, porque no se ha creado el hilo
   //Conectar;  //No inicia la conexión
 end;
 destructor TNiloConexion.Destroy;
@@ -412,7 +412,7 @@ begin
   OnTermWrite   := nil;
   OnTermWriteLn := nil;
   //Verifica si debe detener el hilo
-  if Festado<>cecMuerto then begin
+  if Festado<>necMuerto then begin
     if hilo = nil then begin
       {Este es un caso especial, cuando no se llegó a conectar nunca al hilo o cuando se
        usa a TCabConexion, sin red. Por los tanto no se crea nunca el hilo}
@@ -421,7 +421,7 @@ begin
       hilo.Terminate;
       hilo.WaitFor;  //Si no espera a que muera, puede dejarlo "zombie"
       hilo.Destroy;
-      //estado := cecMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
+      //estado := necMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
     end;
   end;
   MsjesCnx.Destroy;

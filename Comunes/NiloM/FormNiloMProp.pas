@@ -249,13 +249,13 @@ begin
   if self.Visible then begin
     //Refresca estado de la conexión
     case TCibGFacNiloM(padre).estadoCnx of
-    cecConectado: begin
+    necConectado: begin
       txtEstConex.Caption:='Conectado';
     end;
-    cecConectando: begin
+    necConectando: begin
       txtEstConex.Caption:='Conectando...';
     end;
-    cecDetenido, cecMuerto: begin
+    necDetenido, necMuerto: begin
       txtEstConex.Caption:='Desconectado';
     end;
     end;
