@@ -254,7 +254,6 @@ object Config: TConfig
       ClientHeight = 212
       ClientWidth = 336
       inline FraUsuarios1: TFraUsuarios
-        TabOrder = 0
       end
     end
   end

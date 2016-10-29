@@ -135,23 +135,6 @@ object frmPrincipal: TfrmPrincipal
       ImageIndex = 9
       OnExecute = acSisConfigExecute
     end
-    object acArcTarifas: TAction
-      Category = 'Arc'
-      Caption = '&Archivo de Tarifas'
-      OnExecute = acArcTarifasExecute
-    end
-    object acArcRutas: TAction
-      Category = 'Arc'
-      Caption = '&Archivo de Rutas'
-      OnExecute = acArcRutasExecute
-    end
-    object acArcSalir: TAction
-      Category = 'Arc'
-      Caption = '&Salir'
-      Hint = 'Sale de la aplicación.'
-      ImageIndex = 3
-      OnExecute = acArcSalirExecute
-    end
     object acCabPonMan: TAction
       Category = 'Cab'
       Caption = 'Poner en &Mantenimiento'
@@ -229,52 +212,53 @@ object frmPrincipal: TfrmPrincipal
       OnExecute = acEdiElimGruExecute
     end
     object acNilConex: TAction
-      Category = 'Nil'
+      Category = 'GNil'
       Caption = 'Cone&xiones'
       OnExecute = acNilConexExecute
     end
     object acNilPropied: TAction
-      Category = 'Nil'
+      Category = 'GNil'
       Caption = '&Propiedades'
       OnExecute = acNilPropiedExecute
     end
+    object acArcRutTrab: TAction
+      Category = 'Arc'
+      Caption = 'Abrir Carpeta de la A&plicación'
+      OnExecute = acArcRutTrabExecute
+    end
+    object acArcSalir: TAction
+      Category = 'Arc'
+      Caption = '&Salir'
+      Hint = 'Sale de la aplicación.'
+      ImageIndex = 3
+      OnExecute = acArcSalirExecute
+    end
+    object acLocConectar: TAction
+      Category = 'Loc'
+      Caption = '&Conectar'
+      OnExecute = acLocConectarExecute
+    end
+    object acLocDesconec: TAction
+      Category = 'Loc'
+      Caption = '&Desconectar'
+      OnExecute = acLocDesconecExecute
+    end
   end
-  object PopupCabina: TPopupMenu
+  object PopupLocutor: TPopupMenu
     Images = ImageList16
     left = 240
-    top = 120
-    object MenuItem11: TMenuItem
-      Action = acCabIniCta
-    end
-    object MenuItem6: TMenuItem
-      Action = acCabModTpo
-    end
-    object MenuItem8: TMenuItem
-      Action = acCabDetCta
-    end
-    object MenuItem15: TMenuItem
-      Action = acCabPonMan
-    end
-    object MenuItem21: TMenuItem
-      Action = acCabVerBol
-    end
-    object MenuItem10: TMenuItem
-      Action = acCabGraBol
-    end
-    object MenuItem18: TMenuItem
-      Caption = '-'
-    end
+    top = 200
     object MenuItem16: TMenuItem
-      Action = acCabExplorArc
+      Action = acLocConectar
     end
     object MenuItem17: TMenuItem
-      Action = acCabMsjesRed
+      Action = acLocDesconec
     end
     object MenuItem19: TMenuItem
       Caption = '-'
     end
     object MenuItem20: TMenuItem
-      Action = acCabPropied
+      Caption = '&Propiedades'
     end
   end
   object MainMenu1: TMainMenu
@@ -284,10 +268,10 @@ object frmPrincipal: TfrmPrincipal
     object MenuItem1: TMenuItem
       Caption = '&Archivo'
       object MenuItem5: TMenuItem
-        Action = acArcTarifas
+        Action = acArcRutTrab
       end
       object MenuItem7: TMenuItem
-        Action = acArcRutas
+        Caption = '-'
       end
       object MenuItem9: TMenuItem
         Action = acArcSalir
@@ -2218,6 +2202,44 @@ object frmPrincipal: TfrmPrincipal
     end
     object MenuItem38: TMenuItem
       Action = acNilPropied
+    end
+  end
+  object PopupCabina: TPopupMenu
+    Images = ImageList16
+    left = 240
+    top = 128
+    object MenuItem39: TMenuItem
+      Action = acCabIniCta
+    end
+    object MenuItem40: TMenuItem
+      Action = acCabModTpo
+    end
+    object MenuItem46: TMenuItem
+      Action = acCabDetCta
+    end
+    object MenuItem47: TMenuItem
+      Action = acCabPonMan
+    end
+    object MenuItem48: TMenuItem
+      Action = acCabVerBol
+    end
+    object MenuItem49: TMenuItem
+      Action = acCabGraBol
+    end
+    object MenuItem50: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem51: TMenuItem
+      Action = acCabExplorArc
+    end
+    object MenuItem52: TMenuItem
+      Action = acCabMsjesRed
+    end
+    object MenuItem53: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem54: TMenuItem
+      Action = acCabPropied
     end
   end
 end

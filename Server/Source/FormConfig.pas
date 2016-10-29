@@ -82,7 +82,9 @@ type
     procedure escribirArchivoIni;
     procedure Iniciar;
     procedure Mostrar;
+  public //Funciones de moneda
     function CadMon(valor: double): string;
+    function LeeMon(txt: string): double;
   end;
 
 var
@@ -96,17 +98,12 @@ implementation
 { TConfig }
 
 function CadMoneda(valor: double): string; inline;
-{Genera el formato de moneda usado para toda la aplicación.}
 begin
-  Result := Config.SimbMon + ' ' + FloatToStrF(valor, ffNumber, 6, Config.NumDec);
+  Result := Config.CadMon(valor);
 end;
 function LeeMoneda(txt: string): double;
-{Lee una cadena que incluye el símbolo de moneda y la convierte a número.}
-var
-  tmp: String;
 begin
-  tmp := StringReplace(txt, DefaultFormatSettings.CurrencyString, '', []);
-  Result := StrToFloat(tmp);
+  Result := Config.LeeMon(txt);
 end;
 
 procedure TConfig.FormCreate(Sender: TObject);
@@ -215,10 +212,21 @@ begin
   Showmodal;
 end;
 function TConfig.CadMon(valor: double): string;
-//Versión en método, de CadMoneda()
+{Función que devuelve un valor, en el formato de moneda usado para toda la aplicación.
+ Inicialmenet se trabajaba con "CurrencyString", pero eso limitaba la implementación del
+ spnNumDecChange(), para simular cómo quedaría un cantidad en moneda.}
 begin
-  Result := CadMoneda(valor);
+  Result := SimbMon + ' ' + FloatToStrF(valor, ffNumber, 6, NumDec);
 end;
+function TConfig.LeeMon(txt: string): double;
+{Lee una cadena que incluye el símbolo de moneda y la convierte a número.}
+var
+  tmp: String;
+begin
+  tmp := StringReplace(txt, SimbMon, '', []);
+  Result := StrToFloat(tmp);
+end;
+
 procedure TConfig.escribirArchivoIni;
 //Escribe el archivo de configuración
 begin
