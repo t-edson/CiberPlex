@@ -16,9 +16,8 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
   {El comando final, puede tomar información adicional, de los parámetros adicionales de
   la trama, como ParamX o ParamY.
   <<<< ADVERTENCIA >>>>:
-  * No poner valores duplicados, porque el compilador no lo detectará.
-  * No poner valores de más de 255, porque se ha resrevado solo un byte, para alamcenar este
-  campo. Si se desea variación,
+  * No poner valores de más de 255, porque se ha reservado solo un byte, para alamcenar
+  este campo.
   }
   TCPTipCom = (
     //Tipos de Mensajes que incluyen datos. Respuestas a comandos.
@@ -89,19 +88,15 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     C_SOL_ARINI = $A4,  //Solicita archivo de configuración principal (Aplicable a SERVIDOR Y CLIENTE).
     C_SOL_T_PCS = $A5,  //Solicita tiempos de PC's
     C_SOL_T_LOC = $A6,  //Solicita tiempos de locutorios
+    //Acciones sobre una PC
     C_INI_CTAPC = $A7,  //Solicita iniciar la cuenta de una PC
     C_DET_CTAPC = $A8,  //Solicita detener la cuenta de una PC
     C_MOD_CTAPC = $A9,  //Solicita modificar la cuenta de una PC
 
-    C_GRA_BOLPC = $AB,  //Solicita grabar la boleta de una PC
     C_SOL_PANPC = $AC,  //Solicita la pantalla de una PC
-    C_AGR_ITBOL = $AD,  //Solicita agregar ítem de boleta (venta).
-    C_DEV_ITBOL = $AE,  //Solicita devolver un ítem de la boleta.
-    C_DES_ITBOL = $AF,  //Solicita desechar un ítem de la boleta.
-    C_REC_ITBOL = $B0,  //Solicita recuperar un ítem de la boleta.
-    C_COM_ITBOL = $B1,  //Solicita comentar un ítem de la boleta.
-    C_DIV_ITBOL = $B2,  //Solicita dividir un ítem de la boleta.
-    C_GRA_ITBOL = $B3,  //Solicita grabar un ítem de la boleta.
+
+    C_ACC_BOLET = $B0,   //Acción sobre boleta (tiene varios sub-somandos)
+    C_ACC_NILOM = $B2,   //Acciones sobre un NILO-m
 
     //Comando cortos que no devuelven mensaje.
     C_BLOQ_PC = $C1,  //Comando de bloqueo de PC

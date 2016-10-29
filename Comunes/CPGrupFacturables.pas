@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Types, LCLProc, Forms, CibFacturables,
   //Aquí se incluyen las unidades que definen clases descendientes de TCPFacturables
-  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CPUtils,
+  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CibUtils,
   FormVisorMsjRed;
 type
   { TCibGruposFacturables }
@@ -57,7 +57,7 @@ type
     function BuscarPorNombre(nomb: string): TCibGFac;
     procedure Agregar(gof: TCibGFac);
     procedure Eliminar(gf: TCibGFac);
-    procedure gof_TramaLista(facOri: TCibFac; tram: TCPTrama;
+    procedure gof_TramaLista(nomFac, nomGFac: string; tram: TCPTrama;
       tramaLocal: boolean);
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean=false);
@@ -141,118 +141,131 @@ begin
   if not DeshabEven and (OnLogError<>nil) then
     Result := OnLogError(msj);
 end;
-procedure TCibGruposFacturables.gof_TramaLista(facOri: TCibFac;
+procedure TCibGruposFacturables.gof_TramaLista(nomFac, nomGFac: string;
   tram: TCPTrama; tramaLocal: boolean);
-{Rutina de respuesta al mensaje OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
-También se usa para ejecutar los comandos generados a través de un visor(tramaLocal=TRUE).
-Los parámetros son:
+{Rutina ejecutada de dos formas:
+ 1. Como respuesta al evento OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
+    En este caso, las tramas pueden indicar respuesta a un comando enviado a una cabina
+    o solicitudes de acciones sobre el modelo, como es el caso cuando la cabian remota es
+    también un punto de Venta (CiberPlex-Visor).
+ 2. Como método para ejecutar acciones locales sobre el modelo de objetos (Fac, GFac).
+    Estas llamadas, se eejcutarán desde esta misma aplicación, no de cabinas remotas.
+ 3. Como repsuesta a comandos llegados desde la Web (NO IMPLEMENTADO AÚN)
+
+ Parámetros:
+ * nomFac -> Es el nombre del objeto facturable que genera la petición. Para comandos
+            locales, está en blanco.
+ * nomGFac -> Es el nombre del Grupo de facturables del facturable que geenra la petición.
+              Para comandos locales, está en blanco.
+ * tram -> Es la trama que contiene el comando que debe ejecutarse.
  * tramaLocal -> Indica si la trama llegó de forma automática por medio de la conexión de
                  red (FALSE) o si se generó localmente en la misma aplicación.
- * facOri -> Es el objeto facturable origen, de donde llega la trama. Para comandos
-             locales, apunta a la instancia del visor, no al modelo original.
- * tram -> Es la trama que contiene el comando que debe ejecutarse.
 
 Como este método ejecuta todos los comandos solicitados por la cabinas de Internet, o de
 la aplicación, hace uso de eventos para acceder a información que no está en este ámbito.}
-  function IdentificaCabina(var cab: TCibFacCabina; var gru: TCibGFacCabinas): boolean;
-  {Identifica al facurable facOri, para ver si es un cabina. De ser así, devuelve la
-  referencia al objeto y al grupo en los parámetros y retorna TRUE, sino devuelve FALSE.
-  Se asume que la referencia que llega en facOri, es a la copia no al modelo.}
+  function IdentificaCabinaOrig(var cab: TCibFacCabina; var gru: TCibGFacCabinas): boolean;
+  {Identifica al facturable nomGFac-nomFac, para ver si es un cabina. De ser así, devuelve
+  la referencia al objeto y al grupo en los parámetros y retorna TRUE, sino devuelve
+  FALSE.}
   var
     gfac: TCibGFac;
   begin
-    if facOri is TCibFacCabina then begin  //Es CAbina
-      //Identifica al grupo.
-      gfac := BuscarPorNombre(facOri.Grupo.Nombre);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
-      if gfac= nil then exit(false);  //no debería pasar
-      gru := TCibGFacCabinas(gfac);  //se supone que es de este tipo
-      //Identifica objeto cabina en el modelo, porque
-      cab := gru.CabPorNombre(facOri.Nombre);
-      exit(true);
-    end else begin  //No es
-      exit(false);
-    end;
+    //Identifica al grupo.
+    gfac := BuscarPorNombre(nomGFac);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
+    if gfac = nil then exit(false);  //no debería pasar
+    if gfac.tipo <> ctfCabinas then exit(false);  //no es cabina
+    gru := TCibGFacCabinas(gfac);  //se supone que es de este tipo
+    //Identifica objeto cabina en el modelo, porque
+    cab := gru.CabPorNombre(nomFac);
+    exit(true);
   end;
 var
   frm: TfrmVisorMsjRed;
   arch: RawByteString;
-  HoraPC, tSolic: TDateTime;
-  NombrePC, Nomb, tmp: string;
+  HoraPC: TDateTime;
+  NombrePC, tmp, Grupo: string;
   bloqueado: boolean;
-  cabDest: TCibFacCabina;
-  tLibre, horGra: boolean;
-  itBol, itBol2: TCibItemBoleta;
-  a: TStringDynArray;
-  parte: Double;
-  idx, idx2: LongInt;
-  cab: TCibFacCabina;
-  gru: TCibGFacCabinas;
+  cabOrig: TCibFacCabina;
+  gruOrig: TCibGFacCabinas;
+  GFac: TCibGFac;
 begin
   //debugln(NomCab + ': Trama recibida: '+ tram.TipTraHex);
   if not tramaLocal then begin  //Ignora los mensajes locales
-    //Valida la clase, aunque se supone que si la trana es remota, debe provenir de una cabina.
-    if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-    frm := gru.BuscarVisorMensajes(facOri.Nombre);  //Ve si hay un formulario de mensajes para esta cabina
-    {Aunque no se ha detectado consumo de CPU adicional, la búqsqueda regular con
-     BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando que
-     se hace para todos los mensajes que llegan.
-     }
+    //La trama es remota.
+    //Identifica a la cabina origen para buscar su visor de mensajes
+    if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
+    frm := gruOrig.BuscarVisorMensajes(nomFac);  //Ve si hay un formulario de mensajes para esta cabina
+    {Aunque no se ha detectado consumo de CPU adicional, la búsqueda regular con
+     BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando
+     que se hace para todos los mensajes que llegan.}
     if frm<>nil then frm.PonerMsje('>>Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end;
   case tram.tipTra of
   M_ESTAD_CLI: begin  //Se recibió el estado remoto del clente
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
+      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
       Decodificar_M_ESTAD_CLI(tram.traDat, NombrePC, HoraPC, bloqueado);
-      cab.NombrePC:= NombrePC;
-      cab.HoraPC  := HoraPC;
-      cab.PantBloq:= bloqueado;
+      //Actualiz en el modelo el esatdo leído para esa cabina
+      cabOrig.NombrePC:= NombrePC;
+      cabOrig.HoraPC  := HoraPC;
+      cabOrig.PantBloq:= bloqueado;
     end;
-  C_SOL_T_PCS: begin  //Se solicita la lista de tiempos de las PC cliente
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      debugln(cab.Nombre + ': Tiempos de PC solicitado.');
+  C_SOL_T_PCS: begin  //Se solicita la lista de tiempos de las PC cliente. { TODO : Realmente se pide toda la cadena de estado, así que el nombre del comando no es del todo correcto. }
+      //Identifica a la cabina origen para entregarle la información
+      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
+      debugln(cabOrig.Nombre + ': Tiempos de PC solicitado.');
       tmp := CadEstado;
-      gru.TCP_envComando(cab.Nombre, M_SOL_T_PCS, 0, 0, tmp);
+      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_T_PCS, 0, 0, tmp);
     end;
   C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
+      //Identifica a la cabina origen para entregarle la información
+      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
       tmp := CadPropiedades;
-      gru.TCP_envComando(cab.Nombre, M_SOL_ARINI, 0, 0, tmp);
+      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ARINI, 0, 0, tmp);
     end;
   C_PAN_COMPL: begin  //se pide una captura de pantalla
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      debugln(cab.Nombre+ ': Pantalla completa solicitada.');
+      //Identifica a la cabina origen para entregarle la información
+      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
+      debugln(cabOrig.Nombre+ ': Pantalla completa solicitada.');
       if tram.posX = 0 then begin  //se pide de la PC local
         arch := ExtractFilePath(Application.ExeName) + '~00.tmp';
         PantallaAArchivo(arch);
-        gru.TCP_envComando(cab.Nombre, M_PAN_COMP, 0, 0, StringFromFile(arch));
+        gruOrig.TCP_envComando(cabOrig.Nombre, M_PAN_COMP, 0, 0, StringFromFile(arch));
       end else begin
 
       end;
     end;
+  //Acciones sobre cabinas
   C_INI_CTAPC: begin   //Se pide iniciar la cuenta de una PC
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      DecodActivCabina(tram.traDat, Nomb, tSolic, tLibre, horGra );
-      if Nomb='' then exit; //protección
-      cabDest := gru.CabPorNombre(Nomb);
-      cabDest.InicConteo(tSolic, tLibre, horGra);
+      //Identifica a la cabina sobre la que aplica
+      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      GFac := BuscarPorNombre(Grupo);
+      if GFac=nil then exit;
+      if Gfac.tipo <> ctfCabinas then exit;
+      //Ejecuta acción
+      TCibGFacCabinas(GFac).InicConteo(tram.traDat);
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      DecodActivCabina(tram.traDat, Nomb, tSolic, tLibre, horGra );
-      if Nomb='' then exit; //protección
-      cabDest := gru.CabPorNombre(Nomb);
-      cabDest.ModifConteo(tSolic, tLibre, horGra);
+      //Identifica a la cabina sobre la que aplica
+      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      GFac := BuscarPorNombre(Grupo);
+      if GFac=nil then exit;
+      if Gfac.tipo <> ctfCabinas then exit;
+      //Ejecuta acción
+      TCibGFacCabinas(GFac).ModifConteo(tram.traDat);
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
     end;
   C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      cabDest := gru.CabPorNombre(tram.traDat);
-      if cabDest=nil then exit;
+      //Identifica a la cabina sobre la que aplica
+      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      GFac := BuscarPorNombre(Grupo);
+      if GFac=nil then exit;
+      if Gfac.tipo <> ctfCabinas then exit;
+      //Ejecuta acción
       if tram.posX = 1 then begin  //Indica que se quiere poner en mantenimiento.
-        cabDest.PonerManten();
+        TCibGFacCabinas(GFac).PonerManten(tram.traDat);
       end else begin
-        cabDest.DetenConteo();
+        TCibGFacCabinas(GFac).DetenConteo(tram.traDat);
       end;
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
       { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
@@ -260,124 +273,26 @@ begin
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automático, o algún otro evento similar que requiera guardar el estado.}
     end;
-  C_AGR_ITBOL: begin  //Se pide agregar una venta
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      tmp := tram.traDat;
-      cabDest := gru.CabPorNombre(copy(tmp,1,tram.posY));
-      if cabDest=nil then exit;
-      delete(tmp, 1, tram.posY);  //quita Nomb, deja cadena de estado
-      itBol := TCibItemBoleta.Create;
-      itBol.CadEstado := tmp;  //recupera ítem
-      cabDest.Boleta.VentaItem(itBol, true);
+  C_ACC_BOLET: begin  //Acciones sobre Boletas
+      //Identifica al facturable sobre el que se aplica
+      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      GFac := BuscarPorNombre(Grupo);
+      if GFac=nil then exit;
+      Gfac.AccionesBoleta(tram);  //ejecuta la acción
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_DEV_ITBOL: begin  //Devolver ítem
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      a := Explode(#9, tram.traDat);
-      cabDest := gru.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      IF itBol=nil then exit;
-      itBol.coment := a[2];         //escribe comentario
-      cabDest.Boleta.DevolItem(itBol);
+  end;
+  C_ACC_NILOM: begin  //Acciones sobre un NILO-m
+      //Identifica a la cabina sobre la que aplica
+      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      GFac := BuscarPorNombre(Grupo);
+      if GFac=nil then exit;
+      if Gfac.tipo <> ctfNiloM then exit;
+      //Ejecuta acción
+      Gfac.Acciones(tram);
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_GRA_BOLPC: begin  //Se pide grabar la boleta de una PC
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      cabDest := gru.CabPorNombre(tram.traDat);
-      if cabDest=nil then exit;
-      for itBol in cabDest.boleta.items do begin
-    {    If Pventa = '' Then //toma valor por defecto
-            itBol.pVen = PVentaDef
-        else    //escribe con punto de venta
-            itBol.pVen = Me.Pventa
-        end;}
-        cabDest.boleta.IngresItem(itBol);   //ingresa el ítem
-      end;
-      //Graba los campos de la boleta
-      cabDest.boleta.fec_grab := now;  //fecha de grabación
-      if OnLogIngre<>nil then
-        OnLogIngre(IDE_CIB_BOL, cabDest.Boleta.RegVenta, cabDest.boleta.TotPag);
-      //Config.escribirArchivoIni;
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-      cabDest.LimpiarBol;          //Limpia los items
-    end;
-  C_DES_ITBOL: begin  //Desechar ítem
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      a := Explode(#9, tram.traDat);
-      cabDest := gru.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      IF itBol=nil then exit;
-      itBol.coment := a[2];         //escribe comentario
-      itBol.estado := IT_EST_DESECH;
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_REC_ITBOL: begin  //Recuperar ítem
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      a := Explode(#9, tram.traDat);
-      cabDest := gru.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      IF itBol=nil then exit;
-      itBol.coment := '';         //escribe comentario
-      itBol.estado := IT_EST_NORMAL;
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_COM_ITBOL: begin  //Comentar ítem
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      a := Explode(#9, tram.traDat);
-      cabDest := gru.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      if itBol=nil then exit;
-      itBol.coment := a[2];         //escribe comentario
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_DIV_ITBOL: begin
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      a := Explode(#9, tram.traDat);
-      cabDest := gru.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      if itBol=nil then exit;
-      //actualiza ítem inicial
-      parte := StrToFloat(a[2]);
-      itBol.subtot:= itBol.subtot - parte;
-      itBol.fragmen += 1;  //lleva cuenta
-      //agrega elemento separado
-      itBol2 := TCibItemBoleta.Create;
-      itBol2.Assign(itBol);  //crea copia
-      //actualiza separación
-      itBol2.vfec:=now;   //El ítem debe tener otro ID
-      itBol2.subtot := parte;
-      itBol2.fragmen := 1;      //marca como separado
-      itBol2.conStk := false;   //para que no descuente
-      cabDest.Boleta.VentaItem(itBol2, true);  //agrega nuevo ítem
-      //Reubica ítem
-      idx := cabDest.Boleta.items.IndexOf(itBol);
-      idx2 := cabDest.Boleta.items.IndexOf(itBol2);
-      cabDest.Boleta.items.Move(idx2, idx+1);  //acomoda posición
-      cabDest.Boleta.Recalcula;
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_GRA_ITBOL: begin
-      if not IdentificaCabina(cab, gru) then exit;  //valida que venga de cabina
-      a := Explode(#9, tram.traDat);
-      cabDest := gru.CabPorNombre(a[0]);
-      if cabDest=nil then exit;
-      itBol := cabDest.Boleta.BuscaItem(a[1]);
-      if itBol=nil then exit;
-      cabDest.boleta.IngresItem(itBol);   //ingresa el ítem
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
+  end;
   else
     if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
   end;

@@ -5,7 +5,7 @@ unit ObjGraficos;
 interface
 uses
   Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
-  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase,
+  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase, CibNiloMConex,
   CibGFacCabinas, CibGFacNiloM, CibFacturables;
 const
   //Constantes de Colores
@@ -86,13 +86,13 @@ type
 {TogFac, es el objeto intermedio usado para modelar a todos los objetos facturables.}
 TogFac = class(TObjGraf)
 private
-  Ffac: TCibFac;
+  Ffac: TCibFac;   //Referencia a su facturable
   procedure Setfac(AValue: TCibFac);
 public
   NomGrupo   : string;  //nombre del grupo al que pertenece.
   Boleta     : TogBoleta;   //La boleta
   property Fac: TCibFac read Ffac write Setfac;   //contenedor de propiedades
-  function gru: TCibGFac;  //referecnia al grupo
+  function gru: TCibGFac;  //referencia al grupo
   constructor Create(mGraf: TMotGraf); override;
 end;
 
@@ -101,7 +101,7 @@ end;
 facturables.}
 TogGFac = class(TObjGraf)
 protected
-  FGFac: TCibGFac;
+  FGFac: TCibGFac;  //Referencia a su grupo de facturables
   procedure SetGFac(AValue: TCibGFac); virtual;
 public
   property GFac: TCibGFac read FGFac write SetGFac;   //referencia a su objeto grupo
@@ -134,7 +134,7 @@ public  //constructor y detsructor
   destructor Destroy; override;
 end;
 { TogNiloM }
-{Objeto gráfico que representa a los elementos TCibFacCabina}
+{Objeto gráfico que representa a los elementos TCibFacLocutor}
 TogNiloM = class(TogFac)
 private
   procedure ProcDesac(estado0: Boolean);
@@ -173,7 +173,8 @@ end;
 TogGNiloM = class(TogGFac)
 private
 public
-  icono  : TGraphic;    //PC con control
+  icoConec: TGraphic;    //NiloM conectado
+  icoDesc : TGraphic;    //NiloM desconectado
   procedure Dibujar; override;  //Dibuja el objeto gráfico
 protected
 public  //constructor y detsructor
@@ -543,11 +544,9 @@ end;
 procedure TogNiloM.ReubicElemen;
 //Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
 //cambiar las dimensiones.
-var
-  x2: Single;
 begin
   inherited;
-  x2 := x + width;
+  //x2 := x + width;
   Buttons[0].Ubicar(x + 64, y + 60);
 //   Botones[2].Ubicar(x2 - 20, y + 3);  //Botón Cerrar
   //ubica boleta
@@ -585,11 +584,7 @@ begin
 end;
 { TogGCabinas }
 procedure TogGCabinas.Dibujar;
-var
-  x2:Single;
 begin
-  //--------------Dibuja cuerpo de tabla
-  x2 := x + width;
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   //dibuja íconos
@@ -612,15 +607,15 @@ begin
 end;
 { TogGNiloM }
 procedure TogGNiloM.Dibujar;
-var
-  x2:Single;
 begin
-  //--------------Dibuja cuerpo de tabla
-  x2 := x + width;
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   //dibuja íconos
-  v2d.DibujarImagenN(icono, x, y-2);
+  if TCibGFacNiloM(GFac).estadoCnx = necConectado then begin
+    v2d.DibujarImagenN(icoConec, x, y-2);
+  end else begin
+    v2d.DibujarImagenN(icoDesc, x, y-2);
+  end;
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(x + 33, y+3, nombre);

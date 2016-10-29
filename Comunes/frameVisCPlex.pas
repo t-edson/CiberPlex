@@ -23,6 +23,7 @@ type
     Image1: TImage;
     Image10: TImage;
     Image11: TImage;
+    Image12: TImage;
     Image2: TImage;
     Image3: TImage;
     Image4: TImage;
@@ -49,6 +50,7 @@ type
     function Seleccionado: TObjGraf;
     function CabSeleccionada: TogCabina;
     function GCabinasSeleccionado: TogGCabinas;
+    function LocSeleccionado: TogNiloM;
     function GNiloMSeleccionado: TogGNiloM;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
@@ -128,7 +130,8 @@ begin
   ctfNiloM: begin
     ogGNiloM := TogGNiloM.Create(motEdi.v2d, TCibGFacNiloM(GFac));
     motEdi.AgregarObjGrafico(ogGNiloM, false);
-    ogGNiloM.icono := Image8.Picture.Graphic;   //asigna imagen
+    ogGNiloM.icoConec := Image8.Picture.Graphic;   //asigna imagen
+    ogGNiloM.icoDesc  := Image12.Picture.Graphic;
     ogGNiloM.Id := ID_GNILOM;
     ogGNiloM.SizeLocked := true;
     ogGNiloM.PosLocked := FObjBloqueados;  //depende del esatdo actual
@@ -192,6 +195,21 @@ begin
     exit(nil);
   end;
 end;
+function TfraVisCPlex.LocSeleccionado: TogNiloM;
+{Devuelve el locutorio seleccionado. Si no hay ninguno, devuelve NIL.}
+var
+  og: TObjGraf;
+begin
+  if NumSelecionados>1 then begin
+    //MsgExc('Se debe seleccionar solo un locutorio.');
+    exit(nil);
+  end;
+  og := Seleccionado;
+  if og = nil then exit(nil);
+  if not (og is TogNiloM) then exit(nil);
+  Result := TogNiloM(og);
+end;
+
 function TfraVisCPlex.GNiloMSeleccionado: TogGNiloM;
 var
   og: TObjGraf;

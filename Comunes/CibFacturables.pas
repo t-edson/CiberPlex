@@ -8,7 +8,8 @@ unit CibFacturables;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, LCLProc, dateutils, MisUtils;
+  Classes, SysUtils, fgl, types, LCLProc, CibTramas, CibUtils, dateutils,
+  MisUtils;
 type
   //Tipos de objetos Grupos Facturables
   TCibTipFact = (
@@ -32,6 +33,17 @@ const  //Caracteres identificadores para el archivo registros
   IDE_INT_NOR = 'p';     //registro de alquiler de cabina normal
   //Identificadores para llamadas
   IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m
+const  //Acciones sobre boletas
+  //Acciones sobre la boleta
+  ACCBOL_GRA = 1;
+  //Acciones sobre los ítems de la boleta
+  ACCITM_AGR = 2;
+  ACCITM_DEV = 3;
+  ACCITM_DES = 4;
+  ACCITM_REC = 5;
+  ACCITM_COM = 6;
+  ACCITM_DIV = 7;
+  ACCITM_GRA = 8;
 
 type
   TItemBoletaEstado = (
@@ -155,6 +167,7 @@ type
     property Nombre: string read FNombre write SetNombre;  //Nombre del objeto
     property CadEstado: string read GetCadEstado write SetCadEstado;
     property CadPropied: string read GetCadPropied write SetCadPropied;
+    function IdFac: string;  //Identificador del Facturable
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.
     property x: double read Fx write Setx;   //coordenada X
     property y: double read Fy write Sety;  //coordenada Y
@@ -177,10 +190,10 @@ type
   {Objeto sencillo que permite decodificar una cadena de estado de un grupo facturable. }
   TCPDecodCadEstado = class
     private
-      lineas: TStringList;
       pos1, pos2: Integer;
     public
-      procedure Inic(const cad: string);
+      lineas: TStringList;
+      procedure Inic(const cad: string; var lin0: string);
       function ExtraerNombre(const lin: string): string;
       function Extraer(var car: char; var nombre, cadena: string): boolean;
     public  //constructor y destructor
@@ -229,8 +242,10 @@ type
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.
     property x: double read Fx write Setx;   //coordenada X
     property y: double read Fy write Sety;  //coordenada Y
-    function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
     procedure SetXY(x0, y0: double);
+    function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
+    procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
+    procedure Acciones(tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
   public  //Eventos para que el grupo se comunique con la apliación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
@@ -569,6 +584,11 @@ begin
   ///////////////// Actualizar
   boleta.Recalcula;
 end;
+function TCibFac.IdFac: string;
+{Genera el identificador, a partir del nombre y del grupo.}
+begin
+  Result := Grupo.Nombre + #9 + Nombre;
+end;
 procedure TCibFac.LimpiarBol;
 begin
   boleta.ItemClear;
@@ -656,35 +676,16 @@ procedure TCibGFac.SetCadEstado(AValue: string);
 adicionales. De hecho no lee ninguno, ya que los campos Tipo y Nombre, ya fueron usados
 para identificar a este GFac.}
 var
-  nomb, cad: string;
+  nomb, cad, lin1: string;
   car: char;
   it: TCibFac;
 begin
-  decod.Inic(AValue);
+  decod.Inic(AValue, lin1);
   while decod.Extraer(car, nomb, cad) do begin
     if cad = '' then continue;
     it := ItemPorNombre(nomb);
     if it<>nil then it.CadEstado := cad;
   end;
-end;
-procedure TCibGFac.Setx(AValue: double);
-begin
-  if Fx=AValue then exit;
-  Fx:=AValue;
-  if OnCambiaPropied<>nil then OnCambiaPropied();
-end;
-procedure TCibGFac.SetXY(x0,y0: double);
-begin
-  if (Fx=x0) and (Fy=y0) then exit;
-  Fx:=x0;
-  Fy:=y0;
-  if OnCambiaPropied<>nil then OnCambiaPropied();
-end;
-procedure TCibGFac.Sety(AValue: double);
-begin
-  if Fy=AValue then exit;
-  Fy:=AValue;
-  if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibGFac.AgregarItem(fac: TCibFac);
 {Agrega un ítem, a la lista de facturables. Esta función debe ser usada siempre que se
@@ -701,6 +702,25 @@ begin
   fac.OnActualizStock:= @fac_ActualizStock;
   items.Add(fac);
 end;
+procedure TCibGFac.Setx(AValue: double);
+begin
+  if Fx=AValue then exit;
+  Fx:=AValue;
+  if OnCambiaPropied<>nil then OnCambiaPropied();
+end;
+procedure TCibGFac.Sety(AValue: double);
+begin
+  if Fy=AValue then exit;
+  Fy:=AValue;
+  if OnCambiaPropied<>nil then OnCambiaPropied();
+end;
+procedure TCibGFac.SetXY(x0,y0: double);
+begin
+  if (Fx=x0) and (Fy=y0) then exit;
+  Fx:=x0;
+  Fy:=y0;
+  if OnCambiaPropied<>nil then OnCambiaPropied();
+end;
 function TCibGFac.ItemPorNombre(nom: string): TCibFac;
 {Devuelve la referencia a un ítem, ubicándola por su nombre. Si no lo enuentra
  devuelve NIL.}
@@ -712,6 +732,110 @@ begin
   end;
   exit(nil);
 end;
+procedure TCibGFac.AccionesBoleta(tram: TCPTrama);
+{Ejecuta acciones sobre la boleta}
+var
+  a: TStringDynArray;
+  facDest: TCibFac;
+  itBol, itBol2: TCibItemBoleta;
+  traDat, nom: String;
+  parte: Extended;
+  idx, idx2: LongInt;
+  Err: boolean;
+begin
+  traDat := tram.traDat;  //crea copia para modificar
+  ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+  facDest := ItemPorNombre(nom);
+  if facDest=nil then exit;
+  case tram.posX of  //Se usa el parámetro para ver la acción
+  //Acciones sobre la boleta
+  ACCBOL_GRA: begin  //Se pide grabar la boleta de una PC
+      for itBol in facDest.boleta.items do begin
+    {    If Pventa = '' Then //toma valor por defecto
+            itBol.pVen = PVentaDef
+        else    //escribe con punto de venta
+            itBol.pVen = Me.Pventa
+        end;}
+        facDest.boleta.IngresItem(itBol);   //ingresa el ítem
+      end;
+      //Graba los campos de la boleta
+      facDest.boleta.fec_grab := now;  //fecha de grabación
+      if OnLogIngre<>nil then
+        OnLogIngre(IDE_CIB_BOL, facDest.Boleta.RegVenta, facDest.boleta.TotPag);
+      //Config.escribirArchivoIni;
+      facDest.LimpiarBol;          //Limpia los items
+    end;
+  //Acciones sobre los ítems de la boleta
+  ACCITM_AGR: begin  //Se pide agregar una venta
+      itBol := TCibItemBoleta.Create;
+      itBol.CadEstado := traDat;  //recupera ítem
+      facDest.Boleta.VentaItem(itBol, true);
+    end;
+  ACCITM_DEV: begin  //Devolver ítem
+      a := Explode(#9, traDat);
+      itBol := facDest.Boleta.BuscaItem(a[0]);
+      IF itBol=nil then exit;
+      itBol.coment := a[1];         //escribe comentario
+      facDest.Boleta.DevolItem(itBol);
+    end;
+  ACCITM_DES: begin  //Desechar ítem
+      a := Explode(#9, traDat);
+      itBol := facDest.Boleta.BuscaItem(a[0]);
+      IF itBol=nil then exit;
+      itBol.coment := a[1];         //escribe comentario
+      itBol.estado := IT_EST_DESECH;
+    end;
+  ACCITM_REC: begin  //Recuperar ítem
+      a := Explode(#9, traDat);
+      itBol := facDest.Boleta.BuscaItem(a[0]);
+      IF itBol=nil then exit;
+      itBol.coment := '';         //escribe comentario
+      itBol.estado := IT_EST_NORMAL;
+    end;
+  ACCITM_COM: begin  //Comentar ítem
+      a := Explode(#9, traDat);
+      itBol := facDest.Boleta.BuscaItem(a[0]);
+      if itBol=nil then exit;
+      itBol.coment := a[1];         //escribe comentario
+    end;
+  ACCITM_DIV: begin
+      a := Explode(#9, traDat);
+      itBol := facDest.Boleta.BuscaItem(a[0]);
+      if itBol=nil then exit;
+      //actualiza ítem inicial
+      parte := StrToFloat(a[1]);
+      itBol.subtot:= itBol.subtot - parte;
+      itBol.fragmen += 1;  //lleva cuenta
+      //agrega elemento separado
+      itBol2 := TCibItemBoleta.Create;
+      itBol2.Assign(itBol);  //crea copia
+      //actualiza separación
+      itBol2.vfec:=now;   //El ítem debe tener otro ID
+      itBol2.subtot := parte;
+      itBol2.fragmen := 1;      //marca como separado
+      itBol2.conStk := false;   //para que no descuente
+      facDest.Boleta.VentaItem(itBol2, true);  //agrega nuevo ítem
+      //Reubica ítem
+      idx := facDest.Boleta.items.IndexOf(itBol);
+      idx2 := facDest.Boleta.items.IndexOf(itBol2);
+      facDest.Boleta.items.Move(idx2, idx+1);  //acomoda posición
+      facDest.Boleta.Recalcula;
+    end;
+  ACCITM_GRA: begin
+      a := Explode(#9, traDat);
+      itBol := facDest.Boleta.BuscaItem(a[0]);
+      if itBol=nil then exit;
+      facDest.boleta.IngresItem(itBol);   //ingresa el ítem
+    end;
+  end;
+end;
+procedure TCibGFac.Acciones(tram: TCPTrama);
+{Ejecuta alguna acción en el objeto.}
+begin
+
+end;
+////Constructor y destructor
 constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipFact
   );
 begin
@@ -727,8 +851,9 @@ begin
   inherited Destroy;
 end;
 { TCPDecodCadEstado }
-procedure TCPDecodCadEstado.Inic(const cad: string);
-{Inicia la exploración de la cadenas}
+procedure TCPDecodCadEstado.Inic(const cad: string; var lin0: string);
+{Inicia la exploración de la cadenas. Devuelve la primera línea de la cadena en
+"lin0".}
 begin
   lineas.Text := cad;
   pos1 := 0;  //posición inicial alta
@@ -737,6 +862,7 @@ begin
     MsgErr('Error en formato de cadena de estado: ' + cad);
     exit;
   end;
+  lin0 := lineas[0];
   lineas.Delete(0);              //elimina la línea: "<0,   Cabinas"
   lineas.Delete(lineas.Count-1); //elimina la línea: ">"
 end;
