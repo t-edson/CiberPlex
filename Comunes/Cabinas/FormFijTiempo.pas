@@ -6,13 +6,11 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Buttons, MisUtils, ObjGraficos, DateUtils, LCLType,
-  CibCabinaBase;
+  StdCtrls, Buttons, MisUtils, DateUtils, LCLType,
+  CibCabinaBase, CibFacturables;
 
 type
-
   { TfrmFijTiempo }
-
   TfrmFijTiempo = class(TForm)
     BitBtn1: TBitBtn;
     BitBtn2: TBitBtn;
@@ -37,11 +35,11 @@ type
     procedure cmd15Click(Sender: TObject);
     procedure cmd30Click(Sender: TObject);
     procedure cmdLimClick(Sender: TObject);
-    procedure Mostrar(cab: TogCabina);
-    procedure MostrarIni(cab: TogCabina);
+    procedure Mostrar(fac0: TCibFac);
+    procedure MostrarIni(fac0: TCibFac);
   private
-    ogCab: TogCabina;      //referecnia a objeto
-    //tpoInic: integer;      //variable de tiempo limitado inicial
+    fac: TCibFac;      //referencia a objeto
+    //tpoInic: integer;    //variable de tiempo limitado inicial
     tpoLimi: integer;      //variable de tiempo limitado
     procedure RefrescarTextos;
   public
@@ -58,20 +56,18 @@ var
   frmFijTiempo: TfrmFijTiempo;
 
 implementation
-
 {$R *.lfm}
-
+uses CibGFacCabinas;   //Declarada aquí para evitar referecnia circular
 
 { TfrmFijTiempo }
-
-procedure TfrmFijTiempo.Mostrar(cab: TogCabina);
+procedure TfrmFijTiempo.Mostrar(fac0: TCibFac);
 //Muestra el formulario con información de la cabina indicada
 begin
-  ogCab := cab;  //guarda referencia
-  Caption := 'MODIFICAR TIEMPO: ' + ogCab.nombre;
-  tpoLimi:= ogCab.cab.tSolicSeg;  //tiempo solicitado en segundos
+  fac := fac0;  //guarda referencia
+  Caption := 'MODIFICAR TIEMPO: ' + fac.nombre;
+  tpoLimi:= TCibFacCabina(fac).tSolicSeg;  //tiempo solicitado en segundos
 
-  //  cmbHorIni.Text := Format(ogCab.hor_ini, "yyyy/mm/dd hh:nn:ss");
+  //  cmbHorIni.Text := Format(fac.hor_ini, "yyyy/mm/dd hh:nn:ss");
 
     If tpoLimi = 0 Then begin
         txtHH.Text := '00';
@@ -81,21 +77,21 @@ begin
         RefrescarTextos;
     End;
     txtHH.SelectAll;
-    chkHorGra.Checked := ogCab.cab.horgra;
-    chkLibre.Checked := ogCab.cab.tlibre;
-    chkManten.Checked := (ogCab.cab.EstadoCta = EST_MANTEN);
+    chkHorGra.Checked := TCibFacCabina(fac).horgra;
+    chkLibre.Checked := TCibFacCabina(fac).tlibre;
+    chkManten.Checked := (TCibFacCabina(fac).EstadoCta = EST_MANTEN);
 
     cancelo := True;  //para salir sin acción cuando se cierra la ventana con "X"
 //    Show;  //se muestra
     ShowModal;
 end;
-procedure TfrmFijTiempo.MostrarIni(cab: TogCabina);
+procedure TfrmFijTiempo.MostrarIni(fac0: TCibFac);
 //Muestra el formulario para fijar el inicio de la cuenta
 begin
-  ogCab := cab;  //guarda referencia
-  Caption := 'FIJAR TIEMPO: ' + ogCab.nombre;
+  fac := fac0;  //guarda referencia
+  Caption := 'FIJAR TIEMPO: ' + fac.nombre;
   tpoLimi:= 0;
-  //  cmbHorIni.Text := Format(ogCab.hor_ini, "yyyy/mm/dd hh:nn:ss");
+  //  cmbHorIni.Text := Format(fac.hor_ini, "yyyy/mm/dd hh:nn:ss");
     txtHH.Text := '00';
     txtMM.Text := '00';
     txtSS.Text := '00';
@@ -229,7 +225,7 @@ End;
 function TfrmFijTiempo.CadActivacion: string;
 {Devuelve una cadena con información sobre la activación de la cabina}
 begin
-  Result := ogCab.cab.CadActivacion(tSolic, tLibre, horGra );
+  Result := TCibFacCabina(fac).CadActivacion(tSolic, tLibre, horGra );
 end;
 
 

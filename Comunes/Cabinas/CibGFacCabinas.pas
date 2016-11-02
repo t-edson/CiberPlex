@@ -13,8 +13,13 @@ unit CibGFacCabinas;
 interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
-  MisUtils, CibTramas, CibFacturables,
-  CibCabinaBase, CibCabinaTarifas, FormVisorMsjRed, FormAdminTarCab, FormAdminCabinas;
+  Menus, MisUtils, CibTramas, CibFacturables, CibCabinaBase, CibCabinaTarifas,
+  FormVisorMsjRed, CibUtils, FormAdminTarCab, FormAdminCabinas, FormFijTiempo;
+const //Acciones
+  C_INI_CTAPC = 1;  //Solicita iniciar la cuenta de una PC
+  C_DET_CTAPC = 2;  //Solicita detener la cuenta de una PC
+  C_MOD_CTAPC = 3;  //Solicita modificar la cuenta de una PC
+  C_PON_MANTN = 4;  //Solicita poner en mantenimiento a una PC
 
 type
   TCibFacCabina = class;
@@ -126,11 +131,12 @@ type
   private
     timer1 : TTimer;
     ventMsjes: TForm_list;     //Ventanas de mensajes de red
+    frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
     procedure cab_RegMensaje(NomCab: string; msj: string);
     procedure cab_TramaLista(nomOForig, nomGOForig: string; tram: TCPTrama;
       tramaLocal: boolean);
   public  //Eventos.
-    {Acciones que se pueden disparar automáticamente. Sin intervención del usuario}
+    {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
     OnRegMensaje   : TEvCabRegMensaje; //indica que se ha generado un mensaje de la conexión
   protected //Getters and Setters
@@ -149,15 +155,18 @@ type
     function Toleran: TDateTime;   //acceso a la tolerancia
     function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
       ): TfrmVisorMsjRed;
+    procedure MuestraConexionCabina;
   public  //Operaciones con cabinas
-    procedure InicConteo(traDat: string);
-    procedure ModifConteo(traDat: string);
-    procedure DetenConteo(traDat: string);
-    procedure PonerManten(traDat: string);
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
+  public  //Campos para manejo de acciones
+    procedure EjecAccion(tram: TCPTrama); override;
+    procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
+    procedure mnInicCuenta(Sender: TObject);
+    procedure mnModifCuenta(Sender: TObject);
+    procedure mnDetenCuenta(Sender: TObject);
+    procedure mnPonerManten(Sender: TObject);
   public  //Constructor y destructor
-    procedure MuestraConexionCabina;
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
   end;
@@ -836,68 +845,15 @@ begin
     Result := nil;
   end;
 end;
+procedure TCibGFacCabinas.MuestraConexionCabina;  //para depuración
+var
+  c : TCibFac;
+begin
+  for c in items do begin
+    debugln('  Nomb:' + c.Nombre + ' SinRed:' + B2f(TCibFacCabina(c).SinRed));
+  end;
+end;
 //operaciones con cabinas
-procedure TCibGFacCabinas.InicConteo(traDat: string);
-{Inicia el conteo de una cabina, a partir de la parte de cadena de la trama}
-var
-  campos: TStringDynArray;
-  tSolic0: TDateTime;
-  tLibre0, horGra0: Boolean;
-  cab: TCibFacCabina;
-begin
-  campos := Explode(#9, traDat)  ;
-  if high(campos) < 4 then exit;
-//  nomGFac:= campos[0];
-  cab := CabPorNombre(campos[1]);
-  if cab = nil then exit;
-  tSolic0 := f2D(campos[2]);
-  tLibre0 := f2B(campos[3]);
-  horGra0 := f2B(campos[4]);
-  cab.InicConteo(tSolic0, tLibre0, horGra0);
-end;
-procedure TCibGFacCabinas.ModifConteo(traDat: string);
-{Modifica el conteo de una cabina, a partir de la parte de cadena de la trama}
-var
-  campos: TStringDynArray;
-  tSolic0: TDateTime;
-  tLibre0, horGra0: Boolean;
-  cab: TCibFacCabina;
-begin
-  campos := Explode(#9, traDat)  ;
-  if high(campos) < 4 then exit;
-//  nomGFac:= campos[0];
-  cab := CabPorNombre(campos[1]);
-  if cab = nil then exit;
-  tSolic0 := f2D(campos[2]);
-  tLibre0 := f2B(campos[3]);
-  horGra0 := f2B(campos[4]);
-  cab.ModifConteo(tSolic0, tLibre0, horGra0);
-end;
-procedure TCibGFacCabinas.DetenConteo(traDat: string);
-{Detiene el conteo de una cabina, a partir de la parte de cadena de la trama}
-var
-  campos: TStringDynArray;
-  cab: TCibFacCabina;
-begin
-  campos := Explode(#9, traDat)  ;
-//  nomGFac:= campos[0];
-  cab := CabPorNombre(campos[1]);
-  if cab = nil then exit;
-  cab.DetenConteo;
-end;
-procedure TCibGFacCabinas.PonerManten(traDat: string);
-{Pone una cabina en mantenimiento, a partir de la parte de cadena de la trama}
-var
-  campos: TStringDynArray;
-  cab: TCibFacCabina;
-begin
-  campos := Explode(#9, traDat)  ;
-  if high(campos) < 4 then exit;
-//  nomGFac:= campos[0];
-  cab := CabPorNombre(campos[1]);
-  if cab = nil then exit;
-  cab.PonerManten;
-end;
 procedure TCibGFacCabinas.TCP_envComando(nom: string; comando: TCPTipCom; ParamX,
   ParamY: word; cad: string = '');
 var
@@ -907,21 +863,117 @@ begin
   if cab = nil then exit;
   cab.TCP_envComando(comando, ParamX, ParamY, cad);
 end;
-//constructor y destructor
-procedure TCibGFacCabinas.MuestraConexionCabina;  //para depuración
+procedure TCibGFacCabinas.EjecAccion(tram: TCPTrama);
 var
-  c : TCibFac;
+  traDat, nom: String;
+  facDest: TCibFac;
+  Err, tLibre0, horGra0: boolean;
+  cab: TCibFacCabina;
+  campos: TStringDynArray;
+  tSolic0: TDateTime;
 begin
-  for c in items do begin
-    debugln('  Nomb:' + c.Nombre + ' SinRed:' + B2f(TCibFacCabina(c).SinRed));
+debugln('Acción solicitada a GFacCabinas:' + tram.traDat);
+  traDat := tram.traDat;  //crea copia para modificar
+  ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+  facDest := ItemPorNombre(nom);
+  if facDest=nil then exit;
+  cab := TCibFacCabina(facDest);
+  case tram.posX of  //Se usa el parámetro para ver la acción
+  C_INI_CTAPC: begin   //Se pide iniciar la cuenta de una PC
+    campos := Explode(#9, traDat);
+    tSolic0 := f2D(campos[0]);
+    tLibre0 := f2B(campos[1]);
+    horGra0 := f2B(campos[2]);
+    cab.InicConteo(tSolic0, tLibre0, horGra0);
+    end;
+  C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
+    campos := Explode(#9, traDat);
+    tSolic0 := f2D(campos[0]);
+    tLibre0 := f2B(campos[1]);
+    horGra0 := f2B(campos[2]);
+    cab.ModifConteo(tSolic0, tLibre0, horGra0);
+    end;
+  C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
+    cab.DetenConteo;
+    end;
+  C_PON_MANTN: begin  //Se pide detener la cuenta de las PC
+    cab.PonerManten;
+    end;
   end;
 end;
+procedure TCibGFacCabinas.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
+var
+  mn: TMenuItem;
+begin
+  facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
+  if facSelec=nil then exit;
+  mn := MenuAccion('Poner en &Mantenimiento',@mnPonerManten);
+  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
+  mn := MenuAccion('&Detener Cuenta',@mnDetenCuenta);
+  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
+  mn := MenuAccion('&Modif. Tiempo',@mnModifCuenta);
+  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
+  mn := MenuAccion('&Iniciar Cuenta',@mnInicCuenta);
+  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
+end;
+procedure TCibGFacCabinas.mnInicCuenta(Sender: TObject);
+var
+  cab: TCibFacCabina;
+begin
+  cab := TCibFacCabina(facSelec);
+  if cab.EstadoCta = EST_MANTEN then begin
+    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
+  end else if not cab.Detenida then begin
+    msgExc('No se puede iniciar una cuenta en esta cabina.');
+    exit;
+  end;
+  frmTiempos.MostrarIni(cab);  //modal
+  if frmTiempos.cancelo then exit;  //canceló
+  if OnSolicEjecAcc<>nil then  //ejecuta evento
+    OnSolicEjecAcc(C_ACC_CABIN, C_INI_CTAPC, 0, frmTiempos.CadActivacion);
+end;
+procedure TCibGFacCabinas.mnModifCuenta(Sender: TObject);
+var
+  cab: TCibFacCabina;
+begin
+  cab := TCibFacCabina(facSelec);
+  if cab.Detenida then begin
+    mnInicCuenta(self);  //está detenida, inicia la cuenta
+  end else if cab.Contando then begin
+    //Está en medio de una cuenta
+    frmTiempos.Mostrar(cab);  //modal
+    if frmTiempos.cancelo then exit;  //canceló
+    OnSolicEjecAcc(C_ACC_CABIN, C_MOD_CTAPC, 0, frmTiempos.CadActivacion);
+  end;
+end;
+procedure TCibGFacCabinas.mnDetenCuenta(Sender: TObject);
+var
+  cab: TCibFacCabina;
+begin
+  cab := TCibFacCabina(facSelec);
+  if MsgYesNo('¿Desconectar Computadora: ' + cab.nombre + '?') <> 1 then exit;
+  OnSolicEjecAcc(C_ACC_CABIN, C_DET_CTAPC, 0, cab.IdFac);
+end;
+procedure TCibGFacCabinas.mnPonerManten(Sender: TObject);
+var
+  cab: TCibFacCabina;
+begin
+  cab := TCibFacCabina(facSelec);
+  if not cab.Detenida then begin
+    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
+    exit;
+  end;
+  OnSolicEjecAcc(C_ACC_CABIN, C_PON_MANTN, 0, cab.IdFac); //El mismo comando, pone en mantenimiento
+end;
+//constructor y destructor
 constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
 begin
   inherited Create(nombre0, ctfCabinas);
   FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 //debugln('-Creando: '+ nombre0);
-  //Se incluye un objeto TGrupoTarAlquiler para la tarificación
+  frmTiempos:= TfrmFijTiempo.Create(nil);   //formulario para fijar tiempos
+//Se incluye un objeto TGrupoTarAlquiler para la tarificación
   GrupTarAlquiler := TGrupoTarAlquiler.Create;
   tarif := TCPTarifCabinas.Create(GrupTarAlquiler);
   timer1 := TTimer.Create(nil);
@@ -972,6 +1024,7 @@ begin
     TCibFacCabina(c).Desconectar;
   end;
   GrupTarAlquiler.Destroy;
+  frmTiempos.Destroy;
   inherited Destroy;  {Aquí se hace items.Destroy, que puede demorar por los hilos}
 end;
 
