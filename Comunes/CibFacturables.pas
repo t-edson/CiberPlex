@@ -8,7 +8,7 @@ unit CibFacturables;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, LCLProc, CibTramas, CibUtils, dateutils,
+  Classes, SysUtils, fgl, types, LCLProc, Menus, CibTramas, CibUtils, dateutils,
   MisUtils;
 type
   //Tipos de objetos Grupos Facturables
@@ -185,7 +185,8 @@ type
   TEvReqConfigMon = procedure(var SimbMon: string; var numDec: integer; var IGV: Double) of object;
   //Requiere convertir a formato de moneda, usando el formato de la aplicación
   TevReqCadMoneda = function(valor: double): string of object;
-
+  //Solicita ejecutar un acción
+  TEvSolicEjecAcc = procedure(comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
   { TCPDecodCadEstado }
   {Objeto sencillo que permite decodificar una cadena de estado de un grupo facturable. }
   TCPDecodCadEstado = class
@@ -245,7 +246,11 @@ type
     procedure SetXY(x0, y0: double);
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
     procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
-    procedure Acciones(tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
+  public  //Campos para manejo de acciones
+    facSelec: TCibFac;   //Facturable seleccionado (en la interfaz gráfica)
+    OnSolicEjecAcc: TEvSolicEjecAcc;  //Solicita ejecutar acciones
+    procedure EjecAccion(tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
+    procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); virtual;
   public  //Eventos para que el grupo se comunique con la apliación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
@@ -749,7 +754,7 @@ begin
   facDest := ItemPorNombre(nom);
   if facDest=nil then exit;
   case tram.posX of  //Se usa el parámetro para ver la acción
-  //Acciones sobre la boleta
+  //EjecAccion sobre la boleta
   ACCBOL_GRA: begin  //Se pide grabar la boleta de una PC
       for itBol in facDest.boleta.items do begin
     {    If Pventa = '' Then //toma valor por defecto
@@ -766,7 +771,7 @@ begin
       //Config.escribirArchivoIni;
       facDest.LimpiarBol;          //Limpia los items
     end;
-  //Acciones sobre los ítems de la boleta
+  //EjecAccion sobre los ítems de la boleta
   ACCITM_AGR: begin  //Se pide agregar una venta
       itBol := TCibItemBoleta.Create;
       itBol.CadEstado := traDat;  //recupera ítem
@@ -830,10 +835,14 @@ begin
     end;
   end;
 end;
-procedure TCibGFac.Acciones(tram: TCPTrama);
+procedure TCibGFac.EjecAccion(tram: TCPTrama);
 {Ejecuta alguna acción en el objeto.}
 begin
 
+end;
+procedure TCibGFac.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
+{Configura un menú PopUp con las acciones sobre el facturable.}
+begin
 end;
 ////Constructor y destructor
 constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipFact
@@ -842,7 +851,7 @@ begin
   items  := TCibFac_list.Create(true);
   nombre := nombre0;
   tipo   := tipo0;
-  decod := TCPDecodCadEstado.Create;
+  decod  := TCPDecodCadEstado.Create;
 end;
 destructor TCibGFac.Destroy;
 begin

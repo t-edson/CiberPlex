@@ -18,6 +18,8 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
+    procedure gof_SolicEjecAcc(comando: TCPTipCom; ParamX, ParamY: word;
+      cad: string);
     function gof_LogIngre(ident: char; msje: string; dCosto: Double): integer;
     function gof_LogError(msj: string): integer;
     function gof_LogVenta(ident: char; msje: string; dCosto: Double): integer;
@@ -41,9 +43,10 @@ type
 //    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
 //    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
     OnGuardarEstado: procedure of object;
-    OnReqConfigGen : TEvReqConfigGen; //Se requiere información de configruación
-    OnReqCadMoneda : TevReqCadMoneda; //Se requiere convertir a formato de moneda
-    OnActualizStock: TEvBolActStock;  //Se requiere actualizar el stock
+    OnReqConfigGen : TEvReqConfigGen;  //Se requiere información de configruación
+    OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
+    OnActualizStock: TEvBolActStock;   //Se requiere actualizar el stock
+    OnSolicEjecAcc : TEvSolicEjecAcc;  //Se solicita ejecutar una acción
   public
     nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
@@ -209,12 +212,12 @@ begin
       cabOrig.HoraPC  := HoraPC;
       cabOrig.PantBloq:= bloqueado;
     end;
-  C_SOL_T_PCS: begin  //Se solicita la lista de tiempos de las PC cliente. { TODO : Realmente se pide toda la cadena de estado, así que el nombre del comando no es del todo correcto. }
+  C_SOL_ESTAD: begin  //Se solicita el estado de todos los objetos del modelo
       //Identifica a la cabina origen para entregarle la información
       if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
       debugln(cabOrig.Nombre + ': Tiempos de PC solicitado.');
       tmp := CadEstado;
-      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_T_PCS, 0, 0, tmp);
+      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ESTAD, 0, 0, tmp);
     end;
   C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
       //Identifica a la cabina origen para entregarle la información
@@ -234,45 +237,7 @@ begin
 
       end;
     end;
-  //Acciones sobre cabinas
-  C_INI_CTAPC: begin   //Se pide iniciar la cuenta de una PC
-      //Identifica a la cabina sobre la que aplica
-      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
-      GFac := BuscarPorNombre(Grupo);
-      if GFac=nil then exit;
-      if Gfac.tipo <> ctfCabinas then exit;
-      //Ejecuta acción
-      TCibGFacCabinas(GFac).InicConteo(tram.traDat);
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
-      //Identifica a la cabina sobre la que aplica
-      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
-      GFac := BuscarPorNombre(Grupo);
-      if GFac=nil then exit;
-      if Gfac.tipo <> ctfCabinas then exit;
-      //Ejecuta acción
-      TCibGFacCabinas(GFac).ModifConteo(tram.traDat);
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-    end;
-  C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
-      //Identifica a la cabina sobre la que aplica
-      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
-      GFac := BuscarPorNombre(Grupo);
-      if GFac=nil then exit;
-      if Gfac.tipo <> ctfCabinas then exit;
-      //Ejecuta acción
-      if tram.posX = 1 then begin  //Indica que se quiere poner en mantenimiento.
-        TCibGFacCabinas(GFac).PonerManten(tram.traDat);
-      end else begin
-        TCibGFacCabinas(GFac).DetenConteo(tram.traDat);
-      end;
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-      { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
-      de estado, (como se hace actualmente con el Timer) , ya que se está detectando cada
-      evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
-      desconexión automático, o algún otro evento similar que requiera guardar el estado.}
-    end;
+  //Acciones sobre objetos facturables
   C_ACC_BOLET: begin  //Acciones sobre Boletas
       //Identifica al facturable sobre el que se aplica
       Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
@@ -282,6 +247,21 @@ begin
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
+  C_ACC_CABIN: begin   //Acciones sobre una cabina
+      //Identifica a la cabina sobre la que aplica
+      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      GFac := BuscarPorNombre(Grupo);
+      if GFac=nil then exit;
+      if Gfac.tipo <> ctfCabinas then exit;
+      //Ejecuta acción
+      Gfac.EjecAccion(tram);
+      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
+      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
+      { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
+      de estado, (como se hace actualmente con el Timer) , ya que se está detectando cada
+      evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
+      desconexión automática, o algún otro evento similar que requiera guardar el estado.}
+  end;
   C_ACC_NILOM: begin  //Acciones sobre un NILO-m
       //Identifica a la cabina sobre la que aplica
       Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
@@ -289,7 +269,7 @@ begin
       if GFac=nil then exit;
       if Gfac.tipo <> ctfNiloM then exit;
       //Ejecuta acción
-      Gfac.Acciones(tram);
+      Gfac.EjecAccion(tram);
       //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
@@ -318,6 +298,12 @@ procedure TCibGruposFacturables.gof_ActualizStock(const codPro: string;
 begin
   {Porpaga el evento, ya que se supone que no se tiene acceso al alamacén desde aquí}
   if not DeshabEven and (OnActualizStock<>nil) then OnActualizStock(codPro, Ctdad);
+end;
+procedure TCibGruposFacturables.gof_SolicEjecAcc(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+{Un Gfac solicita ejecutar una acción, en uno de sus elementos.}
+begin
+  if not DeshabEven and (OnSolicEjecAcc<>nil) then OnSolicEjecAcc(comando, ParamX, ParamY, cad);
 end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
@@ -447,6 +433,7 @@ begin
   gof.OnReqConfigGen := @gof_RequiereInfo;
   gof.OnReqCadMoneda := @gof_ReqCadMoneda;
   gof.OnActualizStock:= @gof_ActualizStock;
+  gof.OnSolicEjecAcc:=@gof_SolicEjecAcc;
   case gof.tipo of
   ctfCabinas: begin
     TCibGFacCabinas(gof).OnTramaLista:=@gof_TramaLista;

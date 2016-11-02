@@ -18,6 +18,8 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
   <<<< ADVERTENCIA >>>>:
   * No poner valores de más de 255, porque se ha reservado solo un byte, para alamcenar
   este campo.
+  Notar que aquí se están juntando los comandos usados tanto para las PC cliente,
+  como para los Visores adicionales.
   }
   TCPTipCom = (
     //Tipos de Mensajes que incluyen datos. Respuestas a comandos.
@@ -43,7 +45,7 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     M_SOL_CPUME = $1C,  //Mensaje con información de CPU y Memoria
 
     M_SOL_ARINI = $24,  //Envía archivo de configuración
-    M_SOL_T_PCS = $25,  //Mensaje tiempos de PC's
+    M_SOL_ESTAD = $25,  //Mensaje con el estado de los objetos
     M_SOL_T_LOC = $26,  //Mensaje tiempos de locutorios
     M_SOL_PANPC = $2C,  //pantalla de una PC solicitada
 
@@ -85,18 +87,14 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     C_CHAT_CERR = $A1,  //Cierra ventana de chat
     C_CHAT_MNSJ = $A2,  //Envía mensaje a ventana de chat
 
+    ///////////////////////////////////////
     C_SOL_ARINI = $A4,  //Solicita archivo de configuración principal (Aplicable a SERVIDOR Y CLIENTE).
-    C_SOL_T_PCS = $A5,  //Solicita tiempos de PC's
-    C_SOL_T_LOC = $A6,  //Solicita tiempos de locutorios
-    //Acciones sobre una PC
-    C_INI_CTAPC = $A7,  //Solicita iniciar la cuenta de una PC
-    C_DET_CTAPC = $A8,  //Solicita detener la cuenta de una PC
-    C_MOD_CTAPC = $A9,  //Solicita modificar la cuenta de una PC
-
+    C_SOL_ESTAD = $A5,  //Solicita estado de objetos
     C_SOL_PANPC = $AC,  //Solicita la pantalla de una PC
-
-    C_ACC_BOLET = $B0,   //Acción sobre boleta (tiene varios sub-somandos)
-    C_ACC_NILOM = $B2,   //Acciones sobre un NILO-m
+    //Acciones sobre objetos facturables
+    C_ACC_BOLET = $B0,   //Acción sobre boleta (Incluye sub-somandos en ParamX)
+    C_ACC_CABIN = $B1,   //Acción sobre una cabina (Incluye sub-somandos en ParamX)
+    C_ACC_NILOM = $B2,   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
 
     //Comando cortos que no devuelven mensaje.
     C_BLOQ_PC = $C1,  //Comando de bloqueo de PC

@@ -1,0 +1,167 @@
+object frmBoleta: TfrmBoleta
+  Left = 285
+  Height = 292
+  Top = 285
+  Width = 401
+  Caption = 'Boleta'
+  ClientHeight = 292
+  ClientWidth = 401
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '1.6.0.4'
+  object Panel1: TPanel
+    Left = 0
+    Height = 76
+    Top = 216
+    Width = 401
+    Align = alBottom
+    ClientHeight = 76
+    ClientWidth = 401
+    TabOrder = 0
+    object BitBtn1: TBitBtn
+      Left = 24
+      Height = 30
+      Top = 40
+      Width = 104
+      Action = acBolGrabar
+      Caption = '&GRABAR'
+      TabOrder = 0
+    end
+    object BitBtn2: TBitBtn
+      Left = 264
+      Height = 30
+      Top = 40
+      Width = 99
+      Caption = '&CERRAR'
+      Kind = bkClose
+      ModalResult = 11
+      TabOrder = 1
+    end
+    object Label1: TLabel
+      Left = 224
+      Height = 15
+      Top = 3
+      Width = 40
+      Caption = 'TOTAL:'
+      ParentColor = False
+    end
+    object txtTotal: TEdit
+      Left = 288
+      Height = 25
+      Top = 0
+      Width = 72
+      Alignment = taRightJustify
+      Font.Height = -13
+      ParentFont = False
+      ReadOnly = True
+      TabOrder = 2
+    end
+  end
+  object grilla: TStringGrid
+    Left = 0
+    Height = 216
+    Top = 0
+    Width = 401
+    Align = alClient
+    TabOrder = 1
+    ColWidths = (
+      26
+      34
+      170
+      64
+      68
+    )
+    Cells = (
+      5
+      0
+      0
+      'N°'
+      1
+      0
+      'CANTIDAD'
+      2
+      0
+      'DESCRIPCIÓN'
+      3
+      0
+      'PREC.UNITARIO'
+      4
+      0
+      'SUBTOTAL'
+    )
+  end
+  object ActionList1: TActionList
+    left = 240
+    top = 80
+    object acItemAgregar: TAction
+      Category = 'Item'
+      Caption = '&Agregar Ítem ...'
+      OnExecute = acItemAgregarExecute
+      ShortCut = 113
+    end
+    object acItemDevolv: TAction
+      Category = 'Item'
+      Caption = 'De&volver Ítem'
+      OnExecute = acItemDevolvExecute
+      ShortCut = 46
+    end
+    object acItemDesech: TAction
+      Category = 'Item'
+      Caption = '&Desechar Ítem'
+      OnExecute = acItemDesechExecute
+    end
+    object acItemRecup: TAction
+      Category = 'Item'
+      Caption = '&Recuperar Ítem'
+      OnExecute = acItemRecupExecute
+    end
+    object acItemComent: TAction
+      Category = 'Item'
+      Caption = '&Comentar Ítem'
+      OnExecute = acItemComentExecute
+    end
+    object acItemDividir: TAction
+      Category = 'Item'
+      Caption = 'D&ividir Ítem'
+      OnExecute = acItemDividirExecute
+    end
+    object acItemGraSelec: TAction
+      Category = 'Item'
+      Caption = '&Grabar Ítem'
+      OnExecute = acItemGraSelecExecute
+    end
+    object acBolGrabar: TAction
+      Category = 'Bol'
+      Caption = '&Grabar Boleta'
+      OnExecute = acBolGrabarExecute
+    end
+  end
+  object PopupMenu1: TPopupMenu
+    left = 144
+    top = 80
+    object MenuItem1: TMenuItem
+      Action = acItemAgregar
+    end
+    object MenuItem2: TMenuItem
+      Action = acItemDevolv
+    end
+    object MenuItem3: TMenuItem
+      Action = acItemDesech
+    end
+    object MenuItem4: TMenuItem
+      Action = acItemRecup
+    end
+    object MenuItem5: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem8: TMenuItem
+      Action = acItemComent
+    end
+    object MenuItem6: TMenuItem
+      Action = acItemDividir
+    end
+    object MenuItem7: TMenuItem
+      Action = acItemGraSelec
+    end
+  end
+end

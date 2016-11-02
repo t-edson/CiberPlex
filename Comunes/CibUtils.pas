@@ -3,12 +3,14 @@ unit CibUtils;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Types, dateutils, Graphics, LCLType, LCLIntf, MisUtils;
+  Classes, SysUtils, Types, dateutils, Graphics, LCLType, LCLIntf, Menus,
+  MisUtils;
 
   procedure PantallaAArchivo(arch: String);
   procedure Decodificar_M_ESTAD_CLI(cad: string; var nombrePC: string; var HoraPC: TDateTime;
     var bloqueado: boolean);
   function ExtraerHasta(var cad: string; car: char; out Err: boolean): string;
+  function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
 
 implementation
 procedure PantallaAArchivo(arch: String);
@@ -68,6 +70,19 @@ begin
   Result := copy(cad, 1, p-1);  //toma hasta el final
   delete(cad, 1, p);    //extrae
   Err := false;
+end;
+
+function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
+{Devuelve la referencia a un ítemd e menú, para poder agregarla a un menú.}
+var
+  nuevMen: TMenuItem;
+begin
+  nuevMen:= TMenuItem.Create(nil);
+  nuevMen.Caption:=etiq;
+  nuevMen.OnClick:=accion;
+  {Notar que la referencia "nuevMen", no ha sido destruida porque se supone que se usará
+  para agregarla a un menú, de modo que será el propieo menú el encargdao de destruirla.}
+  Result := nuevMen;
 end;
 
 end.

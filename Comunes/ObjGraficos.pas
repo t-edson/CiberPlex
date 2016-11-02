@@ -11,16 +11,11 @@ const
   //Constantes de Colores
  COL_AZUL_CLARO = 230 * 256 *256 + 255 *256 + 255;
  COL_AZUL_CLARO2 = $FFA8A8;
- COL_GRIS_CLARO = $C0C0C0;     //gris claro
  COL_GRIS = $808080;          //gris
+ COL_GRIS_CLARO = $D0D0D0;    //gris claro
  COL_VERD_CLARO = $C0FFC0;   //RGB(200, 255, 200)
  COL_VERDE = $B0FFB0;        //RGB(200, 255, 200)
  COL_AMAR_CLARO = $B4FFFF;   //RGB(255, 255, 180)
-
-  //Constantes de Colores para CEdGrafOQ
-  COL_BARTIT_ACT = COL_AZUL_CLARO2;   //Fondo para barra de título
-  COL_BARTIT_DES = COL_GRIS_CLARO;   //Fondo barra de títulos desactivada
-  COL_FON_TABLAS = clWhite;  //Fondo para las tablas
 
   //Constantes geométricas para CEdGrafOQ
   ALT_ENCAB_DEF = 22 ;   //Espacio que se deja al inicio
@@ -343,18 +338,12 @@ begin
   //--------------Dibuja cuerpo de tabla
   x2 := x + width;
   //y2 := y + height;
-  //Sombra
-//    Call v2d.FijaLapiz(0, 3, COL_GRIS_CLARO)
-//    Call v2d.FijaRellenoTransparente
-//    v2d.RectRedonR mX + 2, mY + 2, x2 + 2, y2 + 2
   //Frente
 //  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
 //  v2d.FijaRelleno(clWhite);
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-//  If Desactivado Then v2d.FijaRelleno(COL_BARTIT_DES) Else v2d.FijaRelleno(COL_BARTIT_ACT);
-//  v2d.RectRedonR(x, y, x2, y + ALT_ENCAB_DEF);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, nombre);
   //dibuja íconos de PC y de conexión
@@ -464,7 +453,7 @@ procedure TogNiloM.DibujarDatosLlam;
   {Muestar el mensaje tres líneea, que indica que está esperando llamadas }
   begin
     v2d.FijaRelleno(TColor($D0D0D0));
-//    v2d.FijaRelleno(TColor($80ff80));
+//    v2d.FijaRelleno(clBlue);
     v2d.RectangR(x-3, y-2, x+97, y+50);
     v2d.Texto(x+1,y   , 'Esperando');
     v2d.Texto(x+1,y+16, 'marcación...');
@@ -476,7 +465,7 @@ procedure TogNiloM.DibujarDatosLlam;
 begin
   //dibuja cuadro de estado
   if loc.descolg then begin    //Está descolgado
-    if loc.llam.NUM_DIG<> '' then begin  //Hay llamadas
+    if loc.llam.NUM_DIG<> '' then begin  //Hay llamadas, Al menos la actual.
       if loc.llam.CONTES then v2d.SetText(clRed, 10,'',false)
       else v2d.SetText(clBlack, 10,'',false);
       v2d.FijaRelleno(TColor($D0D0D0));
@@ -504,23 +493,21 @@ begin
   //--------------Dibuja cuerpo de tabla
   x2 := x + width;
   //y2 := y + height;
-  //Sombra
-//    Call v2d.FijaLapiz(0, 3, COL_GRIS_CLARO)
-//    Call v2d.FijaRellenoTransparente
-//    v2d.RectRedonR mX + 2, mY + 2, x2 + 2, y2 + 2
-  //Frente
-//  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-//  v2d.FijaRelleno(clWhite);
-//  v2d.RectRedonR(x, y, x2, y2);
-  //--------------Dibuja encabezado
+  //Dibuja fondo rectangular
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-  v2d.FijaRelleno(TColor($BCF5A9));
-  v2d.RectangR(x, y, x2, y+height);
-//  If Desactivado Then v2d.FijaRelleno(COL_BARTIT_DES) Else v2d.FijaRelleno(COL_BARTIT_ACT);
-//  v2d.RectRedonR(x, y, x2, y + ALT_ENCAB_DEF);
+  if loc.descon then v2d.FijaRelleno(COL_GRIS_CLARO)
+  else v2d.FijaRelleno(TColor($BCF5A9));
+  v2d.RectangR(x, y, x2, y + height);
+  //Dibuja visor
+  v2d.FijaRelleno(clBlack);
+  v2d.RectangR(x+16, y+10, x2-16, y + 40);
+  if loc.descon then v2d.FijaRelleno(COL_GRIS_CLARO)
+  else v2d.FijaRelleno(clBlue);
+  v2d.RectangR(x+22, y+16, x2-22, y + 30);
+
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(X + 2, Y -20, nombre);
-  //dibuja íconos de teléfono
+  v2d.Texto(X + 2, Y -20, nombre);  //Nombre de objeto
+  //dibuja ícono de teléfono
   if loc.descolg then begin
     v2d.DibujarImagenN(icoTelDes, x+28, y+52);
   end else begin

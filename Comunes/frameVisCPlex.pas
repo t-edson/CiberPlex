@@ -13,8 +13,8 @@ uses
 const
   ID_CABINA  = 1;  //Cabinas
   ID_GCABINA = 2;  //Grupo de cabinas
-  ID_GNILOM  = 3;  //Grupo NiloM
   ID_NILOM   = 4;  //Locutorio
+  ID_GNILOM  = 3;  //Grupo NiloM
 
 type
   { TfraVisCPlex }
@@ -43,11 +43,14 @@ type
   public
     motEdi: TModEdicion;  //motor de edición
     OnObjectsMoved: procedure of object;
+    grupos: TCibGruposFacturables; {Esta lista de grupos facturables, será una copia
+                                    de la lista que existe en el servidor.}
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
     function AgregOgFac(Fac: TCibFac): TogFac;
     function BuscarOgCabina(const nom: string): TogCabina;
     function NumSelecionados: integer;
     function Seleccionado: TObjGraf;
+    function FacSeleccionado: TogFac;
     function CabSeleccionada: TogCabina;
     function GCabinasSeleccionado: TogGCabinas;
     function LocSeleccionado: TogNiloM;
@@ -56,8 +59,6 @@ type
     procedure ActualizarEstado(cadEstado: string);
   private
     decod: TCPDecodCadEstado;  //decodificador de cadenas de estado
-    grupos: TCibGruposFacturables;   {Esta lista de grupos facturables, será una copia
-                                        de la lista que existe en el servidor.}
   public
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
@@ -163,6 +164,21 @@ function TfraVisCPlex.Seleccionado: TObjGraf;  //atajo
 begin
   Result := motEdi.Seleccionado;
 end;
+function TfraVisCPlex.FacSeleccionado: TogFac;
+{Devuelve el ogFac seleccionado. Si no hay ninguna, devuelve NIL.}
+var
+  og: TObjGraf;
+begin
+  if NumSelecionados>1 then begin
+    //MsgExc('Se debe seleccionar solo una cabina.');
+    exit(nil);
+  end;
+  og := Seleccionado;
+  if og = nil then exit(nil);
+  if not (og is TogFac) then exit(nil);
+  Result := TogFac(og);
+end;
+
 function TfraVisCPlex.CabSeleccionada: TogCabina;
 {Devuelve la cabina seleccionada. Si no hay ninguna, devuelve NIL.}
 var
