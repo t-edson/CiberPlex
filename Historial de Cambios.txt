@@ -1,3 +1,77 @@
+1.0.0
+=====
+Se elimina el Popup para los locutorios, y se crean métodos para manejer dinámicamente los
+menús de los facturables.
+Se separan las acciones que son comunes a los facturables, en una categoría especial.
+Se quitan los manejadores de eventos de los menús, y se mueven a la unidad CibGFac.
+Se crea el evento TCibGfac.OnSolicEjecAcc y se propaga a TCibGruposFacturables.
+Se deja de crear estáticamente el formulario frmFijTiempo. Ahora es parte de los 
+GFacCabinas y se crea dinámicamente.
+Se eliminan varios comandos de las cabinas y se unifican en uno solo, para manejar luego 
+subcomandos, de la misma forma a como se hace con los locutorios.
+Se cambia de nombre a algunos métodos del formulario principal.
+Se quita la dependencia de la unidad FormIngVenta a FormBoleta, para hacerla más 
+indenpediente.
+Se incluye el evento OnAgregarItem() a FormBoleta para evitar llamar direcatmente al
+formualario FormIngVenta.
+Se quita la dependencia de la unidad Config a FormBoleta, para hacerla más indenpediente.
+Así se logra que ahora esta unidad pase a ser una unidad común y pueda usarse desde otros
+aplicativos de CiberPlex. 
+Se modifica a Ciberplex-Visor para manejar la nueva forma de enviar comandos al servidor,
+incluyendo la opción de mostrar boletas.
+Se cambia el nombre del comando C_SOL_T_PCS a C_SOL_ESTAD, ya que es más apropiado.
+Se incluye a la undiad FormNiloMProp, como parte del proyecto.
+Se crea la función TCibGFacNiloM.EnvCadena(), para que permita ingresar comandos de varias
+líneas al enrutador.
+Se implementa la ventana de conexiones en FormNiloMConex,incluyendo todas las funciones de
+su equivalente en VB, excepto la opción de capturar la imagen del estado de las salidas.
+Se implementa la ventana de enrutamiento como parte de la ventana de conexiones.
+Se implementa el contéo de las llamadas en los objetos TCibFacLocutor, con el método
+TCibFacLocutor.ActualizaLlamadaContestada.
+Se crean las propiedades GFacNiloM.IniLLamMan, GFacNiloM.IniLLamTemp  y GFacNiloM.PerLLamTemp
+para completar las opciones de control del NILO-m, y se habilita su admninistración en la 
+ventana de propiedades del enrutador.
+Se implementan diversos métodos en TCibFacLocutor, para el tratamiento de las llamadas,
+siguiendo el esquema del NILOTER-mC.
+Se agrega la variable global "rutSonidos", para direccionar a la carpeta en donde se 
+guardarán los archivos de sonido que deben reproducirse.
+Se mejora la creación de nuevos GFac desde el mnú principal.
+
+0.9.9
+=====
+Se redefine el evento TEvCabTramaLista, para que sea más general, y se cambian todas las
+rutinas relacionadas.
+Se corrigen las rutinas de acciones sobre cabinas en gof_TramaLista().
+Se corrige una falla en las funciones de moneda de la unidad FormConfig.
+Se agrupan todas las acciones de boleta en un solo comando C_ACC_BOLET, y se crea el 
+método TCibGFac.AccionesBoleta() para el procesamiento de los subcomandos de C_ACC_BOLET.
+Se implementan los comandos de conexión y desconexión sobre los locutorios.
+Se mejora la representación gráfica de los locutorios.
+Se procesa el estado de desconexión de los locutorios, para mostrarlo gráficamente. Se crea
+la propiedad TCibFacLocutor.descon.
+
+0.9.8
+=====
+Se continúa eliminando dependencias innecesarias, para hacer más modular al código.
+Se crea el método TCibBoleta.DevolItem, para ordenar mejor el código.
+Se reordena el código para que todos los accesos al registro de ventas se hagan desde la
+unidad CibFacturables.
+Se eliminan los eventos de TCibBoleta, para no tener un nivel de propagación de eventos 
+muy alto. Para acceder a información global, ahora se accede a través de eventos del 
+objeto padre.
+Se cambia de nombre a regIBol_ARegVen por RegVenta.
+Se cambia de nombre a regIBol_AReg por RegIngres.
+Se elimina el evento TCibFacLocutor.OnRegMsjError, y se activa TCibFac.OnLogError.
+Se elimina la referencia TCibFacLocutor.trm, ya que no es necesaria proque se tiene la
+referencia "Grupo".
+Se revisa a Ciberplex-Visor para actualizarlo con los últimos avances de Ciberplex-Server.
+Se modificó TCPDecodCadEstado.Inic, para que devuelva la línea inicial.
+Se habilitó la lectura de la propiedad "estadoCnx" en TCibGFacNiloM.SetCadEstado.
+Se agregó un temporizador al objeto NILO-m para que intenet conectarse si se encuentra 
+desconectado.
+Se agregó un ícono al objeto NILO-m para indicar el estado de desconectado.
+Se cambia de nombre al objeto TfrmPrincipal.VisorCabinas por TfrmPrincipal.Visor.
+
 0.9.7
 =====
 Se elimina el método "override" TCibGFacCabinas.SetModoCopia(), ya que se supone que
@@ -16,6 +90,22 @@ Se mueve el campo decod de CibGFacCabinas a CibGFac, de modo que se puede usar a
 en todos los Grupos de facturables.
 Se cambia el formato de la cadena de estado de los facturables, dejando de usar un 
 caracter especial para cada tipo de facturable. Ahora solo se usa '.'.
+Se modifica el formato de fecha (agregando las funciones T2f y f2T a la librería 
+MisUtils) de la cadena de estado de los facturables, de modo que ahora ocupen menos 
+espacio.
+Se amplía la cadena de estado de TCibFacLocutor, para que incluya a la llamada actual.
+Se implementó la visualización del teléfono descolgado y el número marcado en el objeto
+gráfico que representa a un locutorio.
+Se unifican las funciones de acceso a registro PLogInt y PLogIntD.
+Se elimina la dependencia de CPProductos, desde la unidad CibFacturables. Para ellos se
+crean nuevos eventos, que se propagan hasta la aplicación principal.
+Se crean los eventos TCibBoleta.OnLogVenta y TCibBoleta.OnActualizStock.
+Se crean los eventos TCibFac.OnLogVenta y TCibFac.OnActualizStock.
+Se quita la dependencia de FormInicio, a la unidad CibGFacCabinas.
+Se elimina el evento TCibGFacCabinas.OnDetenConteo
+Se eliminan varios métodos de acceso al archivo de registro, unificándolos.
+Se enpaquetan las rutinas de acceso a registro en la clase TCibArcReg.
+Se enpaquetan las rutinas de manejo de los productos en la clase TCibTabProduc.
 
 0.9.6
 =====
@@ -306,7 +396,7 @@ una gotera de memoria.
 SERVER
 Se crea el campo TCabConexion.MsjsRed, para guardar los últimos mensajes de Red recibidos.
 Se crea el campo TSocketCabina.trama, para permitir procesar las tramas a TSocketCabina.
-Se crea el evento TSocketCabina.OnTramaLista, para indciar cuando terminó de recibir una trama.
+Se crea el evento TSocketCabina.OnTramaLista, para indiCar cuando terminó de recibir una trama.
 Se crean los eventos TCabConexion.OnRegMensaje y TCabConexion.OnTramaLista.
 Se crea el evento TCPCabina.OnTramaLista.
 Se crea el evento TGrupoCabinas.OnTramaLista.
