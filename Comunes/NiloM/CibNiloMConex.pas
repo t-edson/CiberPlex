@@ -118,16 +118,16 @@ type
     OnProcesarCad : TEvProcesarCad; {Se ha recibido una cadena por el puerto serial. La
                                      cadena puede contener cualquier caracter incluyendo
                                      saltos. Es útil para mostrar datos en un terminal.}
-    OnProcesarLin : TEvProcesarCad;  {Se ha recibido una línea completa, es decir un texto hasta
-                                     el delimitador #10. Trabaja con "ultLinea". Es útil
-                                     para procesar comandos.}
+    OnProcesarLin : TEvProcesarCad;  {Se ha recibido una línea completa, es decir un texto
+                                     hasta el delimitador #10. Trabaja con "ultLinea". Es
+                                     útil para procesar comandos.}
     OnGenError    : TEvRegMensaje;  //Se ha generado un error
     //Lo siguientes eventos están pensados para su uso conjunto, en un terminal.
     OnTermWrite   : TEvProcesarCad; {Se debe escribir cadena en la última línea. Se debe
                                      agregarla al final de la última línea del terminal.}
     OnTermWriteLn : TEvTermWriteLn; {Similar a OnTermWrite, pero debe agregarse un salto
                                      de línea. Incluye en los parámetros, el fragmento
-                                     final de la línea (subcad) y la línea compelta (lin).}
+                                     final de la línea (subcad) y la línea completa (lin).}
   public  //constructor y destructor
     constructor Create;
     destructor Destroy; override;

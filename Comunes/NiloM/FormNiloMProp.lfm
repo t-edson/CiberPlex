@@ -62,9 +62,9 @@ object frmNiloMProp: TfrmNiloMProp
     Height = 366
     Top = 0
     Width = 367
-    ActivePage = tabTarif
+    ActivePage = tabGenerales
     Align = alClient
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 1
     object tabGenerales: TTabSheet
       Caption = 'Generales'
@@ -180,7 +180,6 @@ object frmNiloMProp: TfrmNiloMProp
         Caption = 'Detección de inicio de llamada'
         ClientHeight = 77
         ClientWidth = 236
-        Enabled = False
         TabOrder = 6
         object CheckBox1: TCheckBox
           Left = 16
@@ -207,6 +206,7 @@ object frmNiloMProp: TfrmNiloMProp
           Top = 48
           Width = 122
           Caption = 'Inicio Temporizado'
+          OnChange = CheckBox3Change
           TabOrder = 2
         end
         object SpinEdit1: TSpinEdit

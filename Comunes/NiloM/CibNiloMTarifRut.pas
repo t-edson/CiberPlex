@@ -12,6 +12,10 @@ uses
   strutils, MisUtils, SynFacilHighlighter, XpresBas;
 Const
   MAX_DEFINICIONES = 50;
+  MAX_NIV_ARRUT = 10;   //Máximo nivel del arbol de rutas
+  MAX_TAM_CODPR = 20;   {Tamaño máximo de la cadena de los códigos de prefijos
+                         para guardar en EEPROM. 10 códigos por 2 caracteres.}
+
 type
   { regTarifa }
   //Define el tipo que almacena una tarifa (Una línea del archivo tarifario)
@@ -152,6 +156,10 @@ type
   procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
   procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
 
+  function VerificarCadCodpre(cad : String): string;
+  Function CodifPref(codStr: string; var Err: string): Byte;
+  Function DecodPref(codPre: Byte): String;
+
 implementation
 Function SeriesIguales(ser1, ser2 : string): Boolean;
 //Compara dos series considerando que "ser2" puede tener el comodín "?"
@@ -233,6 +241,89 @@ begin
   hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', attPrepro);
   hl.Rebuild;  //reconstruye
 end;
+function VerificarCadCodpre(cad : String): string;
+{Analiza una cadena de código de prefijos para ver si es válida.
+Si hay error, actualiza devuelve mensaje de error.}
+var
+  i : Integer;
+  Err: string;
+begin
+  Result := '';
+  If Length(cad) > MAX_TAM_CODPR Then begin
+      exit('Códigos de prefijo muy largo.');  //sale con error
+  End;
+  If Length(cad) Mod 2 <> 0 Then begin
+      exit('Falta caracter en Códigos de prefijo');   //sale con error
+  End;
+  For i := 1 To Length(cad) div 2 do begin
+      CodifPref(MidStr(cad, (2*i)-1, 2), Err);
+      If Err <> '' Then exit(Err);
+  end;
+End;
+Function CodifPref(codStr: string; var Err: string): Byte;
+//Codifica una cadena de 2 bytes en un código de prefijo de un byte
+//Si encuentra error, devuelve mensaje en "Err".
+var
+  com : char;
+  num : char;
+  arg : Byte;  //argumento
+begin
+    Err := '';
+    If Length(codStr) <> 2 Then begin
+        Err := 'Error en código de prefijo: ' + codStr;
+        Exit;
+    end;
+    com := codStr[1];
+    num := codStr[2];
+    If num = '*' Then
+        arg := 10
+    Else If num = '#' Then
+        arg := 11
+    Else If num = 'p' Then
+        arg := 12
+    Else If num = '?' Then
+        arg := 15
+    Else
+        arg := StrToInt(num);
+    If com = 'c' Then
+        CodifPref := $30 + arg
+    Else If com = 'i' Then
+        CodifPref := $20 + arg
+    Else If com = 'q' Then
+        CodifPref := $40 + arg
+    Else If com = 'a' Then
+        CodifPref := $50 + arg
+    Else begin
+        Err := 'Error en código de prefijo. Comando desconocido: ' + codStr;
+        Exit;
+    End;
+end;
+Function DecodPref(codPre: Byte): String;
+//Decodifica un código de prefijo en su cadena indicadora
+var
+  com : Byte;
+  num : Byte;
+  car : String;
+begin
+  com := codPre div 16;
+  num := codPre mod 16;
+  if num = 10 Then
+    car := '*'
+  else If num = 11 Then
+    car := '#'
+  else If num = 12 Then
+    car := 'p'
+  else If num = 15 Then
+    car := '?'
+  else
+    car := IntToStr(num);
+  case com of
+  3: Result := 'c' + car;
+  2: Result := 'i' + car;
+  4: Result := 'q' + car;
+  5: Result := 'a' + car;
+  end;
+End;
 
 { regTarifa }
 function regTarifa.paso: String;

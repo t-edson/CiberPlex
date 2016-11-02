@@ -1,35 +1,38 @@
 object frmNiloMConex: TfrmNiloMConex
-  Left = 295
-  Height = 361
-  Top = 226
-  Width = 425
+  Left = 747
+  Height = 445
+  Top = 131
+  Width = 586
   Caption = 'Conexiones'
-  ClientHeight = 361
-  ClientWidth = 425
+  ClientHeight = 445
+  ClientWidth = 586
+  KeyPreview = True
+  OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnKeyPress = FormKeyPress
   OnShow = FormShow
   LCLVersion = '1.6.0.4'
   object PageControl1: TPageControl
     Left = 0
-    Height = 361
+    Height = 445
     Top = 0
-    Width = 425
-    ActivePage = tabSerial
+    Width = 586
+    ActivePage = tabConexiones
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 0
     object tabSerial: TTabSheet
       Caption = 'Puerto Serial'
-      ClientHeight = 333
-      ClientWidth = 417
+      ClientHeight = 417
+      ClientWidth = 578
       object Panel2: TPanel
         Left = 0
-        Height = 333
+        Height = 417
         Top = 0
-        Width = 184
+        Width = 240
         Align = alLeft
-        ClientHeight = 333
-        ClientWidth = 184
+        ClientHeight = 417
+        ClientWidth = 240
         TabOrder = 0
         object Label1: TLabel
           Left = 8
@@ -58,9 +61,9 @@ object frmNiloMConex: TfrmNiloMConex
           TabOrder = 1
         end
         object btnAceptar: TBitBtn
-          Left = 8
+          Left = 0
           Height = 30
-          Top = 296
+          Top = 352
           Width = 75
           DefaultCaption = True
           Kind = bkOK
@@ -69,9 +72,9 @@ object frmNiloMConex: TfrmNiloMConex
           TabOrder = 2
         end
         object btnCancelar: TBitBtn
-          Left = 96
+          Left = 157
           Height = 30
-          Top = 296
+          Top = 352
           Width = 75
           Cancel = True
           DefaultCaption = True
@@ -106,9 +109,9 @@ object frmNiloMConex: TfrmNiloMConex
           Text = '1'
         end
         object btnAplicar: TBitBtn
-          Left = 48
+          Left = 80
           Height = 30
-          Top = 256
+          Top = 352
           Width = 75
           Caption = '&A&plicar'
           Default = True
@@ -121,7 +124,7 @@ object frmNiloMConex: TfrmNiloMConex
           Left = 8
           Height = 25
           Top = 168
-          Width = 147
+          Width = 108
           Caption = '&Enviar Comando:'
           OnClick = btnEnviarClick
           TabOrder = 6
@@ -130,15 +133,15 @@ object frmNiloMConex: TfrmNiloMConex
           Left = 8
           Height = 23
           Top = 144
-          Width = 144
+          Width = 224
           TabOrder = 7
         end
       end
       object Memo1: TMemo
-        Left = 184
-        Height = 333
+        Left = 240
+        Height = 417
         Top = 0
-        Width = 233
+        Width = 338
         Align = alClient
         Font.CharSet = ANSI_CHARSET
         Font.Height = -12
@@ -156,12 +159,1133 @@ object frmNiloMConex: TfrmNiloMConex
     end
     object tabConexiones: TTabSheet
       Caption = '&Conexiones'
+      ClientHeight = 417
+      ClientWidth = 578
+      object btnRefres: TButton
+        Left = 16
+        Height = 41
+        Top = 8
+        Width = 78
+        Caption = '&REFRESCAR'
+        OnClick = btnRefresClick
+        TabOrder = 0
+      end
+      object Shape1: TShape
+        Left = 120
+        Height = 6
+        Top = 24
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object txtDigitados: TEdit
+        Left = 8
+        Height = 23
+        Top = 112
+        Width = 96
+        TabOrder = 1
+      end
+      object cmdD1: TButton
+        Left = 8
+        Height = 24
+        Top = 136
+        Width = 32
+        Caption = '1'
+        OnClick = cmdD1Click
+        TabOrder = 2
+      end
+      object cmdD2: TButton
+        Left = 40
+        Height = 24
+        Top = 136
+        Width = 32
+        Caption = '2'
+        OnClick = cmdD2Click
+        TabOrder = 3
+      end
+      object cmdD3: TButton
+        Left = 72
+        Height = 24
+        Top = 136
+        Width = 32
+        Caption = '3'
+        OnClick = cmdD3Click
+        TabOrder = 4
+      end
+      object cmdD4: TButton
+        Left = 8
+        Height = 24
+        Top = 160
+        Width = 32
+        Caption = '4'
+        OnClick = cmdD4Click
+        TabOrder = 5
+      end
+      object cmdD5: TButton
+        Left = 40
+        Height = 24
+        Top = 160
+        Width = 32
+        Caption = '5'
+        OnClick = cmdD5Click
+        TabOrder = 6
+      end
+      object cmdD6: TButton
+        Left = 72
+        Height = 24
+        Top = 160
+        Width = 32
+        Caption = '6'
+        OnClick = cmdD6Click
+        TabOrder = 7
+      end
+      object cmdD7: TButton
+        Left = 8
+        Height = 24
+        Top = 184
+        Width = 32
+        Caption = '7'
+        OnClick = cmdD7Click
+        TabOrder = 8
+      end
+      object cmdD8: TButton
+        Left = 40
+        Height = 24
+        Top = 184
+        Width = 32
+        Caption = '8'
+        OnClick = cmdD8Click
+        TabOrder = 9
+      end
+      object cmdD9: TButton
+        Left = 72
+        Height = 24
+        Top = 184
+        Width = 32
+        Caption = '9'
+        OnClick = cmdD9Click
+        TabOrder = 10
+      end
+      object cmdDA: TButton
+        Left = 8
+        Height = 24
+        Top = 208
+        Width = 32
+        Caption = '*'
+        OnClick = cmdDAClick
+        TabOrder = 11
+      end
+      object cmdD0: TButton
+        Left = 40
+        Height = 24
+        Top = 208
+        Width = 32
+        Caption = '0'
+        OnClick = cmdD0Click
+        TabOrder = 12
+      end
+      object cmdDB: TButton
+        Left = 72
+        Height = 24
+        Top = 208
+        Width = 32
+        Caption = '#'
+        OnClick = cmdDBClick
+        TabOrder = 13
+      end
+      object txtMarcNum: TEdit
+        Left = 6
+        Height = 23
+        Top = 264
+        Width = 96
+        OnDragDrop = txtMarcNumDragDrop
+        OnDragOver = txtMarcNumDragOver
+        TabOrder = 14
+      end
+      object cmdMarcNum: TButton
+        Left = 8
+        Height = 33
+        Top = 232
+        Width = 96
+        Caption = 'Marcar &Número'
+        OnClick = cmdMarcNumClick
+        TabOrder = 15
+      end
+      object Shape2: TShape
+        Left = 120
+        Height = 6
+        Top = 56
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape3: TShape
+        Left = 120
+        Height = 6
+        Top = 96
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape4: TShape
+        Left = 120
+        Height = 6
+        Top = 136
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape5: TShape
+        Left = 120
+        Height = 6
+        Top = 176
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape6: TShape
+        Left = 120
+        Height = 6
+        Top = 218
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape7: TShape
+        Left = 120
+        Height = 6
+        Top = 256
+        Width = 432
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape8: TShape
+        Left = 120
+        Height = 6
+        Top = 296
+        Width = 48
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape9: TShape
+        Left = 120
+        Height = 310
+        Top = 24
+        Width = 6
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object cmdD5a: TShape
+        Left = 48
+        Height = 102
+        Top = 80
+        Width = 6
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape11: TShape
+        Left = 48
+        Height = 6
+        Top = 75
+        Width = 78
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object lblSensor: TMemo
+        Left = 6
+        Height = 74
+        Top = 320
+        Width = 120
+        Lines.Strings = (
+          '?'
+        )
+        OnClick = lblSensorClick
+        ReadOnly = True
+        TabOrder = 16
+      end
+      object lbl7: TEdit
+        Left = 528
+        Height = 26
+        Top = 8
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 17
+        Text = 'L7'
+        TextHintFontColor = clBtnFace
+      end
+      object lbl6: TEdit
+        Left = 528
+        Height = 26
+        Top = 48
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 18
+        Text = 'L6'
+        TextHintFontColor = clBtnFace
+      end
+      object lbl1: TEdit
+        Left = 528
+        Height = 26
+        Top = 248
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 19
+        Text = 'L1'
+        TextHintFontColor = clBtnFace
+      end
+      object lbl2: TEdit
+        Left = 528
+        Height = 26
+        Top = 208
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 20
+        Text = 'L2'
+        TextHintFontColor = clBtnFace
+      end
+      object lbl3: TEdit
+        Left = 528
+        Height = 26
+        Top = 168
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 21
+        Text = 'L3'
+        TextHintFontColor = clBtnFace
+      end
+      object lbl4: TEdit
+        Left = 528
+        Height = 26
+        Top = 128
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 22
+        Text = 'L4'
+        TextHintFontColor = clBtnFace
+      end
+      object lbl5: TEdit
+        Left = 528
+        Height = 26
+        Top = 88
+        Width = 40
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        TabOrder = 23
+        Text = 'L5'
+        TextHintFontColor = clBtnFace
+      end
+      object cmdVerEstado: TSpeedButton
+        Left = 512
+        Height = 38
+        Top = 288
+        Width = 64
+        Caption = 'Ver Estado de &Salidas'
+        OnClick = cmdVerEstadoClick
+      end
+      object lblE3: TEdit
+        Left = 216
+        Height = 26
+        Top = 336
+        Width = 48
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        OnMouseUp = lblE3MouseUp
+        ParentFont = False
+        ReadOnly = True
+        TabOrder = 24
+        Text = 'E3'
+        TextHintFontColor = clBtnFace
+      end
+      object lblE2: TEdit
+        Left = 296
+        Height = 26
+        Top = 336
+        Width = 48
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        OnMouseUp = lblE2MouseUp
+        ParentFont = False
+        ReadOnly = True
+        TabOrder = 25
+        Text = 'E2'
+        TextHintFontColor = clBtnFace
+      end
+      object lblE1: TEdit
+        Left = 376
+        Height = 26
+        Top = 336
+        Width = 48
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        OnMouseUp = lblE1MouseUp
+        ParentFont = False
+        ReadOnly = True
+        TabOrder = 26
+        Text = 'E1'
+        TextHintFontColor = clBtnFace
+      end
+      object lblE0: TEdit
+        Left = 456
+        Height = 26
+        Top = 336
+        Width = 48
+        Alignment = taCenter
+        Color = cl3DLight
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        OnMouseUp = lblE0MouseUp
+        ParentFont = False
+        ReadOnly = True
+        TabOrder = 27
+        Text = 'E0'
+        TextHintFontColor = clBtnFace
+      end
+      object Shape12: TShape
+        Left = 240
+        Height = 310
+        Top = 32
+        Width = 6
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape13: TShape
+        Left = 320
+        Height = 310
+        Top = 40
+        Width = 6
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape14: TShape
+        Left = 400
+        Height = 310
+        Top = 32
+        Width = 6
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object Shape15: TShape
+        Left = 480
+        Height = 310
+        Top = 40
+        Width = 6
+        Pen.Color = clLime
+        Pen.Width = 3
+      end
+      object txtDig3: TEdit
+        Left = 200
+        Height = 23
+        Top = 360
+        Width = 80
+        DragMode = dmAutomatic
+        TabOrder = 28
+      end
+      object enrut3: TButton
+        Left = 200
+        Height = 33
+        Top = 384
+        Width = 80
+        Caption = 'Enrutam...'
+        OnClick = enrut3Click
+        TabOrder = 29
+      end
+      object txtDig2: TEdit
+        Left = 280
+        Height = 23
+        Top = 360
+        Width = 80
+        DragMode = dmAutomatic
+        TabOrder = 30
+      end
+      object txtDig1: TEdit
+        Left = 360
+        Height = 23
+        Top = 360
+        Width = 80
+        DragMode = dmAutomatic
+        TabOrder = 31
+      end
+      object txtDig0: TEdit
+        Left = 440
+        Height = 23
+        Top = 360
+        Width = 80
+        DragMode = dmAutomatic
+        TabOrder = 32
+      end
+      object enrut2: TButton
+        Left = 280
+        Height = 33
+        Top = 384
+        Width = 80
+        Caption = 'Enrutam...'
+        OnClick = enrut2Click
+        TabOrder = 33
+      end
+      object enrut1: TButton
+        Left = 360
+        Height = 33
+        Top = 384
+        Width = 80
+        Caption = 'Enrutam...'
+        OnClick = enrut1Click
+        TabOrder = 34
+      end
+      object enrut0: TButton
+        Left = 440
+        Height = 33
+        Top = 384
+        Width = 80
+        Caption = 'Enrutam...'
+        OnClick = enrut0Click
+        TabOrder = 35
+      end
+      object ESL7: TStaticText
+        Left = 144
+        Height = 33
+        Top = 8
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL47'
+        Color = clDefault
+        OnClick = ESL7Click
+        ParentColor = False
+        TabOrder = 36
+        Transparent = False
+      end
+      object ESL6: TStaticText
+        Left = 144
+        Height = 33
+        Top = 48
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL46'
+        Color = clDefault
+        OnClick = ESL6Click
+        ParentColor = False
+        TabOrder = 37
+        Transparent = False
+      end
+      object ESL5: TStaticText
+        Left = 144
+        Height = 33
+        Top = 88
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL45'
+        Color = clDefault
+        OnClick = ESL5Click
+        ParentColor = False
+        TabOrder = 38
+        Transparent = False
+      end
+      object ESL4: TStaticText
+        Left = 144
+        Height = 33
+        Top = 128
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL44'
+        Color = clDefault
+        OnClick = ESL4Click
+        ParentColor = False
+        TabOrder = 39
+        Transparent = False
+      end
+      object ESL3: TStaticText
+        Left = 144
+        Height = 33
+        Top = 168
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL43'
+        Color = clDefault
+        OnClick = ESL3Click
+        ParentColor = False
+        TabOrder = 40
+        Transparent = False
+      end
+      object ESL2: TStaticText
+        Left = 144
+        Height = 33
+        Top = 208
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL42'
+        Color = clDefault
+        OnClick = ESL2Click
+        ParentColor = False
+        TabOrder = 41
+        Transparent = False
+      end
+      object ESL1: TStaticText
+        Left = 144
+        Height = 33
+        Top = 248
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL41'
+        Color = clDefault
+        OnClick = ESL1Click
+        ParentColor = False
+        TabOrder = 42
+        Transparent = False
+      end
+      object ESL0: TStaticText
+        Left = 144
+        Height = 33
+        Top = 288
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = '?'
+        Color = clDefault
+        OnClick = ESL0Click
+        ParentColor = False
+        TabOrder = 43
+        Transparent = False
+      end
+      object E3L7: TStaticText
+        Left = 216
+        Height = 33
+        Top = 8
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL37'
+        Color = clDefault
+        OnClick = E3L7Click
+        ParentColor = False
+        TabOrder = 44
+        Transparent = False
+      end
+      object E3L6: TStaticText
+        Left = 216
+        Height = 33
+        Top = 48
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL36'
+        Color = clDefault
+        OnClick = E3L6Click
+        ParentColor = False
+        TabOrder = 45
+        Transparent = False
+      end
+      object E3L5: TStaticText
+        Left = 216
+        Height = 33
+        Top = 88
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL35'
+        Color = clDefault
+        OnClick = E3L5Click
+        ParentColor = False
+        TabOrder = 46
+        Transparent = False
+      end
+      object E3L4: TStaticText
+        Left = 216
+        Height = 33
+        Top = 128
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL34'
+        Color = clDefault
+        OnClick = E3L4Click
+        ParentColor = False
+        TabOrder = 47
+        Transparent = False
+      end
+      object E3L3: TStaticText
+        Left = 216
+        Height = 33
+        Top = 168
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL33'
+        Color = clDefault
+        OnClick = E3L3Click
+        ParentColor = False
+        TabOrder = 48
+        Transparent = False
+      end
+      object E3L2: TStaticText
+        Left = 216
+        Height = 33
+        Top = 208
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL32'
+        Color = clDefault
+        OnClick = E3L2Click
+        ParentColor = False
+        TabOrder = 49
+        Transparent = False
+      end
+      object E3L1: TStaticText
+        Left = 216
+        Height = 33
+        Top = 248
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL31'
+        Color = clDefault
+        OnClick = E3L1Click
+        ParentColor = False
+        TabOrder = 50
+        Transparent = False
+      end
+      object E3L0: TStaticText
+        Left = 216
+        Height = 33
+        Top = 288
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL30'
+        Color = clDefault
+        OnClick = E3L0Click
+        ParentColor = False
+        TabOrder = 51
+        Transparent = False
+      end
+      object E2L7: TStaticText
+        Left = 296
+        Height = 33
+        Top = 8
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL27'
+        Color = clDefault
+        OnClick = E2L7Click
+        ParentColor = False
+        TabOrder = 52
+        Transparent = False
+      end
+      object E2L6: TStaticText
+        Left = 296
+        Height = 33
+        Top = 48
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL26'
+        Color = clDefault
+        OnClick = E2L6Click
+        ParentColor = False
+        TabOrder = 53
+        Transparent = False
+      end
+      object E2L5: TStaticText
+        Left = 296
+        Height = 33
+        Top = 88
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL25'
+        Color = clDefault
+        OnClick = E2L5Click
+        ParentColor = False
+        TabOrder = 54
+        Transparent = False
+      end
+      object E2L4: TStaticText
+        Left = 296
+        Height = 33
+        Top = 128
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL24'
+        Color = clDefault
+        OnClick = E2L4Click
+        ParentColor = False
+        TabOrder = 55
+        Transparent = False
+      end
+      object E2L3: TStaticText
+        Left = 296
+        Height = 33
+        Top = 168
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL23'
+        Color = clDefault
+        OnClick = E2L3Click
+        ParentColor = False
+        TabOrder = 56
+        Transparent = False
+      end
+      object E2L2: TStaticText
+        Left = 296
+        Height = 33
+        Top = 208
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL22'
+        Color = clDefault
+        OnClick = E2L2Click
+        ParentColor = False
+        TabOrder = 57
+        Transparent = False
+      end
+      object E2L1: TStaticText
+        Left = 296
+        Height = 33
+        Top = 248
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL21'
+        Color = clDefault
+        OnClick = E2L1Click
+        ParentColor = False
+        TabOrder = 58
+        Transparent = False
+      end
+      object E2L0: TStaticText
+        Left = 296
+        Height = 33
+        Top = 288
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL20'
+        Color = clDefault
+        OnClick = E2L0Click
+        ParentColor = False
+        TabOrder = 59
+        Transparent = False
+      end
+      object E1L7: TStaticText
+        Left = 376
+        Height = 33
+        Top = 8
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL17'
+        Color = clDefault
+        OnClick = E1L7Click
+        ParentColor = False
+        TabOrder = 60
+        Transparent = False
+      end
+      object E1L6: TStaticText
+        Left = 376
+        Height = 33
+        Top = 48
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL16'
+        Color = clDefault
+        OnClick = E1L6Click
+        ParentColor = False
+        TabOrder = 61
+        Transparent = False
+      end
+      object E1L5: TStaticText
+        Left = 376
+        Height = 33
+        Top = 88
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL15'
+        Color = clDefault
+        OnClick = E1L5Click
+        ParentColor = False
+        TabOrder = 62
+        Transparent = False
+      end
+      object E1L4: TStaticText
+        Left = 376
+        Height = 33
+        Top = 128
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL14'
+        Color = clDefault
+        OnClick = E1L4Click
+        ParentColor = False
+        TabOrder = 63
+        Transparent = False
+      end
+      object E1L3: TStaticText
+        Left = 376
+        Height = 33
+        Top = 168
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL13'
+        Color = clDefault
+        OnClick = E1L3Click
+        ParentColor = False
+        TabOrder = 64
+        Transparent = False
+      end
+      object E1L2: TStaticText
+        Left = 376
+        Height = 33
+        Top = 208
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL12'
+        Color = clDefault
+        OnClick = E1L2Click
+        ParentColor = False
+        TabOrder = 65
+        Transparent = False
+      end
+      object E1L1: TStaticText
+        Left = 376
+        Height = 33
+        Top = 248
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL11'
+        Color = clDefault
+        OnClick = E1L1Click
+        ParentColor = False
+        TabOrder = 66
+        Transparent = False
+      end
+      object E1L0: TStaticText
+        Left = 376
+        Height = 33
+        Top = 288
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL10'
+        Color = clDefault
+        OnClick = E1L0Click
+        ParentColor = False
+        TabOrder = 67
+        Transparent = False
+      end
+      object E0L7: TStaticText
+        Left = 456
+        Height = 33
+        Top = 8
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL07'
+        Color = clDefault
+        OnClick = E0L7Click
+        ParentColor = False
+        TabOrder = 68
+        Transparent = False
+      end
+      object E0L6: TStaticText
+        Left = 456
+        Height = 33
+        Top = 48
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL06'
+        Color = clDefault
+        OnClick = E0L6Click
+        ParentColor = False
+        TabOrder = 69
+        Transparent = False
+      end
+      object E0L5: TStaticText
+        Left = 456
+        Height = 33
+        Top = 88
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL05'
+        Color = clDefault
+        OnClick = E0L5Click
+        ParentColor = False
+        TabOrder = 70
+        Transparent = False
+      end
+      object E0L4: TStaticText
+        Left = 456
+        Height = 33
+        Top = 128
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL04'
+        Color = clDefault
+        OnClick = E0L4Click
+        ParentColor = False
+        TabOrder = 71
+        Transparent = False
+      end
+      object E0L3: TStaticText
+        Left = 456
+        Height = 33
+        Top = 168
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL03'
+        Color = clDefault
+        OnClick = E0L3Click
+        ParentColor = False
+        TabOrder = 72
+        Transparent = False
+      end
+      object E0L2: TStaticText
+        Left = 456
+        Height = 33
+        Top = 208
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL02'
+        Color = clDefault
+        OnClick = E0L2Click
+        ParentColor = False
+        TabOrder = 73
+        Transparent = False
+      end
+      object E0L1: TStaticText
+        Left = 456
+        Height = 33
+        Top = 248
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL01'
+        Color = clDefault
+        OnClick = E0L1Click
+        ParentColor = False
+        TabOrder = 74
+        Transparent = False
+      end
+      object E0L0: TStaticText
+        Left = 456
+        Height = 33
+        Top = 288
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL00'
+        Color = clDefault
+        OnClick = E0L0Click
+        ParentColor = False
+        TabOrder = 75
+        Transparent = False
+      end
+      object cmdSEN: TStaticText
+        Left = 32
+        Height = 33
+        Top = 64
+        Width = 48
+        Alignment = taCenter
+        BorderStyle = sbsSingle
+        Caption = 'RL40'
+        Color = clDefault
+        OnClick = cmdSENClick
+        ParentColor = False
+        TabOrder = 76
+        Transparent = False
+      end
     end
   end
   object Timer1: TTimer
     Interval = 500
     OnTimer = Timer1Timer
-    left = 208
-    top = 24
+    left = 48
+    top = 368
   end
 end

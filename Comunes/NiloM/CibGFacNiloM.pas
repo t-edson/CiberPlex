@@ -9,9 +9,9 @@ unit CibGFacNiloM;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, MisUtils, crt,
-  strutils, CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
-  CibNiloMTarifRut, Globales, CibRegistros, CibTramas, CibUtils;
+  Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, Menus, Forms, MisUtils,
+  crt, strutils, mmsystem, CibFacturables, CibNiloMConex, FormNiloMConex,
+  FormNiloMProp, CibNiloMTarifRut, Globales, CibRegistros, CibTramas, CibUtils;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 const //Acciones
@@ -61,6 +61,10 @@ type
     //variables de acumulación
     costo_tot: Double;  //costo acumulado de todas las llamadas
     num_llam : Double;  //número de llamadas acumuladas
+    procedure ActualizaLlamadaContestada;
+    procedure ConectarLlamada;
+    procedure DesconectarLlamada;
+    procedure InicioConteo;
   protected  //"Getter" and "Setter"
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -85,13 +89,14 @@ type
     tar      : regTarifa;
     trama_tmp: string;     //bolsa temporal para la trama
     descolg  : Boolean;    //Bandera de descolgado
+    descon   : Boolean;    //Cabina desconectada (sin energía).
     llam     : regLlamada; //llamada en curso
     function RegVenta(usu: string): string; override; //línea para registro de venta
     function AgregarFila: integer;
     procedure EscribeDatosAdicionales;
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
       CategLocu: string; tarif: TNiloMTabTar);
-  public  //constructor y destructor
+  public  //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
   end;
@@ -107,6 +112,7 @@ type
     arcLog    : TCibArcReg;
     timer1    : TTimer;      //temporizador
     tic       : integer;     //contador
+    llego_prompt: boolean; //bandera para indicar la llegada del prompt del NILO
     //Funciones para manejo del registro
     procedure AbrirRegistro;
     procedure CerrarRegistro;
@@ -127,11 +133,16 @@ type
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
-    ArcReg    : string;  //Archivo de registro para el registro propio del enrutador
-    ArcTarif  : string;  //Archivo de configuración de tarifas
-    ArcRutas  : string;  //Archivo de configuración de rutas
-    MsjError  : string;  //Bandera - Mensaje de error
+    ArcReg    : string;   //Archivo de registro para el registro propio del enrutador
+    ArcTarif  : string;   //Archivo de configuración de tarifas
+    ArcRutas  : string;   //Archivo de configuración de rutas
+    MsjError  : string;   //Bandera - Mensaje de error
     facCmoneda: Double;
+
+    IniLLamMan : Boolean;  //Bandera de Inicio de llamada Manual
+    IniLLamTemp: Boolean;  //Bandera de Inicio de llamada Temporizado
+    PerLLamTemp: Integer;  //Periodo de Inicio de llamada Temporizado
+
     frmNilomConex: TfrmNiloMConex;
     frmNilomProp: TfrmNiloMProp;
     tarif     : TNiloMTabTar;      //Contenedor de tarifas
@@ -163,8 +174,14 @@ type
     procedure Conectar;
     procedure Desconectar;
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
+    procedure EnviaComEspPr(cad: string);
+    procedure EnvCadena(cadena: string);
     function Agregar(nomLoc: string; num_can: char): TCibFacLocutor;
-    procedure Acciones(tram: TCPTrama); override;
+  public  //Campos para manejo de acciones
+    procedure EjecAccion(tram: TCPTrama); override;
+    procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
+    procedure mnConectarClick(Sender: TObject);
+    procedure mnDesconecClick(Sender: TObject);
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -202,6 +219,18 @@ begin
     Result := 0;
   end;
 end;
+Function CadDurNilo(nseg: Integer): string;
+{Devuelve una cadena en el formato de duración del nilo "MMMSS"
+Recibe la cantidad de segundos. Solo puede codificar hasta 255 minutos.}
+var
+  mm: Integer;  //Cantidad de minutos
+  ss: Integer;  //Cantidad de segundos
+begin
+  mm := nseg div 60;
+  ss := nseg Mod 60;
+//  Result := Format(mm, '000') + Format(ss, '00');
+  Result := Format('%.3d%.2d', [mm,ss]);
+End;
 Function verTiempo(cad: String): String;
 //Recibe cadena de duración del NILO: MMMSS y devuelve tiempo en formato hh:nn:ss.
 //Si hay error devuelve en MsjError
@@ -410,36 +439,31 @@ var
   a: TStringDynArray;
 begin
   a := explode(SEP, AValue);
-  serie    := a[0];
-  canal    := a[1];
-  durac    := a[2];
-  Costo    := a[3];
-  costoA   := a[4];
-  canalS   := a[5];
-  digitado := a[6];
-  descripc := a[7];
-  HORA_INI := f2T(a[8]);
-  HORA_CON := f2T(a[9]);
-  NUM_DIG  := a[10];
-  CONTES   := f2B(a[11]);
-  DESCR_   := a[12];
-  DURAC_   := a[13];
-  PASO_    := a[14];
-  COSTOP_  := a[15];
-  COST_NTER:= f2N(a[16]);
-  CATEG_   := a[17];;
+  try
+    serie    := a[0];
+    canal    := a[1];
+    durac    := a[2];
+    Costo    := a[3];
+    costoA   := a[4];
+    canalS   := a[5];
+    digitado := a[6];
+    descripc := a[7];
+    HORA_INI := f2T(a[8]);
+    HORA_CON := f2T(a[9]);
+    NUM_DIG  := a[10];
+    CONTES   := f2B(a[11]);
+    DESCR_   := a[12];
+    DURAC_   := a[13];
+    PASO_    := a[14];
+    COSTOP_  := a[15];
+    COST_NTER:= f2N(a[16]);
+    CATEG_   := a[17];;
+  except
+    MsgErr('Error leyendo registro de llamadas.');
+  end;
 end;
 
 { TCibFacLocutor }
-function TCibFacLocutor.AgregarFila: integer;
-{Agrega un registro, a la lista de llamadas. Devuelve índice al último registro.}
-var
-  l : regLlamada;
-begin
-  l := regLlamada.Create;
-  llamadas.Add(l);
-  Result := llamadas.Count-1;
-end;
 procedure TCibFacLocutor.LeeListaLlamadas();
 //Actualiza las variables "costo_tot" y "num_llam"
 var
@@ -465,7 +489,7 @@ los campos que deban ser actualizados}
 begin
   Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
          nombre + #9 +    {el nombre es obligatorio para identificarlo unívocamente}
-         B2f(descolg) + #9 + llam.CadEstado + #9 + #9;
+         B2f(descolg) + #9 + B2f(descon) + #9 + #9 + llam.CadEstado + #9;
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -478,9 +502,10 @@ begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
   delete(lin, 1, 1);  //recorta identificador
-  campos := Explode(#9, lin);
-  descolg   := f2B(campos[1]);
-  llam.CadEstado:=campos[2];
+  campos  := Explode(#9, lin);
+  descolg := f2B(campos[1]);
+  descon  := f2B(campos[2]);
+  llam.CadEstado:=campos[4];
 
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
@@ -507,23 +532,6 @@ begin
   x := f2N(campos[4]);
   y := f2N(campos[5]);
   if OnCambiaPropied<>nil then OnCambiaPropied();
-end;
-procedure TCibFacLocutor.EscribeDatosAdicionales;
-//Escribe datos en el registro y en el terminal
-var
-  linea: string;
-  nilo: TCibGFacNiloM;
-begin
-  nilo := TCibGFacNiloM(self.Grupo);
-  linea := FormatDateTime('yyyy/mm/dd hh:nn:ss', now) +
-           ' COST:' + FormatFloat('000.00', llam.COST_NTER) +
-           ' DESC:' + llam.DESCR_ +
-           ' CAT:' + llam.CATEG_;
-  nilo.EscribeTer(linea);
-  nilo.EscribeTerPrompt;      //Se escribe prompt para no alterar el formato de log
-  nilo.EscribeLog(linea);
-  nilo.VolcarErrorLog;        //Vuelca también los mensajes de error
-  nilo.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
 end;
 procedure TCibFacLocutor.ProcesaDigitado(dig : String; tarif: TNiloMTabTar);
 var
@@ -564,7 +572,7 @@ begin
         EscribeDatosAdicionales;
         //Genera sonido para llamadas con tiempo
         if (llam.DURAC_ <> '') And (llam.DURAC_ <> '00:00:00') Then begin
-            //PlaySound(CarpetaSnd + '\colgado.wav', ByVal 0&, SND_FILENAME Or SND_ASYNC Or SND_NODEFAULT)
+            sndPlaySound(PChar(rutSonidos + '\colgado.wav'), SND_ASYNC Or SND_NODEFAULT)
         end;
         bloquear_rx := False;  //libera el bloqueo
         llam.CONTES := False;
@@ -581,8 +589,9 @@ end;
 procedure TCibFacLocutor.ProcesaDescolgado();
 begin
     PosLlam := -1;    //Límpia bandera de posición de llamada
-    descolg := True;     //La llamada está colgada
-    tic_con := 0;        //Inicia contador
+    descolg := True;   //La llamada está colgada
+    descon := false;   //Se supone que si se descuelga debe teenr conexión
+    tic_con := 0;      //Inicia contador
 end;
 procedure TCibFacLocutor.ProcesarContestada(cansal: String);
 //Procesa una llamada contestada. "cansal" es el canal de salida actual de la
@@ -603,6 +612,94 @@ begin
     descolg := True;     //La llamada está descolgada
     llam.HORA_CON := now;      //toma hora de contestación
 end;
+function TCibFacLocutor.AgregarFila: integer;
+{Agrega un registro, a la lista de llamadas. Devuelve índice al último registro.}
+var
+  l : regLlamada;
+begin
+  l := regLlamada.Create;
+  llamadas.Add(l);
+  Result := llamadas.Count-1;
+end;
+procedure TCibFacLocutor.ActualizaLlamadaContestada;
+var
+  stransc: Integer;  //segundos transcurridos
+  linea: String;     //emula a la línea de tiempo del NILO
+  GFacNiloM: TCibGFacNiloM;
+begin
+    GFacNiloM := TCibGFacNiloM(Grupo);
+    //Procesa el conteo de la temporización
+    If descolg And GFacNiloM.IniLLamMan And (llam.NUM_DIG <> '') then begin
+        tic_con := tic_con + 1;   //Lleva la cuenta
+        If (tic_con >= GFacNiloM.PerLLamTemp) And Not llam.CONTES Then begin
+            InicioConteo;
+        End;
+    End;
+    If llam.CONTES Then begin    //LLamada en curso
+        stransc := Round(((date + Time) - llam.HORA_CON) * 24 * 60 * 60);   //en segundos
+
+        linea := CadDurNilo(stransc);       //tiempo transcurrido en formato del nilo
+        llam.DURAC_ := verTiempo(linea);                    //toma el tiempo estimado
+        If msjError <> '' Then GFacNiloM.ErrorLog(msjError);
+        llam.COST_NTER := verCosto(linea, llam.PASO_, llam.COSTOP_);  //Estima costo
+        If msjError <> '' Then GFacNiloM.ErrorLog(msjError);
+        If tpoLimitado > 0 Then begin //hay tiempo limitado
+            //transc = transc & '(<' & tpoLimitado & ')'
+            If stransc >= tpoLimitado Then begin
+                GFacNiloM.EnvComando('x' + num_can);
+                If msjError <> '' Then MsgBox(msjError); Exit;
+//                cmdTiempo.Picture = picRelojApa.Picture;
+                tpoLimitado := 0;
+            End;
+        End;
+        //Actualiza registro de llamada cada segundo
+        LeeListaLlamadas;
+    End;
+end;
+procedure TCibFacLocutor.EscribeDatosAdicionales;
+//Escribe datos en el registro y en el terminal
+var
+  linea: string;
+  nilo: TCibGFacNiloM;
+begin
+  nilo := TCibGFacNiloM(self.Grupo);
+  linea := FormatDateTime('yyyy/mm/dd hh:nn:ss', now) +
+           ' COST:' + FormatFloat('000.00', llam.COST_NTER) +
+           ' DESC:' + llam.DESCR_ +
+           ' CAT:' + llam.CATEG_;
+  nilo.EscribeTer(linea);
+  nilo.EscribeTerPrompt;      //Se escribe prompt para no alterar el formato de log
+  nilo.EscribeLog(linea);
+  nilo.VolcarErrorLog;        //Vuelca también los mensajes de error
+  nilo.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
+end;
+procedure TCibFacLocutor.ConectarLlamada;
+begin
+  If grabando_nilo Then begin  //Protección
+      MsgExc('No se puede usar locutorios en medio de una llamada');
+      exit;
+  End;
+  //Envía comando
+  TcibGFacNiloM(grupo).EnvComando('u' + num_can);
+  If msjError <> '' Then MsgErr(msjError);
+  Sleep(500);   //espera a que el NILO termine de procesar la orden
+  //Me.MiLista1.Clear;
+  llamadas.Clear;
+End;
+procedure TCibFacLocutor.DesconectarLlamada;
+begin
+    //Envía comando
+    TcibGFacNiloM(grupo).EnvComando('x' + num_can);
+    If msjError <> '' Then MsgBox(msjError);
+    Sleep(500);   //espera a que el NILO termine de procesar la orden
+End;
+procedure TCibFacLocutor.InicioConteo;
+//Inicia contéo manual del tiempo en el locutorio
+begin
+    TcibGFacNiloM(grupo).EnvComando('k' + num_can);
+    If msjError <> '' Then MsgBox(msjError);
+    Sleep(500);   //espera a que el NILO termine de procesar la orden
+End;
 function TCibFacLocutor.RegVenta(usu: string): string;
 var
   nilo: TCibGFacNiloM;
@@ -642,9 +739,11 @@ begin
         //Se ha cortado la llamada
         descolg:= False;     //La llamada está colgada
         tpoLimitado := 0;     //al terminar una llamada en el NILO-m se reinicia el límite
+        descon:=true;     //actualiza estado
         exit;
     end else if linea = 'Rtda' + num_can then begin   //Habilitada
         descolg := False;     //La llamada está colgada
+        descon:=false;    //actualiza estado
         exit;
     end else if EsLineaCDR then begin
         //----Llegó el cdr   #001;0;00016;00002;00002;4;450;LOCAL----
@@ -677,8 +776,7 @@ begin
         EscribeDatosAdicionales;
         //Genera sonido para llamadas con tiempo
         if (llam.DURAC_ <> '') And (llam.DURAC_ <> '00:00:00') then begin
-            { TODO : Falta implementar rutinas de sonido }
-            //PlaySound(CarpetaSnd + '\colgado.wav', ByVal 0+, SND_FILENAME Or SND_ASYNC Or SND_NODEFAULT)
+          sndPlaySound(PChar(rutSonidos + '\colgado.wav'), SND_ASYNC Or SND_NODEFAULT)
         end;
         bloquear_rx := False;  //libera el bloqueo
         ActualizaLista();  //Actualiza lista
@@ -712,7 +810,7 @@ begin
     else if copy(linea, 1, 2)  = 'd' + num_can then   //Llamada descolgada
         ProcesaDescolgado;
 end;
-
+//Constructor y destructor
 constructor TCibFacLocutor.Create;
 begin
   inherited Create;
@@ -764,8 +862,15 @@ begin
 end;
 procedure TCibGFacNiloM.timer1Timer(Sender: TObject);
 {Temporiza el objeto, cada segundo}
+var
+  it : TCibFac;
 begin
   tic := tic + 1;
+  //Temporiza a todos los locutorios, para su funcionamiento interno
+  for it in items do  begin
+    TCibFacLocutor(it).ActualizaLlamadaContestada;
+  end;
+  //Cödigo para la conexión automática por el puerto serial
   if (tic+3) mod 5 = 0 then begin   //se suma 3 para que la primera vez se ejecute antes
     if estadoCnx in [necMuerto, necDetenido] then begin
       //Intenta conectarse
@@ -882,7 +987,10 @@ var
 begin
   //Información del grupo en la primera línea
   Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
-            PuertoN + #9 + N2f(facCmoneda) + #9 + #9;
+            PuertoN + #9 + N2f(facCmoneda) + #9 +
+            B2f(IniLLamMan) + #9 +
+            B2f(IniLLamTemp) + #9 +
+            I2f(PerLLamTemp) + #9 + #9;
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + c.CadPropied;
@@ -905,7 +1013,11 @@ begin
   Fx := f2N(a[2]);
   Fy := f2N(a[3]);
   PuertoN:=a[4];
-  facCmoneda:=f2N(a[5]);
+  facCmoneda := f2N(a[5]);
+  IniLLamMan := f2B(a[6]);
+  IniLLamTemp:= f2B(a[7]);
+  PerLLamTemp:= f2I(a[8]);
+
   lineas.Delete(0);  //elimima línea
   //Procesa líneas con información de las cabinas
   items.Clear;
@@ -933,6 +1045,8 @@ procedure TCibGFacNiloM.nilConex_TermWrite(cad: string);
 begin
   if OnTermWrite<>nil then OnTermWrite(cad);
   lin_serial := lin_serial + cad;  //acumula última línea
+  //Se aproceha este evento para actualizar "llego_prompt"
+  if cad = '>' then  llego_prompt := true;
 end;
 procedure TCibGFacNiloM.nilConex_TermWriteLn(const subcad: string; const lin: string
   );
@@ -971,7 +1085,6 @@ que acceder a objetos fuera del alcance de esta librería. }
     end;
   end;
   DebugLn('linea:'+lin);
-
 end;
 procedure TCibGFacNiloM.nilConex_CambiaEstado(nuevoEstado: TNilEstadoConex);
 begin
@@ -1014,7 +1127,61 @@ procedure TCibGFacNiloM.EnvComando(com: string; IncluirSalto: boolean);
 begin
   if ModoCopia then exit;
   nilConex.EnvComando(com, IncluirSalto);
+  { TODO : Tal vez se debería incluir algún medio para determinar
+  si se produce error con el envío }
 end;
+procedure TCibGFacNiloM.EnviaComEspPr(cad: string);
+{Envia comando esperando el prompt antes de seguir. Debe recibir sólo
+una línea de texto.}
+var
+  cont: integer;
+begin
+  msjError := '';
+  llego_prompt := false;    //inicia bandera
+  EnvComando(cad);
+  if msjError <> '' Then exit;
+  //Espera respuesta
+  cont := 0;
+  while Not llego_prompt And (cont < 400) do begin
+      sleep(5);
+      Application.ProcessMessages;  //para no congelar el aplicativo
+      cont := cont + 1;
+  end;
+  if cont = 400 Then begin
+      msjError := 'Falla al enviar comando al NILO. Tiempo de respuesta agotado. ';
+//      PLogErr msjError    //Escribe error en registro
+  end;
+end;
+procedure TCibGFacNiloM.EnvCadena(cadena: string);
+{Envia una cadena de comandos al NILO. Pueden haber varias líneas. Se espera
+a que salga el prompt antes de enviar la siguiente línea. Reconoce el
+caracter de control "\n".
+Si hay error muestra el mensaje.}
+var
+  i: Integer;
+  a: TStringDynArray;
+begin
+   msjError := '';
+   if cadena = '' then begin
+       EnviaComEspPr('');
+       exit;
+   end;
+   //Convierte salto de línea y divide
+   cadena := StringReplace(cadena, '\n', LineEnding, [rfReplaceAll]);
+   a := explode(LineEnding, cadena);
+   for i := 0 To High(a) do begin
+       if a[i] = '\p' Then begin //comando de pausa
+           sleep(500);
+       end else begin
+           EnviaComEspPr(a[i]);
+           If msjError <> '' Then begin
+               MsgErr(msjError);  //Muestra mensaje
+               exit;
+           end;
+       end;
+   end;
+end;
+
 function TCibGFacNiloM.Agregar(nomLoc: string; num_can: char): TCibFacLocutor;
 
 var
@@ -1027,8 +1194,7 @@ begin
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := loc;
 end;
-
-procedure TCibGFacNiloM.Acciones(tram: TCPTrama);
+procedure TCibGFacNiloM.EjecAccion(tram: TCPTrama);
 var
   traDat, nom, comando: String;
   facDest: TCibFac;
@@ -1041,17 +1207,40 @@ begin
   if facDest=nil then exit;
   case tram.posX of  //Se usa el parámetro para ver la acción
   ACCLOC_CONEC: begin  //Se pide grabar la boleta de una PC
-    comando := 'u'+TCibFacLocutor(facDest).num_can;
-    EnvComando(comando);
+    //comando := 'u'+TCibFacLocutor(facDest).num_can;
+    //EnvComando(comando);
+    TCibFacLocutor(facDest).ConectarLlamada;
     end;
   ACCLOC_DESCO: begin  //Se pide grabar la boleta de una PC
-    comando := 'x'+TCibFacLocutor(facDest).num_can;
-    EnvComando(comando);
+    //comando := 'x'+TCibFacLocutor(facDest).num_can;
+    //EnvComando(comando);
+    TCibFacLocutor(facDest).DesconectarLlamada;
     end;
   end;
 end;
-
-//constructor y destructor
+procedure TCibGFacNiloM.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
+{Configura las acciones}
+var
+  mn: TMenuItem;
+begin
+  facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
+  if facSelec=nil then exit;
+  mn := MenuAccion('&Desconectar',@mnDesconecClick);
+  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
+  mn := MenuAccion('&Conectar',@mnConectarClick);
+  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
+end;
+procedure TCibGFacNiloM.mnConectarClick(Sender: TObject);
+begin
+  if OnSolicEjecAcc<>nil then  //ejecuta evento
+    OnSolicEjecAcc(C_ACC_NILOM, ACCLOC_CONEC, 0, facSelec.IdFac);
+end;
+procedure TCibGFacNiloM.mnDesconecClick(Sender: TObject);
+begin
+  if OnSolicEjecAcc<>nil then  //ejecuta evento
+    OnSolicEjecAcc(C_ACC_NILOM, ACCLOC_DESCO, 0, facSelec.IdFac);
+end;
+//Constructor y destructor
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
 begin
   inherited Create(nombre0, ctfNiloM);
@@ -1101,6 +1290,10 @@ debugln('-Creando: '+ nombre0);
   Agregar('LOC3','2');
   Agregar('LOC4','3');
   CategVenta := 'LLAMADAS';
+  //Configura parámetros de control de inicio de llamadas
+  IniLLamMan  := false;
+  IniLLamTemp := false;
+  PerLLamTemp := 10;   //inicia
 end;
 destructor TCibGFacNiloM.Destroy;
 begin

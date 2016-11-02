@@ -1,0 +1,81 @@
+object frmNiloMEnrutam: TfrmNiloMEnrutam
+  Left = 297
+  Height = 181
+  Top = 145
+  Width = 315
+  Caption = 'frmNiloMEnrutam'
+  ClientHeight = 181
+  ClientWidth = 315
+  OnActivate = FormActivate
+  LCLVersion = '1.6.0.4'
+  object cmdActualizar: TButton
+    Left = 16
+    Height = 25
+    Top = 10
+    Width = 88
+    Caption = '&REFRESCAR'
+    OnClick = cmdActualizarClick
+    TabOrder = 0
+  end
+  object cmdGrabar: TButton
+    Left = 112
+    Height = 25
+    Top = 10
+    Width = 88
+    Caption = '&GRABAR'
+    OnClick = cmdGrabarClick
+    TabOrder = 1
+  end
+  object cmdEnrutar: TButton
+    Left = 208
+    Height = 25
+    Top = 10
+    Width = 88
+    Caption = '&ENRUTAR!!!'
+    OnClick = cmdEnrutarClick
+    TabOrder = 2
+  end
+  object Command1: TButton
+    Left = 96
+    Height = 33
+    Top = 136
+    Width = 112
+    Caption = '&CERRAR'
+    OnClick = Command1Click
+    TabOrder = 3
+  end
+  object Label1: TLabel
+    Left = 16
+    Height = 17
+    Top = 56
+    Width = 101
+    Caption = 'Bolsa de prefijos:'
+    Font.Height = -13
+    ParentColor = False
+    ParentFont = False
+  end
+  object txtBolsaPre: TEdit
+    Left = 128
+    Height = 23
+    Top = 56
+    Width = 168
+    TabOrder = 4
+  end
+  object Label2: TLabel
+    Left = 16
+    Height = 17
+    Top = 88
+    Width = 97
+    Caption = 'Bolsa de dígitos:'
+    Font.Height = -13
+    ParentColor = False
+    ParentFont = False
+  end
+  object txtBolsaDig: TEdit
+    Left = 128
+    Height = 23
+    Top = 88
+    Width = 168
+    TabOrder = 5
+  end
+end

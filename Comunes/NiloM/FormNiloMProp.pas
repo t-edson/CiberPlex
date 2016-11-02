@@ -69,6 +69,7 @@ type
     procedure btnAplicarClick(Sender: TObject);
     procedure btnCancelarClick(Sender: TObject);
     procedure btnCfgConexClick(Sender: TObject);
+    procedure CheckBox3Change(Sender: TObject);
     procedure cmbFacMonChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -181,10 +182,13 @@ begin
   GFacNiloM.x := spnX.Value;
   GFacNiloM.y := spnY.Value;
   GFacNiloM.CategVenta := txtCategVenta.Text;
+  GFacNiloM.IniLLamMan  := CheckBox2.Checked;
+  GFacNiloM.IniLLamTemp := CheckBox3.Checked;
+  GFacNiloM.PerLLamTemp := SpinEdit1.Value;
+
   //Procesa los archivos de rutas y tarifario
   edTarif.SaveFile;
   if edTarif.Error<>'' then MsgErr(edTarif.Error);
-
 
   edRutas.SaveFile;
   if edRutas.Error<>'' then MsgErr(edRutas.Error);
@@ -199,6 +203,10 @@ procedure TfrmNiloMProp.btnCfgConexClick(Sender: TObject);
 begin
   TCibGFacNiloM(padre).frmNilomConex.Show;
 end;
+procedure TfrmNiloMProp.CheckBox3Change(Sender: TObject);
+begin
+  SpinEdit1.Enabled:=CheckBox3.Checked;
+end;
 procedure TfrmNiloMProp.FormCreate(Sender: TObject);
 var
   attPrepro: TSynHighlighterAttributes;
@@ -212,16 +220,24 @@ begin
   ConfigurarSintaxisRutas(edRutas.hl, attPrepro);
 end;
 procedure TfrmNiloMProp.FormShow(Sender: TObject);
+var
+  GFacNiloM: TCibGFacNiloM;
 begin
+  GFacNiloM := TCibGFacNiloM(padre);
   //Carga las propiedades
-  txtNombre.Text    := TCibGFacNiloM(padre).Nombre;
-  spnX.Value        := TCibGFacNiloM(padre).x;
-  spnY.Value        := TCibGFacNiloM(padre).y;
-  filTarif.Text     := TCibGFacNiloM(padre).ArcTarif;
-  filRut.Text       := TCibGFacNiloM(padre).ArcRutas;
+  txtNombre.Text    := GFacNiloM.Nombre;
+  spnX.Value        := GFacNiloM.x;
+  spnY.Value        := GFacNiloM.y;
+  filTarif.Text     := GFacNiloM.ArcTarif;
+  filRut.Text       := GFacNiloM.ArcRutas;
 
-  txtCategVenta.Text:= TCibGFacNiloM(padre).CategVenta;
-  cmbFacMon.Text    := FloatToStr(TCibGFacNiloM(padre).facCmoneda);
+  txtCategVenta.Text:= GFacNiloM.CategVenta;
+  cmbFacMon.Text    := FloatToStr(GFacNiloM.facCmoneda);
+  CheckBox2.Checked := GFacNiloM.IniLLamMan;
+  CheckBox3.Checked := GFacNiloM.IniLLamTemp;
+  SpinEdit1.Value   := GFacNiloM.PerLLamTemp;
+
+
   //Carga contenido de los archivos de configuración
   CargarArchivosConfig;
   cmbFacMonChange(self); //actualiza combo
