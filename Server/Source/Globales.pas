@@ -19,6 +19,7 @@ var
    rutTemp    : string;     //ruta de la carpeta de scripts (sin "\" final)
    rutDatos   : string;     //ruta de la carpeta de datos (sin "\" final)
    rutArchivos: string;     //ruta para descargar de archivos (sin "\" final)
+   rutSonidos : string;     //ruta para los archivos de sonidos (sin "\" final)
    //archivos de configuración
    arcProduc : string;     //archivo de productos
    arcGastos : string;     //archivo de gastos
@@ -39,6 +40,7 @@ initialization
   rutTemp := rutApp + '\temp';
   rutDatos := rutApp + '\datos';
   rutArchivos := rutApp + '\archivos';
+  rutSonidos := rutApp + '\sonidos';
   //verifica existencia de carpetas de trabajo
   try
     if not DirectoryExists(rutTemp) then begin
@@ -53,9 +55,10 @@ initialization
       msgexc('No se encuentra carpeta: ' + rutArchivos + '. Se creará.');
       CreateDir(rutArchivos);
     end;
-{    if not FileExists(rutApp+'plink.exe') then begin
-      msgErr('No se encuentra archivo plink.exe');
-    end;}
+    if not DirectoryExists(rutSonidos) then begin
+      msgexc('No se encuentra carpeta: ' + rutSonidos + '. Se creará.');
+      CreateDir(rutSonidos);
+    end;
   except
     msgErr('Error. No se puede leer o crear directorios.');
   end;
@@ -71,6 +74,7 @@ finalization
   rutDatos := '';
   rutTemp := '';
   rutArchivos := '';
+  rutSonidos := '';
 
   arcProduc := '';
   arcGastos := '';

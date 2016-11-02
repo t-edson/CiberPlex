@@ -1,7 +1,7 @@
 object frmPrincipal: TfrmPrincipal
-  Left = 417
+  Left = 318
   Height = 660
-  Top = 77
+  Top = 125
   Width = 874
   Caption = 'frmPrincipal'
   ClientHeight = 640
@@ -140,11 +140,11 @@ object frmPrincipal: TfrmPrincipal
       Caption = 'Poner en &Mantenimiento'
       OnExecute = acCabPonManExecute
     end
-    object acCabGraBol: TAction
-      Category = 'Cab'
+    object acFacGraBol: TAction
+      Category = 'Fac'
       Caption = 'Grabar &Boleta'
       Hint = 'Graba la boleta'
-      OnExecute = acCabGraBolExecute
+      OnExecute = acFacGraBolExecute
     end
     object acCabPaus: TAction
       Category = 'Cab'
@@ -163,11 +163,6 @@ object frmPrincipal: TfrmPrincipal
     object acCabPropied: TAction
       Category = 'Cab'
       Caption = '&Propiedades'
-    end
-    object acCabVerBol: TAction
-      Category = 'Cab'
-      Caption = '&Ver Boleta'
-      OnExecute = acCabVerBolExecute
     end
     object acVerRepIng: TAction
       Category = 'Ver'
@@ -236,29 +231,21 @@ object frmPrincipal: TfrmPrincipal
     object acLocConectar: TAction
       Category = 'Loc'
       Caption = '&Conectar'
-      OnExecute = acLocConectarExecute
     end
     object acLocDesconec: TAction
       Category = 'Loc'
       Caption = '&Desconectar'
-      OnExecute = acLocDesconecExecute
     end
-  end
-  object PopupLocutor: TPopupMenu
-    Images = ImageList16
-    left = 240
-    top = 200
-    object MenuItem16: TMenuItem
-      Action = acLocConectar
+    object acFacAgrVen: TAction
+      Category = 'Fac'
+      Caption = '&Agregar Venta...'
+      OnExecute = acFacAgrVenExecute
     end
-    object MenuItem17: TMenuItem
-      Action = acLocDesconec
-    end
-    object MenuItem19: TMenuItem
-      Caption = '-'
-    end
-    object MenuItem20: TMenuItem
-      Caption = '&Propiedades'
+    object acFacVerBol: TAction
+      Category = 'Fac'
+      Caption = '&Ver Boleta...'
+      Hint = 'Mostrar la boleta'
+      OnExecute = acFacVerBolExecute
     end
   end
   object MainMenu1: TMainMenu
@@ -2207,7 +2194,7 @@ object frmPrincipal: TfrmPrincipal
   object PopupCabina: TPopupMenu
     Images = ImageList16
     left = 240
-    top = 128
+    top = 120
     object MenuItem39: TMenuItem
       Action = acCabIniCta
     end
@@ -2221,10 +2208,10 @@ object frmPrincipal: TfrmPrincipal
       Action = acCabPonMan
     end
     object MenuItem48: TMenuItem
-      Action = acCabVerBol
+      Action = acFacVerBol
     end
     object MenuItem49: TMenuItem
-      Action = acCabGraBol
+      Action = acFacGraBol
     end
     object MenuItem50: TMenuItem
       Caption = '-'
@@ -2240,6 +2227,14 @@ object frmPrincipal: TfrmPrincipal
     end
     object MenuItem54: TMenuItem
       Action = acCabPropied
+    end
+  end
+  object PopupFac: TPopupMenu
+    Images = ImageList16
+    left = 240
+    top = 200
+    object MenuItem61: TMenuItem
+      Caption = '-'
     end
   end
 end

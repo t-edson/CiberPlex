@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
   ComCtrls, Dialogs, MisUtils, ogDefObjGraf, FormIngVentas, FormConfig,
-  frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos, FormFijTiempo,
+  frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
   FormExplorCab, FormVisorMsjRed, FormBoleta, FormRepIngresos, FormBusProductos,
   FormInicio, CibRegistros, CibTramas, CibFacturables, CPProductos,
   CibGFacCabinas, CibGFacNiloM;
@@ -13,7 +13,7 @@ type
   TfrmPrincipal = class(TForm)
   published
     acCabDetCta: TAction;
-    acCabGraBol: TAction;
+    acFacGraBol: TAction;
     acCabIniCta: TAction;
     acCabModTpo: TAction;
     acEnvCom: TAction;
@@ -28,7 +28,7 @@ type
     acCabExplorArc: TAction;
     acCabMsjesRed: TAction;
     acCabPropied: TAction;
-    acCabVerBol: TAction;
+    acFacVerBol: TAction;
     acBusTarif: TAction;
     acBusRutas: TAction;
     acBusProduc: TAction;
@@ -41,6 +41,7 @@ type
     acArcRutTrab: TAction;
     acLocConectar: TAction;
     acLocDesconec: TAction;
+    acFacAgrVen: TAction;
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
@@ -51,11 +52,7 @@ type
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
-    MenuItem16: TMenuItem;
-    MenuItem17: TMenuItem;
-    MenuItem19: TMenuItem;
     MenuItem2: TMenuItem;
-    MenuItem20: TMenuItem;
     MenuItem22: TMenuItem;
     MenuItem23: TMenuItem;
     MenuItem24: TMenuItem;
@@ -92,11 +89,12 @@ type
     MenuItem52: TMenuItem;
     MenuItem53: TMenuItem;
     MenuItem54: TMenuItem;
+    MenuItem61: TMenuItem;
     MenuItem7: TMenuItem;
     MenuItem9: TMenuItem;
     panLLam: TPanel;
     panBolet: TPanel;
-    PopupLocutor: TPopupMenu;
+    PopupFac: TPopupMenu;
     PopupCabina: TPopupMenu;
     PopupGCabina: TPopupMenu;
     PopupGNiloM: TPopupMenu;
@@ -116,17 +114,16 @@ type
     procedure acBusTarifExecute(Sender: TObject);
     procedure acCabDetCtaExecute(Sender: TObject);
     procedure acCabExplorArcExecute(Sender: TObject);
-    procedure acCabGraBolExecute(Sender: TObject);
+    procedure acFacAgrVenExecute(Sender: TObject);
+    procedure acFacGraBolExecute(Sender: TObject);
     procedure acCabIniCtaExecute(Sender: TObject);
     procedure acCabModTpoExecute(Sender: TObject);
     procedure acCabMsjesRedExecute(Sender: TObject);
     procedure acCabPonManExecute(Sender: TObject);
-    procedure acCabVerBolExecute(Sender: TObject);
+    procedure acFacVerBolExecute(Sender: TObject);
     procedure acEdiElimGruExecute(Sender: TObject);
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
-    procedure acLocConectarExecute(Sender: TObject);
-    procedure acLocDesconecExecute(Sender: TObject);
     procedure acNilConexExecute(Sender: TObject);
     procedure acNilPropiedExecute(Sender: TObject);
     procedure acGCabAdmCabExecute(Sender: TObject);
@@ -138,7 +135,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure VisorCabinas_ClickDer(xp, yp: integer);
+    procedure Visor_ClickDer(xp, yp: integer);
     procedure grupos_CambiaPropied;
     procedure Timer1Timer(Sender: TObject);
   private
@@ -150,6 +147,9 @@ type
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
+    procedure frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
+    procedure grupos_SolicEjecAcc(comando: TCPTipCom; ParamX,
+      ParamY: word; cad: string);
     function grupos_LogIngre(ident: char; msje: string; dCosto: Double
       ): integer;
     function grupos_LogError(msj: string): integer;
@@ -170,8 +170,8 @@ type
     procedure LeerEstadoDeArchivo;
     procedure NiloM_RegMsjError(NomObj: string; msj: string);
     procedure PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
-    procedure VisorCabinasObjectsMoved;
-    procedure VisorCabinas_DblClick(Sender: TObject);
+    procedure Visor_ObjectsMoved;
+    procedure Visor_DblClick(Sender: TObject);
   public
     { public declarations }
   end;
@@ -236,6 +236,16 @@ begin
       MsgBox(msjError);
   end;
 end;
+procedure TfrmPrincipal.grupos_SolicEjecAcc(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+{Un GFac ha solicitado ejecutar un comando. Eso significa que es un comando local,
+ya que los comandos remotos no llegan por aquí.}
+begin
+  TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
+  //Llama como evento, indicando que es una trama local.
+  //No se incluye nombre del OF y GOF que generan la trama, proque es local.
+  Config.grupos.gof_TramaLista('', '', TramaTmp, true);
+end;
 procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
   log.PLogErr(usuario, msj);
@@ -251,9 +261,9 @@ begin
   Visor := TfraVisCPlex.Create(self);
   Visor.Parent := self;
   Visor.Align := alClient;
-  Visor.motEdi.OnClickDer:=@VisorCabinas_ClickDer;
-  Visor.motEdi.OnDblClick:=@VisorCabinas_DblClick;
-  Visor.OnObjectsMoved:=@VisorCabinasObjectsMoved;
+  Visor.motEdi.OnClickDer:=@Visor_ClickDer;
+  Visor.motEdi.OnDblClick:=@Visor_DblClick;
+  Visor.OnObjectsMoved:=@Visor_ObjectsMoved;
   tic := 0;   //inicia contador
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
@@ -272,7 +282,8 @@ begin
   Config.grupos.OnGuardarEstado:= @grupos_EstadoArchivo;
   Config.grupos.OnReqConfigGen := @grupos_ReqConfigGen;
   Config.grupos.OnReqCadMoneda := @Config.CadMon;
-  Config.grupos.OnActualizStock:=@grupos_ActualizStock;
+  Config.grupos.OnActualizStock:= @grupos_ActualizStock;
+  Config.grupos.OnSolicEjecAcc := @grupos_SolicEjecAcc;
   //Crea los objetos gráficos de cabina de acuerdo.
   Visor.ActualizarPropiedades(config.grupos.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
@@ -303,13 +314,16 @@ begin
   frmIngVentas.TabPro := tabPro;
   frmIngVentas.LeerDatos;
   frmIngVentas.OnAgregarVenta:=@frmIngVentas_AgregarVenta;
-  frmBoleta.OnGrabarBoleta:=@frmBoleta_GrabarBoleta;
-  frmBoleta.OnDevolverItem:=@frmBoleta_DevolverItem;
-  frmBoleta.OnDesecharItem:=@frmBoleta_DesecharItem;
-  frmBoleta.OnRecuperarItem:=@frmBoleta_RecuperarItem;
-  frmBoleta.OnComentarItem:=@frmBoleta_ComentarItem;
-  frmBoleta.OnDividirItem:=@frmBoleta_DividirItem;
-  frmBoleta.OnGrabarItem:=@frmBoletaGrabarItem;
+  //Configrua formualrio de boleta
+  frmBoleta.OnAgregarItem  := @frmBoleta_AgregarItem;
+  frmBoleta.OnGrabarBoleta := @frmBoleta_GrabarBoleta;
+  frmBoleta.OnDevolverItem := @frmBoleta_DevolverItem;
+  frmBoleta.OnDesecharItem := @frmBoleta_DesecharItem;
+  frmBoleta.OnRecuperarItem:= @frmBoleta_RecuperarItem;
+  frmBoleta.OnComentarItem := @frmBoleta_ComentarItem;
+  frmBoleta.OnDividirItem  := @frmBoleta_DividirItem;
+  frmBoleta.OnGrabarItem   := @frmBoletaGrabarItem;
+  frmBoleta.OnReqCadMoneda := @Config.CadMon;
   log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados');
   {frmInicio.edUsu.Text := 'admin';
   frmInicio.ShowModal;
@@ -337,16 +351,52 @@ begin
   TramaTmp.Destroy;
   //Matar a los hilos de ejecución, puede tomar tiempo
 end;
-procedure TfrmPrincipal.VisorCabinas_ClickDer(xp, yp: integer);
+procedure TfrmPrincipal.Visor_ClickDer(xp, yp: integer);
+var
+  ogFac: TogFac;
+  nomFac, Nombre: String;
+  GFac: TCibGFac;
+  mn: TMenuItem;
 begin
   if Visor.Seleccionado = nil then exit;
   //hay objeto seleccionado
-  if Visor.Seleccionado.Id = ID_CABINA then PopupCabina.PopUp;
-  if Visor.Seleccionado.Id = ID_NILOM then PopupLocutor.PopUp;
+//  if Visor.Seleccionado.Id = ID_CABINA then PopupCabina.PopUp;
+//  if Visor.Seleccionado.Id = ID_NILOM then PopupLocutor.PopUp;
+  if Visor.Seleccionado is TogFac then begin
+    //Se ha seleccionado un facturable
+    ogFac := TogFac(Visor.Seleccionado);
+    Nombre := ogFac.Fac.Nombre;
+    nomFac := ogFac.Fac.Grupo.Nombre;
+    //Ubica GFac en el modelo original, no en la copia del visor
+    GFac := Config.grupos.BuscarPorNombre(nomFac);
+    if GFac=nil then exit;
+    //Deja que el facturable configure el menú contextual, con sus acciones
+    PopupFac.Items.Clear;
+    GFac.MenuAcciones(PopupFac, Nombre);
+    //Agrega los ítems del menú que son comunes a todos los facturables
+    mn :=  TMenuItem.Create(nil);
+    mn.Caption:='-';
+    PopupFac.Items.Add(mn);
+
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacVerBol;
+    PopupFac.Items.Add(mn);
+
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacAgrVen;
+    PopupFac.Items.Add(mn);
+
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacGraBol;
+    PopupFac.Items.Add(mn);
+
+    PopupFac.PopUp;  //muestra
+  end;
+
   if Visor.Seleccionado.Id = ID_GCABINA then PopupGCabina.PopUp;
   if Visor.Seleccionado.Id = ID_GNILOM then PopupGNiloM.PopUp;
 end;
-procedure TfrmPrincipal.VisorCabinas_DblClick(Sender: TObject);
+procedure TfrmPrincipal.Visor_DblClick(Sender: TObject);
 begin
   if Visor.Seleccionado = nil then exit;
   acCabExplorArcExecute(self);
@@ -402,12 +452,6 @@ begin
   end;
   end;
 end;
-procedure TfrmPrincipal.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
-{Graba el contenido de una boleta}
-begin
-  if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
-  PonerComando(C_ACC_BOLET, ACCBOL_GRA, 0, CibFac.IdFac);
-end;
 procedure TfrmPrincipal.frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string
   );
 {Este evento se genera cuando se solicita ingresar una venta a la boletad e un objeto.}
@@ -416,6 +460,16 @@ var
 begin
   txt := CibFac.IdFac + #9 + itBol;
   PonerComando(C_ACC_BOLET, ACCITM_AGR, 0, txt);  //envía con tamaño en Y
+end;
+procedure TfrmPrincipal.frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
+begin
+  frmIngVentas.Exec(CibFac);
+end;
+procedure TfrmPrincipal.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+{Graba el contenido de una boleta}
+begin
+  if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
+  PonerComando(C_ACC_BOLET, ACCBOL_GRA, 0, CibFac.IdFac);
 end;
 procedure TfrmPrincipal.frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -500,7 +554,7 @@ begin
   //No se incluye nombre del OF y GOF que geenran la trama, proque es local.
   Config.grupos.gof_TramaLista('', '', TramaTmp, true);
 end;
-procedure TfrmPrincipal.VisorCabinasObjectsMoved;
+procedure TfrmPrincipal.Visor_ObjectsMoved;
 {Se ha producido el movimiento de objetos en el editor. Se actualiza en el modelo.}
 var
   og: TObjGraf;
@@ -553,8 +607,18 @@ end;
 procedure TfrmPrincipal.acEdiInsEnrutExecute(Sender: TObject); //Inserta Enrutador
 var
   grupNILOm: TCibGFacNiloM;
+  nom: String;
 begin
-  grupNILOm := TCibGFacNiloM.Create('NILO-m', false);
+  nom := InputBox('', 'Nombre: ', 'NILO-m');
+  if trim(nom)='' then begin
+    msgExc('Nombre no válido.');
+    exit;
+  end;
+  if Config.grupos.BuscarPorNombre(nom) <> nil then begin
+    msgExc('Nombre ya existe.');
+    exit;
+  end;
+  grupNILOm := TCibGFacNiloM.Create(nom, false);
   //Inicializa Nilo-m
   //grupNILOm.OnRegMsjError:=@NiloM_RegMsjError;
   //grupNILOm.Conectar;
@@ -637,9 +701,9 @@ begin
     msgExc('No se puede iniciar una cuenta en esta cabina.');
     exit;
   end;
-  frmFijTiempo.MostrarIni(ogCab);  //modal
+{  frmFijTiempo.MostrarIni(ogCab);  //modal
   if frmFijTiempo.cancelo then exit;  //canceló
-  PonerComando(C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+  PonerComando(C_ACC_CABIN, C_INI_CTAPC, 0, frmFijTiempo.CadActivacion);}
 end;
 procedure TfrmPrincipal.acCabModTpoExecute(Sender: TObject);
 var
@@ -651,9 +715,9 @@ begin
     acCabIniCtaExecute(self);  //está detenida, inicia la cuenta
   end else if ogCab.Contando then begin
     //está en medio de una cuenta
-    frmFijTiempo.Mostrar(ogCab);  //modal
+{    frmFijTiempo.Mostrar(ogCab);  //modal
     if frmFijTiempo.cancelo then exit;  //canceló
-    PonerComando(C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
+    PonerComando(C_ACC_CABIN, C_MOD_CTAPC, 0, frmFijTiempo.CadActivacion);}
   end;
 end;
 procedure TfrmPrincipal.acCabDetCtaExecute(Sender: TObject);
@@ -663,7 +727,7 @@ begin
   ogCab := Visor.CabSeleccionada;
   if ogCab = nil then exit;
   if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
-  PonerComando(C_DET_CTAPC, 0, 0, ogCab.Fac.IdFac);
+  PonerComando(C_ACC_CABIN, C_DET_CTAPC, 0, ogCab.Fac.IdFac);
 end;
 procedure TfrmPrincipal.acCabPonManExecute(Sender: TObject);
 var
@@ -675,7 +739,7 @@ begin
     MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
     exit;
   end;
-  PonerComando(C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
+  PonerComando(C_ACC_CABIN, C_PON_MANTN, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
 end;
 procedure TfrmPrincipal.acCabExplorArcExecute(Sender: TObject);
 //Muestra la ventana explorador de archivo
@@ -703,21 +767,30 @@ begin
   frmMsjes := TCibGFacCabinas(gcab).BuscarVisorMensajes(ogCab.Nombre, true);
   frmMsjes.Exec(ogCab.Nombre);
 end;
-procedure TfrmPrincipal.acCabGraBolExecute(Sender: TObject);
+//Acciones sobre Facturables
+procedure TfrmPrincipal.acFacGraBolExecute(Sender: TObject);
 var
-  ogCab: TogCabina;
+  ogFac: TogFac;
 begin
-  ogCab := Visor.CabSeleccionada;
-  if ogCab = nil then exit;
-  frmBoleta_GrabarBoleta(ogCab.Fac,'');
+  ogFac := Visor.FacSeleccionado;
+  if ogFac = nil then exit;
+  frmBoleta_GrabarBoleta(ogFac.Fac,'');
 end;
-procedure TfrmPrincipal.acCabVerBolExecute(Sender: TObject);
+procedure TfrmPrincipal.acFacAgrVenExecute(Sender: TObject);
 var
-  ogCab: TogCabina;
+  ogFac: TogFac;
 begin
-  ogCab := Visor.CabSeleccionada;
-  if ogCab = nil then exit;
-  frmBoleta.Exec(ogCab.Fac, tabPro);
+  ogFac := Visor.FacSeleccionado;
+  if ogFac = nil then exit;
+  frmIngVentas.Exec(ogFac.Fac);
+end;
+procedure TfrmPrincipal.acFacVerBolExecute(Sender: TObject);
+var
+  ogFac: TogFac;
+begin
+  ogFac := Visor.FacSeleccionado;
+  if ogFac = nil then exit;
+  frmBoleta.Exec(ogFac.Fac);
 end;
 //Acciones de Grupo NILO-m
 procedure TfrmPrincipal.acNilConexExecute(Sender: TObject);
@@ -727,8 +800,6 @@ var
 begin
   ogGnil := Visor.GNiloMSeleccionado;
   if ogGnil = nil then exit;
-  {Aquí sería fácil acceder a "ogGnil.gcab.frmAdminCabs", pero esta sería la ventana
-  de administración de la copia, no del modelo original.}
   gnil := Config.grupos.BuscarPorNombre(ogGnil.GFac.Nombre);  //Busca grupo en el modelo
   TCibGFacNiloM(gnil).frmNilomConex.Show;
 end;
@@ -739,27 +810,8 @@ var
 begin
   ogGnil := Visor.GNiloMSeleccionado;
   if ogGnil = nil then exit;
-  {Aquí sería fácil acceder a "ogGnil.gcab.frmAdminCabs", pero esta sería la ventana
-  de administración de la copia, no del modelo original.}
   gnil := Config.grupos.BuscarPorNombre(ogGnil.GFac.Nombre);  //Busca grupo en el modelo
   TCibGFacNiloM(gnil).frmNilomProp.Show;
-end;
-//Acciones de locutorio
-procedure TfrmPrincipal.acLocConectarExecute(Sender: TObject);
-var
-  ogLoc: TogNiloM;
-begin
-  ogLoc := Visor.LocSeleccionado;
-  if ogLoc = nil then exit;
-  PonerComando(C_ACC_NILOM, ACCLOC_CONEC, 0, ogLoc.loc.IdFac);
-end;
-procedure TfrmPrincipal.acLocDesconecExecute(Sender: TObject);
-var
-  ogLoc: TogNiloM;
-begin
-  ogLoc := Visor.LocSeleccionado;
-  if ogLoc = nil then exit;
-  PonerComando(C_ACC_NILOM, ACCLOC_DESCO, 0, ogLoc.loc.IdFac);
 end;
 // Acciones Ver
 procedure TfrmPrincipal.acVerRepIngExecute(Sender: TObject);

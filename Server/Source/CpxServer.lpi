@@ -54,15 +54,18 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="3">
       <Item1>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="LazControls"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SynEdit"/>
       </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
     </RequiredPackages>
-    <Units Count="28">
+    <Units Count="30">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -102,7 +105,7 @@
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="FormBoleta.pas"/>
+        <Filename Value="..\..\Comunes\FormBoleta.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmBoleta"/>
         <HasResources Value="True"/>
@@ -214,6 +217,20 @@
         <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit27>
+      <Unit28>
+        <Filename Value="..\..\Comunes\NiloM\FormNiloMProp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmNiloMProp"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\..\Comunes\NiloM\FormNiloMEnrutam.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmNiloMEnrutam"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit29>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -224,7 +241,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.5b;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes"/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.5b;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
