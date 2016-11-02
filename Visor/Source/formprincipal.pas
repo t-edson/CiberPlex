@@ -10,9 +10,9 @@ unit FormPrincipal;
 interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ActnList,
-  Menus, lclProc, LCLType, LCLIntf,
-  MisUtils, FormPant, FormPantCli, FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos,
-  FormFijTiempo, CibTramas, CibCabinaBase, FormExplorCab, CPServidorCab, Globales;
+  Menus, lclProc, LCLType, LCLIntf, ExtCtrls, MisUtils, FormPant, FormPantCli,
+  FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos, CibTramas, FormBoleta,
+  CibFacturables, FormExplorCab, CPServidorCab, Globales;
 type
   { TForm1 }
   TForm1 = class(TForm)
@@ -22,11 +22,12 @@ type
     acCabModTpo: TAction;
     acCabIniCta: TAction;
     acCabDetCta: TAction;
-    acCabGraBol: TAction;
+    acFacGraBol: TAction;
     acAccVerPan: TAction;
     acAccRefObj: TAction;
     acCabExplorArc: TAction;
     acCabPonMan: TAction;
+    acFacVerBol: TAction;
     ActionList1: TActionList;
     MainMenu1: TMainMenu;
     Memo2: TMemo;
@@ -44,40 +45,45 @@ type
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
+    MenuItem61: TMenuItem;
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
+    PopupFac: TPopupMenu;
     PopupMenu1: TPopupMenu;
+    Timer1: TTimer;
     procedure acAccRefObjExecute(Sender: TObject);
-    procedure acCabDetCtaExecute(Sender: TObject);
     procedure acCabExplorArcExecute(Sender: TObject);
-    procedure acCabGraBolExecute(Sender: TObject);
-    procedure acCabIniCtaExecute(Sender: TObject);
-    procedure acCabModTpoExecute(Sender: TObject);
+    procedure acFacGraBolExecute(Sender: TObject);
     procedure acAccEnvComExecute(Sender: TObject);
     procedure acAccEnvMjeTitExecute(Sender: TObject);
     procedure acAccVerPanExecute(Sender: TObject);
-    procedure acCabPonManExecute(Sender: TObject);
+    procedure acFacVerBolExecute(Sender: TObject);
     procedure fraVisCPlex1ClickDer(xp, yp: integer);
     procedure PaintBox1Click(Sender: TObject);
     procedure procesoTramaLista(tram: TCPTrama);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
   private
     { private declarations }
     ServCab: TCabServidor;
     trama   : TCPTrama;  //referencia a la trama recibida.
     procedure EnviaPantalla;
+    procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure PedirArchivoIni;
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
     procedure PedirPantallaCli;
     procedure Plog(s: string);
     procedure ServCabRegMensaje(msj: string);
-
+    procedure Visor_SolicEjecAcc(comando: TCPTipCom; ParamX,
+      ParamY: word; cad: string);
+    procedure Visor_ClickDer(x, y: integer);
+    function CadMon(valor: double): string;
   public
-    VisorCabinas: TfraVisCPlex;
+    Visor: TfraVisCPlex;
   end;
 
 var
@@ -95,6 +101,57 @@ end;
 procedure TForm1.ServCabRegMensaje(msj: string);
 begin
   Plog(msj);
+end;
+procedure TForm1.Visor_SolicEjecAcc(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+begin
+  //Envía el comando al servidor
+  ServCab.PonerComando(comando, ParamX, ParamY, cad);
+end;
+procedure TForm1.Visor_ClickDer(x, y: integer);
+var
+  ogFac: TogFac;
+  Nombre, nomFac: String;
+  mn: TMenuItem;
+  GFac: TCibGFac;
+begin
+  if Visor.Seleccionado = nil then exit;
+  //hay objeto seleccionado
+  if Visor.Seleccionado is TogFac then begin
+    //Se ha seleccionado un facturable
+    ogFac := TogFac(Visor.Seleccionado);
+    Nombre := ogFac.Fac.Nombre;
+    nomFac := ogFac.Fac.Grupo.Nombre;
+    //Ubica GFac en el modelo original, no en la copia del visor
+    GFac := Visor.grupos.BuscarPorNombre(nomFac);
+    if GFac=nil then exit;
+    //Deja que el facturable configure el menú contextual, con sus acciones
+    PopupFac.Items.Clear;
+    GFac.MenuAcciones(PopupFac, Nombre);
+    //Agrega los ítems del menú que son comunes a todos los facturables
+    mn :=  TMenuItem.Create(nil);
+    mn.Caption:='-';
+    PopupFac.Items.Add(mn);
+
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacVerBol;
+    PopupFac.Items.Add(mn);
+{
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacAgrVen;
+    PopupFac.Items.Add(mn);
+}
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacGraBol;
+    PopupFac.Items.Add(mn);
+
+    PopupFac.PopUp;  //muestra
+  end;
+
+end;
+function TForm1.CadMon(valor: double): string;
+begin
+  Result := 'S/' + ' ' + FloatToStrF(valor, ffNumber, 6, 2);
 end;
 procedure TForm1.EnviaPantalla;
 //Captura el contenido de la pantalla, y lo envía como respuesta.
@@ -118,6 +175,11 @@ begin
   //envía archivo
   ServCab.EnviaArchivo(M_PAN_COMP, arch);
 end;
+procedure TForm1.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+begin
+  if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
+  ServCab.PonerComando(C_ACC_BOLET, ACCBOL_GRA, 0, CibFac.IdFac);
+end;
 procedure TForm1.PedirPantalla;
 //Pide el archivo de configuración del servidor
 begin
@@ -129,7 +191,7 @@ var
   og: TObjGraf;
 begin
   //solicita pantalla de una PC
-  og := VisorCabinas.Seleccionado;
+  og := Visor.Seleccionado;
   if og = nil then begin
     MsgErr('Debe haber cabina seleccionada para este comando');
     exit;
@@ -145,19 +207,20 @@ end;
 procedure TForm1.PedirEstadoPCs ;
 begin
   memo2.Clear;
-  ServCab.PonerComando(C_SOL_T_PCS, 0, 0);
+  ServCab.PonerComando(C_SOL_ESTAD, 0, 0);
 end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  VisorCabinas:= TfraVisCPlex.Create(self);
-  VisorCabinas.Parent := self;
-  VisorCabinas.Align:=alClient;
-  VisorCabinas.motEdi.OnClickDer:=@fraVisCPlex1ClickDer;
-  VisorCabinas.Left:=300;
-  VisorCabinas.Top:=0;
-  VisorCabinas.Width:=400;
-  VisorCabinas.Height:=300;
-  VisorCabinas.Visible:=true;
+  Visor:= TfraVisCPlex.Create(self);
+  Visor.Parent := self;
+  Visor.Align:=alClient;
+  Visor.motEdi.OnClickDer:=@fraVisCPlex1ClickDer;
+  Visor.Left:=300;
+  Visor.Top:=0;
+  Visor.Width:=400;
+  Visor.Height:=300;
+  Visor.Visible:=true;
+  Visor.motEdi.OnClickDer:=@Visor_ClickDer;
 
   ServCab := TCabServidor.create;
   //evento de llegada de trama
@@ -171,7 +234,7 @@ begin
   ServCab.Terminate;
   ServCab.WaitFor;
   ServCab.Free;
-  VisorCabinas.Destroy;
+  Visor.Destroy;
 end;
 procedure TForm1.FormShow(Sender: TObject);
 begin
@@ -181,12 +244,23 @@ begin
   frmPantCli.OnRefrescar:=@PedirPantallaCli;
   acAccRefObjExecute(self);   //para refrescar los objetos
   PedirEstadoPCs;         //Para que se refresque el estado
+  Visor.grupos.OnSolicEjecAcc:=@Visor_SolicEjecAcc;
+  frmBoleta.OnGrabarBoleta:=@frmBoleta_GrabarBoleta;
+  //  frmBoleta.OnReqCadMoneda := @Config.CadMon;
+  frmBoleta.OnReqCadMoneda := @CadMon;  { TODO : Esto es solo temporal }
+end;
+procedure TForm1.Timer1Timer(Sender: TObject);
+begin
+  //Aprovecha para refrescar la ventana de boleta
+  if (frmBoleta<>nil) and frmBoleta.Visible then
+    frmBoleta.ActualizarDatos;
+
 end;
 procedure TForm1.fraVisCPlex1ClickDer(xp,yp: integer);   //Evento Click Derecho
 var
   og: TObjGraf;
 begin
-  og := VisorCabinas.Seleccionado;
+  og := Visor.Seleccionado;
   if og = nil then exit;
   //hay objeto seleccionado
   PopupMenu1.PopUp;
@@ -227,12 +301,12 @@ begin
     memo2.Lines.Text:=trama.traDat;  //muestra el archivo
     //LeeEstado(trama.traDat)
   end;
-  M_SOL_T_PCS: begin   //se recibe un archivo solictado
+  M_SOL_ESTAD: begin   //se recibe un archivo solictado
     memo2.Lines.Text:=trama.traDat;  //muestra el archivo
-    VisorCabinas.ActualizarEstado(trama.traDat);
+    Visor.ActualizarEstado(trama.traDat);
   end;
   M_SOL_ARINI: begin  //Se recibe archivo ini
-    VisorCabinas.ActualizarPropiedades(trama.traDat);  //actualiza propeidades de objetos
+    Visor.ActualizarPropiedades(trama.traDat);  //actualiza propeidades de objetos
     //StringToFile(trama.traDat, rutApp + '\CpxServer.ini');
   end;
   M_SOL_RUT_A: begin   //se recibe la ruta actual
@@ -282,73 +356,30 @@ procedure TForm1.acAccRefObjExecute(Sender: TObject);
 begin
   ServCab.PonerComando(C_SOL_ARINI, 0, 0);
 end;
-procedure TForm1.acCabIniCtaExecute(Sender: TObject);
-//Inicia la cuenta de una cabina de internet
-var
-  ogCab: TogCabina;
-begin
-  ogCab := VisorCabinas.CabSeleccionada;
-  if ogCab = nil then exit;
-  if ogCab.EnManten then begin
-    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
-  end else if not ogCab.Detenida then begin
-    msgExc('No se puede iniciar una cuenta en esta cabina.');
-    exit;
-  end;
-  frmFijTiempo.MostrarIni(ogCab);  //modal
-  if frmFijTiempo.cancelo then exit;  //canceló
-  //envía comando de inicio de cuenta
-  ServCab.PonerComando(C_INI_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
-end;
-procedure TForm1.acCabModTpoExecute(Sender: TObject);
-var
-  ogCab: TogCabina;
-begin
-  ogCab := VisorCabinas.CabSeleccionada;
-  if ogCab = nil then exit;
-  frmFijTiempo.Mostrar(ogCab);
-  if frmFijTiempo.cancelo then exit;  //canceló
-  //envía comando de modificaicón de cuenta
-  ServCab.PonerComando(C_MOD_CTAPC, 0, 0, frmFijTiempo.CadActivacion);
-end;
-procedure TForm1.acCabDetCtaExecute(Sender: TObject);  //Detener cuentea
-var
-  ogCab: TogCabina;
-begin
-  ogCab := VisorCabinas.CabSeleccionada;
-  if ogCab = nil then exit;
-  if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
-  ServCab.PonerComando(C_DET_CTAPC, 0, 0, ogCab.nombre);
-end;
-procedure TForm1.acCabPonManExecute(Sender: TObject);
-var
-  ogCab: TogCabina;
-begin
-  ogCab := VisorCabinas.CabSeleccionada;
-  if ogCab = nil then exit;
-  if not ogCab.Detenida then begin
-    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
-    exit;
-  end;
-  ServCab.PonerComando(C_DET_CTAPC, 1, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
-end;
 procedure TForm1.acCabExplorArcExecute(Sender: TObject);
 var
   ogCab: TogCabina;
 begin
-  ogCab := VisorCabinas.CabSeleccionada;
+  ogCab := Visor.CabSeleccionada;
   if ogCab = nil then exit;
   //Solo maneja una instancia
-  frmExplorCab.Exec(VisorCabinas, ogCab.Nombre);
+  frmExplorCab.Exec(Visor, ogCab.Nombre);
 end;
-procedure TForm1.acCabGraBolExecute(Sender: TObject);  //Graba la boleta
+procedure TForm1.acFacGraBolExecute(Sender: TObject);  //Graba la boleta
 var
-  ogCab: TogCabina;
+  ogFac: TogFac;
 begin
-  ogCab := VisorCabinas.CabSeleccionada;
-  if ogCab = nil then exit;
-  if MsgYesNo('Grabar Boleta de: ' + ogCab.nombre + '?')<>1 then exit;
-  ServCab.PonerComando(C_GRA_BOLPC, 0, 0, ogCab.nombre);
+  ogFac := Visor.FacSeleccionado;
+  if ogFac = nil then exit;
+  frmBoleta_GrabarBoleta(ogFac.Fac,'');
+end;
+procedure TForm1.acFacVerBolExecute(Sender: TObject);
+var
+  ogFac: TogFac;
+begin
+  ogFac := Visor.FacSeleccionado;
+  if ogFac = nil then exit;
+  frmBoleta.Exec(ogFac.Fac);
 end;
 end.
 

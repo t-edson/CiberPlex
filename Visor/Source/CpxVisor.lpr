@@ -8,7 +8,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, FormPrincipal, FormPant, FormLog, FormPantCli, ogMotGraf2d,
-  ogDefObjGraf, CPServidorCab, CibTramas, CPUtils;
+  ogDefObjGraf, CPServidorCab, CibTramas, CibFacturables, FormFijTiempo, FormBoleta;
 
 {$R *.res}
 
@@ -19,6 +19,8 @@ begin
   Application.CreateForm(TfrmPant, frmPant);
   Application.CreateForm(TfrmLog, frmLog);
   Application.CreateForm(TfrmPantCli, frmPantCli);
+  Application.CreateForm(TfrmFijTiempo, frmFijTiempo);
+  Application.CreateForm(TfrmBoleta, frmBoleta);
   Application.Run;
 end.
 

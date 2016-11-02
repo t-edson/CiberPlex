@@ -15,17 +15,20 @@ var
    //Variables globales
    MsjError    : String;    //Bandera - Mensaje de error
 
-   rutApp     : string;     //ruta de la aplicación
-   rutTemp    : string;     //ruta de la carpeta de scripts
-   rutDatos   : string;     //ruta de la carpeta de macros
-   rutArchivos: string;     //ruta para descargar de archivos
+   rutApp     : string;     //ruta de la aplicación (sin "\" final)
+   rutTemp    : string;     //ruta de la carpeta de scripts (sin "\" final)
+   rutDatos   : string;     //ruta de la carpeta de datos (sin "\" final)
+   rutArchivos: string;     //ruta para descargar de archivos (sin "\" final)
+   rutSonidos : string;     //ruta para los archivos de sonidos (sin "\" final)
    //archivos de configuración
    arcProduc : string;     //archivo de productos
    arcGastos : string;     //archivo de gastos
-   arcTarifas: string;     //archivo de tarifas
-   arcRutas  : string;     //archivo de rutas
    //archivo de estado
    arcEstado : string;
+
+   CVniloter: Double;      //valor del contador de Ventas del CiberPlex
+   CVfec_act: TDateTime;   //Fecha de actualización del contador de ventas del CiberPlex
+   CIfec_act: TDateTime;   //Fecha de actualización del contador de Ingresos del CiberPlex
 
 implementation
 
@@ -37,6 +40,7 @@ initialization
   rutTemp := rutApp + '\temp';
   rutDatos := rutApp + '\datos';
   rutArchivos := rutApp + '\archivos';
+  rutSonidos := rutApp + '\sonidos';
   //verifica existencia de carpetas de trabajo
   try
     if not DirectoryExists(rutTemp) then begin
@@ -51,17 +55,16 @@ initialization
       msgexc('No se encuentra carpeta: ' + rutArchivos + '. Se creará.');
       CreateDir(rutArchivos);
     end;
-{    if not FileExists(rutApp+'plink.exe') then begin
-      msgErr('No se encuentra archivo plink.exe');
-    end;}
+    if not DirectoryExists(rutSonidos) then begin
+      msgexc('No se encuentra carpeta: ' + rutSonidos + '. Se creará.');
+      CreateDir(rutSonidos);
+    end;
   except
     msgErr('Error. No se puede leer o crear directorios.');
   end;
   //inicia archivos de configuración
   arcProduc := rutApp + '\productos.txt';    //archivo de productos
   arcGastos := rutApp + '\gastos.txt';       //archivo de gastos
-  arcTarifas := rutApp + '\tarifario.txt';   //archivo de tarifas
-  arcRutas := rutApp + '\rutas.txt';         //archivo de rutas
   arcEstado := rutApp + '\estado.ini';         //archivo de estado
 
 finalization
@@ -71,11 +74,10 @@ finalization
   rutDatos := '';
   rutTemp := '';
   rutArchivos := '';
+  rutSonidos := '';
 
   arcProduc := '';
   arcGastos := '';
-  arcTarifas := '';
-  arcRutas := '';
   arcEstado := '';
 end.
 

@@ -50,17 +50,14 @@ object Form1: TForm1
     object acCabIniCta: TAction
       Category = 'Cab'
       Caption = '&Iniciar Cuenta'
-      OnExecute = acCabIniCtaExecute
     end
     object acCabModTpo: TAction
       Category = 'Cab'
       Caption = '&Modif. Tiempo'
-      OnExecute = acCabModTpoExecute
     end
     object acCabDetCta: TAction
       Category = 'Cab'
       Caption = '&Detener Cuenta'
-      OnExecute = acCabDetCtaExecute
     end
     object acAccRefObj: TAction
       Category = 'Acc'
@@ -70,18 +67,22 @@ object Form1: TForm1
     object acCabPonMan: TAction
       Category = 'Cab'
       Caption = 'Poner en &Mantenimiento'
-      OnExecute = acCabPonManExecute
     end
-    object acCabGraBol: TAction
-      Category = 'Cab'
+    object acFacGraBol: TAction
+      Category = 'Fac'
       Caption = 'Grabar &Boleta'
       Hint = 'Graba la boleta'
-      OnExecute = acCabGraBolExecute
+      OnExecute = acFacGraBolExecute
     end
     object acCabExplorArc: TAction
       Category = 'Cab'
       Caption = 'Ver E&xplorador de Archivos'
       OnExecute = acCabExplorArcExecute
+    end
+    object acFacVerBol: TAction
+      Category = 'Fac'
+      Caption = '&Ver Boleta'
+      OnExecute = acFacVerBolExecute
     end
   end
   object MainMenu1: TMainMenu
@@ -99,7 +100,7 @@ object Form1: TForm1
         Action = acAccEnvMjeTit
       end
       object MenuItem9: TMenuItem
-        Action = acCabGraBol
+        Action = acFacGraBol
       end
     end
     object MenuItem1: TMenuItem
@@ -114,7 +115,7 @@ object Form1: TForm1
         Action = acCabDetCta
       end
       object MenuItem13: TMenuItem
-        Action = acCabGraBol
+        Action = acFacGraBol
       end
     end
   end
@@ -134,7 +135,7 @@ object Form1: TForm1
       Action = acCabPonMan
     end
     object MenuItem10: TMenuItem
-      Action = acCabGraBol
+      Action = acFacGraBol
     end
     object MenuItem15: TMenuItem
       Caption = '-'
@@ -142,5 +143,18 @@ object Form1: TForm1
     object MenuItem16: TMenuItem
       Action = acCabExplorArc
     end
+  end
+  object PopupFac: TPopupMenu
+    left = 336
+    top = 80
+    object MenuItem61: TMenuItem
+      Caption = '-'
+    end
+  end
+  object Timer1: TTimer
+    Interval = 500
+    OnTimer = Timer1Timer
+    left = 484
+    top = 76
   end
 end
