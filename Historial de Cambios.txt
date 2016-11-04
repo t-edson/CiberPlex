@@ -36,6 +36,8 @@ siguiendo el esquema del NILOTER-mC.
 Se agrega la variable global "rutSonidos", para direccionar a la carpeta en donde se 
 guardarán los archivos de sonido que deben reproducirse.
 Se mejora la creación de nuevos GFac desde el mnú principal.
+Se crea la clase TModEdicion2 en frameVisCPlex, para implementar en el editor, la posibilidad
+de arrastrar objetos gráficos y sus boletas.
 
 0.9.9
 =====
