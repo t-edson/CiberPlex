@@ -20,9 +20,9 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="FormPrincipal"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="251"/>
-        <CursorPos Y="304"/>
-        <FoldState Value=" TL006 T5j202 T3j90412213[5414 T6kS045 T0lMJ3Eq"/>
+        <TopLine Value="250"/>
+        <CursorPos X="12" Y="271"/>
+        <FoldState Value=" T5j202 T3j90412213[5414 T6kS045 T0lMJ3Ee"/>
         <UsageCount Value="207"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
