@@ -16,7 +16,7 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
   {El comando final, puede tomar información adicional, de los parámetros adicionales de
   la trama, como ParamX o ParamY.
   <<<< ADVERTENCIA >>>>:
-  * No poner valores de más de 255, porque se ha reservado solo un byte, para alamcenar
+  * No poner valores de más de 255, porque se ha reservado solo un byte, para almacenar
   este campo.
   Notar que aquí se están juntando los comandos usados tanto para las PC cliente,
   como para los Visores adicionales.
@@ -96,7 +96,7 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     C_ACC_CABIN = $B1,   //Acción sobre una cabina (Incluye sub-somandos en ParamX)
     C_ACC_NILOM = $B2,   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
 
-    //Comando cortos que no devuelven mensaje.
+    //Comandos cortos que no devuelven mensaje.
     C_BLOQ_PC = $C1,  //Comando de bloqueo de PC
     C_DESB_PC = $C2,  //Comando de desbloqueo de PC
     C_FIJ_RAT = $C3,  //Comando para fijar coordenadas de raton

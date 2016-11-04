@@ -9,7 +9,8 @@ interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
-  CibFacturables, CibGFacCabinas, CibGFacNiloM, CPGrupFacturables, ogMotEdicion;
+  CibFacturables, CibGFacCabinas, CibGFacNiloM, CPGrupFacturables, ogMotEdicion,
+  MisUtils;
 const
   ID_CABINA  = 1;  //Cabinas
   ID_GCABINA = 2;  //Grupo de cabinas
@@ -17,6 +18,19 @@ const
   ID_GNILOM  = 3;  //Grupo NiloM
 
 type
+  TEvArrstreFac = procedure(fac: TogFac; X, Y: Integer) of object;
+  { TModEdicion2 }
+  {Versión personalizada del motro de edición, para agregar características adicionales,
+  como el arrastre de boletas.}
+  TModEdicion2 = class(TModEdicion)
+  public
+    ObjBloqueados: boolean;    //bandera de bloqueo de objetos
+    OnInicArrastreFac: TEvArrstreFac;  //Se inicia el arrastre en un objeto facturable
+  protected
+    procedure MouseMove(Sender: TObject; Shift: TShiftState; X,  Y: Integer); override;
+  end;
+
+
   { TfraVisCPlex }
   TfraVisCPlex = class(TFrame)
   published
@@ -33,15 +47,21 @@ type
     Image8: TImage;
     Image9: TImage;
     PaintBox1: TPaintBox;
+    procedure PaintBox1DragOver(Sender, Source: TObject; X, Y: Integer;
+      State: TDragState; var Accept: Boolean);
   private
     FObjBloqueados: boolean;
+    decod: TCPDecodCadEstado;  //decodificador de cadenas de estado
+    arrastEsBol: boolean;  //indica si el objeto arrastrado es una boleta.
+    arrastFuente : string;  //Id de objeto facturable arrastrado
     procedure ActualizarOgGrupos(items: TCibGFact_list);
     function AgregarOgGrupo(GFac: TCibGFac): TogGFac;
+    procedure motEdiInicArrastreFac(ogFac: TogFac; X, Y: Integer);
     procedure motEdiObjectsMoved;
     procedure SetObjBloqueados(AValue: boolean);
     procedure ActualizarOgFacturables(grupo: TCibGFac);
   public
-    motEdi: TModEdicion;  //motor de edición
+    motEdi: TModEdicion2;  //motor de edición
     OnObjectsMoved: procedure of object;
     grupos: TCibGruposFacturables; {Esta lista de grupos facturables, será una copia
                                     de la lista que existe en el servidor.}
@@ -57,20 +77,83 @@ type
     function GNiloMSeleccionado: TogGNiloM;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
-  private
-    decod: TCPDecodCadEstado;  //decodificador de cadenas de estado
-  public
+  public  //Constructor y destructor.
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
   end;
 
 implementation
 {$R *.lfm}
+
+{ TModEdicion2 }
+
+procedure TModEdicion2.MouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+var
+  s: TObjGraf;
+  ogFac: TogFac;
+begin
+  if OnMouseMove<>nil then OnMouseMove(Sender, Shift, X, Y);
+  If Shift = [ssCtrl, ssShift, ssRight] Then  //<Shift>+<Ctrl> + <Botón derecho>
+     begin
+      EstPuntero := EP_DESP_PANT;
+      MoverDesp(x_pulso - X, y_pulso - Y);
+      Refrescar;
+      Exit;
+     End;
+  If ParaMover = True Then VerificarParaMover(X, Y);
+  If EstPuntero = EP_SELECMULT Then begin  //modo seleccionando multiples formas
+      x2Sel := X;
+      y2Sel := Y;
+      //verifica los que se encuentran seleccionados
+      if objetos.Count < 100 Then begin//sólo anima para pocos objetos
+          for s In objetos do begin
+            if s.SelLocked then continue;
+            if enRecSeleccion(s.XCent, s.YCent) And Not s.Selected Then begin
+              s.Selec;
+            End;
+            if Not enRecSeleccion(s.XCent, s.YCent) And s.Selected Then begin
+              s.Deselec;
+            end;
+          end;
+      End;
+      Refrescar
+  end Else If EstPuntero = EP_MOV_OBJS Then begin  //mueve la selección
+//        If perfil = PER_OPER Then Exit;  //No permite mover
+      if ObjBloqueados then begin
+        //Objetos bloqueados -> Modo Vita. Aquí se pueden trasladar boletas
+        if (seleccion.Count=1) and (seleccion[0] is TogFac) then begin
+          //Solo es válido para un objeto gráfico, de tipo facturable
+          ogFac := TogFac(seleccion[0]);   //obtiene objeto
+          if OnInicArrastreFac<>nil then OnInicArrastreFac(ogFac, X, Y);
+        end;
+      end else begin
+        //movimiento normal
+        Modif := True;
+        for s in seleccion do
+            s.Mover(x,y, seleccion.Count);
+        Refrescar;
+      end;
+  end Else If EstPuntero = EP_DIMEN_OBJ Then begin
+      //se está dimensionando un objeto
+      CapturoEvento.Mover(X, Y, seleccion.Count);
+      Refrescar;
+  end Else
+      If CapturoEvento <> NIL Then begin
+         CapturoEvento.Mover(X, Y, seleccion.Count);
+         Refrescar;
+      end Else begin  //Movimiento simple
+          s := VerificarMovimientoRaton(X, Y);
+          if s <> NIL then s.MouseMove(Sender, Shift, X, Y);  //pasa el evento
+      end;
+end;
+
 procedure TfraVisCPlex.SetObjBloqueados(AValue: boolean);
 var
   og :TObjGraf;
 begin
   if FObjBloqueados=AValue then Exit;
+  motEdi.ObjBloqueados:=AValue;  //actualiza bandera
   for og in motEdi.objetos do begin
     og.PosLocked:=AValue;
   end;
@@ -138,6 +221,22 @@ begin
     ogGNiloM.PosLocked := FObjBloqueados;  //depende del esatdo actual
     Result := ogGNiloM;
   end;
+  end;
+end;
+procedure TfraVisCPlex.motEdiInicArrastreFac(ogFac: TogFac; X, Y: Integer);
+{Se inicia el arrastre de un objeto gráfico facturable.}
+begin
+  //Aquí se puede inciar el arrastre del objeto o su boleta
+  if ogFac.Boleta.LoSelec(X,Y) and (ogFac.Fac.Boleta.ItemCount>0)  then begin
+    //Selecciona una boleta y está visible
+    arrastEsBol:= true;  //Indica que el objeto, a arrastrar, es una boleta.
+    arrastFuente := ogFac.Fac.IdFac;   //
+    PaintBox1.BeginDrag(true);
+  end else if ogFac.LoSelecciona(X,Y) then begin
+    //Selecciona al facturable
+    arrastEsBol:= false;  //Indica que el objeto, a arrastrar, es una boleta.
+    arrastFuente := ogFac.Fac.IdFac;   //
+//    PaintBox1.BeginDrag(true);
   end;
 end;
 function TfraVisCPlex.BuscarOgCabina(const nom: string): TogCabina;
@@ -280,6 +379,28 @@ begin
     end;
   end;
 end;
+procedure TfraVisCPlex.PaintBox1DragOver(Sender, Source: TObject; X,
+  Y: Integer; State: TDragState; var Accept: Boolean);
+var
+  og: TObjGraf;
+begin
+  //Busca para ver si pasa por alguna boleta
+  for og in motEdi.objetos do begin
+    if og.LoSelecciona(X,Y) and (og is TogFac) then begin
+      //Pasa por un objeto facturable
+      if arrastEsBol then begin
+        //Se arrastra una boleta
+        Accept := TogFac(og).Boleta.LoSelec(X,Y);
+      end else begin
+        //Se arrastra un Facturable
+        Accept := true;
+      end;
+      exit;
+    end;
+  end;
+  //No lo selecciona
+  Accept := false;
+end;
 procedure TfraVisCPlex.ActualizarOgGrupos(items: TCibGFact_list);
 {Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
 habrá un grupo.}
@@ -368,13 +489,15 @@ end;
 procedure TfraVisCPlex.motEdiObjectsMoved;
 //Se ha producido el movimiento de uno o más objetos
 begin
+  if FObjBloqueados then exit;   //se supone que no se pueden mover en este estado
   if OnObjectsMoved<>nil then OnObjectsMoved;
 end;
 constructor TfraVisCPlex.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  motEdi := TModEdicion.Create(PaintBox1);
+  motEdi := TModEdicion2.Create(PaintBox1);
   motEdi.OnObjectsMoved:=@motEdiObjectsMoved;
+  motEdi.OnInicArrastreFac:=@motEdiInicArrastreFac;
   decod := TCPDecodCadEstado.Create;
   grupos:= TCibGruposFacturables.Create('GrupVis', true);  //Crea en modo copia
 end;

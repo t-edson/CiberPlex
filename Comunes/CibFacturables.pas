@@ -36,14 +36,16 @@ const  //Caracteres identificadores para el archivo registros
 const  //Acciones sobre boletas
   //Acciones sobre la boleta
   ACCBOL_GRA = 1;
+  ACCBOL_TRA = 2;
+
   //Acciones sobre los ítems de la boleta
-  ACCITM_AGR = 2;
-  ACCITM_DEV = 3;
-  ACCITM_DES = 4;
-  ACCITM_REC = 5;
-  ACCITM_COM = 6;
-  ACCITM_DIV = 7;
-  ACCITM_GRA = 8;
+  ACCITM_AGR = 5;
+  ACCITM_DEV = 6;
+  ACCITM_DES = 7;
+  ACCITM_REC = 8;
+  ACCITM_COM = 9;
+  ACCITM_DIV = 10;
+  ACCITM_GRA = 11;
 
 type
   TItemBoletaEstado = (
@@ -92,6 +94,7 @@ type
   Notar que TCibBoleta no maneja eventos propios para acceder a información global,
   sino que hace uso de los eventos del OF que lo contiene.}
   TCibBoleta = class
+  public
     //propiedades del formulario
     nBole  : Integer;    //Número de Serie de la Boleta
     fec_bol: String;     //fecha de boleta
@@ -104,8 +107,7 @@ type
     Pventa : String;     //Punto de venta de la Boleta
     fec_grab: TDateTime;  //fecha de grabación en registro de ventas
   private
-    //lista de ítems
-    Fitems  : TCibItemBoleta_list;
+    Fitems  : TCibItemBoleta_list;  //lista de ítems
     procedure AgregarItemR(r: TCibItemBoleta);
     function GetCadEstado: string;
   public
@@ -115,6 +117,7 @@ type
     procedure Recalcula;
     function RegVenta: string;
     property CadEstado: string read GetCadEstado;
+    procedure Assign(orig: TCibBoleta);
   public  //Información y Operaciones con ítems
     function BuscaItem(const id: string): TCibItemBoleta;
     procedure VentaItem(it: TCibItemBoleta; RegisVenta: Boolean);
@@ -187,6 +190,9 @@ type
   TevReqCadMoneda = function(valor: double): string of object;
   //Solicita ejecutar un acción
   TEvSolicEjecAcc = procedure(comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
+  //Solicita buscar un objeto GFac
+  TEvBuscarGFac = function(nomGFac: string): TCibGFac of object;
+
   { TCPDecodCadEstado }
   {Objeto sencillo que permite decodificar una cadena de estado de un grupo facturable. }
   TCPDecodCadEstado = class
@@ -248,10 +254,9 @@ type
     procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
   public  //Campos para manejo de acciones
     facSelec: TCibFac;   //Facturable seleccionado (en la interfaz gráfica)
-    OnSolicEjecAcc: TEvSolicEjecAcc;  //Solicita ejecutar acciones
     procedure EjecAccion(tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
     procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); virtual;
-  public  //Eventos para que el grupo se comunique con la apliación principal
+  public  //Eventos para que el grupo se comunique con la aplicación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
     OnReqConfigMon : TEvReqConfigMon;   //Se requiere información de moneda
@@ -261,6 +266,8 @@ type
     OnLogIngre     : TEvBolLogVenta;    //Requiere escribir un ingreso en el registro
     OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
+    OnSolicEjecAcc : TEvSolicEjecAcc;   //Solicita ejecutar acciones
+    OnBuscarGFac   : TEvBuscarGFac;
   public  //Constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipFact);
     destructor Destroy; override;
@@ -524,6 +531,29 @@ begin
          D2f(fec_grab) + #9 + fec_bol + #9 +
          '' + #9 + '';
 end;
+procedure TCibBoleta.Assign(orig: TCibBoleta);
+var
+  it, itbol: TCibItemBoleta;
+begin
+  nBole    := orig.nBole;
+  fec_bol  := orig.fec_bol;
+  nombre   := orig.nombre;
+  direc    := orig.direc;
+  RUC      := orig.RUC;
+  subtot   := orig.subtot;
+  TotPag   := orig.TotPag;
+  usarIGV  := orig.usarIGV;
+  Pventa   := orig.Pventa;
+  fec_grab := orig.fec_grab;
+  msjError := orig.msjError;
+  padre    := orig.padre;  //notar que esto es una referencia
+  Fitems.Clear;   //elimina ítems
+  for it in orig.Fitems do begin
+    itbol := TCibItemBoleta.Create;  //crea nuevo ítem
+    itbol.Assign(it);  //copia
+    Fitems.Add(itbol);
+  end;
+end;
 function TCibBoleta.GetCadEstado: string;
 {Devuelve una cadena, con información de los ítems}
 var
@@ -741,12 +771,13 @@ procedure TCibGFac.AccionesBoleta(tram: TCPTrama);
 {Ejecuta acciones sobre la boleta}
 var
   a: TStringDynArray;
-  facDest: TCibFac;
+  facDest, facDest2: TCibFac;
   itBol, itBol2: TCibItemBoleta;
-  traDat, nom: String;
+  traDat, nom, gru: String;
   parte: Extended;
   idx, idx2: LongInt;
   Err: boolean;
+  Gfac: TCibGFac;
 begin
   traDat := tram.traDat;  //crea copia para modificar
   ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
@@ -771,6 +802,25 @@ begin
       //Config.escribirArchivoIni;
       facDest.LimpiarBol;          //Limpia los items
     end;
+  ACCBOL_TRA: begin  //Se pide mover la boleta de una cabina a otra
+    //Se supone que la boleta se moverá de facDest a facDest2
+    //Ubica el facturable a donde se moverá la boleta
+    gru := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+    //Identifica de acuerdo al grupo
+    if self.Nombre = gru then begin
+      //Es el mismo grupo
+      facDest2 := ItemPorNombre(nom);
+    end else begin
+      //Es otro grupo
+      Gfac := OnBuscarGFac(gru);
+      if Gfac = nil then exit;
+      facDest2 := Gfac.ItemPorNombre(nom);
+    end;
+    //Ahora ya se puede mover la boleta
+    facDest2.Boleta.Assign(facDest.Boleta);
+    facDest.LimpiarBol;
+  end;
   //EjecAccion sobre los ítems de la boleta
   ACCITM_AGR: begin  //Se pide agregar una venta
       itBol := TCibItemBoleta.Create;

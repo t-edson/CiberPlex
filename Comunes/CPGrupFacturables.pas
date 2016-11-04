@@ -433,7 +433,8 @@ begin
   gof.OnReqConfigGen := @gof_RequiereInfo;
   gof.OnReqCadMoneda := @gof_ReqCadMoneda;
   gof.OnActualizStock:= @gof_ActualizStock;
-  gof.OnSolicEjecAcc:=@gof_SolicEjecAcc;
+  gof.OnSolicEjecAcc := @gof_SolicEjecAcc;
+  gof.OnBuscarGFac   := @BuscarPorNombre;
   case gof.tipo of
   ctfCabinas: begin
     TCibGFacCabinas(gof).OnTramaLista:=@gof_TramaLista;
