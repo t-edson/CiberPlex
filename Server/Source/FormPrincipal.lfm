@@ -247,6 +247,11 @@ object frmPrincipal: TfrmPrincipal
       Hint = 'Mostrar la boleta'
       OnExecute = acFacVerBolExecute
     end
+    object acFacMovBol: TAction
+      Category = 'Fac'
+      Caption = '&Trasladar Boleta'
+      OnExecute = acFacMovBolExecute
+    end
   end
   object MainMenu1: TMainMenu
     Images = ImageList16

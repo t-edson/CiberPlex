@@ -42,6 +42,7 @@ type
     acLocConectar: TAction;
     acLocDesconec: TAction;
     acFacAgrVen: TAction;
+    acFacMovBol: TAction;
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
@@ -120,6 +121,7 @@ type
     procedure acCabModTpoExecute(Sender: TObject);
     procedure acCabMsjesRedExecute(Sender: TObject);
     procedure acCabPonManExecute(Sender: TObject);
+    procedure acFacMovBolExecute(Sender: TObject);
     procedure acFacVerBolExecute(Sender: TObject);
     procedure acEdiElimGruExecute(Sender: TObject);
     procedure acEdiInsEnrutExecute(Sender: TObject);
@@ -388,6 +390,10 @@ begin
 
     mn :=  TMenuItem.Create(nil);
     mn.Action := acFacGraBol;
+    PopupFac.Items.Add(mn);
+
+    mn :=  TMenuItem.Create(nil);
+    mn.Action := acFacMovBol;
     PopupFac.Items.Add(mn);
 
     PopupFac.PopUp;  //muestra
@@ -791,6 +797,21 @@ begin
   ogFac := Visor.FacSeleccionado;
   if ogFac = nil then exit;
   frmBoleta.Exec(ogFac.Fac);
+end;
+procedure TfrmPrincipal.acFacMovBolExecute(Sender: TObject);
+var
+  cabDest: String;
+  ogFac: TogFac;
+  Fac2: TCibFac;
+begin
+  ogFac := Visor.FacSeleccionado;
+  if ogFac = nil then exit;
+//  if MsgYesNo('Trasladar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
+  cabDest := InputBox('','Indique la cabina destino: ','');
+  if cabDest='' then exit;
+  Fac2 := ogFac.gru.ItemPorNombre(cabDest);
+  if Fac2 = nil then exit;
+  PonerComando(C_ACC_BOLET, ACCBOL_TRA, 0, ogFac.Fac.IdFac + #9 + Fac2.idFac);
 end;
 //Acciones de Grupo NILO-m
 procedure TfrmPrincipal.acNilConexExecute(Sender: TObject);
