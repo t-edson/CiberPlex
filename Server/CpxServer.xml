@@ -10,12 +10,12 @@
   <ImpVen Val="18"/>
   <PanLlamadas Val="True"/>
   <PanBoletas Val="False"/>
-  <ModDiseno Val="True"/>
+  <ModDiseno Val="False"/>
   <StateStatusbar Val="1"/>
   <GrpsFact Val="
 [[0
 Cabinas1	COUNTER	21	-1		
-Cab1	192.168.1.33		21	44	V					
+Cab1	192.168.1.33		18	44	V					
 Cab2	192.168.1.50		117	48	V	SES-D149513C3F1				
 Cab3	192.168.1.50		208	48	F	SES-D149513C3F1				
 Cab4			308	52	F					
@@ -24,19 +24,19 @@ Cab6			500	41	F
 Cab7			18	204	F					
 Cab8			113	204	F					
 Cab9			208	204	F					
-Cab10			303	203	F					
-Cab11			404	204	F					
-Cab12			500	200	F					
+Cab10			316	205	F					
+Cab11			422	203	F					
+Cab12			526	201	F					
 ]]
 [[1
 NILO-m	LLAMADAS	21	360	12	0.1	F	F	15		
 LOC1	0	0	0	29	396				
 LOC2	1	0	0	136	396				
 LOC3	2	0	0	245	395				
-LOC4	3	0	0	360	394				
+LOC4	3	0	0	354	395				
 ]]
 "/>
-  <usuarios Val="1395071132102132222182Y157157161
-139507113224225214227157157162
+  <usuarios Val="4643722263Y326335331336270270274
+464372226337338327340270270275
 "/>
 </CONFIG>
