@@ -113,14 +113,10 @@ type
     procedure acBusProducExecute(Sender: TObject);
     procedure acBusRutasExecute(Sender: TObject);
     procedure acBusTarifExecute(Sender: TObject);
-    procedure acCabDetCtaExecute(Sender: TObject);
     procedure acCabExplorArcExecute(Sender: TObject);
     procedure acFacAgrVenExecute(Sender: TObject);
     procedure acFacGraBolExecute(Sender: TObject);
-    procedure acCabIniCtaExecute(Sender: TObject);
-    procedure acCabModTpoExecute(Sender: TObject);
     procedure acCabMsjesRedExecute(Sender: TObject);
-    procedure acCabPonManExecute(Sender: TObject);
     procedure acFacMovBolExecute(Sender: TObject);
     procedure acFacVerBolExecute(Sender: TObject);
     procedure acEdiElimGruExecute(Sender: TObject);
@@ -240,8 +236,14 @@ begin
 end;
 procedure TfrmPrincipal.grupos_SolicEjecAcc(comando: TCPTipCom; ParamX,
   ParamY: word; cad: string);
-{Un GFac ha solicitado ejecutar un comando. Eso significa que es un comando local,
-ya que los comandos remotos no llegan por aquí.}
+{Aquí se llega pro dos vías, ambas de tipo local (ya que los comandos remotos no llegan
+por aquí):
+1. Un GFac ha solicitado ejecutar un comando. Estos comandos son los que los objetos
+facturables generan a través de su método TCibGFac.EjecAccion.
+2. El visor ha generado un evento, como el arrastre de objetos, que requiere ejecutar
+una acción sobre el modelo.
+Observar que este método es similar a PonerComando(), pero allí llegan los comandos
+que se generan con acciones de FormPrincipal.}
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
   //Llama como evento, indicando que es una trama local.
@@ -263,9 +265,6 @@ begin
   Visor := TfraVisCPlex.Create(self);
   Visor.Parent := self;
   Visor.Align := alClient;
-  Visor.motEdi.OnClickDer:=@Visor_ClickDer;
-  Visor.motEdi.OnDblClick:=@Visor_DblClick;
-  Visor.OnObjectsMoved:=@Visor_ObjectsMoved;
   tic := 0;   //inicia contador
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
@@ -286,7 +285,12 @@ begin
   Config.grupos.OnReqCadMoneda := @Config.CadMon;
   Config.grupos.OnActualizStock:= @grupos_ActualizStock;
   Config.grupos.OnSolicEjecAcc := @grupos_SolicEjecAcc;
-  //Crea los objetos gráficos de cabina de acuerdo.
+  //Configura Visor para comunicar sus eventos
+  Visor.motEdi.OnClickDer := @Visor_ClickDer;
+  Visor.motEdi.OnDblClick := @Visor_DblClick;
+  Visor.OnObjectsMoved    := @Visor_ObjectsMoved;
+  Visor.OnSolicEjecAcc    := @grupos_SolicEjecAcc;
+  //Crea los objetos gráficos del visor de acuerdo al archivo INI.
   Visor.ActualizarPropiedades(config.grupos.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
    de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
@@ -694,59 +698,6 @@ begin
   TCibGFacCabinas(gcab).frmAdminCabs.Show;  //abre su ventana de administración
 end;
 //Acciones de Cabinas
-procedure TfrmPrincipal.acCabIniCtaExecute(Sender: TObject);
-//Inicia la cuenta de una cabina de internet
-var
-  ogCab: TogCabina;
-begin
-  ogCab := Visor.CabSeleccionada;
-  if ogCab = nil then exit;
-  if ogCab.EnManten then begin
-    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
-  end else if not ogCab.Detenida then begin
-    msgExc('No se puede iniciar una cuenta en esta cabina.');
-    exit;
-  end;
-{  frmFijTiempo.MostrarIni(ogCab);  //modal
-  if frmFijTiempo.cancelo then exit;  //canceló
-  PonerComando(C_ACC_CABIN, C_INI_CTAPC, 0, frmFijTiempo.CadActivacion);}
-end;
-procedure TfrmPrincipal.acCabModTpoExecute(Sender: TObject);
-var
-  ogCab: TogCabina;
-begin
-  ogCab := Visor.CabSeleccionada;
-  if ogCab = nil then exit;
-  if ogCab.Detenida then begin
-    acCabIniCtaExecute(self);  //está detenida, inicia la cuenta
-  end else if ogCab.Contando then begin
-    //está en medio de una cuenta
-{    frmFijTiempo.Mostrar(ogCab);  //modal
-    if frmFijTiempo.cancelo then exit;  //canceló
-    PonerComando(C_ACC_CABIN, C_MOD_CTAPC, 0, frmFijTiempo.CadActivacion);}
-  end;
-end;
-procedure TfrmPrincipal.acCabDetCtaExecute(Sender: TObject);
-var
-  ogCab: TogCabina;
-begin
-  ogCab := Visor.CabSeleccionada;
-  if ogCab = nil then exit;
-  if MsgYesNo('¿Desconectar Computadora: ' + ogCab.nombre + '?') <> 1 then exit;
-  PonerComando(C_ACC_CABIN, C_DET_CTAPC, 0, ogCab.Fac.IdFac);
-end;
-procedure TfrmPrincipal.acCabPonManExecute(Sender: TObject);
-var
-  ogCab: TogCabina;
-begin
-  ogCab := Visor.CabSeleccionada;
-  if ogCab = nil then exit;
-  if not ogCab.Detenida then begin
-    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
-    exit;
-  end;
-  PonerComando(C_ACC_CABIN, C_PON_MANTN, 0, ogCab.nombre); //El mismo comando, pone en mantenimiento
-end;
 procedure TfrmPrincipal.acCabExplorArcExecute(Sender: TObject);
 //Muestra la ventana explorador de archivo
 var

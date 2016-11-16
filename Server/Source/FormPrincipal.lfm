@@ -100,19 +100,16 @@ object frmPrincipal: TfrmPrincipal
       Category = 'Cab'
       Caption = '&Iniciar Cuenta'
       Hint = 'Iniciar Cuenta'
-      OnExecute = acCabIniCtaExecute
     end
     object acCabDetCta: TAction
       Category = 'Cab'
       Caption = '&Detener Cuenta'
       Hint = 'Detener Cuenta'
-      OnExecute = acCabDetCtaExecute
     end
     object acCabModTpo: TAction
       Category = 'Cab'
       Caption = '&Modif. Tiempo'
       Hint = 'Modificar Tiempo'
-      OnExecute = acCabModTpoExecute
     end
     object acGCabAdmCab: TAction
       Category = 'GCab'
@@ -138,7 +135,6 @@ object frmPrincipal: TfrmPrincipal
     object acCabPonMan: TAction
       Category = 'Cab'
       Caption = 'Poner en &Mantenimiento'
-      OnExecute = acCabPonManExecute
     end
     object acFacGraBol: TAction
       Category = 'Fac'
