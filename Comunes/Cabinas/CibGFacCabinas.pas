@@ -14,12 +14,14 @@ interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
   Menus, MisUtils, CibTramas, CibFacturables, CibCabinaBase, CibCabinaTarifas,
-  FormVisorMsjRed, CibUtils, FormAdminTarCab, FormAdminCabinas, FormFijTiempo;
+  FormVisorMsjRed, CibUtils, Globales, FormAdminTarCab, FormAdminCabinas,
+  FormFijTiempo;
 const //Acciones
   C_INI_CTAPC = 1;  //Solicita iniciar la cuenta de una PC
   C_DET_CTAPC = 2;  //Solicita detener la cuenta de una PC
   C_MOD_CTAPC = 3;  //Solicita modificar la cuenta de una PC
   C_PON_MANTN = 4;  //Solicita poner en mantenimiento a una PC
+  C_TRA_CABIN = 5;  //Solicita trasladar cabina
 
 type
   TCibFacCabina = class;
@@ -47,6 +49,7 @@ type
     tic    : integer;   //contador para temporización
     SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
                         por Socket.}
+    procedure LimpiarCabina;
     function VerCorteAutomatico: boolean;
     procedure cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
   protected  //"Getter" and "Setter"
@@ -143,8 +146,8 @@ type
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
-    tarif: TCPTarifCabinas; //tarifas de cabina
     GrupTarAlquiler: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
+    tarif: TCPTarifCabinas; //tarifas de cabina
     frmAdminTar: TfrmAdminTarCab;
     frmAdminCabs: TfrmAdminCabinas;
     function Agregar(nombre0: string; ip0: string): TCibFacCabina;
@@ -291,10 +294,9 @@ begin
            IntToStr(TranscSegTol) + #9 +
            N2f(FCosto) + #9 + N2f(FCosto) + #9 +
            D2f(cabCuenta.hor_ini) + #9 + categ + #9 +
-           I2f(Round(cabCuenta.tSolic * 24 * 60)) + #9 +
-           'ALQUILER DE CABINA' + #9 + D2f(FTransc) + #9 +
-           Nombre + #9 + estConex + #9 +
-           I2f(PausadS) + #9 + D2f(TranscSegTol) + #9 +
+           I2f(Round(cabCuenta.tSolic * 24 * 60)) + #9 + 'ALQUILER DE CABINA' + #9 +
+           D2f(FTransc/3600/24) + #9 + Nombre + #9 + estConex + #9 + I2f(PausadS) + #9 +
+           D2f(TranscSegTol/3600/24) + #9 +
            D2f(cabCuenta.tSolic) + #9 + Grupo.CategVenta +
            #9 + #9 + #9
 end;
@@ -564,7 +566,7 @@ function TCibFacCabina.CadActivacion(tSolic0: TDateTime; tLibre0,
 {Devuelve cadena con información de los campos usuales, para la activación o
  desactivación de la cabina.}
 begin
-  Result := Grupo.Nombre + #9 + Nombre + #9 +
+  Result := IdFac + #9 +
             D2f(tSolic0)+ #9 +
             B2f(tLibre0)+ #9 +
             B2f(horGra0);
@@ -599,10 +601,21 @@ procedure TCibFacCabina.DetenConteo;
 var
   nser: integer;
   r: TCibItemBoleta;
+  NombProg, NombLocal, Usuario: string;
 begin
   if not Contando then
     exit;   //No se puede detener cuenta en este Estado
-  //cabCuenta.hor_ini:=Now;
+  //Pide información global, porque se va a usar
+  if Grupo.OnReqConfigGen<>nil then
+      Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+  //Registra la venta en el archivo de registro
+  if horGra then begin
+    nser := OnLogVenta(IDE_INT_GRA, RegVenta(Usuario), Costo);
+  end else begin
+    nser := OnLogVenta(IDE_INT_NOR, RegVenta(Usuario), Costo);
+  end;
+  //Si hubo error, ya se mostró en OnLogVenta()
+  //Limpia cuenta. Se hace después de registrar la venta para no alterar el estado
   cabCuenta.tSolic:=0;
   cabCuenta.tLibre:=false;
   cabCuenta.horGra:=false;
@@ -610,14 +623,6 @@ begin
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
   cabConex.TCP_envComando(C_BLOQ_PC, 0, 0);    //bloquea, si hay conexión
-
-  //Registra la venta en el archivo de registro
-  if horGra then begin
-    nser := OnLogVenta(IDE_INT_GRA, RegVenta('XXX'), Costo);
-  end else begin
-    nser := OnLogVenta(IDE_INT_NOR, RegVenta('XXX'), Costo);
-  end;
-  //Si hubo error, ya se mostró en OnLogVenta()
 
   //agrega item a boleta
   r := TCibItemBoleta.Create;   //crea elemento
@@ -662,7 +667,12 @@ begin
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
 end;
-//constructor y destructor
+procedure TCibFacCabina.LimpiarCabina;
+//Pone la cabina limpia sin tiempos ni cuentas
+begin
+  cabCuenta.Limpiar;
+end;
+//Constructor y destructor
 constructor TCibFacCabina.Create(nombre0: string; ip0: string);
 begin
   inherited Create;
@@ -767,6 +777,9 @@ begin
   //Información del grupo en la primera línea
   Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
             #9 ;
+  //Información de las tarifas de alquiler
+  Result := Result + LineEnding + GrupTarAlquiler.StrObj;
+  Result := Result + LineEnding + tarif.StrObj;
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + c.CadPropied ;
@@ -789,6 +802,24 @@ begin
   Fx := f2N(a[2]);
   Fy := f2N(a[3]);
   lineas.Delete(0);  //elimima línea
+  //Busca líneas con información de Grupos de Tarifas de Alquiler
+  lin := '';
+  while lineas[0][1] = '+' do begin
+    //Acumula
+    lin := lin + lineas[0] + LineEnding;
+    lineas.Delete(0);  //elimima línea
+  end;
+  QuitarSaltoFinal(lin);
+  GrupTarAlquiler.StrObj:=lin;
+  //Busca líneas con información de Tarifas de Alquiler
+  lin := '';
+  while lineas[0][1] = '*' do begin
+    //Acumula
+    lin := lin + lineas[0] + LineEnding;
+    lineas.Delete(0);  //elimima línea
+  end;
+  QuitarSaltoFinal(lin);
+  tarif.StrObj:=lin;
   //Procesa líneas con información de las cabinas
   items.Clear;
   for lin in lineas do begin
@@ -865,16 +896,17 @@ begin
 end;
 procedure TCibGFacCabinas.EjecAccion(tram: TCPTrama);
 var
-  traDat, nom: String;
-  facDest: TCibFac;
+  traDat, nom, gru: String;
+  facDest, facDest2: TCibFac;
   Err, tLibre0, horGra0: boolean;
-  cab: TCibFacCabina;
+  cab, cab2: TCibFacCabina;
   campos: TStringDynArray;
   tSolic0: TDateTime;
+  Gfac: TCibGFac;
 begin
 debugln('Acción solicitada a GFacCabinas:' + tram.traDat);
   traDat := tram.traDat;  //crea copia para modificar
-  ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+  gru := ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
   nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
   facDest := ItemPorNombre(nom);
   if facDest=nil then exit;
@@ -899,6 +931,49 @@ debugln('Acción solicitada a GFacCabinas:' + tram.traDat);
     end;
   C_PON_MANTN: begin  //Se pide detener la cuenta de las PC
     cab.PonerManten;
+    end;
+  C_TRA_CABIN: begin  //Se pide trasladar desde una cabina a otra
+    //Se supone que la cabina se moverá de cab a cab2
+    //Ubica el facturable a donde se moverá
+    gru := ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+    //Identifica de acuerdo al grupo
+    if self.Nombre = gru then begin
+      //Es el mismo grupo
+      facDest2 := ItemPorNombre(nom);
+    end else begin
+      //Es otro grupo
+      Gfac := OnBuscarGFac(gru);
+      if Gfac = nil then exit;
+      facDest2 := Gfac.ItemPorNombre(nom);
+    end;
+    if facDest2=nil then exit;
+    cab2 := TCibFacCabina(facDest2);
+    //Ahora ya se puede mover la cabina
+    //Verifica si se puede trasladar libre la cabina
+    If cab2.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
+        MsgExc('Cabina ocupada.');
+        exit;
+    end else if cab2.EstadoCta = EST_MANTEN then begin
+        MsgExc('Cabina en mantenimiento.');
+        exit;
+    end else if cab2.Boleta.items.Count > 0 then begin
+        MsgExc('Cabina con boleta pendiente');
+        exit;
+    end;
+    //Copia variables de estado, incluyendo la boleta.
+    cab2.CadEstado := cab.CadEstado;
+    //Limpia cabina fuente
+    cab.LimpiarCabina;
+    cab.LimpiarBol;
+    //Envía comandos para restablecer estado
+    cab.TCP_envComando(C_BLOQ_PC, 0, 0);
+    Application.ProcessMessages;    //Para darle tiempo a enviar
+    Sleep(200);
+    Application.ProcessMessages;    //Para darle tiempo a enviar
+    if cab2.EstadoCta = EST_CONTAN Then begin
+        cab2.TCP_envComando(C_DESB_PC, 0, 0)
+    end;
     end;
   end;
 end;

@@ -3,8 +3,8 @@
 
 Áquí se definen 2 objetos principales:
 
-Tarifas de Alquiler y
-Tarifario de Cabinas
+- Grupo de Tarifas de Alquiler
+- Tarifario de Cabinas
 
 Por Tito Hinostroza
 }
@@ -12,7 +12,7 @@ unit CibCabinaTarifas;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dateutils, math, types, fgl, MisUtils;
+  Classes, SysUtils, dateutils, math, types, fgl, MisUtils, Globales;
 const
   MAX_NUM_CAB_INT = 50;        //máximo número de cabinas de internet
   MAX_TOLE_CAB_INT = 10;       //tolerancia en minutos para tiempos de cabina
@@ -303,8 +303,9 @@ var
 begin
   Result := '';
   for ta in items do begin
-    Result+=ta.StrObj + LineEnding;
+    Result+='+' + ta.StrObj + LineEnding;  //incluye con marca
   end;
+  QuitarSaltoFinal(Result); //Quita salto final
 end;
 procedure TGrupoTarAlquiler.SetStrObj(AValue: string);
 var
@@ -317,7 +318,7 @@ begin
   for lin in campos do begin
     if lin = '' then continue;
     ta := TTarAlquiler.Create;
-    ta.StrObj := lin;
+    ta.StrObj := copy(lin,2,length(lin)); //quita caracter inicial '+'
     ta.OnCambia:=@taCambia;
     items.Add(ta);
   end;
@@ -467,15 +468,15 @@ end;
 { TCPTarifCabinas }
 function TCPTarifCabinas.GetStrObj: string;
 begin
-  Result :=  I2f(toler) + LineEnding +
-             horLunes.StrObj + LineEnding +
-             horMartes.StrObj + LineEnding +
-             horMiercol.StrObj + LineEnding +
-             horJueves.StrObj + LineEnding +
-             horViernes.StrObj + LineEnding +
-             horSabado.StrObj + LineEnding +
-             horDomingo.StrObj + LineEnding +
-             horFeriado.StrObj;
+  Result :=  '*' + I2f(toler) + LineEnding +
+             '*' + horLunes.StrObj + LineEnding +
+             '*' + horMartes.StrObj + LineEnding +
+             '*' + horMiercol.StrObj + LineEnding +
+             '*' + horJueves.StrObj + LineEnding +
+             '*' + horViernes.StrObj + LineEnding +
+             '*' + horSabado.StrObj + LineEnding +
+             '*' + horDomingo.StrObj + LineEnding +
+             '*' + horFeriado.StrObj;
 end;
 function TCPTarifCabinas.GetTolerMin: integer;
 begin
@@ -487,19 +488,22 @@ begin
 end;
 procedure TCPTarifCabinas.SetStrObj(AValue: string);
 var
-  campos: TStringDynArray;
+  lineas: TStringDynArray;
+  i: Integer;
 begin
   if AValue='' then exit;
-  campos := explode(lineending, AValue);
-  toler := f2I(campos[0]);
-  horLunes.StrObj  := campos[1];
-  horMartes.StrObj := campos[2];
-  horMiercol.StrObj:= campos[3];
-  horJueves.StrObj := campos[4];
-  horViernes.StrObj:= campos[5];
-  horSabado.StrObj := campos[6];
-  horDomingo.StrObj:= campos[7];
-  horFeriado.StrObj:= campos[8];
+  lineas := explode(lineending, AValue);
+  for i := 0 to high(lineas) do
+    delete(lineas[i],1,1); //quita caracter '*'
+  toler := f2I(lineas[0]);
+  horLunes.StrObj  := lineas[1];
+  horMartes.StrObj := lineas[2];
+  horMiercol.StrObj:= lineas[3];
+  horJueves.StrObj := lineas[4];
+  horViernes.StrObj:= lineas[5];
+  horSabado.StrObj := lineas[6];
+  horDomingo.StrObj:= lineas[7];
+  horFeriado.StrObj:= lineas[8];
 end;
 function TCPTarifCabinas.CostoAlq(hor_ini: TDateTime; trans: integer): double;
 var

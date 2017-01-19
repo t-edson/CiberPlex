@@ -56,6 +56,7 @@ type
     property estadoN: integer read GetEstadoN write SetEstadoN;   //estado como entero
     function estadoStr: string;  //estado en texto
     function tSolicSeg: integer; //tiempo solicitado en segundos
+    procedure Limpiar;
   public
     constructor Create;
   end;
@@ -159,6 +160,15 @@ function TCabCuenta.tSolicSeg: integer;
 begin
   Result := round(tSolic*86400)
 end;
+
+procedure TCabCuenta.Limpiar;
+begin
+ estado := EST_NORMAL;
+
+ horgra := False;
+ tlibre := False;
+end;
+
 function TCabCuenta.GetEstadoN: integer;
 begin
   Result := Ord(estado);
