@@ -9,6 +9,7 @@ uses
   procedure PantallaAArchivo(arch: String);
   procedure Decodificar_M_ESTAD_CLI(cad: string; var nombrePC: string; var HoraPC: TDateTime;
     var bloqueado: boolean);
+  function VerHasta(const cad: string; car: char; out Err: boolean): string;
   function ExtraerHasta(var cad: string; car: char; out Err: boolean): string;
   function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
 
@@ -50,6 +51,25 @@ begin
   ss := StrToInt(copy(fec,13,2));
   HoraPC := EncodeDateTime(yy, mm, dd, hh, nn, ss, 0);
   if a[5] = '0' then bloqueado:=false else bloqueado:=true;
+end;
+
+function VerHasta(const cad: string; car: char; out Err: boolean): string;
+{Extrae una parte de una cadena, hasta encontrar el delimitador "car" , o hasta el final
+de la cadena. Si no encuentra el delimitador devuelve Err con TRUE.}
+var
+  p: SizeInt;
+begin
+  Err := false;
+  p := Pos(car, cad);
+  if p=0 then begin
+    //no encontró delimitador
+    Result := cad;  //toma hasta el final
+    Err := true;
+    exit;
+  end;
+  //Si encontró delimitador
+  Result := copy(cad, 1, p-1);  //toma hasta el final
+  Err := false;
 end;
 function ExtraerHasta(var cad: string; car: char; out Err: boolean): string;
 {Extrae una parte de una cadena, hasta encontrar el delimitador "car" , o hasta el final

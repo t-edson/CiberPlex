@@ -14,6 +14,7 @@ object fraVisCPlex: TfraVisCPlex
     Top = 0
     Width = 481
     Align = alClient
+    OnDragDrop = PaintBox1DragDrop
     OnDragOver = PaintBox1DragOver
   end
   object Image1: TImage

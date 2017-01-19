@@ -187,7 +187,7 @@ var
   arch: RawByteString;
   HoraPC: TDateTime;
   NombrePC, tmp, Grupo: string;
-  bloqueado: boolean;
+  bloqueado, Err: boolean;
   cabOrig: TCibFacCabina;
   gruOrig: TCibGFacCabinas;
   GFac: TCibGFac;
@@ -240,22 +240,20 @@ begin
   //Acciones sobre objetos facturables
   C_ACC_BOLET: begin  //Acciones sobre Boletas
       //Identifica al facturable sobre el que se aplica
-      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
       if GFac=nil then exit;
       Gfac.AccionesBoleta(tram);  //ejecuta la acción
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
   C_ACC_CABIN: begin   //Acciones sobre una cabina
       //Identifica a la cabina sobre la que aplica
-      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+      Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
       if GFac=nil then exit;
       if Gfac.tipo <> ctfCabinas then exit;
       //Ejecuta acción
       Gfac.EjecAccion(tram);
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
       { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
       de estado, (como se hace actualmente con el Timer) , ya que se está detectando cada
@@ -264,13 +262,12 @@ begin
   end;
   C_ACC_NILOM: begin  //Acciones sobre un NILO-m
       //Identifica a la cabina sobre la que aplica
-      Grupo := Explode(#9, tram.traDat)[0];  //El grupo viene en el primer campo
+    Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
       if GFac=nil then exit;
       if Gfac.tipo <> ctfNiloM then exit;
       //Ejecuta acción
       Gfac.EjecAccion(tram);
-      //Config.escribirArchivoIni;    { TODO : ¿Será necesario? }
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
   else
@@ -290,8 +287,10 @@ begin
 end;
 function TCibGruposFacturables.gof_ReqCadMoneda(valor: double): string;
 begin
-  if OnReqCadMoneda=nil then Result := ''
-  else Result := OnReqCadMoneda(valor);
+  if OnReqCadMoneda=nil then
+    Result := ''
+  else
+    Result := OnReqCadMoneda(valor);
 end;
 procedure TCibGruposFacturables.gof_ActualizStock(const codPro: string;
   const Ctdad: double);

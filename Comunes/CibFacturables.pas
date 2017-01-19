@@ -1,8 +1,10 @@
 {Define estructuras que se usarán para manejar Boletas y objetos facturables.
  Define a la clase TCPBoleta y sus clases asociadas, que se usará para representar a una
  boleta en CiberPlex.
- También se define al objeto TCPFacturable que es el objeto base de todos los objetos que
- pueeden manejar boletas.
+ También se define a las clases:
+ 1. "TCibFac" que es el objeto base de todos los objetos facturables (que pueden manejar
+ boletas).
+ 2. "TCibGFac" que es el objeto base de todos los objetos grupos de facturables.
 }
 unit CibFacturables;
 {$mode objfpc}{$H+}
@@ -20,8 +22,8 @@ const  //Caracteres identificadores para el archivo registros
   {Estos identificadores se usan para poder facilitar rápidamente el tipo de registro
    escrito, en el archivo de registro. Esta es la forma como trabaja el NILOTER-m y por
    eso se ha mantenido, pero Ciberplex, bien podría decidir usar base de datos.}
-  IDE_REG_ERR = 'e';     //registro de error
   IDE_REG_INF = 'i';     //registro de información
+  IDE_REG_ERR = 'e';     //registro de error
   //Identificadores para ventas e ingresos
   IDE_REG_VEN = 'v';     //registro de venta común
   IDE_REG_VEND= 'y';     //registro de venta descartada
@@ -33,19 +35,21 @@ const  //Caracteres identificadores para el archivo registros
   IDE_INT_NOR = 'p';     //registro de alquiler de cabina normal
   //Identificadores para llamadas
   IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m
+
 const  //Acciones sobre boletas
   //Acciones sobre la boleta
-  ACCBOL_GRA = 1;
-  ACCBOL_TRA = 2;
-
+  ACCBOL_GRA = 1;  //Grabar
+  ACCBOL_TRA = 2;  //Trasladar
   //Acciones sobre los ítems de la boleta
-  ACCITM_AGR = 5;
-  ACCITM_DEV = 6;
-  ACCITM_DES = 7;
-  ACCITM_REC = 8;
-  ACCITM_COM = 9;
-  ACCITM_DIV = 10;
-  ACCITM_GRA = 11;
+  ACCITM_AGR = 10;
+  ACCITM_DEV = 11;
+  ACCITM_DES = 12;
+  ACCITM_REC = 13;
+  ACCITM_COM = 14;
+  ACCITM_DIV = 15;
+  ACCITM_GRA = 16;
+const
+  SEP_IDFAC = ':';   //caracter separador
 
 type
   TItemBoletaEstado = (
@@ -54,8 +58,8 @@ type
   );
 
   { TCibItemBoleta }
-  TCibItemBoleta = class { TODO : Lo ideal serái crearle un índice a los ítems, para evitar errores por accesos concurrentes a las boletas. }
-    Index  : Integer;   //índice del item dentro de su lista
+  TCibItemBoleta = class { TODO : Lo ideal sería crearle un índice a los ítems, para evitar errores por accesos concurrentes a las boletas. }
+    Index  : Integer;   //índice del item dentro de su lista { TODO : Pareciera que este campo no es estríctamente, necesario}
     vfec   : TDateTime; //fecha-hora en que se crea el item (de venta)
     vser   : Integer;   //num. serie del item de venta asociado
     cat    : String;    //Categoría de ítem
@@ -108,7 +112,6 @@ type
     fec_grab: TDateTime;  //fecha de grabación en registro de ventas
   private
     Fitems  : TCibItemBoleta_list;  //lista de ítems
-    procedure AgregarItemR(r: TCibItemBoleta);
     function GetCadEstado: string;
   public
     msjError : string;
@@ -118,11 +121,13 @@ type
     function RegVenta: string;
     property CadEstado: string read GetCadEstado;
     procedure Assign(orig: TCibBoleta);
+    procedure Agregar(orig: TCibBoleta);
   public  //Información y Operaciones con ítems
     function BuscaItem(const id: string): TCibItemBoleta;
     procedure VentaItem(it: TCibItemBoleta; RegisVenta: Boolean);
     procedure DevolItem(it: TCibItemBoleta);
-    procedure IngresItem(it: TCibItemBoleta; recalcular: boolean=true);
+    procedure GrabarItemNoElim(it: TCibItemBoleta);
+    procedure GrabarItem(it: TCibItemBoleta);
     procedure ItemClear;
     procedure ItemAdd(it: TCibItemBoleta; recalcular: boolean=true);
     procedure ItemDelete(id: string; recalcular: boolean=true);
@@ -353,12 +358,15 @@ begin
         B2f(conStk) + #9 + #9 + N2f(pUnitR) + #9 + #9 + #9;
 end;
 function TCibItemBoleta.GetCadEstado: string;
+{El campo de estado se usa siempre para guardar en disco, el estado de la aplicación.
+La idea sería incluir la mínima cantidad de campos aquí, para hacer la cadena de estado
+total de la aplicación, no crezca tanto.}
 begin
   Result := '[b]' + I2f(Index) + #9 + DD2f(vfec) + #9 + I2f(vser) + #9 +
           cat + #9 + subcat + #9 + codPro + #9 +
-          descr + #9 + N2f(Cant) + #9 + N2f(pUnit) + #9 +
-          N2f(subtot) + #9 + I2f(estadoN) + #9 + I2f(fragmen) + #9 +
-          S2f(coment) + #9 + B2f(conStk) + #9 + #9 + #9
+          descr + #9 + N2f(Cant) + #9 + N2f(pUnit) + #9 + N2f(pUnitR) + #9 +
+          N2f(subtot) + #9 + N2f(stkIni) + #9 + I2f(estadoN) + #9 + I2f(fragmen) + #9 +
+          S2f(coment) + #9 + B2f(conStk) + #9;
 end;
 procedure TCibItemBoleta.SetCadEstado(AValue: string);
 var
@@ -377,22 +385,18 @@ begin
   descr := b[6];
   Cant := f2N(b[7]);
   pUnit := f2N(b[8]);
+  pUnitR:= f2N(b[9]);
 
-  subtot := f2N(b[9]);
-  estadoN := f2I(b[10]);
-  fragmen := f2I(b[11]);
+  subtot := f2N(b[10]);
+  stkIni := f2N(b[11]);
+  estadoN := f2I(b[12]);
+  fragmen := f2I(b[13]);
 
-  coment := f2S(b[12]);
+  coment := f2S(b[14]);
   //regBol_DeDisco.pven = b[12)
-  conStk := f2b(b[13]);
+  conStk := f2b(b[15]);
 end;
 { TCibBoleta }
-procedure TCibBoleta.AgregarItemR(r: TCibItemBoleta); { TODO : Pareceira que no es necesario esta función }
-//Agrega un ítem a la boleta. Se le debe pasar el registro
-begin
-  Fitems.Add(r);   //No está creando al objeto
-  r.Index := Fitems.Count-1;
-end;
 procedure TCibBoleta.Recalcula;
 {Recalcula los campos "SubTot" y "TotPag" de la boleta. Además actualiza el campo Index
  de todos los ítems.}
@@ -454,7 +458,8 @@ begin
         it.vser := nser;   //actualiza referencia a la venta
     end;
     //Agrega a la Boleta
-    AgregarItemR(it);
+    Fitems.Add(it);   //No está creando al objeto
+    it.Index := Fitems.Count-1;
     Recalcula;  //Actualiza subtotales
 //    if OnVentaAgregada<>nil then OnVentaAgregada;
     If msjError <> '' then exit;
@@ -473,23 +478,28 @@ begin
   padre.OnLogVenta(IDE_REG_VEND, Usuario + #9 + it.RegVenta, -it.subtot);
   ItemDelete(it.Id);  //quita de la lista
 end;
-procedure TCibBoleta.IngresItem(it: TCibItemBoleta; recalcular: boolean=true);
-{Realiza el ingreso del ítem de la boleta, eliminándolo de la boleta. Esto se hace cada
-vez que se pide grabar un ítem de la boleta o cuando se graban todos los ítems.}
+procedure TCibBoleta.GrabarItemNoElim(it: TCibItemBoleta);
+{Graba un ítem de una boleta pero sin eliminarlo.}
 var
   NombProg, NombLocal, Usuario: string;
 begin
   //Recupera información de configuración
   padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
   //Registra el ingreso en el archivo de registro
-  If it.estado = IT_EST_NORMAL Then begin
+  if it.estado = IT_EST_NORMAL Then begin
     //Ítem normal
     padre.OnLogIngre(IDE_CIB_IBO, Usuario + #9 + it.RegIngres, 0);
   end else begin
     //Ítem descartado
     padre.OnLogIngre(IDE_CIB_IBOD, Usuario + #9 + it.RegIngres, 0);
   end;
-  ItemDelete(it.Id, recalcular);  //quita el ítem de la boleta
+end;
+procedure TCibBoleta.GrabarItem(it: TCibItemBoleta);
+{Graba un ítem de una boleta, eliminándolo de la boleta. Esto se hace cada
+vez que se pide grabar un ítem de la boleta.}
+begin
+  GrabarItemNoElim(it);
+  ItemDelete(it.Id, true);  //quita el ítem de la boleta
 end;
 procedure TCibBoleta.ItemClear;
 begin
@@ -548,6 +558,17 @@ begin
   msjError := orig.msjError;
   padre    := orig.padre;  //notar que esto es una referencia
   Fitems.Clear;   //elimina ítems
+  for it in orig.Fitems do begin
+    itbol := TCibItemBoleta.Create;  //crea nuevo ítem
+    itbol.Assign(it);  //copia
+    Fitems.Add(itbol);
+  end;
+end;
+procedure TCibBoleta.Agregar(orig: TCibBoleta);
+{Agrega los ítems de otra boleta.}
+var
+  it, itbol: TCibItemBoleta;
+begin
   for it in orig.Fitems do begin
     itbol := TCibItemBoleta.Create;  //crea nuevo ítem
     itbol.Assign(it);  //copia
@@ -622,7 +643,7 @@ end;
 function TCibFac.IdFac: string;
 {Genera el identificador, a partir del nombre y del grupo.}
 begin
-  Result := Grupo.Nombre + #9 + Nombre;
+  Result := Grupo.Nombre + SEP_IDFAC + Nombre;
 end;
 procedure TCibFac.LimpiarBol;
 begin
@@ -773,14 +794,14 @@ var
   a: TStringDynArray;
   facDest, facDest2: TCibFac;
   itBol, itBol2: TCibItemBoleta;
-  traDat, nom, gru: String;
+  traDat, nom, gru, tmp: String;
   parte: Extended;
   idx, idx2: LongInt;
   Err: boolean;
   Gfac: TCibGFac;
 begin
   traDat := tram.traDat;  //crea copia para modificar
-  ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+  ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
   nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
   facDest := ItemPorNombre(nom);
   if facDest=nil then exit;
@@ -793,10 +814,17 @@ begin
         else    //escribe con punto de venta
             itBol.pVen = Me.Pventa
         end;}
-        facDest.boleta.IngresItem(itBol);   //ingresa el ítem
+        //Graba el ítem, sin recalcular para mantener el valor de los totales, cuando se
+        //llame a OnLogIngre().
+        facDest.boleta.GrabarItemNoElim(itBol);
       end;
       //Graba los campos de la boleta
       facDest.boleta.fec_grab := now;  //fecha de grabación
+      //El llenado de fec_bol, solo se hace para guardar la compatibilidad con el NILOTER-m,
+      //ya que en el estado actual de CiberPlex (boleta sin campo de fecha), no tiene mucho sentido.
+      DateTimeToString(tmp, 'dd/mm/yyyy', Now);
+      facDest.Boleta.fec_bol:= tmp;
+
       if OnLogIngre<>nil then
         OnLogIngre(IDE_CIB_BOL, facDest.Boleta.RegVenta, facDest.boleta.TotPag);
       //Config.escribirArchivoIni;
@@ -805,7 +833,7 @@ begin
   ACCBOL_TRA: begin  //Se pide mover la boleta de una cabina a otra
     //Se supone que la boleta se moverá de facDest a facDest2
     //Ubica el facturable a donde se moverá la boleta
-    gru := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+    gru := ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
     nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
     //Identifica de acuerdo al grupo
     if self.Nombre = gru then begin
@@ -818,7 +846,7 @@ begin
       facDest2 := Gfac.ItemPorNombre(nom);
     end;
     //Ahora ya se puede mover la boleta
-    facDest2.Boleta.Assign(facDest.Boleta);
+    facDest2.Boleta.Agregar(facDest.Boleta);
     facDest.LimpiarBol;
   end;
   //EjecAccion sobre los ítems de la boleta
@@ -870,7 +898,7 @@ begin
       itBol2.subtot := parte;
       itBol2.fragmen := 1;      //marca como separado
       itBol2.conStk := false;   //para que no descuente
-      facDest.Boleta.VentaItem(itBol2, true);  //agrega nuevo ítem
+      facDest.Boleta.VentaItem(itBol2, false);  //agrega nuevo ítem
       //Reubica ítem
       idx := facDest.Boleta.items.IndexOf(itBol);
       idx2 := facDest.Boleta.items.IndexOf(itBol2);
@@ -881,7 +909,7 @@ begin
       a := Explode(#9, traDat);
       itBol := facDest.Boleta.BuscaItem(a[0]);
       if itBol=nil then exit;
-      facDest.boleta.IngresItem(itBol);   //ingresa el ítem
+      facDest.boleta.GrabarItem(itBol);   //ingresa el ítem
     end;
   end;
 end;

@@ -8,7 +8,7 @@ object frmBoleta: TfrmBoleta
   ClientWidth = 401
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object Panel1: TPanel
     Left = 0
     Height = 76
