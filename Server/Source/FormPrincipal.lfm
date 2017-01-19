@@ -11,7 +11,7 @@ object frmPrincipal: TfrmPrincipal
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object ToolBar1: TToolBar
     Left = 0
     Height = 26

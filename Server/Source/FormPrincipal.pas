@@ -141,7 +141,7 @@ type
     tabPro: TCibTabProduc;
     Visor : TfraVisCPlex;     //Visor de cabinas
     TramaTmp    : TCPTrama;    //Trama temporal
-//    fallasesion : boolean;  //indica si se cancela el inicio de sesión
+    fallasesion : boolean;  //indica si se cancela el inicio de sesión
     tic : integer;
     function BuscarExplorCab(nomCab: string; CrearNuevo: boolean=false
       ): TfrmExplorCab;
@@ -290,6 +290,7 @@ begin
   Visor.motEdi.OnDblClick := @Visor_DblClick;
   Visor.OnObjectsMoved    := @Visor_ObjectsMoved;
   Visor.OnSolicEjecAcc    := @grupos_SolicEjecAcc;
+  Visor.OnReqCadMoneda    := @Config.CadMon;   //Para que pueda mostrar monedas
   //Crea los objetos gráficos del visor de acuerdo al archivo INI.
   Visor.ActualizarPropiedades(config.grupos.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
@@ -331,20 +332,22 @@ begin
   frmBoleta.OnGrabarItem   := @frmBoletaGrabarItem;
   frmBoleta.OnReqCadMoneda := @Config.CadMon;
   log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados');
-  {frmInicio.edUsu.Text := 'admin';
+  frmInicio.edUsu.Text := 'admin';
   frmInicio.ShowModal;
   if frmInicio.cancelo then begin
     fallasesion := True;
     Close;
-  end;}
-usuario := 'admin';
-perfil  := PER_ADMIN;
+  end;
+  log.PLogInf(usuario, 'Sesión iniciada: ' + usuario);
+//usuario := 'admin';
+//perfil  := PER_ADMIN;
   self.Activate;
   self.SetFocus;
   //self.Show;
 end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
+  log.PLogInf(usuario, 'Sesión terminada: ' + usuario);
   Config.escribirArchivoIni;  //guarda la configuración actual
   grupos_EstadoArchivo;       //guarda estado
 end;
@@ -464,7 +467,7 @@ begin
 end;
 procedure TfrmPrincipal.frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string
   );
-{Este evento se genera cuando se solicita ingresar una venta a la boletad e un objeto.}
+{Este evento se genera cuando se solicita ingresar una venta a la boleta de un objeto.}
 var
   txt: string;
 begin

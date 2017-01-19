@@ -30,8 +30,22 @@ var
    CVfec_act: TDateTime;   //Fecha de actualización del contador de ventas del CiberPlex
    CIfec_act: TDateTime;   //Fecha de actualización del contador de Ingresos del CiberPlex
 
+procedure QuitarSaltoFinal(var cad: string);
+
 implementation
 
+procedure QuitarSaltoFinal(var cad: string);
+{Verifica si la cadena incluye un salto de línea al final y de ser así, lo quita}
+var
+  lSalto: Integer;
+begin
+  lSalto := length(LineEnding);
+  if length(cad)<lSalto then exit;  //no puede contener salto
+  if RightStr(cad, lSalto) = LineEnding then begin
+    //Contiene el salto
+    delete(cad, length(cad)-lSalto +1 ,lSalto);
+  end;
+end;
 
 initialization
   //inicia directorios de la aplicación

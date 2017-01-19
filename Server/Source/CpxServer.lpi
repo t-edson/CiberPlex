@@ -65,7 +65,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="30">
+    <Units Count="31">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -231,6 +231,14 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit29>
+      <Unit30>
+        <Filename Value="..\..\Comunes\forminicio.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmInicio"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormInicio"/>
+      </Unit30>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -241,7 +249,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.5b;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres 0.8b;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes;.."/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.5b;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

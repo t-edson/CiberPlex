@@ -8,10 +8,10 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazcontrols, FormPrincipal, FormConfig, CibFacturables, frameVisCPlex,
-  ObjGraficos, CibCabinaTarifas, FormBoleta, FormRepIngresos, RegistrosVentas,
-  FormBusProductos, FormIngVentas, FormAgrupVert, CibGFacNiloM, FormNiloMConex,
-  FormFijTiempo, FormAdminCabinas, FormAdminTarCab, CibGFacCabinas,
-  CibNiloMTarifRut, FormNiloMEnrutam, FormNiloMProp;
+  ObjGraficos, CibCabinaTarifas, FormBoleta, FormInicio, FormRepIngresos,
+  RegistrosVentas, FormBusProductos, FormIngVentas, FormAgrupVert, CibGFacNiloM,
+  FormNiloMConex, FormFijTiempo, FormAdminCabinas, FormAdminTarCab,
+  CibGFacCabinas, CibNiloMTarifRut, FormNiloMEnrutam, FormNiloMProp;
 
 {$R *.res}
 
@@ -26,6 +26,7 @@ begin
   Application.CreateForm(TfrmIngVentas, frmIngVentas);
   Application.CreateForm(TfrmAgrupVert, frmAgrupVert);
   Application.CreateForm(TfrmAdminCabinas, frmAdminCabinas);
+  Application.CreateForm(TfrmInicio, frmInicio);
   Application.Run;
 end.
 
