@@ -17,39 +17,59 @@ Const
                          para guardar en EEPROM. 10 códigos por 2 caracteres.}
 
 type
-  { regTarifa }
+  {Fomato del CDR del NILO-m: #001;0;00016;00002;00002;4;450;LOCAL}
+
+  { TRegCDRNiloM }
+
+  TRegCDRNiloM = object
+  public  //Campos del CDR
+    serie   : string;
+    canal   : string;
+    durac   : string;
+    Costo   : string;
+    costoA  : string;
+    canalS  : string;
+    digitado: string;
+    descripc: string;
+  public //Campos adicionales
+    msjErr : string;
+    duracSeg: integer;  //duración en segundos
+    procedure LeeCdrNilo(linea: String);
+  end;
+
+  { TRegTarifa }
   //Define el tipo que almacena una tarifa (Una línea del archivo tarifario)
-  regTarifa = class
+  TRegTarifa = class
     //Campos leidos directamente del archivo tarifario
     serie   : String;     //serie de la tarifa
     categoria : string;   //categoría de llamada
     descripcion: String;  //Descripción de la serie
     //Campos calculados
-    HaySubPaso : Boolean; //Indica si hay subpaso (y por lo tanto subcosto)
-    npaso    : Integer;   //Valor del paso en segundos
-    Nsubpaso : Integer;   //Valor del subpaso en segundos
-    Ncosto   : Double;    //Valor del costo en flotante
-    Nsubcosto: Double;    //Valor del subcosto en flotante
-    HayCPaso1: Boolean;   //Indica si hay costo de paso 1
-    NCpaso1  : Double;    //Costo del Paso 1 en flotante
+    HaySubPaso : Boolean;  //Indica si hay subpaso (y por lo tanto subcosto)
+    nPaso      : Integer;  //Valor del paso en segundos
+    nSubpaso   : Integer;  //Valor del subpaso en segundos
+    nCtoPaso   : Double;   //Valor del costo del paso en flotante
+    nCtoSubPaso: Double;   //Valor del subcosto del paso en flotante
+    HayCtoPaso1: Boolean;  //Indica si hay costo de paso 1
+    nCtoPaso1  : Double;   //Costo del Paso 1 en flotante
     function paso: String;  //Paso como cadena
-    function costop: string;  //Costo comoc cadena
-    procedure assign(reg: regTarifa);   //para copia
+    function costop: string;  //Costo como cadena
+    procedure assign(reg: TRegTarifa);   //para copia
   end;
-  regTarifa_list = specialize TFPGObjectList<regTarifa>;
+  regTarifa_list = specialize TFPGObjectList<TRegTarifa>;
 
   //Define el tipo que almacena una ruta (Una línea del archivo de rutas)
 
-  { regRuta }
+  { TRegRuta }
 
-  regRuta = class
+  TRegRuta = class
     serie : string;    //Serie digitada
     numdig: integer;   //Número de digitos
     codPre: string;    //Cósigos de Prefijos
     indNT : integer;   //índice a colección. Solo se usa en "rutasA"
-    procedure assign(reg: regRuta);   //para copia
+    procedure assign(reg: TRegRuta);   //para copia
   end;
-  regRuta_list = specialize TFPGObjectList<regRuta>;
+  regRuta_list = specialize TFPGObjectList<TRegRuta>;
 
 
 
@@ -117,16 +137,16 @@ type
     nlin : integer;
     ctx  : TContextTar;   //contexto para procesar el tarifario
     procedure ActualizarMinMax;
-    function BuscaTarifaI(num: String): regTarifa;
-    function regTarif_DeEdi(r: regTarifa; cad: string; facCmoneda: double): string;
+    function BuscaTarifaI(num: String): TRegTarifa;
+    function regTarif_DeEdi(r: TRegTarifa; cad: string; facCmoneda: double): string;
     procedure VerificFinal(var numlin: Integer);
   public
     monNil : string;   //símbolo de moneda a grabar en el NILO-m
     tarifasTmp: regTarifa_list;
     tarifas: regTarifa_list;
-    tarNula: regTarifa;  //tarifa con valores nulos
+    tarNula: TRegTarifa;  //tarifa con valores nulos
     minCostop, maxCostop: Double;   //costo mínimo y máximo
-    function BuscaTarifa(num: String): regTarifa;
+    function BuscaTarifa(num: String): TRegTarifa;
     procedure CargarTarifas(lins: TStrings; facCmoneda: double);
 //    function CargarTarifas(archivo: String; facCmoneda: double): Integer;
   public  //Constructor y destructor
@@ -141,7 +161,7 @@ type
     nlin : integer;
     ctx  : TContextTar;   //contexto para procesar el tarifario
     function CodifPref(codStr: string): byte;
-    function regRuta_DeEdi(r: regRuta; cad: string): string;
+    function regRuta_DeEdi(r: TRegRuta; cad: string): string;
   public
     rutasTmp: regRuta_list;
     rutas: regRuta_list;
@@ -151,8 +171,6 @@ type
     destructor Destroy; override;
   end;
 
-  function LeeCdrNilo(linea: String;
-      var serie, canal, durac, Costo, costoA, canalS, digitado, descripc: String): string;
   procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
   procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
 
@@ -176,28 +194,6 @@ begin
     end;
     Result := True;   //concidieron
 End;
-function LeeCdrNilo(linea: String;
-    var serie, canal, durac, Costo, costoA, canalS, digitado, descripc: String): string;
-{Lee el CDR del NILO-m. Si hay error, devuelve cadena con mensaje.}
-var
-  a: TStringDynArray;
-begin
-  //Lee sólo los campos generados por el NILO-m
-  Result := '';
-  a := Explode(';', linea);
-  If High(a) < 7 then begin
-      Result := 'Error leyendo cdr. Faltan campos: ' + linea;
-      exit;
-  end;
-  serie   := copy(a[0], 2, 3);    //toma serie
-  canal   := a[1];
-  durac   := copy(a[2], 1, 3) + ':' + copy(a[2], 4, 2);
-  Costo   := a[3];
-  costoA  := a[4];     //costo acumulado
-  canalS  := a[5];
-  digitado:= a[6];
-  descripc:= a[7];
-end;
 procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
 {Configura la sintaxis de un resaltador, para que reconozca la sintaxis de un tarifario
 para un NILO-mC/D/E}
@@ -325,39 +321,80 @@ begin
   end;
 End;
 
-{ regTarifa }
-function regTarifa.paso: String;
-{Valor del paso en segundos tal y como se leería del archivo tarifario}
+{ TRegCDRNiloM }
+procedure TRegCDRNiloM.LeeCdrNilo(linea: String);
+{Lee el CDR del NILO-m. Si hay error, devuelve cadena con mensaje en "msjErr".}
+var
+  a: TStringDynArray;
+  min, seg: integer;
 begin
-  if HaySubPaso then Result:=IntToStr(npaso)+'/'+IntToStr(Nsubpaso)
-  else Result:=IntToStr(npaso);
+  //Lee sólo los campos generados por el NILO-m
+  msjErr := '';
+  a := Explode(';', linea);
+  If High(a) < 7 then begin
+      msjErr := 'Error leyendo CDR. Faltan campos: ' + linea;
+      exit;
+  end;
+  serie   := copy(a[0], 2, 3);    //toma serie
+  canal   := a[1];
+  durac   := a[2];
+  Costo   := a[3];
+  costoA  := a[4];     //costo acumulado
+  canalS  := a[5];
+  digitado:= a[6];
+  descripc:= a[7];
+  //Actualiza campso adicionales
+  if length(durac)<>5 then begin
+    msjErr := 'Error leyendo CDR. Duración errónea.';
+    duracSeg := 0;
+    exit;
+  end;
+  if not TryStrToInt(MidStr(durac, 1, 3), min) then begin
+    msjErr := 'Error leyendo CDR. Duración errónea.';
+    duracSeg := 0;
+    exit;
+  end;
+  if not TryStrToInt(MidStr(durac, 4, 2), seg) then begin
+    msjErr := 'Error leyendo CDR. Duración errónea.';
+    duracSeg := 0;
+    exit;
+  end;
+  duracSeg:= min * 60 + seg;
 end;
 
-function regTarifa.costop: string;
+{ TRegTarifa }
+function TRegTarifa.paso: String;
+{Valor del paso en segundos tal y como se leería del archivo tarifario}
+begin
+  if HaySubPaso then Result:=IntToStr(nPaso)+'/'+IntToStr(nSubpaso)
+  else Result:=IntToStr(nPaso);
+end;
+
+function TRegTarifa.costop: string;
 {Costo del paso tal y como se leería del tarifario  (puede incluir sintaxis de SubCosto
 o costo de paso 1)}
 begin
-  Result := FLoatToStr(Ncosto);
-  if HaySubPaso then Result := Result + '/' + FLoatToStr(Nsubcosto);
-  if HayCPaso1  then Result := FLoatToStr(NCpaso1) + ':' + Result;
+  Result := FLoatToStr(nCtoPaso);
+  if HaySubPaso then Result := Result + '/' + FLoatToStr(nCtoSubPaso);
+  if HayCtoPaso1  then Result := FLoatToStr(nCtoPaso1) + ':' + Result;
 end;
 
-procedure regTarifa.assign(reg: regTarifa);
+procedure TRegTarifa.assign(reg: TRegTarifa);
 begin
   serie       := reg.serie;
   categoria   := reg.categoria;
   descripcion := reg.descripcion;
   //Campos calculados
   HaySubPaso  := reg.HaySubPaso;
-  npaso       := reg.npaso;
-  Nsubpaso    := reg.Nsubpaso;
-  Ncosto      := reg.Ncosto;
-  Nsubcosto   := reg.Nsubcosto;
-  HayCPaso1   := reg.HayCPaso1;
-  NCpaso1     := reg.NCpaso1;
+  nPaso       := reg.nPaso;
+  nSubpaso    := reg.nSubpaso;
+  nCtoPaso      := reg.nCtoPaso;
+  nCtoSubPaso   := reg.nCtoSubPaso;
+  HayCtoPaso1   := reg.HayCtoPaso1;
+  nCtoPaso1     := reg.nCtoPaso1;
 end;
-{ regRuta }
-procedure regRuta.assign(reg: regRuta);
+{ TRegRuta }
+procedure TRegRuta.assign(reg: TRegRuta);
 begin
   serie  := reg.serie;
   numdig := reg.numdig;
@@ -564,27 +601,27 @@ end;
 procedure TNiloMTabTar.ActualizarMinMax;
 //Actualiza valores máximo y mínimo
 var
-  tar: regTarifa;
+  tar: TRegTarifa;
   cp: Double;
 begin
   For tar in tarifas  do begin
-    cp := tar.Ncosto;
+    cp := tar.nCtoPaso;
     If cp < minCostop Then minCostop := cp;
     If cp > maxCostop Then maxCostop := cp;
     If tar.HaySubPaso Then begin
-        cp := tar.NCpaso1;
+        cp := tar.nCtoPaso1;
         If cp < minCostop Then minCostop := cp;
         If cp > maxCostop Then maxCostop := cp;
     End;
   end;
 end;
-function TNiloMTabTar.BuscaTarifaI(num: String): regTarifa;
+function TNiloMTabTar.BuscaTarifaI(num: String): TRegTarifa;
 {Devuelve la referencia a una Tarifa para la serie indicada. Si no
 encuentra una concidencia, devuelve NIL.
 Cuando hay pocos dígitos, no es preciso en ubicar la tarifa.}
 var
   clave : string;
-  tar: regTarifa;
+  tar: TRegTarifa;
 begin
   clave := num;
   While Length(clave) > 0 do begin
@@ -596,7 +633,7 @@ begin
   //No encuentra concidencia
   Result := nil;
 end;
-function TNiloMTabTar.regTarif_DeEdi(r: regTarifa; cad: string; facCmoneda: double): string;
+function TNiloMTabTar.regTarif_DeEdi(r: TRegTarifa; cad: string; facCmoneda: double): string;
 {Convierte cadena de texto en registro. Se usa para leer del editor
 Se asume que el editor sólo tiene espacios como separadores. Las tabulaciones
 deben haberse reemplazado previamente. Si hay error, devuelve mensaje como cadena.}
@@ -614,54 +651,54 @@ begin
   //Coge PASO
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
-  r.npaso := ctx.CogerInt;  //lee y pasa al siguiente
-  if r.npaso = MaxInt then exit('Se esperaba número (0..9) en campo PASO.');
+  r.nPaso := ctx.CogerInt;  //lee y pasa al siguiente
+  if r.nPaso = MaxInt then exit('Se esperaba número (0..9) en campo PASO.');
   if ctx.Token='/' then begin
     //Hay subpaso
     r.HaySubPaso:=true;
     ctx.Next;  //pasa al siguiente
     if ctx.Eof then exit('Campos insuficientes');
-    r.Nsubpaso := ctx.CogerInt;  //coge subpaso
-    if r.Nsubpaso = MaxInt then exit('Se esperaba número después de "/".');
+    r.nSubpaso := ctx.CogerInt;  //coge subpaso
+    if r.nSubpaso = MaxInt then exit('Se esperaba número después de "/".');
   end;
 
   //Coge COSTO
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
   if not ctx.EsNumero then exit('Se esperaba número.');
-  r.Ncosto := ctx.CogerFloat;  //lee y pasa al siguiente (Se asume que es costo)
-  if r.Ncosto = MaxFloat then exit('Se esperaba número en campo COSTO.');
+  r.nCtoPaso := ctx.CogerFloat;  //lee y pasa al siguiente (Se asume que es costo)
+  if r.nCtoPaso = MaxFloat then exit('Se esperaba número en campo COSTO.');
   //Verifica si se trata de Costo de Paso1
   if ctx.Token=':' then begin
     //Es costo de paso 1
-    r.HayCPaso1:=true;
+    r.HayCtoPaso1:=true;
     ctx.Next;
-    r.NCpaso1:=r.Ncosto;   //copia el valor leído
+    r.nCtoPaso1:=r.nCtoPaso;   //copia el valor leído
     //ahora sí lee el costo
-    r.Ncosto:= ctx.CogerFloat;
-    if r.Ncosto= MaxFloat then exit('Se esperaba número en campo COSTO.');
+    r.nCtoPaso:= ctx.CogerFloat;
+    if r.nCtoPaso= MaxFloat then exit('Se esperaba número en campo COSTO.');
   end;
   if r.HaySubPaso then begin
     //Hay subpaso, se espera un SubCosto
     if ctx.Token<>'/' then exit('Se esperaba SubCosto.');
     ctx.Next;   //coge "/"
     if ctx.Eof then exit('Campos insuficientes');
-    r.Nsubcosto := ctx.CogerFloat;  //coge subpaso
-    if r.Nsubcosto = MaxFloat then exit('Se esperaba número después de "/".');
+    r.nCtoSubPaso := ctx.CogerFloat;  //coge subpaso
+    if r.nCtoSubPaso = MaxFloat then exit('Se esperaba número después de "/".');
   end;
   //Valida si es posible la codificación de este costo
-  dif := frac(r.Ncosto / facCmoneda);
+  dif := frac(r.nCtoPaso / facCmoneda);
   dif := round(dif * 1000000)/1000000;  //redondea por posible error de decimales
   if (dif <> 0) and (dif<>1) Then begin
-      exit('Costo de paso: ' + FloatToStr(r.Ncosto) +
+      exit('Costo de paso: ' + FloatToStr(r.nCtoPaso) +
            ' no se puede codificar con Factor de corrección de moneda: ' +
            FloatToStr(facCmoneda));
   end;
-  if r.Ncosto>facCmoneda*255 then exit('Costo muy alto para ' +
+  if r.nCtoPaso>facCmoneda*255 then exit('Costo muy alto para ' +
             'Factor de corrección de moneda actual');  //Valida costo máximo
-  if r.Nsubcosto>facCmoneda*255 then exit('SubCosto muy alto para ' +
+  if r.nCtoSubPaso>facCmoneda*255 then exit('SubCosto muy alto para ' +
             'Factor de corrección de moneda actual');  //Valida costo máximo
-  if r.NCpaso1>facCmoneda*255 then exit('Costo de Paso 1 muy alto para ' +
+  if r.nCtoPaso1>facCmoneda*255 then exit('Costo de Paso 1 muy alto para ' +
             'Factor de corrección de moneda actual');  //Valida costo máximo
 
   //Coge CATEGORÍA
@@ -699,7 +736,7 @@ begin
         numlin := 1;    //posicion al inicio
     End;
 end;
-function TNiloMTabTar.BuscaTarifa(num: String): regTarifa;
+function TNiloMTabTar.BuscaTarifa(num: String): TRegTarifa;
 {Devuelve un registro de tipo Tarifa para la serie indicada. Si no
 encuentra una concidencia, devuelve un registro con sus campos vacios.
 Cuando hay pocos dígitos, no es preciso en ubicar la tarifa.}
@@ -715,7 +752,7 @@ En ese caso no modifica el tarifario actual.}
 var
   linea , l: String;
   i : Integer;
-  tar, tar2: regTarifa;
+  tar, tar2: TRegTarifa;
 begin
   debugln('Cargando tarifas.');
   nlin := 0;
@@ -732,7 +769,7 @@ begin
           break;
       end;
       if trim(linea) <> '' then  begin //tiene datos
-          tar := regTarifa.Create;
+          tar := TRegTarifa.Create;
           tarifasTmp.Add(tar);  //agrega nueva tarifa
           msjError := regTarif_DeEdi(tar, linea, facCmoneda);
           If msjError <> '' Then begin
@@ -760,7 +797,7 @@ begin
   //terminó la lectura sin errores
   tarifas.Clear;       //elimina objetos
   for tar in tarifasTmp do begin  //copia las tarifas
-    tar2 := regTarifa.Create;  //crea copia para no interferir con objetos administrados
+    tar2 := TRegTarifa.Create;  //crea copia para no interferir con objetos administrados
     tar2.assign(tar);    //crea copia
     tarifas.Add(tar2);    //copia tarifas
   end;
@@ -773,7 +810,7 @@ constructor TNiloMTabTar.Create;
 begin
   tarifasTmp:= regTarifa_list.Create(true);
   tarifas:= regTarifa_list.Create(true);
-  tarNula:= regTarifa.Create;  //crea tarifa con campos en blanco
+  tarNula:= TRegTarifa.Create;  //crea tarifa con campos en blanco
   ctx := TContextTar.Create;
   ConfigurarSintaxisTarif(ctx.xLex, ctx.tkPrepro);  //usa la misma sintaxis que el resaltador
 end;
@@ -786,7 +823,7 @@ begin
   inherited Destroy;
 end;
 { TNiloMTabRut }
-function TNiloMTabRut.regRuta_DeEdi(r: regRuta; cad: string): string;
+function TNiloMTabRut.regRuta_DeEdi(r: TRegRuta; cad: string): string;
 {Convierte cadena de texto en registro. Se usa para leer del editor
 Se asume que el editor sólo tiene espacios o tabulaciones como separadores.
 Si hay error devuelve mensaje como cadena.}
@@ -873,7 +910,7 @@ En ese caso no modifica la tabla de rutas actual.}
 var
   linea , l: String;
   i : Integer;
-  rut, rut2: regRuta;
+  rut, rut2: TRegRuta;
 begin
   debugln('Cargando rutas.');
   nlin := 0;
@@ -888,7 +925,7 @@ begin
           break;
       end;
       if trim(linea) <> '' then  begin //tiene datos
-          rut := regRuta.Create;
+          rut := TRegRuta.Create;
           rutasTmp.Add(rut);  //agrega nueva tarifa
           msjError := regRuta_DeEdi(rut, linea);
           If msjError <> '' Then break;
@@ -912,7 +949,7 @@ begin
   //terminó la lectura sin errores
   rutas.Clear;       //elimina objetos
   for rut in rutasTmp do begin  //copia las rutas
-    rut2 := regRuta.Create;  //crea copia para no interferir con objetos administrados
+    rut2 := TRegRuta.Create;  //crea copia para no interferir con objetos administrados
     rut2.assign(rut);    //crea copia
     rutas.Add(rut2);    //copia rutas
   end;
