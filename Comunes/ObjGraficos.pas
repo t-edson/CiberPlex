@@ -457,26 +457,28 @@ procedure TogNiloM.DibujarDatosLlam;
     v2d.RectangR(x-3, y-2, x+97, y+50);
     v2d.Texto(x+1,y   , 'Esperando');
     v2d.Texto(x+1,y+16, 'marcación...');
-    if loc.llamadas.Count = 1 then v2d.Texto(x+1,y+32, '<1 llamada.>')
-    else v2d.Texto(x+1,y+32, '<'+ IntToStr(loc.llamadas.Count) +' llamadas>');
+    if loc.num_llam= 1 then v2d.Texto(x+1,y+32, '<1 llamada.>')
+    else v2d.Texto(x+1,y+32, '<'+ IntToStr(loc.num_llam) +' llamadas>');
 //    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
 //    v2d.Texto(x+1,y+16,tmp);
   end;
 begin
   //dibuja cuadro de estado
   if loc.descolg then begin    //Está descolgado
-    if loc.llam.NUM_DIG<> '' then begin  //Hay llamadas, Al menos la actual.
-      if loc.llam.CONTES then v2d.SetText(clRed, 10,'',false)
+    if loc.llamAct <> nil then begin  //Hay llamadas, Al menos la actual.
+      if loc.llamAct.CONTES then v2d.SetText(clRed, 10,'',false)
       else v2d.SetText(clBlack, 10,'',false);
       v2d.FijaRelleno(TColor($D0D0D0));
       v2d.RectangR(x-3, y-2, x+97, y+50);
       //muestra tiempo transcurrido
-      v2d.Texto(x+1,y   , loc.llam.NUM_DIG);
-      v2d.Texto(x+1,y+16, loc.llam.DESCR_);
-      if loc.llam.CONTES then
-        v2d.Texto(x+1,y+32, loc.llam.DURAC_ + ' ' + loc.Grupo.OnReqCadMoneda(loc.llam.COST_NTER))
-      else
-        v2d.Texto(x+1,y+32, 'Cto.Paso=' + loc.llam.COSTOP_);
+      v2d.Texto(x+1,y   , loc.llamAct.digitado);
+      v2d.Texto(x+1,y+16, loc.llamAct.tarDesrip);
+      if loc.llamAct.CONTES then begin
+        v2d.Texto(x+1,y+32, loc.llamAct.duracStr + ' ' + loc.Grupo.OnReqCadMoneda(loc.llamAct.COST_NTER))
+      end else begin
+        v2d.Texto(x+1,y+32, 'Cto.Paso=' + loc.llamAct.tarCtoPaso);
+      end;
+
     end else begin  //Hay llamadas
       v2d.SetText(clBlack, 10,'',false);
       MensajeNllamadas;
@@ -515,12 +517,11 @@ begin
   end;
   //Dibuja datos de llamada
   DibujarDatosLlam;
-  //muestra consumo
+  //muestra consumo en moneda
   v2d.FijaLapiz(psSolid, 1, clBlack);
   v2d.FijaRelleno(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
-  //solo muestra tiempo, en conteo
-  s := loc.Grupo.OnReqCadMoneda(0.1);
+  s := loc.Grupo.OnReqCadMoneda(loc.costo_tot);  //costo en formato de moneda
   v2d.SetText(clBlue, 11,'',false);
   v2d.TextoR(x+2, y+88, width-4, 22, s);
   BotDes.estado:= true;
