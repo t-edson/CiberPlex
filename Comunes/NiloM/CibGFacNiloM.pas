@@ -30,7 +30,7 @@ type
     serie    : string;  //Número de serie de la llamada
     canal    : string;  //Canal de entrada de llamada
     durac    : integer; //Duración de la llamada en segundos. Se actualiza periódicamente.
-    Costo    : string;  //Costo de la llamada
+    Costo    : string;  //Costo de la llamada. Se usa para alamcenar el costo del NILO-m.
     costoA   : string;  //Costo Global
     canalS   : string;  //Canal de salida de la llamada
     descripc : string;  //Descripción de llamada
@@ -39,7 +39,7 @@ type
   public   //Campos calculados o referencias.
     tabTar   : TNiloMTabTar; //Referencia a la tabla de tarifas. Se define al inicio.
     regTar   : TRegTarifa;   //Referencia a la tarifa.  Se actualiza con "digitado".
-    {Campos estáticos que se obtienen de "regTar". Se usam para que el visor pueda acceder
+    {Campos estáticos que se obtienen de "regTar". Se usan para que el visor pueda acceder
     a esta información}
     tarCtoPaso: string;   //Costo de paso de la llamada actual. Se actualiza con "digitado".
     tarDesrip: string;    //Descripción de la lamada actual. Se actualiza con "digitado".
@@ -47,15 +47,16 @@ type
     function verCosto: Double;  //Calcula el costo de una llamada
   public   //Campos adicionales
     HORA_INI : TDateTime;  //Hora de inicio de llamada
-    HORA_CON : TDateTime;  //hora de inicio de contestación
+    HORA_CON : TDateTime;  //Hora de inicio de contestación
     CONTES   : Boolean;    //Bandera de contestación
-    COST_NTER: Double;     //costo de una llamada (visto por el NILOTER)
+    COST_NTER: Double;     //Costo de una llamada, calculado por el NILOTER.
   protected
     const SEP = '|';  //separador de campos
     function GetCadEstado: string;
     procedure SetCadEstado(AValue: string);
   public
     property CadEstado: string read GetCadEstado write SetCadEstado;
+    constructor Create;
   end;
   regLlamada_list = specialize TFPGObjectList<TRegLlamada>;   //lista de bloques
 
@@ -323,19 +324,19 @@ function TRegLlamada.GetCadEstado: string;
 {Notar que no se guarda la refererncia "tarif", ya que se puede obtener de NUM_DIG}
 begin
   Result :=
-    serie      + SEP +
-    canal      + SEP +
-    Costo      + SEP +
-    costoA     + SEP +
-    canalS     + SEP +
-    descripc   + SEP +
-    T2f(HORA_INI) + SEP +
-    T2f(HORA_CON) + SEP +
-    fDigitado      + SEP +
-    B2f(CONTES)   + SEP +
+    serie        + SEP +
+    canal        + SEP +
+    Costo        + SEP +
+    costoA       + SEP +
+    canalS       + SEP +
+    descripc     + SEP +
+    T2f(HORA_INI)+ SEP +
+    T2f(HORA_CON)+ SEP +
+    fDigitado    + SEP +
+    B2f(CONTES)  + SEP +
     I2f(durac)   + SEP +
-    tarCtoPaso    + SEP +
-    tarDesrip     + SEP +
+    tarCtoPaso   + SEP +
+    tarDesrip    + SEP +
     N2f(COST_NTER);
 end;
 procedure TRegLlamada.SetCadEstado(AValue: string);
@@ -352,15 +353,19 @@ begin
     descripc  := a[5];
     HORA_INI  := f2T(a[6]);
     HORA_CON  := f2T(a[7]);
-    fDigitado  := a[8];
+    fDigitado := a[8];
     CONTES    := f2B(a[9]);
-    durac    := f2I(a[10]);
+    durac     := f2I(a[10]);
     tarCtoPaso:= a[11];
     tarDesrip := a[12];
     COST_NTER := f2N(a[13]);
   except
     MsgErr('Error leyendo registro de llamadas .');
   end;
+end;
+constructor TRegLlamada.Create;
+begin
+  HORA_INI := now;
 end;
 { TCibFacLocutor }
 procedure TCibFacLocutor.CalcularCostoTotNumLLam();
@@ -376,9 +381,6 @@ begin
     //Calcula el costo total de listLLamadas
     costo_tot := 0;
     For l in listLLamadas do begin  //no toma encabezado
-//        Costo := l.Costo;
-//        Costo := StringReplace(Costo, ',', '.', []);
-//        costo_tot := costo_tot + StrToFloat(Costo);   //val() sólo reconoce punto
         costo_tot := costo_tot + l.COST_NTER;
     end;
     num_llam := listLLamadas.Count;
@@ -389,7 +391,10 @@ los campos que deban ser actualizados}
 var
   llamActEstado: String;
 begin
-  if llamAct=nil then llamActEstado := '' else llamActEstado := llamAct.CadEstado;
+  if llamAct=nil then
+    llamActEstado := ''
+  else
+    llamActEstado := llamAct.CadEstado;
   Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
          nombre + #9 +    {el nombre es obligatorio para identificarlo unívocamente}
          B2f(descolg) + #9 + B2f(descon) + #9 +
@@ -575,6 +580,7 @@ begin
   Sleep(500);   //espera a que el NILO termine de procesar la orden
   //Me.MiLista1.Clear;
   listLLamadas.Clear;   //se aprovecha para limpiar la lista
+  llamAct := nil;
   CalcularCostoTotNumLLam;
 End;
 procedure TCibFacLocutor.DesconectarLlamada;
@@ -685,6 +691,7 @@ begin
         bloquear_rx := False;  //libera el bloqueo
         CalcularCostoTotNumLLam;               //Actualiza costo
         //Registra la venta en el archivo de registro
+debugln('--regist. venta');
         nser := OnLogVenta(IDE_NIL_LLA, RegVenta(usuario), llamAct.COST_NTER);    //toma serie
         //Si hubo error, ya se mostró en OnLogVenta()
 
@@ -694,13 +701,15 @@ begin
         r.Cant := 1;
         r.pUnit := llamAct.COST_NTER;
         r.subtot := llamAct.COST_NTER;
-        r.descr := 'llamAct: ' + llamAct.digitado + '(' + llamAct.descripc + ')';
+        r.descr := 'Llamada: ' + llamAct.digitado + '(' + llamAct.descripc + ') ' +
+                  llamAct.duracStr;
         r.cat := CategLocu;
         r.subcat := 'LLAMADA';
         r.vfec := now;
         r.estado := IT_EST_NORMAL;
         r.fragmen := 0;
         r.conStk := False;    //no se maneja stock
+debugln('--venta ítem');
         Boleta.VentaItem(r, False);
     end;
 
@@ -1188,11 +1197,11 @@ debugln('-Creando: '+ nombre0);
   FestadoCnx  := necMuerto;  //este es el estadoCnx inicial, porque no se ha creado el hilo
   //Conectar;  //No inicia la conexión
   mens_error:= TStringList.Create;
-  Agregar('LOC1','0', tarif);
-  Agregar('LOC2','1', tarif);
-  Agregar('LOC3','2', tarif);
-  Agregar('LOC4','3', tarif);
-  CategVenta := 'LLAMADAS';
+  Agregar('LOCUTORIO 1','0', tarif);
+  Agregar('LOCUTORIO 2','1', tarif);
+  Agregar('LOCUTORIO 3','2', tarif);
+  Agregar('LOCUTORIO 4','3', tarif);
+  CategVenta := 'COUNTER';
   //Configura parámetros de control de inicio de llamadas
   IniLLamMan  := false;
   IniLLamTemp := false;

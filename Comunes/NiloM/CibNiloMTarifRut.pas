@@ -97,6 +97,7 @@ type   //Tipos para manejo de definiciones
     tkPrepro: TSynHighlighterAttributes;  //atributo para procesar definiciones
     definiciones: TNilDefinicion_list;
     function ExisteDefinicion(def: String): TNilDefinicion;
+    function CogerTok: string;
     function CogerCad: string;
     function CogerInt: integer;
     function CogerFloat: double;
@@ -369,7 +370,6 @@ begin
   if HaySubPaso then Result:=IntToStr(nPaso)+'/'+IntToStr(nSubpaso)
   else Result:=IntToStr(nPaso);
 end;
-
 function TRegTarifa.costop: string;
 {Costo del paso tal y como se leería del tarifario  (puede incluir sintaxis de SubCosto
 o costo de paso 1)}
@@ -378,7 +378,6 @@ begin
   if HaySubPaso then Result := Result + '/' + FLoatToStr(nCtoSubPaso);
   if HayCtoPaso1  then Result := FLoatToStr(nCtoPaso1) + ':' + Result;
 end;
-
 procedure TRegTarifa.assign(reg: TRegTarifa);
 begin
   serie       := reg.serie;
@@ -414,10 +413,16 @@ begin
   end;
   exit(nil);
 end;
-function TContextTar.CogerCad: string;
+function TContextTar.CogerTok: string;
 {Devuelve el token actual, como cadena y pasa al siguiente token.}
 begin
   Result := Token;
+  Next;   //pasa al siguiente
+end;
+function TContextTar.CogerCad: string;
+{Coge una cadena, quitando los caracteres delimitadores laterales.}
+begin
+  Result := copy(Token,2,length(Token)-2);
   Next;   //pasa al siguiente
 end;
 function TContextTar.CogerInt: integer;
@@ -434,7 +439,6 @@ begin
   if not TryStrToFloat(Token, Result) then Result := MaxFloat;
   Next;
 end;
-
 //Funciones de identificación del token actual
 function TContextTar.EsDEFINIR: boolean;
 {Indica si el identificador actual es la directiva DEFINIR}
@@ -646,7 +650,7 @@ begin
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
   if not ctx.EsNumero then exit('Se esperaba número (0..9,#,*) en campo SERIE.');
-  r.serie := ctx.CogerCad;  //lee y pasa al siguiente
+  r.serie := ctx.CogerTok;  //lee y pasa al siguiente
 
   //Coge PASO
   ctx.SkipWhites;
@@ -705,8 +709,10 @@ begin
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
   if not ctx.EsCadena and not ctx.EsIdentif then exit('Se esperaba cadena o identificador en CATEGORÍA.');
-  r.categoria := ctx.CogerCad;  //lee y pasa al siguiente
-
+  if ctx.EsCadena then  //Es cadena
+    r.categoria := ctx.CogerTok
+  else          //Es identificador
+    r.categoria := ctx.CogerTok;
   //Coge DESCRIPCIÓN
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
@@ -836,7 +842,7 @@ begin
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
   if not ctx.EsNumero then exit('Se esperaba número (0..9,#,*) en campo SERIE.');
-  r.serie := ctx.CogerCad;  //lee y pasa al siguiente
+  r.serie := ctx.CogerTok;  //lee y pasa al siguiente
 
   //Coge NUMDIG
   ctx.SkipWhites;
@@ -851,8 +857,7 @@ begin
   ctx.SkipWhites;
   if ctx.Eof then exit('Campos insuficientes');
   if not ctx.EsCadena then exit('Se esperaba cadena en campo CODPRE.');
-  r.codPre := ctx.CogerCad;  //lee y pasa al siguiente
-  r.codPre := copy(r.codPre,2,length(r.codPre)-2);  //quita comillas laterales
+  r.codPre := ctx.CogerCad;  //lee sin comillas
   //Valida CODPRE
   if length(r.codPre) > 20 then  //Solo se permiten hasta 20 caracteres en el NILO-mC/D/E
     exit('Códigos de prefijo muy largo.');
