@@ -11,15 +11,15 @@ object frmNiloMConex: TfrmNiloMConex
   OnDestroy = FormDestroy
   OnKeyPress = FormKeyPress
   OnShow = FormShow
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object PageControl1: TPageControl
     Left = 0
     Height = 445
     Top = 0
     Width = 586
-    ActivePage = tabConexiones
+    ActivePage = tabSerial
     Align = alClient
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 0
     object tabSerial: TTabSheet
       Caption = 'Puerto Serial'
@@ -135,6 +135,15 @@ object frmNiloMConex: TfrmNiloMConex
           Top = 144
           Width = 224
           TabOrder = 7
+        end
+        object btnLimpTerm: TButton
+          Left = 8
+          Height = 25
+          Top = 208
+          Width = 108
+          Caption = '&Limpiar Terminal>>'
+          OnClick = btnLimpTermClick
+          TabOrder = 8
         end
       end
       object Memo1: TMemo

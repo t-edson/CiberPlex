@@ -16,6 +16,7 @@ type
     btnEnviar: TButton;
     btnConect: TButton;
     btnDescon: TButton;
+    btnLimpTerm: TButton;
     btnRefres: TButton;
     cmdD1: TButton;
     cmdD2: TButton;
@@ -124,6 +125,7 @@ type
     procedure btnConectClick(Sender: TObject);
     procedure btnDesconClick(Sender: TObject);
     procedure btnEnviarClick(Sender: TObject);
+    procedure btnLimpTermClick(Sender: TObject);
     procedure btnRefresClick(Sender: TObject);
     procedure cmbPuertoChange(Sender: TObject);
     procedure cmdD0Click(Sender: TObject);
@@ -256,6 +258,10 @@ end;
 procedure TfrmNiloMConex.btnEnviarClick(Sender: TObject);
 begin
   TCibGFacNiloM(padre).EnvComando(txtComando.Text);
+end;
+procedure TfrmNiloMConex.btnLimpTermClick(Sender: TObject);
+begin
+  Memo1.Clear;
 end;
 procedure TfrmNiloMConex.btnRefresClick(Sender: TObject);
 begin

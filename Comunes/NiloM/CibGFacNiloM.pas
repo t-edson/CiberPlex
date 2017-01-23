@@ -48,7 +48,7 @@ type
   public   //Campos adicionales
     HORA_INI : TDateTime;  //Hora de inicio de llamada
     HORA_CON : TDateTime;  //Hora de inicio de contestación
-    CONTES   : Boolean;    //Bandera de contestación
+    CONTEST  : Boolean;    //Bandera de contestación
     COST_NTER: Double;     //Costo de una llamada, calculado por el NILOTER.
   protected
     const SEP = '|';  //separador de campos
@@ -82,7 +82,7 @@ type
   protected
     tabTar  : TNiloMTabTar; //Referencia a la tabla de tarifas. Se actualiza al inicio.
     tic_con : Integer;    //Contador para contestación automática
-    procedure ProcesaColgado;
+    procedure ProcesaColgado(usuario: string; CategLocu: string);
     procedure ProcesaDescolgado;
     procedure ProcesaDigitado(dig: String);
     procedure ProcesarContestada(cansal: String);
@@ -98,7 +98,7 @@ type
     procedure CalcularCostoTotNumLLam;  //Actualiza "costo_tot" y "num_llam"
     function RegVenta(usu: string): string; override; //línea para registro de venta
     function AgregarFila: TRegLlamada;
-    procedure EscribeDatosAdicionales;
+    procedure TerminarLlamada(usuario: string; CategLocu: string);
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
       CategLocu: string);
   public  //Constructor y destructor
@@ -196,7 +196,6 @@ type
 var
   grabando_nilo   : Boolean;  //Bandera para indicar que se está grabando
   cancelar_envio  : Boolean;  //Bandera para cancelar el envío de un archivo CNL
-  bloquear_rx     : Boolean;  //Bandera para detener la escritura en el log
 
 implementation
 const
@@ -333,7 +332,7 @@ begin
     T2f(HORA_INI)+ SEP +
     T2f(HORA_CON)+ SEP +
     fDigitado    + SEP +
-    B2f(CONTES)  + SEP +
+    B2f(CONTEST)  + SEP +
     I2f(durac)   + SEP +
     tarCtoPaso   + SEP +
     tarDesrip    + SEP +
@@ -354,7 +353,7 @@ begin
     HORA_INI  := f2T(a[6]);
     HORA_CON  := f2T(a[7]);
     fDigitado := a[8];
-    CONTES    := f2B(a[9]);
+    CONTEST    := f2B(a[9]);
     durac     := f2I(a[10]);
     tarCtoPaso:= a[11];
     tarDesrip := a[12];
@@ -465,35 +464,43 @@ begin
     //Acumula número digitado, y actualiza tarifa y costo de paso
     llamAct.digitado := llamAct.digitado + dig;
 end;
-procedure TCibFacLocutor.ProcesaColgado;
+procedure TCibFacLocutor.ProcesaColgado(usuario: string; CategLocu: string);
 begin
   descolg := False;     //La llamada está colgada
   if llamAct=nil then exit;  //protección
-  if llamAct.CONTES Then begin   //estaba contestada, se asume fin de llamada
-      //No se generó el cdr '#'
-      //Ha terminado la llamada, se aprovecha para registrar datos adicionales
-      //de la llamada antes de que venga otro flujo de caracteres por el serial
-      bloquear_rx := True;  //para evitar que se escriban datos en el log, mientras escribimos los datos adicionales
-      EscribeDatosAdicionales;
-      //Genera sonido para listLLamadas con tiempo
-      if llamAct.durac > 0 Then begin
- {Por algún motivo, esta rutina produce que las siguientes instrucciones no se ejecuten,
-           generando diversos errores.
-          sndPlaySound(PChar(rutSonidos + '\colgado.wav'), SND_ASYNC Or SND_NODEFAULT)
-}
-      end;
-      bloquear_rx := False;  //libera el bloqueo
-      llamAct.CONTES := False;
-//        costo_tot = costo_tot + llamAct.costo //acumula costo
-      CalcularCostoTotNumLLam;
+  if llamAct.CONTEST Then begin   //Estaba aún en este estado
+      {Esto no debería pasar, porque las llamadas contestadas, generan su CDR antes de
+      generar la indicación de "colgado" (haciendo que lo procese ProcesarLinea(), quien
+      pone CONTEST = false.). Si pasa, es probable que no se haya detectado la llegada
+      del CDR corectamente, tal vez por problemas de comunicación.}
+      TCibGFacNiloM(grupo).ErrorLog('Recibido el estado de colgado sin recibir CDR.');
+      {Para salvar la situación, generamos el registro de venta y el ítem de la boleta,
+      para evitar perder el cobro. Pero hay que notar que no tenemos la información que nos
+      da el CDR, así que usaremos los campos que tenemos}
+      llamAct.serie    := '000';
+      llamAct.canal    := '?';
+      //llamAct.durac  //Usamos la duración de CIBERPLEX
+      llamAct.Costo    := '00000';
+      llamAct.costoA   := '00000';
+      llamAct.canalS   := '?';
+      //llamAct.digitado //Usamos el digitado de CIBERPLEX
+      llamAct.descripc := llamAct.regTar.descripcion; //Usamos la descripción de CIBERPLEX
+
+      llamAct.CONTEST := False;
+      //Notar que comop no tenemos el CDR,
+      //Calcula costo en campo calculados
+      llamAct.COST_NTER := llamAct.verCosto;  //Costo con duración CIBERPLEX
+      If msjError <> '' then TCibGFacNiloM(grupo).ErrorLog(msjError);
+      //Termina la llamada normalmente, registrando datos adicionales.
+      TerminarLlamada(usuario, CategLocu);
   end;
   llamAct := nil;    //Termina la llamada actual.
 end;
 procedure TCibFacLocutor.ProcesaDescolgado();
 begin
     llamAct := nil;    //Límpia bandera de llamada
-    descolg := True;   //La llamada está colgada
-    descon := false;   //Se supone que si se descuelga debe teenr conexión
+    descolg := True;   //La llamada está descolgada
+    descon := false;   //Se supone que si se descuelga debe tener conexión
     tic_con := 0;      //Inicia contador
 end;
 procedure TCibFacLocutor.ProcesarContestada(cansal: String);
@@ -504,7 +511,7 @@ begin
       llamAct := AgregarFila;
       llamAct.HORA_INI := now;
   end;
-  llamAct.CONTES := True;
+  llamAct.CONTEST := True;
   llamAct.HORA_CON := now;      //toma hora de contestación
   descolg := True;     //La llamada está descolgada
 end;
@@ -530,11 +537,11 @@ begin
   //Procesa el conteo de la temporización
   if descolg And GFacNiloM.IniLLamMan And (llamAct.digitado <> '') then begin
       tic_con := tic_con + 1;   //Lleva la cuenta
-      If (tic_con >= GFacNiloM.PerLLamTemp) And Not llamAct.CONTES Then begin
+      If (tic_con >= GFacNiloM.PerLLamTemp) And Not llamAct.CONTEST Then begin
           InicioConteo;
       End;
   End;
-  if llamAct.CONTES Then begin    //LLamada en curso
+  if llamAct.CONTEST Then begin    //LLamada en curso
       llamAct.durac := Round(((date + Time) - llamAct.HORA_CON) * 24 * 60 * 60);   //en segundos
       llamAct.COST_NTER := llamAct.verCosto;  //Estima costo
       If msjError <> '' Then GFacNiloM.ErrorLog(msjError);
@@ -551,12 +558,15 @@ begin
       CalcularCostoTotNumLLam;
   end;
 end;
-procedure TCibFacLocutor.EscribeDatosAdicionales;
+procedure TCibFacLocutor.TerminarLlamada(usuario: string; CategLocu: string);
 //Escribe datos en el registro y en el terminal
 var
   linea: string;
   nilo: TCibGFacNiloM;
+  nser : Integer;
+  r : TCibItemBoleta;
 begin
+  //Escribe datos adicionales en el registro del NILO-m
   nilo := TCibGFacNiloM(self.Grupo);
   linea := FormatDateTime('yyyy/mm/dd hh:nn:ss', now) +
            ' COST:' + FormatFloat('000.00', llamAct.COST_NTER) +
@@ -567,6 +577,34 @@ begin
   nilo.EscribeLog(linea);
   nilo.VolcarErrorLog;        //Vuelca también los mensajes de error
   nilo.EscribeLogPrompt;      //Se escribe prompt para no alterar el formato de log
+  //Genera sonido para listLLamadas con tiempo
+  if llamAct.durac >0 then begin
+{ Por algún motivo, esta rutina produce que las siguientes instrucciones no se ejecuten,
+generando diversos errores.
+    sndPlaySound(PChar(rutSonidos + '\colgado.wav'), SND_ASYNC Or SND_NODEFAULT)
+}
+  end;
+//  costo_tot = costo_tot + llamAct.costo //acumula costo
+  CalcularCostoTotNumLLam;               //Actualiza costo
+  //Registra la venta en el archivo de registro
+  nser := OnLogVenta(IDE_NIL_LLA, RegVenta(usuario), llamAct.COST_NTER);    //toma serie
+  //Si hubo error, ya se mostró en OnLogVenta()
+
+  //agrega item a boleta
+  r := TCibItemBoleta.Create;   //crea elemento
+  r.vser := nser;
+  r.Cant := 1;
+  r.pUnit := llamAct.COST_NTER;
+  r.subtot := llamAct.COST_NTER;
+  r.descr := 'Llamada: ' + llamAct.digitado + '(' + llamAct.descripc + ') ' +
+            llamAct.duracStr;
+  r.cat := CategLocu;
+  r.subcat := 'LLAMADA';
+  r.vfec := now;
+  r.estado := IT_EST_NORMAL;
+  r.fragmen := 0;
+  r.conStk := False;    //no se maneja stock
+  Boleta.VentaItem(r, False);
 end;
 procedure TCibFacLocutor.ConectarLlamada;
 begin
@@ -636,8 +674,6 @@ procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double;
               (linea[6] = num_can);
   end;
 var
-  nser : Integer;
-  r : TCibItemBoleta;
   L : TRegTarifa;
   cdr: TRegCDRNiloM;
 begin
@@ -673,50 +709,18 @@ begin
         llamAct.canalS   := cdr.canalS;
         llamAct.digitado := cdr.digitado;  //Sincroniza con el CDR
         llamAct.descripc := cdr.descripc;
-
-        llamAct.CONTES := False;
+        //Campos adicionales
+        llamAct.CONTEST  := False;
         //Calcula costo en campo calculados
         llamAct.COST_NTER := llamAct.verCosto;  //Costo con duración sincronizada
         If msjError <> '' then TCibGFacNiloM(grupo).ErrorLog(msjError);
-
-        bloquear_rx := True;  //para evitar que se escriban datos en el log, mientras escribimos los datos adicionales
-        EscribeDatosAdicionales;
-        //Genera sonido para listLLamadas con tiempo
-        if llamAct.durac >0 then begin
-{ Por algún motivo, esta rutina produce que las siguientes instrucciones no se ejecuten,
- generando diversos errores.
-          sndPlaySound(PChar(rutSonidos + '\colgado.wav'), SND_ASYNC Or SND_NODEFAULT)
-}
-        end;
-        bloquear_rx := False;  //libera el bloqueo
-        CalcularCostoTotNumLLam;               //Actualiza costo
-        //Registra la venta en el archivo de registro
-debugln('--regist. venta');
-        nser := OnLogVenta(IDE_NIL_LLA, RegVenta(usuario), llamAct.COST_NTER);    //toma serie
-        //Si hubo error, ya se mostró en OnLogVenta()
-
-        //agrega item a boleta
-        r := TCibItemBoleta.Create;   //crea elemento
-        r.vser := nser;
-        r.Cant := 1;
-        r.pUnit := llamAct.COST_NTER;
-        r.subtot := llamAct.COST_NTER;
-        r.descr := 'Llamada: ' + llamAct.digitado + '(' + llamAct.descripc + ') ' +
-                  llamAct.duracStr;
-        r.cat := CategLocu;
-        r.subcat := 'LLAMADA';
-        r.vfec := now;
-        r.estado := IT_EST_NORMAL;
-        r.fragmen := 0;
-        r.conStk := False;    //no se maneja stock
-debugln('--venta ítem');
-        Boleta.VentaItem(r, False);
+        //Termina la llamada, registrando la venta y creando íten de boleta.
+        TerminarLlamada(usuario, CategLocu);
     end;
-
     if copy(linea, 1, 2)  = 'n' + num_can then  //Procesamiento de número digitado
         ProcesaDigitado(Copy(linea, 3, 1))
     else if copy(linea, 1, 2)  = 'c' + num_can then  //Llamada colgada
-        ProcesaColgado
+        ProcesaColgado(usuario, CategLocu)
     else if copy(linea, 1, 2)  = 'y' + num_can then     //Llamada contestada
         ProcesarContestada(MidStr(linea, 3, 1))  //indica canal de salida
     else if copy(linea, 1, 2)  = 'd' + num_can then   //Llamada descolgada
@@ -1144,13 +1148,13 @@ begin
 end;
 procedure TCibGFacNiloM.mnConectarClick(Sender: TObject);
 begin
-  if OnSolicEjecAcc<>nil then  //ejecuta evento
-    OnSolicEjecAcc(C_ACC_NILOM, ACCLOC_CONEC, 0, facSelec.IdFac);
+  if OnSolicEjecCom<>nil then  //ejecuta evento
+    OnSolicEjecCom(C_ACC_NILOM, ACCLOC_CONEC, 0, facSelec.IdFac);
 end;
 procedure TCibGFacNiloM.mnDesconecClick(Sender: TObject);
 begin
-  if OnSolicEjecAcc<>nil then  //ejecuta evento
-    OnSolicEjecAcc(C_ACC_NILOM, ACCLOC_DESCO, 0, facSelec.IdFac);
+  if OnSolicEjecCom<>nil then  //ejecuta evento
+    OnSolicEjecCom(C_ACC_NILOM, ACCLOC_DESCO, 0, facSelec.IdFac);
 end;
 //Constructor y destructor
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
