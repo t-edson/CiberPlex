@@ -11,9 +11,16 @@ uses
     var bloqueado: boolean);
   function VerHasta(const cad: string; car: char; out Err: boolean): string;
   function ExtraerHasta(var cad: string; car: char; out Err: boolean): string;
+  //Funciones para control de menú
+  procedure InicLlenadoAcciones(MenuPopup0: TPopupMenu );
   function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
+  procedure AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1);
 
 implementation
+var  //variables para el lleado de acciones de facturables
+  idxMenu: Integer;
+  MenuPopup: TPopupMenu;
+
 procedure PantallaAArchivo(arch: String);
 //Captura el contenido de la pantalla, y lo guarda en el archivo indicado
 var
@@ -91,7 +98,12 @@ begin
   delete(cad, 1, p);    //extrae
   Err := false;
 end;
-
+procedure InicLlenadoAcciones(MenuPopup0: TPopupMenu);
+{Se usa para empezar a llenar acciones sobre un menú PopUp}
+begin
+  idxMenu := 0;
+  MenuPopup := MenuPopup0;
+end;
 function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
 {Devuelve la referencia a un ítemd e menú, para poder agregarla a un menú.}
 var
@@ -100,9 +112,20 @@ begin
   nuevMen:= TMenuItem.Create(nil);
   nuevMen.Caption:=etiq;
   nuevMen.OnClick:=accion;
+  nuevMen.ImageIndex:=id_icon;
   {Notar que la referencia "nuevMen", no ha sido destruida porque se supone que se usará
-  para agregarla a un menú, de modo que será el propieo menú el encargdao de destruirla.}
+  para agregarla a un menú, de modo que será el propieo menú el encargado de destruirla.}
   Result := nuevMen;
+end;
+procedure AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1);
+{Agrega una acción sobre el menú PopUp indicado. Debe llamarse desoués de llamar a
+InicLlenadoAcciones. El ítem del menú se agrega, justo después del último ítem agregado.}
+var
+  mn: TMenuItem;
+begin
+  mn := MenuAccion(etiq, accion, id_icon);
+  MenuPopup.Items.Insert(idxMenu, mn);  //Agrega al inicio
+  inc(idxMenu);
 end;
 
 end.

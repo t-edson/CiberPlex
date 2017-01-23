@@ -141,6 +141,8 @@ type
   TEvBolActStock = procedure(const codPro: string; const Ctdad: double) of object;
   TEvFacLogInfo = function(msj: string): integer of object;
   TevFacLogError = function(msj: string): integer of object;
+  //Solicita ejecutar un comando
+  TEvSolicEjecCom = procedure(comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
 
   TCibGFac = class;
   { TCibFac }
@@ -160,13 +162,14 @@ type
     procedure Sety(AValue: double);
     procedure LeerEstadoBoleta(var lineas: TStringDynArray);
   public  //eventos generales
-    OnCambiaEstado : procedure of object; //cuando cambia alguna variable de estado
-    OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
-    OnLogInfo      : TEvFacLogInfo;      //Indica que se quiere registrar un mensaje en el registro
+    OnCambiaEstado : procedure of object; //Cuando cambia alguna variable de estado
+    OnCambiaPropied: procedure of object; //Cuando cambia alguna variable de propiedad
+    OnLogInfo      : TEvFacLogInfo;       //Indica que se quiere registrar un mensaje en el registro
     OnLogVenta     : TEvBolLogVenta;      //Requiere escribir una venta en registro
     OnLogIngre     : TEvBolLogVenta;      //Requiere escribir un ingreso en registro
-    OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
+    OnLogError     : TevFacLogError;      //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;      //cuando se requiere actualizar el stock
+    OnSolicEjecCom : TEvSolicEjecCom;
   public
     tipo    : TCibTipFact; //tipo de grupo facturable
     Boleta  : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
@@ -181,6 +184,7 @@ type
     property y: double read Fy write Sety;  //coordenada Y
     procedure LimpiarBol;      //Limpia la boleta
     function RegVenta(usu: string): string; virtual;
+    procedure MenuAcciones(MenuPopup: TPopupMenu); virtual;
   public //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -193,8 +197,6 @@ type
   TEvReqConfigMon = procedure(var SimbMon: string; var numDec: integer; var IGV: Double) of object;
   //Requiere convertir a formato de moneda, usando el formato de la aplicación
   TevReqCadMoneda = function(valor: double): string of object;
-  //Solicita ejecutar un acción
-  TEvSolicEjecAcc = procedure(comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
   //Solicita buscar un objeto GFac
   TEvBuscarGFac = function(nomGFac: string): TCibGFac of object;
 
@@ -219,6 +221,8 @@ type
    objetos facturables.}
   TCibGFac = class
   private
+    procedure fac_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
+      cad: string);
     function fac_LogError(msj: string): integer;
     function fac_LogIngre(ident: char; msje: string; dCosto: Double): integer;
     procedure fac_ActualizStock(const codPro: string; const Ctdad: double);
@@ -271,7 +275,7 @@ type
     OnLogIngre     : TEvBolLogVenta;    //Requiere escribir un ingreso en el registro
     OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
-    OnSolicEjecAcc : TEvSolicEjecAcc;   //Solicita ejecutar acciones
+    OnSolicEjecCom : TEvSolicEjecCom;   //Solicita ejecutar acciones
     OnBuscarGFac   : TEvBuscarGFac;
   public  //Constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipFact);
@@ -667,6 +671,11 @@ sistema, ya que es un campo usado comúnmente para generar el registro de ventas
 begin
   Result := '<sin información>'
 end;
+procedure TCibFac.MenuAcciones(MenuPopup: TPopupMenu);
+{Configura las acciones que deben realizarse para este objeto facturable.}
+begin
+
+end;
 //Constructor y destructor
 constructor TCibFac.Create;
 begin
@@ -683,10 +692,6 @@ procedure TCibGFac.fac_CambiaPropied;
 begin
   if OnCambiaPropied<>nil then OnCambiaPropied;
 end;
-procedure TCibGFac.fac_ActualizStock(const codPro: string; const Ctdad: double);
-begin
-  OnActualizStock(codPro, Ctdad);
-end;
 function TCibGFac.fac_LogInfo(msj: string): integer;
 begin
   Result := OnLogInfo(msj);
@@ -698,6 +703,15 @@ end;
 function TCibGFac.fac_LogIngre(ident: char; msje: string; dCosto: Double): integer;
 begin
   Result := OnLogIngre(ident, msje, dCosto);
+end;
+procedure TCibGFac.fac_ActualizStock(const codPro: string; const Ctdad: double);
+begin
+  OnActualizStock(codPro, Ctdad);
+end;
+procedure TCibGFac.fac_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
+  cad: string);
+begin
+  if OnSolicEjecCom<>nil then OnSolicEjecCom(comando, ParamX, ParamY, cad);
 end;
 function TCibGFac.fac_LogError(msj: string): integer;
 begin
@@ -756,6 +770,7 @@ begin
   fac.OnLogError     := @fac_LogError;
   fac.OnCambiaPropied:= @fac_CambiaPropied;
   fac.OnActualizStock:= @fac_ActualizStock;
+  fac.OnSolicEjecCom := @fac_SolicEjecCom;
   items.Add(fac);
 end;
 procedure TCibGFac.Setx(AValue: double);

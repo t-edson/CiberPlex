@@ -58,15 +58,19 @@ type
     procedure ActualizarOgGrupos(items: TCibGFact_list);
     function AgregarOgGrupo(GFac: TCibGFac): TogGFac;
     function gruposReqCadMoneda(valor: double): string;
-    procedure motEdiInicArrastreFac(ogFac: TogFac; X, Y: Integer);
-    procedure motEdiObjectsMoved;
+    procedure gruposSolicEjecAcc(comando: TCPTipCom; ParamX, ParamY: word;
+      cad: string);
+    procedure motEdi_DblClick(Sender: TObject);
+    procedure motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
+    procedure motEdi_ObjectsMoved;
     procedure SetObjBloqueados(AValue: boolean);
     procedure ActualizarOgFacturables(grupo: TCibGFac);
   public
-    motEdi: TModEdicion2;  //motor de edición
-    OnObjectsMoved: procedure of object;  //Los objetos se han movido
-    OnSolicEjecAcc : TEvSolicEjecAcc;  //Se solicita ejecutar una acción
+    motEdi         : TModEdicion2;  //motor de edición
+    OnObjectsMoved : procedure of object;  //Los objetos se han movido
+    OnSolicEjecAcc : TEvSolicEjecCom;  //Se solicita ejecutar una acción
     OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
+    OnDobleClick   : TNotifyEvent;
     grupos: TCibGruposFacturables; {Esta lista de grupos facturables, será una copia
                                     de la lista que existe en el servidor.}
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
@@ -231,23 +235,10 @@ begin
   if OnReqCadMoneda = nil then exit('');
   Result := OnReqCadMoneda(valor);   //pasa el evento
 end;
-procedure TfraVisCPlex.motEdiInicArrastreFac(ogFac: TogFac; X, Y: Integer);
-{Se inicia el arrastre de un objeto gráfico facturable.}
+procedure TfraVisCPlex.gruposSolicEjecAcc(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
 begin
-  //Aquí se puede inciar el arrastre del objeto o su boleta
-  if ogFac.Boleta.LoSelec(X,Y) and (ogFac.Fac.Boleta.ItemCount>0)  then begin
-    //Selecciona una boleta y está visible
-    arrastEsBol:= true;  //Indica que el objeto, a arrastrar, es una boleta.
-    arrastFuente := ogFac.Fac.IdFac;   //
-    PaintBox1.BeginDrag(true);
-  end else if ogFac.LoSelecciona(X,Y) then begin
-    //Selecciona al facturable
-    if  ogFac is TogCabina then begin  //Es cabina
-      arrastEsBol:= false;  //Indica que el objeto, a arrastrar, es una boleta.
-      arrastFuente := ogFac.Fac.IdFac;   //
-      PaintBox1.BeginDrag(true);
-    end;
-  end;
+  if OnSolicEjecAcc<>nil then OnSolicEjecAcc(comando, ParamX, ParamY, cad);
 end;
 function TfraVisCPlex.BuscarOgCabina(const nom: string): TogCabina;
 {Devuelve la referencia a una cabina. Si no encuentra devuelve NIL}
@@ -536,21 +527,45 @@ begin
   //Los objetos gráficos "verán" los cambios, porque tienen referencias a sus objetos fuente
   motEdi.Refrescar;
 end;
-procedure TfraVisCPlex.motEdiObjectsMoved;
+procedure TfraVisCPlex.motEdi_ObjectsMoved;
 //Se ha producido el movimiento de uno o más objetos
 begin
   if FObjBloqueados then exit;   //se supone que no se pueden mover en este estado
   if OnObjectsMoved<>nil then OnObjectsMoved;
 end;
+procedure TfraVisCPlex.motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
+{Se inicia el arrastre de un objeto gráfico facturable.}
+begin
+  //Aquí se puede inciar el arrastre del objeto o su boleta
+  if ogFac.Boleta.LoSelec(X,Y) and (ogFac.Fac.Boleta.ItemCount>0)  then begin
+    //Selecciona una boleta y está visible
+    arrastEsBol:= true;  //Indica que el objeto, a arrastrar, es una boleta.
+    arrastFuente := ogFac.Fac.IdFac;   //
+    PaintBox1.BeginDrag(true);
+  end else if ogFac.LoSelecciona(X,Y) then begin
+    //Selecciona al facturable
+    if  ogFac is TogCabina then begin  //Es cabina
+      arrastEsBol:= false;  //Indica que el objeto, a arrastrar, es una boleta.
+      arrastFuente := ogFac.Fac.IdFac;   //
+      PaintBox1.BeginDrag(true);
+    end;
+  end;
+end;
+procedure TfraVisCPlex.motEdi_DblClick(Sender: TObject);
+begin
+  if OnDobleClick<>nil then OnDobleClick(Sender);
+end;
 constructor TfraVisCPlex.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   motEdi := TModEdicion2.Create(PaintBox1);
-  motEdi.OnObjectsMoved:=@motEdiObjectsMoved;
-  motEdi.OnInicArrastreFac:=@motEdiInicArrastreFac;
+  motEdi.OnObjectsMoved   := @motEdi_ObjectsMoved;
+  motEdi.OnInicArrastreFac:= @motEdi_InicArrastreFac;
+  motEdi.OnDblClick       := @motEdi_DblClick;
   decod := TCPDecodCadEstado.Create;
   grupos:= TCibGruposFacturables.Create('GrupVis', true);  //Crea en modo copia
-  grupos.OnReqCadMoneda:=@gruposReqCadMoneda;
+  grupos.OnReqCadMoneda  :=@gruposReqCadMoneda;
+  grupos.OnSolicEjecCom  :=@gruposSolicEjecAcc;
    //Para el evento
 end;
 destructor TfraVisCPlex.Destroy;

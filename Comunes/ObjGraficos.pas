@@ -466,14 +466,14 @@ begin
   //dibuja cuadro de estado
   if loc.descolg then begin    //Está descolgado
     if loc.llamAct <> nil then begin  //Hay llamadas, Al menos la actual.
-      if loc.llamAct.CONTES then v2d.SetText(clRed, 10,'',false)
+      if loc.llamAct.CONTEST then v2d.SetText(clRed, 10,'',false)
       else v2d.SetText(clBlack, 10,'',false);
       v2d.FijaRelleno(TColor($D0D0D0));
       v2d.RectangR(x-3, y-2, x+97, y+50);
       //muestra tiempo transcurrido
       v2d.Texto(x+1,y   , loc.llamAct.digitado);
       v2d.Texto(x+1,y+16, loc.llamAct.tarDesrip);
-      if loc.llamAct.CONTES then begin
+      if loc.llamAct.CONTEST then begin
         v2d.Texto(x+1,y+32, loc.llamAct.duracStr + ' ' + loc.Grupo.OnReqCadMoneda(loc.llamAct.COST_NTER))
       end else begin
         v2d.Texto(x+1,y+32, 'Cto.Paso=' + loc.llamAct.tarCtoPaso);

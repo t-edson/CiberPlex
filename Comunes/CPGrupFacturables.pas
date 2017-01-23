@@ -18,7 +18,7 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
-    procedure gof_SolicEjecAcc(comando: TCPTipCom; ParamX, ParamY: word;
+    procedure gof_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
     function gof_LogIngre(ident: char; msje: string; dCosto: Double): integer;
     function gof_LogError(msj: string): integer;
@@ -46,7 +46,7 @@ type
     OnReqConfigGen : TEvReqConfigGen;  //Se requiere información de configruación
     OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     OnActualizStock: TEvBolActStock;   //Se requiere actualizar el stock
-    OnSolicEjecAcc : TEvSolicEjecAcc;  //Se solicita ejecutar una acción
+    OnSolicEjecCom : TEvSolicEjecCom;  //Se solicita ejecutar una acción
   public
     nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
@@ -197,7 +197,7 @@ begin
     //La trama es remota.
     //Identifica a la cabina origen para buscar su visor de mensajes
     if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-    frm := gruOrig.BuscarVisorMensajes(nomFac);  //Ve si hay un formulario de mensajes para esta cabina
+    frm := cabOrig.frmVisMsj;  //Ve si hay un formulario de mensajes para esta cabina
     {Aunque no se ha detectado consumo de CPU adicional, la búsqueda regular con
      BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando
      que se hace para todos los mensajes que llegan.}
@@ -298,11 +298,11 @@ begin
   {Porpaga el evento, ya que se supone que no se tiene acceso al alamacén desde aquí}
   if not DeshabEven and (OnActualizStock<>nil) then OnActualizStock(codPro, Ctdad);
 end;
-procedure TCibGruposFacturables.gof_SolicEjecAcc(comando: TCPTipCom; ParamX,
+procedure TCibGruposFacturables.gof_SolicEjecCom(comando: TCPTipCom; ParamX,
   ParamY: word; cad: string);
 {Un Gfac solicita ejecutar una acción, en uno de sus elementos.}
 begin
-  if not DeshabEven and (OnSolicEjecAcc<>nil) then OnSolicEjecAcc(comando, ParamX, ParamY, cad);
+  if not DeshabEven and (OnSolicEjecCom<>nil) then OnSolicEjecCom(comando, ParamX, ParamY, cad);
 end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
@@ -432,7 +432,7 @@ begin
   gof.OnReqConfigGen := @gof_RequiereInfo;
   gof.OnReqCadMoneda := @gof_ReqCadMoneda;
   gof.OnActualizStock:= @gof_ActualizStock;
-  gof.OnSolicEjecAcc := @gof_SolicEjecAcc;
+  gof.OnSolicEjecCom := @gof_SolicEjecCom;
   gof.OnBuscarGFac   := @BuscarPorNombre;
   case gof.tipo of
   ctfCabinas: begin
