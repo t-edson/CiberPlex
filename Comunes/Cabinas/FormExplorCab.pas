@@ -1,14 +1,10 @@
 {Implementa el formulario explorador de la cabina}
 unit FormExplorCab;
-
 {$mode objfpc}{$H+}
-
 interface
-
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, Buttons, ShellCtrls, ActnList, Menus,
-  frameVisCPlex, ObjGraficos;
+  ExtCtrls, Buttons, ShellCtrls, ActnList, Menus, CibFacturables;
 
 type
 
@@ -36,43 +32,42 @@ type
     procedure picPantClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
-    VisorCabinas: TfraVisCPlex;
+    fac: TCibFac;
   public
-    nomCab: string;
-    procedure Exec(VisorCabinas0: TfraVisCPlex; nomCab0: string);
+    procedure Exec(fac0: TCibFac);
   end;
 
 var
   frmExplorCab: TfrmExplorCab;
 
 implementation
+uses CibGFacCabinas;
 {$R *.lfm}
 { TfrmExplorCab }
 procedure TfrmExplorCab.Timer1Timer(Sender: TObject);
 var
-  ogCab: TogCabina;
+  cab : TCibFacCabina;
 begin
   if not self.Visible then exit;
-  ogCab := VisorCabinas.BuscarOgCabina(nomCab);
+  cab := TCibFacCabina(fac);
   //Actualiza campos
-  lblNomPC.Caption:=ogCab.cab.NombrePC;
-  txtFec.Caption:= DateToStr(ogCab.cab.HoraPC) + LineEnding +
-                   TimeToStr(ogCab.cab.HoraPC);
-  if ogCab.cab.PantBloq then Button1.Caption:='Desbloquear'
+  lblNomPC.Caption:=cab.NombrePC;
+  txtFec.Caption:= DateToStr(cab.HoraPC) + LineEnding +
+                   TimeToStr(cab.HoraPC);
+  if cab.PantBloq then Button1.Caption:='Desbloquear'
   else Button1.Caption:='Bloquear';
 end;
 procedure TfrmExplorCab.picPantClick(Sender: TObject);
 begin
 
 end;
-procedure TfrmExplorCab.Exec(VisorCabinas0: TfraVisCPlex; nomCab0: string);
+procedure TfrmExplorCab.Exec(fac0: TCibFac);
 {Inicializa y muestra el formulario de Exploración de archivos. Se necesita la referencia
 a un Visor de Cabinas, ya que se ha diseñado para trabajar con este objeto como fuente,
 de modo que se pueda usar tanto en el CIBERPLEX-Server como en CIBERPLEX-Visor}
 begin
-  VisorCabinas := VisorCabinas0;
-  nomCab:= nomCab0;
-  Caption := 'Explorador de Archivos - ' + nomCab;
+  fac := fac0;
+  Caption := 'Explorador de Archivos - ' + fac.Nombre;
   self.Show;
 end;
 

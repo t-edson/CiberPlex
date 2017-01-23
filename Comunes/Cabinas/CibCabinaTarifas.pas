@@ -12,7 +12,7 @@ unit CibCabinaTarifas;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dateutils, math, types, fgl, MisUtils, Globales;
+  Classes, SysUtils, dateutils, math, types, fgl, MisUtils;
 const
   MAX_NUM_CAB_INT = 50;        //máximo número de cabinas de internet
   MAX_TOLE_CAB_INT = 10;       //tolerancia en minutos para tiempos de cabina
@@ -305,7 +305,7 @@ begin
   for ta in items do begin
     Result+='+' + ta.StrObj + LineEnding;  //incluye con marca
   end;
-  QuitarSaltoFinal(Result); //Quita salto final
+  TrimEndLine(Result); //Quita salto final
 end;
 procedure TGrupoTarAlquiler.SetStrObj(AValue: string);
 var

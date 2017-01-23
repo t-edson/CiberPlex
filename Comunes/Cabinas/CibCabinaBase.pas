@@ -199,7 +199,7 @@ procedure TSocketCabina.Abrir;
 {Intenta abrir una conexión}
 begin
   estado := cecConectando;
-  sock.Connect(ip, '80');  {Se bloquea unos segundo si no logra la conexión. Mo hay forma
+  sock.Connect(ip, '80');  {Se bloquea unos segundo si no logra la conexión. No hay forma
                            directa de fijar un "Timeout", ya que depende de la implementación
                            del Sistema Operativo}
   if sock.LastError <> 0 then begin

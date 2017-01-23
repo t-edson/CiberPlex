@@ -14,8 +14,8 @@ interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
   Menus, MisUtils, CibTramas, CibFacturables, CibCabinaBase, CibCabinaTarifas,
-  FormVisorMsjRed, CibUtils, Globales, FormAdminTarCab, FormAdminCabinas,
-  FormFijTiempo;
+  FormVisorMsjRed, CibUtils, FormAdminTarCab, FormAdminCabinas,
+  FormFijTiempo, FormExplorCab;
 const //Acciones
   C_INI_CTAPC = 1;  //Solicita iniciar la cuenta de una PC
   C_DET_CTAPC = 2;  //Solicita detener la cuenta de una PC
@@ -50,6 +50,12 @@ type
     SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
                         por Socket.}
     procedure LimpiarCabina;
+    procedure mnDetenCuenta(Sender: TObject);
+    procedure mnInicCuenta(Sender: TObject);
+    procedure mnModifCuenta(Sender: TObject);
+    procedure mnPonerManten(Sender: TObject);
+    procedure mnVerExplorad(Sender: TObject);
+    procedure mnVerMsjesRed(Sender: TObject);
     function VerCorteAutomatico: boolean;
     procedure cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
   protected  //"Getter" and "Setter"
@@ -105,6 +111,8 @@ type
     function Conectado: boolean;
     procedure Desconectar;
   public //control de la cabina
+    frmExpArc: TfrmExplorCab;    //Explorador de archivos
+    frmVisMsj: TfrmVisorMsjRed;  //Visor de mensajes de red
     function Contando: boolean;  //indica que la cabina está contando el tiempo
     function Detenida: boolean;  //indica que la cabina está detenida
     procedure SincTiempo;        //sincroniza el tiempo con la cabina cliente
@@ -117,13 +125,13 @@ type
     procedure DetenConteo;
     procedure PonerManten;     //pone cabina en mantenimiento
     procedure SacarManten;     //pone cabina en mantenimiento
+    procedure MenuAcciones(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
     constructor Create(nombre0: string; ip0: string);
     constructor CreateSinRed;  //Crea objeto sin red
     destructor Destroy; override;
   end;
 
-  TForm_list = specialize TFPGObjectList<TfrmVisorMsjRed>;
   { TCibGFacCabinas }
   { Clase que define al conjunto de las PC clientes. Se juntan todas las
   cabinas en un objeto único, porque la arquitectura se define para centralizar el
@@ -133,7 +141,6 @@ type
     procedure timer1Timer(Sender: TObject);
   private
     timer1 : TTimer;
-    ventMsjes: TForm_list;     //Ventanas de mensajes de red
     frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
     procedure cab_RegMensaje(NomCab: string; msj: string);
     procedure cab_TramaLista(nomOForig, nomGOForig: string; tram: TCPTrama;
@@ -156,8 +163,6 @@ type
     function ListaCabinas: string;
     function CabPorNombre(nom: string): TCibFacCabina;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
     function Toleran: TDateTime;   //acceso a la tolerancia
-    function BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean=false
-      ): TfrmVisorMsjRed;
     procedure MuestraConexionCabina;
   public  //Operaciones con cabinas
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
@@ -165,10 +170,6 @@ type
   public  //Campos para manejo de acciones
     procedure EjecAccion(tram: TCPTrama); override;
     procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
-    procedure mnInicCuenta(Sender: TObject);
-    procedure mnModifCuenta(Sender: TObject);
-    procedure mnDetenCuenta(Sender: TObject);
-    procedure mnPonerManten(Sender: TObject);
   public  //Constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -220,6 +221,8 @@ begin
 end;
 procedure TCibFacCabina.cabConexRegMensaje(NomCab: string; msj: string);
 begin
+  //pasa mensaje a Visor de mensaje, si está abierto
+  frmVisMsj.PonerMsje(msj);  //Envía mensaje a su formaulario
   if OnRegMensaje<>nil then OnRegMensaje(Nombre, msj);
 end;
 function TCibFacCabina.GetIP: string;
@@ -667,6 +670,74 @@ begin
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
 end;
+procedure TCibFacCabina.MenuAcciones(MenuPopup: TPopupMenu);
+begin
+  InicLlenadoAcciones(MenuPopup);
+  AgregarAccion('&Iniciar Cuenta'       , @mnInicCuenta, 14);
+  AgregarAccion('&Modif. Tiempo'        , @mnModifCuenta, 15);
+  AgregarAccion('&Detener Cuenta'       , @mnDetenCuenta, 16);
+  AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, 18);
+//  AgregarAccion('Pausar tiempo',@mnPonerManten, 18);
+  if grupo.ModoCopia then exit;
+  //Acciones que son solo válidas en el servidor
+  AgregarAccion('&Ver Explorador'      , @mnVerExplorad, 19);
+  AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, 13);
+//  AgregarAccion('Propiedades' , @mnVerMsjesRed, -1););
+end;
+procedure TCibFacCabina.mnInicCuenta(Sender: TObject);
+var
+  frmTiempos: TfrmFijTiempo;
+begin
+  if EstadoCta = EST_MANTEN then begin
+    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
+  end else if not Detenida then begin
+    msgExc('No se puede iniciar una cuenta en esta cabina.');
+    exit;
+  end;
+  //Usa el formulario del padre. También podría crearse uno por cada cabina, pero sería más pesaoo.
+  frmTiempos := TCibGFacCabinas(grupo).frmTiempos;
+  frmTiempos.MostrarIni(self);  //modal
+  if frmTiempos.cancelo then exit;  //canceló
+  OnSolicEjecCom(C_ACC_CABIN, C_INI_CTAPC, 0, frmTiempos.CadActivacion);
+end;
+procedure TCibFacCabina.mnModifCuenta(Sender: TObject);
+var
+  frmTiempos: TfrmFijTiempo;
+begin
+  if Detenida then begin
+    mnInicCuenta(self);  //está detenida, inicia la cuenta
+  end else if Contando then begin
+    //Usa el formulario del padre. También podría crearse uno por cada cabina, pero sería más pesaoo.
+    frmTiempos := TCibGFacCabinas(grupo).frmTiempos;
+    //Está en medio de una cuenta
+    frmTiempos.Mostrar(self);  //modal
+    if frmTiempos.cancelo then exit;  //canceló
+    OnSolicEjecCom(C_ACC_CABIN, C_MOD_CTAPC, 0, frmTiempos.CadActivacion);
+  end;
+end;
+procedure TCibFacCabina.mnDetenCuenta(Sender: TObject);
+begin
+  if MsgYesNo('¿Desconectar Computadora: ' + nombre + '?') <> 1 then exit;
+  OnSolicEjecCom(C_ACC_CABIN, C_DET_CTAPC, 0, IdFac);
+end;
+procedure TCibFacCabina.mnPonerManten(Sender: TObject);
+begin
+  if not Detenida then begin
+    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
+    exit;
+  end;
+  OnSolicEjecCom(C_ACC_CABIN, C_PON_MANTN, 0, IdFac); //El mismo comando, pone en mantenimiento
+end;
+procedure TCibFacCabina.mnVerExplorad(Sender: TObject);
+{Muestra el explorador de archivos}
+begin
+  frmExpArc.Exec(self);
+end;
+procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);
+begin
+  frmVisMsj.Exec(Nombre);
+end;
+
 procedure TCibFacCabina.LimpiarCabina;
 //Pone la cabina limpia sin tiempos ni cuentas
 begin
@@ -678,15 +749,18 @@ begin
   inherited Create;
   tipo := ctfCabinas;  //se identifica
   FNombre := nombre0;
+  //Crea objetos de cuenta y conexión
   cabCuenta:= TCabCuenta.Create;  //Estado de cabina
   cabConex := TCabConexion.Create(ip0);  //conexión
   cabConex.OnCambiaEstado:=@cabCambiaEstadoConex;
   cabConex.OnTramaLista:=@cabConexTramaLista;
   cabConex.OnRegMensaje:=@cabConexRegMensaje;
-  //cabConex
   cabCuenta.estado := EST_NORMAL;  //inicia en este estado
   ConConexion := false;
   SinRed := false;
+  //Crea formulario explorador de archivos y visor de mensajes
+  frmExpArc := TfrmExplorCab.Create(nil);
+  frmVisMsj := TfrmVisorMsjRed.Create(nil);
 end;
 constructor TCibFacCabina.CreateSinRed;
 {Crea al objeto para usarlo solo como contenedor de propiedades.}
@@ -696,9 +770,11 @@ begin
 end;
 destructor TCibFacCabina.Destroy;
 begin
+  frmExpArc.Destroy;
   cabConex.Destroy;
   cabCuenta.Destroy;
   inherited Destroy;
+  FreeAndNil(frmVisMsj);  //destruye al final porque pueden aparecer nuevos mensajes
 end;
 { TCibGFacCabinas }
 procedure TCibGFacCabinas.timer1Timer(Sender: TObject);
@@ -724,11 +800,7 @@ procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
 var
   frm: TfrmVisorMsjRed;
 begin
-  //dispara evento
   if OnRegMensaje<>nil then OnRegMensaje(NomCab, msj);
-  //pasa mensaje a Visor de mensaje, si está abierto
-  frm := BuscarVisorMensajes(NomCab);  //Ve si hay un formulario de mensajes para esta cabina
-  if frm<>nil then frm.PonerMsje(msj);  //Envía mensaje a su formaulario
 end;
 function TCibGFacCabinas.Agregar(nombre0: string; ip0: string): TCibFacCabina;
 var
@@ -809,7 +881,7 @@ begin
     lin := lin + lineas[0] + LineEnding;
     lineas.Delete(0);  //elimima línea
   end;
-  QuitarSaltoFinal(lin);
+  TrimEndLine(lin);
   GrupTarAlquiler.StrObj:=lin;
   //Busca líneas con información de Tarifas de Alquiler
   lin := '';
@@ -818,7 +890,7 @@ begin
     lin := lin + lineas[0] + LineEnding;
     lineas.Delete(0);  //elimima línea
   end;
-  QuitarSaltoFinal(lin);
+  TrimEndLine(lin);
   tarif.StrObj:=lin;
   //Procesa líneas con información de las cabinas
   items.Clear;
@@ -854,27 +926,6 @@ end;
 function TCibGFacCabinas.Toleran: TDateTime;
 begin
   Result := tarif.toler;
-end;
-function TCibGFacCabinas.BuscarVisorMensajes(nomCab: string; CrearNuevo: boolean = false): TfrmVisorMsjRed;
-{Busca si existe un formulario de tipo "TfrmVisorMsjRed", que haya sido crreado para
-un nombre de cabina en especial. }
-var
-  frm: TfrmVisorMsjRed;
-begin
-  for frm in ventMsjes do begin
-    if frm.nomCab = nomCab then begin
-      //Encontró
-      exit(frm);   //devuelve refrecnia
-    end;
-  end;
-  //No encontró
-  if CrearNuevo then begin
-    //debugln('Creando nuevo formulario.');
-    Result := TfrmVisorMsjRed.Create(nil);
-    ventMsjes.Add(Result);  //El formulario será destruido con la lista
-  end else begin
-    Result := nil;
-  end;
 end;
 procedure TCibGFacCabinas.MuestraConexionCabina;  //para depuración
 var
@@ -983,63 +1034,8 @@ var
 begin
   facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
   if facSelec=nil then exit;
-  mn := MenuAccion('Poner en &Mantenimiento',@mnPonerManten);
-  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
-  mn := MenuAccion('&Detener Cuenta',@mnDetenCuenta);
-  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
-  mn := MenuAccion('&Modif. Tiempo',@mnModifCuenta);
-  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
-  mn := MenuAccion('&Iniciar Cuenta',@mnInicCuenta);
-  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
-end;
-procedure TCibGFacCabinas.mnInicCuenta(Sender: TObject);
-var
-  cab: TCibFacCabina;
-begin
-  cab := TCibFacCabina(facSelec);
-  if cab.EstadoCta = EST_MANTEN then begin
-    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
-  end else if not cab.Detenida then begin
-    msgExc('No se puede iniciar una cuenta en esta cabina.');
-    exit;
-  end;
-  frmTiempos.MostrarIni(cab);  //modal
-  if frmTiempos.cancelo then exit;  //canceló
-  if OnSolicEjecAcc<>nil then  //ejecuta evento
-    OnSolicEjecAcc(C_ACC_CABIN, C_INI_CTAPC, 0, frmTiempos.CadActivacion);
-end;
-procedure TCibGFacCabinas.mnModifCuenta(Sender: TObject);
-var
-  cab: TCibFacCabina;
-begin
-  cab := TCibFacCabina(facSelec);
-  if cab.Detenida then begin
-    mnInicCuenta(self);  //está detenida, inicia la cuenta
-  end else if cab.Contando then begin
-    //Está en medio de una cuenta
-    frmTiempos.Mostrar(cab);  //modal
-    if frmTiempos.cancelo then exit;  //canceló
-    OnSolicEjecAcc(C_ACC_CABIN, C_MOD_CTAPC, 0, frmTiempos.CadActivacion);
-  end;
-end;
-procedure TCibGFacCabinas.mnDetenCuenta(Sender: TObject);
-var
-  cab: TCibFacCabina;
-begin
-  cab := TCibFacCabina(facSelec);
-  if MsgYesNo('¿Desconectar Computadora: ' + cab.nombre + '?') <> 1 then exit;
-  OnSolicEjecAcc(C_ACC_CABIN, C_DET_CTAPC, 0, cab.IdFac);
-end;
-procedure TCibGFacCabinas.mnPonerManten(Sender: TObject);
-var
-  cab: TCibFacCabina;
-begin
-  cab := TCibFacCabina(facSelec);
-  if not cab.Detenida then begin
-    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
-    exit;
-  end;
-  OnSolicEjecAcc(C_ACC_CABIN, C_PON_MANTN, 0, cab.IdFac); //El mismo comando, pone en mantenimiento
+  InicLlenadoAcciones(MenuPopup);
+
 end;
 //constructor y destructor
 constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
@@ -1068,8 +1064,6 @@ begin
   //Crea ventana de administración de cabinas
   frmAdminCabs:= TfrmAdminCabinas.Create(nil);
   frmAdminCabs.grpCab := self;  //inicia admin. de cabinas
-  //Ventanas de mensajes de red
-  ventMsjes := TForm_list.Create;
 end;
 destructor TCibGFacCabinas.Destroy;
 var
@@ -1077,7 +1071,6 @@ var
 begin
 //debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipo))+','+
 //                          CategVenta+','+IntTostr(items.Count));
-  ventMsjes.Destroy;
   frmAdminCabs.Destroy;
   frmAdminTar.Destroy;
   //Detiene eventos

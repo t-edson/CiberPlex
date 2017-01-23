@@ -7,7 +7,7 @@ object frmExplorCab: TfrmExplorCab
   ClientHeight = 326
   ClientWidth = 402
   Menu = MainMenu1
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object lblNomPC: TStaticText
     Left = 0
     Height = 17
