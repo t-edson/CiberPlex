@@ -3,7 +3,9 @@ CiberPlex 1.1
 
 CiberPlex es un sistema de ventas, con interfaz gráfica, aplicado al control de alquiler de cabinas de Internet y de llamadas para locutorios, desarrollado en Lazarus y FreePascal. 
 
-Como controladro de cabinas de internet, incluye todas las funcionalidades comunes a este tipo de programas, así como funciones de control avanzadas de las computadoras cliente, como visualización de tiempo, bloqueo de pantalla, o apagado remoto.
+Como controlador de cabinas de internet, incluye todas las funcionalidades comunes a este tipo de programas, así como funciones de control avanzadas de las computadoras cliente, como visualización de tiempo, bloqueo de pantalla, o apagado remoto.
+
+![Tito's Terminal](http://blog.pucp.edu.pe/blog/tito/wp-content/uploads/sites/610/2017/01/cp.png "Título de la imagen")
 
 ==CIBERPLEX - Introducción
 CiberPlex, es en general, un software de control de ventas, que puede aplicarse a diversos rubros de negocio, pero que en la versión actual, solo incluye control de alquiler de cabinas de internet y control de llamadas usando enrutadores NILO-m.
