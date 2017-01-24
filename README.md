@@ -1,26 +1,42 @@
-CiberPlex 1.0.0b
-================
+CiberPlex 1.1
+=============
 
-CiberPlex es un programa de control avanzado de cabinas de Internet, desarrollado en Lazarus y FreePascal. Incluye todas las funcionalidades comunes a este tipo de programas, así como funciones de control avanzadas de las computadoras cliente, como visualización de tiempo, bloqueo de pantalla, o apagado remoto.
+CiberPlex es un sistema de ventas, con interfaz gráfica, aplicado al control de alquiler de cabinas de Internet y de llamadas para locutorios, desarrollado en Lazarus y FreePascal. 
 
-IMPORTANTE: Actualmente, Ciberplex se encuentra en fase de  desarrollo, por lo que no es del todo funcional.
+Como controladro de cabinas de internet, incluye todas las funcionalidades comunes a este tipo de programas, así como funciones de control avanzadas de las computadoras cliente, como visualización de tiempo, bloqueo de pantalla, o apagado remoto.
 
 ==CIBERPLEX - Introducción
-CiberPlex, es en general, un software de control de ingresos, especializado en el control de alquiler de cabinas de Internet. Permite realizar ventas, llevando el registro exacto de los elementos vendidos.
+CiberPlex, es en general, un software de control de ventas, que puede aplicarse a diversos rubros de negocio, pero que en la versión actual, solo incluye control de alquiler de cabinas de internet y control de llamadas usando enrutadores NILO-m.
 
-Una de sus característica más llamativas es que usa una interfaz gráfica elaborada, más allá de los simples controles y formularios que usan la mayoría de apliaciones de este tipo. Por ejemplo las PC cliente se representan como objetos gráficos con efectos llamativos, para indicar los estado de cuenta o espera.
+Sus principales características son:
+1. Aplicación para Windows-x64. 
+2. Aplicación portable, sin dependencias de librerías externas.
+3. Incluye una interfaz gráfica donde puede mostrar objetos, con formas y colores, más que simples ventanas.
+4. Diseñado con arquitectura modelo-vista. Permite administrar diversos puntos de ventas, mostrando la misma interfaz gráfica en cada uno de ellos.
+5. Base de datos propietaria, embebida.
+6. Incluye control para alquiler de cabinas de Internet.
+7. Incluye control para llamadas usando enrutadores NILO-m.
+8. Incluye 2 módulos: El servidor y el Punto de venta.
 
-Para realizar esta labor, CiberPlex define 3 conceptos principales:
+Una de sus característica particulares de CIBERPLEX, es que usa una interfaz gráfica elaborada, más allá de los simples controles y formularios que usan la mayoría de aplicaciones de este tipo. Por ejemplo las PC cliente se representan como objetos gráficos con efectos llamativos, para indicar los estado de cuenta o espera.
+
+El control de llamadas, se usa en negocios de Locutorios o Centros de llamadas. Trabaja solamente cuando se usan los equipos enrutadores NILO-m, de la serie NILO-mB, NILO-mC, NILO-mD y NILO-mE.
+
+==CIBERPLEX - Facturación
+
+Las ventas dentro de CIBERPLEX, se realizan siempre en objetos especiales llamados Facturables. Un objeto facturable es un objeto que puede generar consumo. Todo consumo se escribe en una boleta.
+
+Dentro de la terminología de CIBERPLEX, se manejab 3 conceptos principales:
 
 * Boleta. 
 * Objeto Facturable (FAC).
-* Grupo de Objetos Facturables (GFAC).
+* Grupo Facturables (GFAC).
 
 Las boletas son elementos que puede recibir artículos del almacén para la venta. Cuando una boleta se paga, se genera, un ingreso de efectivo, que es registrado por el sistema. Las boletas no aparecen en pantalla, de forma independiente.
 
-Los objetos facturables son  elementos que pueden generar consumo, porque incluyen siempre una boleta. Por lo general tienen una representación gráfica en la pantalla. Y pueden ser de diversos tipos tanto visual como funcionalmente. Se enuentran siempre agrupados en un GFAC. Se les identifica por un nombre, que debe ser único dentro de su GFAC.
+Los objetos facturables o FAC son elementos que pueden generar consumo, porque incluyen siempre una boleta. Por lo general, tienen una representación gráfica en la pantalla, y pueden ser de diversos tipos, tanto visual como funcionalmente. Se enuentran siempre agrupados en un GFAC. Se les identifica por un nombre, que debe ser único dentro de su GFAC.
 
-Los GFAC son elementos que agrupan a los FAC. Pueden contener muchos o ningún FAC. Pueden tener o no, representación gráfica en pantalla. Manejan propiedades independientes que por lo general afectan a todos los FAC que contienen.Se les identifica por un nombre, que debe ser único dentro de la aplicación.
+Los GFAC o Grupo Facturables son elementos que agrupan a los FAC. Pueden contener muchos o ningún FAC. Pueden tener o no, representación gráfica en pantalla. Manejan propiedades independientes que por lo general afectan a todos los FAC que contienen.Se les identifica por un nombre, que debe ser único dentro de la aplicación.
 
 
 ==CIBERPLEX - Server
@@ -41,8 +57,6 @@ Se compone de 3 módulos:
 * CiberPlex-Visor.- Permite mostrar la pantalla prinicpal, desde cualquier PC en la misma red.
 
 La arquitectura de CiberPlex es similar al de un sistema distribuido y separa claramente lo que es el modelo de datos, de la interfaz gráfica.
-
-Incluye también el control de locutorios para los enrutadores para llamadas de la serie NILO-mB, NILO-mC, NILO-mD y NILO-mE.
 
 En principio, CiberPlex realiza las mismas funciones que el programa NILOTER-m, pero ha sido diseñado con una arquitectura más abierta, y flexible, logrando importantes mejoras:
 
