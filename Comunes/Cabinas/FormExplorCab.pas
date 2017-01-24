@@ -4,7 +4,7 @@ unit FormExplorCab;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, Buttons, ShellCtrls, ActnList, Menus, CibFacturables;
+  ExtCtrls, Buttons, ShellCtrls, ActnList, Menus, CibFacturables, CibTramas;
 
 type
 
@@ -17,7 +17,7 @@ type
     BitBtn2: TBitBtn;
     BitBtn3: TBitBtn;
     BitBtn4: TBitBtn;
-    Button1: TButton;
+    btnBloqDesb: TButton;
     lblNomPC1: TStaticText;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
@@ -29,6 +29,7 @@ type
     ShellTreeView1: TShellTreeView;
     Timer1: TTimer;
     txtFec: TStaticText;
+    procedure btnBloqDesbClick(Sender: TObject);
     procedure picPantClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -54,13 +55,27 @@ begin
   lblNomPC.Caption:=cab.NombrePC;
   txtFec.Caption:= DateToStr(cab.HoraPC) + LineEnding +
                    TimeToStr(cab.HoraPC);
-  if cab.PantBloq then Button1.Caption:='Desbloquear'
-  else Button1.Caption:='Bloquear';
+  if cab.PantBloq then btnBloqDesb.Caption:='Desbloquear'
+  else btnBloqDesb.Caption:='Bloquear';
 end;
 procedure TfrmExplorCab.picPantClick(Sender: TObject);
 begin
 
 end;
+
+procedure TfrmExplorCab.btnBloqDesbClick(Sender: TObject);
+var
+  cab: TCibFacCabina;
+begin
+  cab := TCibFacCabina(fac);
+  if btnBloqDesb.Caption='Bloquear' then begin
+    //Manda comando de bloqueo
+    cab.OnSolicEjecCom(C_ACC_CABIN, C_BLO_CABIN, 0, cab.IdFac);
+  end else begin
+    cab.OnSolicEjecCom(C_ACC_CABIN, C_DBL_CABIN, 0, cab.IdFac);
+  end;
+end;
+
 procedure TfrmExplorCab.Exec(fac0: TCibFac);
 {Inicializa y muestra el formulario de Exploración de archivos. Se necesita la referencia
 a un Visor de Cabinas, ya que se ha diseñado para trabajar con este objeto como fuente,

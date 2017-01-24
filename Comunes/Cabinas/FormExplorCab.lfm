@@ -10,26 +10,31 @@ object frmExplorCab: TfrmExplorCab
   LCLVersion = '1.6.2.0'
   object lblNomPC: TStaticText
     Left = 0
-    Height = 17
+    Height = 20
     Top = 8
-    Width = 81
+    Width = 89
     BorderStyle = sbsSingle
+    Caption = '<Nombre>'
+    Font.Height = -12
+    ParentFont = False
     TabOrder = 0
   end
   object txtFec: TStaticText
     Left = 0
-    Height = 41
-    Top = 24
-    Width = 81
+    Height = 33
+    Top = 28
+    Width = 89
     Alignment = taRightJustify
     BorderStyle = sbsSingle
     TabOrder = 1
   end
-  object Button1: TButton
-    Left = 0
+  object btnBloqDesb: TButton
+    Left = 1
     Height = 25
-    Top = 72
-    Width = 81
+    Top = 64
+    Width = 88
+    Caption = 'Bloq/Desbloq'
+    OnClick = btnBloqDesbClick
     TabOrder = 2
   end
   object picPant: TImage
@@ -558,7 +563,6 @@ object frmExplorCab: TfrmExplorCab
     Top = 80
     Width = 152
     BorderStyle = sbsSingle
-    Caption = 'lblNomPC1'
     TabOrder = 7
   end
   object ShellTreeView1: TShellTreeView

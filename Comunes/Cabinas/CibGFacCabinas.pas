@@ -22,6 +22,8 @@ const //Acciones
   C_MOD_CTAPC = 3;  //Solicita modificar la cuenta de una PC
   C_PON_MANTN = 4;  //Solicita poner en mantenimiento a una PC
   C_TRA_CABIN = 5;  //Solicita trasladar cabina
+  C_BLO_CABIN = 6;  //Solicita bloquear una cabina
+  C_DBL_CABIN = 7;  //Solicita desbloquear una cabina
 
 type
   TCibFacCabina = class;
@@ -569,8 +571,7 @@ function TCibFacCabina.CadActivacion(tSolic0: TDateTime; tLibre0,
 {Devuelve cadena con información de los campos usuales, para la activación o
  desactivación de la cabina.}
 begin
-  Result := IdFac + #9 +
-            D2f(tSolic0)+ #9 +
+  Result := D2f(tSolic0)+ #9 +
             B2f(tLibre0)+ #9 +
             B2f(horGra0);
 end;
@@ -698,7 +699,7 @@ begin
   frmTiempos := TCibGFacCabinas(grupo).frmTiempos;
   frmTiempos.MostrarIni(self);  //modal
   if frmTiempos.cancelo then exit;  //canceló
-  OnSolicEjecCom(C_ACC_CABIN, C_INI_CTAPC, 0, frmTiempos.CadActivacion);
+  OnSolicEjecCom(C_ACC_CABIN, C_INI_CTAPC, 0, IdFac + #9 + frmTiempos.CadActivacion);
 end;
 procedure TCibFacCabina.mnModifCuenta(Sender: TObject);
 var
@@ -712,7 +713,7 @@ begin
     //Está en medio de una cuenta
     frmTiempos.Mostrar(self);  //modal
     if frmTiempos.cancelo then exit;  //canceló
-    OnSolicEjecCom(C_ACC_CABIN, C_MOD_CTAPC, 0, frmTiempos.CadActivacion);
+    OnSolicEjecCom(C_ACC_CABIN, C_MOD_CTAPC, 0, IdFac + #9 + frmTiempos.CadActivacion);
   end;
 end;
 procedure TCibFacCabina.mnDetenCuenta(Sender: TObject);
@@ -983,6 +984,12 @@ debugln('Acción solicitada a GFacCabinas:' + tram.traDat);
   C_PON_MANTN: begin  //Se pide detener la cuenta de las PC
     cab.PonerManten;
     end;
+  C_BLO_CABIN: begin
+    cab.TCP_envComando(C_BLOQ_PC, 0, 0);
+  end;
+  C_DBL_CABIN: begin
+    cab.TCP_envComando(C_DESB_PC, 0, 0);
+  end;
   C_TRA_CABIN: begin  //Se pide trasladar desde una cabina a otra
     //Se supone que la cabina se moverá de cab a cab2
     //Ubica el facturable a donde se moverá
