@@ -99,7 +99,7 @@ type
   sino que hace uso de los eventos del OF que lo contiene.}
   TCibBoleta = class
   public
-    //propiedades del formulario
+    //propiedades
     nBole  : Integer;    //Número de Serie de la Boleta
     fec_bol: String;     //fecha de boleta
     nombre : String;     //nombre o razón social

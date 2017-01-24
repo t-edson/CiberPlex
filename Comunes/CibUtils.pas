@@ -7,8 +7,7 @@ uses
   MisUtils;
 
   procedure PantallaAArchivo(arch: String);
-  procedure Decodificar_M_ESTAD_CLI(cad: string; var nombrePC: string; var HoraPC: TDateTime;
-    var bloqueado: boolean);
+  procedure Decodificar_M_ESTAD_CLI(cad: string; out nombrePC: string; out HoraPC: TDateTime);
   function VerHasta(const cad: string; car: char; out Err: boolean): string;
   function ExtraerHasta(var cad: string; car: char; out Err: boolean): string;
   //Funciones para control de menú
@@ -40,8 +39,7 @@ begin
   jpg.Free;
   bmp.Free;
 end;
-procedure Decodificar_M_ESTAD_CLI(cad: string; var nombrePC: string; var HoraPC: TDateTime;
-  var bloqueado: boolean);
+procedure Decodificar_M_ESTAD_CLI(cad: string; out nombrePC: string; out HoraPC: TDateTime);
 var
   a: TStringDynArray;
   fec: string;
@@ -57,7 +55,6 @@ begin
   nn := StrToInt(copy(fec,11,2));
   ss := StrToInt(copy(fec,13,2));
   HoraPC := EncodeDateTime(yy, mm, dd, hh, nn, ss, 0);
-  if a[5] = '0' then bloqueado:=false else bloqueado:=true;
 end;
 
 function VerHasta(const cad: string; car: char; out Err: boolean): string;

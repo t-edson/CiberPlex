@@ -13,7 +13,7 @@ interface
 uses
   Classes, SysUtils, strutils, FileUtil, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, Buttons, Grids, StdCtrls, ActnList, Menus, LCLProc, UtilsGrilla,
-  MisUtils, CibFacturables, CPProductos;
+  MisUtils, CibFacturables;
 type
   TevAccionItemBol = procedure(CibFac: TCibFac; idItemtBol, coment: string) of object;
   TevAccionBoleta = procedure(CibFac: TCibFac; coment: string) of object;
@@ -58,7 +58,7 @@ type
     gri: TUtilGrillaFil;
     function HayCambios(bol: TCibBoleta): boolean;
     function ItemSeleccionado: TCibItemBoleta;
-    function LeerItemSeleccionado(var item: TCibItemBoleta; var codigo: string;
+    function LeerItemSeleccionado(var item: TCibItemBoleta; out codigo: string;
       var estado: TItemBoletaEstado): boolean;
     function LlenarFila(f: integer; it: TCibItemBoleta; Cambiar: boolean=true
       ): boolean;
@@ -207,7 +207,7 @@ begin
   gri.Destroy;
 end;
 function TfrmBoleta.LeerItemSeleccionado(var item: TCibItemBoleta;
-         var codigo: string; var estado: TItemBoletaEstado): boolean;
+         out codigo: string; var estado: TItemBoletaEstado): boolean;
 {Lee el ítem seleccionado, y copia el código. Si no hay ítem seleccionado, devuelve FALSE. }
 begin
   item := ItemSeleccionado;

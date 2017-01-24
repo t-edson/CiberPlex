@@ -187,7 +187,7 @@ var
   arch: RawByteString;
   HoraPC: TDateTime;
   NombrePC, tmp, Grupo: string;
-  bloqueado, Err: boolean;
+  Err: boolean;
   cabOrig: TCibFacCabina;
   gruOrig: TCibGFacCabinas;
   GFac: TCibGFac;
@@ -205,12 +205,14 @@ begin
   end;
   case tram.tipTra of
   M_ESTAD_CLI: begin  //Se recibió el estado remoto del clente
+    {Realmente este comando debe estar enel grupo de cabinas, paro se mantiene aquí
+    todavía, proque se está usando el mismo cliente del NILOTER-m}
       if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-      Decodificar_M_ESTAD_CLI(tram.traDat, NombrePC, HoraPC, bloqueado);
-      //Actualiz en el modelo el esatdo leído para esa cabina
+      Decodificar_M_ESTAD_CLI(tram.traDat, NombrePC, HoraPC);
+      //Actualiza en el modelo el estado leído para esa cabina
       cabOrig.NombrePC:= NombrePC;
       cabOrig.HoraPC  := HoraPC;
-      cabOrig.PantBloq:= bloqueado;
+      cabOrig.PantBloq:= (tram.posX = 1);
     end;
   C_SOL_ESTAD: begin  //Se solicita el estado de todos los objetos del modelo
       //Identifica a la cabina origen para entregarle la información
