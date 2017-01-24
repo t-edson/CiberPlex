@@ -18,7 +18,7 @@ Sus principales características son:
 5. Base de datos propietaria, embebida.
 6. Incluye control para alquiler de cabinas de Internet.
 7. Incluye control para llamadas usando enrutadores NILO-m.
-8. Incluye 2 módulos: El servidor y el Punto de venta.
+
 
 Una de sus característica particulares de CIBERPLEX, es que usa una interfaz gráfica elaborada, más allá de los simples controles y formularios que usan la mayoría de aplicaciones de este tipo. Por ejemplo las PC cliente se representan como objetos gráficos con efectos llamativos, para indicar los estado de cuenta o espera.
 
@@ -28,7 +28,7 @@ El control de llamadas, se usa en negocios de Locutorios o Centros de llamadas. 
 
 Las ventas dentro de CIBERPLEX, se realizan siempre en objetos especiales llamados Facturables. Un objeto facturable es un objeto que puede generar consumo. Todo consumo se escribe en una boleta.
 
-Dentro de la terminología de CIBERPLEX, se manejab 3 conceptos principales:
+Dentro de la terminología de CIBERPLEX, se manejan 3 conceptos principales:
 
 * Boleta. 
 * Objeto Facturable (FAC).
