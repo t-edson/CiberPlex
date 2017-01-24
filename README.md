@@ -11,13 +11,14 @@ Como controlador de cabinas de internet, incluye todas las funcionalidades comun
 CiberPlex, es en general, un software de control de ventas, que puede aplicarse a diversos rubros de negocio, pero que en la versión actual, solo incluye control de alquiler de cabinas de internet y control de llamadas usando enrutadores NILO-m.
 
 Sus principales características son:
-1. Aplicación para Windows-x64. 
-2. Aplicación portable, sin dependencias de librerías externas.
-3. Incluye una interfaz gráfica donde puede mostrar objetos, con formas y colores, más que simples ventanas.
-4. Diseñado con arquitectura modelo-vista. Permite administrar diversos puntos de ventas, mostrando la misma interfaz gráfica en cada uno de ellos.
-5. Base de datos propietaria, embebida.
-6. Incluye control para alquiler de cabinas de Internet.
-7. Incluye control para llamadas usando enrutadores NILO-m.
+
+	1. Aplicación para Windows-x64. 
+	2. Aplicación portable, sin dependencias de librerías externas.
+	3. Incluye una interfaz gráfica donde puede mostrar objetos, con formas y colores, más que simples ventanas.
+	4. Diseñado con arquitectura modelo-vista. Permite administrar diversos puntos de ventas, mostrando la misma interfaz gráfica en cada uno de ellos.
+	5. Base de datos propietaria, embebida.
+	6. Incluye control para alquiler de cabinas de Internet.
+	7. Incluye control para llamadas usando enrutadores NILO-m.
 
 
 Una de sus característica particulares de CIBERPLEX, es que usa una interfaz gráfica elaborada, más allá de los simples controles y formularios que usan la mayoría de aplicaciones de este tipo. Por ejemplo las PC cliente se representan como objetos gráficos con efectos llamativos, para indicar los estado de cuenta o espera.
