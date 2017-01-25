@@ -22,6 +22,9 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
   como para los Visores adicionales.
   }
   TCPTipCom = (
+    ////////////////////////////////////////////////////////////////////////////////
+    //Comandos de control para las PC cliente
+    ////////////////////////////////////////////////////////////////////////////////
     //Tipos de Mensajes que incluyen datos. Respuestas a comandos.
     M_PAN_COMP  = $01,  //Mensaje que incluye una pantalla inicial
     M_COORD_RAT = $02,  //Mensaje con coordenadas del raton
@@ -47,7 +50,6 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     M_SOL_ARINI = $24,  //Envía archivo de configuración
     M_SOL_ESTAD = $25,  //Mensaje con el estado de los objetos
     M_SOL_T_LOC = $26,  //Mensaje tiempos de locutorios
-    M_SOL_PANPC = $2C,  //pantalla de una PC solicitada
 
     //---------------------------------------------------------------------
     //Tipos de Comandos permitidos. Los comandos tienen valor >= 128----------
@@ -87,15 +89,6 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     C_CHAT_CERR = $A1,  //Cierra ventana de chat
     C_CHAT_MNSJ = $A2,  //Envía mensaje a ventana de chat
 
-    ///////////////////////////////////////
-    C_SOL_ARINI = $A4,  //Solicita archivo de configuración principal (Aplicable a SERVIDOR Y CLIENTE).
-    C_SOL_ESTAD = $A5,  //Solicita estado de objetos
-    C_SOL_PANPC = $AC,  //Solicita la pantalla de una PC
-    //Acciones sobre objetos facturables
-    C_ACC_BOLET = $B0,   //Acción sobre boleta (Incluye sub-somandos en ParamX)
-    C_ACC_CABIN = $B1,   //Acción sobre una cabina (Incluye sub-somandos en ParamX)
-    C_ACC_NILOM = $B2,   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
-
     //Comandos cortos que no devuelven mensaje.
     C_BLOQ_PC = $C1,  //Comando de bloqueo de PC
     C_DESB_PC = $C2,  //Comando de desbloqueo de PC
@@ -114,7 +107,19 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
 
     C_REI_CLI = $D0,  //Comando para reiniciar el cliente
     C_ACT_CLI = $D1,  //Comando para actualizar el programa cliente
-    C_REI_COM = $D2  //Comando para reiniciar el proceso compañero del cliente
+    C_REI_COM = $D2,  //Comando para reiniciar el proceso compañero del cliente
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //Comandos de control para el Visor. Se ponen en los valores altos, para poder
+    //identificarlos fácilmente.
+    ////////////////////////////////////////////////////////////////////////////////
+    CVIS_SOLPROP = $E0,  //Solicita archivo de configuración principal (Aplicable a SERVIDOR Y CLIENTE).
+    CVIS_SOLESTA = $E1,  //Solicita estado de objetos
+    CVIS_CAPPANT = $E2,  //Solicita captura de pantalla del servidor
+    RVIS_CAPPANT = $E3,  //Respuesta a captura de pantalla del servidor
+    CVIS_ACBOLET = $E4,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
+    CFAC_CABIN = $F0,  //Acción sobre una cabina (Incluye sub-somandos en ParamX)
+    CFAC_NILOM = $F1   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
   );
 
 type

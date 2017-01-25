@@ -7,8 +7,7 @@ interface
 uses
   Classes, SysUtils, Types, LCLProc, Forms, CibFacturables,
   //Aquí se incluyen las unidades que definen clases descendientes de TCPFacturables
-  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CibUtils,
-  FormVisorMsjRed;
+  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CibUtils;
 type
   { TCibGruposFacturables }
   {Objeto que engloba a todos los grupos facturables. Debe haber solo una instancia para
@@ -60,8 +59,7 @@ type
     function BuscarPorNombre(nomb: string): TCibGFac;
     procedure Agregar(gof: TCibGFac);
     procedure Eliminar(gf: TCibGFac);
-    procedure gof_TramaLista(nomFac, nomGFac: string; tram: TCPTrama;
-      tramaLocal: boolean);
+    procedure EjecComando(nomFac, nomGFac: string; tram: TCPTrama);
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean=false);
     destructor Destroy; override;
@@ -144,25 +142,25 @@ begin
   if not DeshabEven and (OnLogError<>nil) then
     Result := OnLogError(msj);
 end;
-procedure TCibGruposFacturables.gof_TramaLista(nomFac, nomGFac: string;
-  tram: TCPTrama; tramaLocal: boolean);
-{Rutina ejecutada de dos formas:
+procedure TCibGruposFacturables.EjecComando(nomFac, nomGFac: string;
+  tram: TCPTrama);
+{Rutina que centraliza todas las acciones a realizar sobre el modelo.
+ Es llamada de las siguientes formas:
  1. Como respuesta al evento OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
     En este caso, las tramas pueden indicar respuesta a un comando enviado a una cabina
     o solicitudes de acciones sobre el modelo, como es el caso cuando la cabian remota es
     también un punto de Venta (CiberPlex-Visor).
  2. Como método para ejecutar acciones locales sobre el modelo de objetos (Fac, GFac).
-    Estas llamadas, se eejcutarán desde esta misma aplicación, no de cabinas remotas.
+    Estas llamadas, se ejecutarán desde esta misma aplicación (Visor local o la misma
+    aplicación), no de PC remotas.
  3. Como repsuesta a comandos llegados desde la Web (NO IMPLEMENTADO AÚN)
 
  Parámetros:
  * nomFac -> Es el nombre del objeto facturable que genera la petición. Para comandos
             locales, está en blanco.
- * nomGFac -> Es el nombre del Grupo de facturables del facturable que geenra la petición.
+ * nomGFac -> Es el nombre del Grupo de facturables del facturable que genera la petición.
               Para comandos locales, está en blanco.
  * tram -> Es la trama que contiene el comando que debe ejecutarse.
- * tramaLocal -> Indica si la trama llegó de forma automática por medio de la conexión de
-                 red (FALSE) o si se generó localmente en la misma aplicación.
 
 Como este método ejecuta todos los comandos solicitados por la cabinas de Internet, o de
 la aplicación, hace uso de eventos para acceder a información que no está en este ámbito.}
@@ -183,64 +181,36 @@ la aplicación, hace uso de eventos para acceder a información que no está en 
     exit(true);
   end;
 var
-  frm: TfrmVisorMsjRed;
   arch: RawByteString;
-  HoraPC: TDateTime;
-  NombrePC, tmp, Grupo: string;
+  tmp, Grupo: string;
   Err: boolean;
   cabOrig: TCibFacCabina;
   gruOrig: TCibGFacCabinas;
   GFac: TCibGFac;
 begin
-  //debugln(NomCab + ': Trama recibida: '+ tram.TipTraHex);
-  if not tramaLocal then begin  //Ignora los mensajes locales
-    //La trama es remota.
-    //Identifica a la cabina origen para buscar su visor de mensajes
-    if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-    frm := cabOrig.frmVisMsj;  //Ve si hay un formulario de mensajes para esta cabina
-    {Aunque no se ha detectado consumo de CPU adicional, la búsqueda regular con
-     BuscarVisorMensajes() puede significar una carga innecesaria de CPU, considerando
-     que se hace para todos los mensajes que llegan.}
-    if frm<>nil then frm.PonerMsje('>>Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
-  end;
   case tram.tipTra of
-  M_ESTAD_CLI: begin  //Se recibió el estado remoto del clente
-    {Realmente este comando debe estar enel grupo de cabinas, paro se mantiene aquí
-    todavía, proque se está usando el mismo cliente del NILOTER-m}
-      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-      Decodificar_M_ESTAD_CLI(tram.traDat, NombrePC, HoraPC);
-      //Actualiza en el modelo el estado leído para esa cabina
-      cabOrig.NombrePC:= NombrePC;
-      cabOrig.HoraPC  := HoraPC;
-      cabOrig.PantBloq:= (tram.posX = 1);
-    end;
-  C_SOL_ESTAD: begin  //Se solicita el estado de todos los objetos del modelo
-      //Identifica a la cabina origen para entregarle la información
-      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-      debugln(cabOrig.Nombre + ': Tiempos de PC solicitado.');
-      tmp := CadEstado;
-      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ESTAD, 0, 0, tmp);
-    end;
-  C_SOL_ARINI: begin  //Se solicita el archivo INI (No está bien definido)
+  CVIS_SOLPROP: begin  //Se solicita el archivo INI (No está bien definido)
       //Identifica a la cabina origen para entregarle la información
       if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
       tmp := CadPropiedades;
       gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ARINI, 0, 0, tmp);
     end;
-  C_PAN_COMPL: begin  //se pide una captura de pantalla
+  CVIS_SOLESTA: begin  //Se solicita el estado de todos los objetos del modelo
+      //Identifica a la cabina origen para entregarle la información
+      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
+      debugln(cabOrig.Nombre + ': Estado solicitado.');
+      tmp := CadEstado;
+      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ESTAD, 0, 0, tmp);
+    end;
+  CVIS_CAPPANT: begin  //se pide una captura de pantalla
       //Identifica a la cabina origen para entregarle la información
       if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
       debugln(cabOrig.Nombre+ ': Pantalla completa solicitada.');
-      if tram.posX = 0 then begin  //se pide de la PC local
-        arch := ExtractFilePath(Application.ExeName) + '~00.tmp';
-        PantallaAArchivo(arch);
-        gruOrig.TCP_envComando(cabOrig.Nombre, M_PAN_COMP, 0, 0, StringFromFile(arch));
-      end else begin
-
-      end;
+      arch := ExtractFilePath(Application.ExeName) + '~00.tmp';
+      PantallaAArchivo(arch);
+      gruOrig.TCP_envComando(cabOrig.Nombre, RVIS_CAPPANT, 0, 0, StringFromFile(arch));
     end;
-  //Acciones sobre objetos facturables
-  C_ACC_BOLET: begin  //Acciones sobre Boletas
+  CVIS_ACBOLET: begin  //Acciones sobre Boletas
       //Identifica al facturable sobre el que se aplica
       Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
@@ -248,7 +218,8 @@ begin
       Gfac.AccionesBoleta(tram);  //ejecuta la acción
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
-  C_ACC_CABIN: begin   //Acciones sobre una cabina
+  //Acciones sobre objetos facturables
+  CFAC_CABIN: begin   //Acciones sobre una cabina
       //Identifica a la cabina sobre la que aplica
       Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
@@ -262,7 +233,7 @@ begin
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automática, o algún otro evento similar que requiera guardar el estado.}
   end;
-  C_ACC_NILOM: begin  //Acciones sobre un NILO-m
+  CFAC_NILOM: begin  //Acciones sobre un NILO-m
       //Identifica a la cabina sobre la que aplica
     Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
@@ -273,7 +244,7 @@ begin
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
   else
-    if frm<>nil then frm.PonerMsje('  ¡¡Comando no implementado!!');  //Envía mensaje a su formaulario
+    debugln('  ¡¡Comando no implementado!!');
   end;
 end;
 procedure TCibGruposFacturables.gof_RequiereInfo(var NombProg,
@@ -438,7 +409,7 @@ begin
   gof.OnBuscarGFac   := @BuscarPorNombre;
   case gof.tipo of
   ctfCabinas: begin
-    TCibGFacCabinas(gof).OnTramaLista:=@gof_TramaLista;
+    TCibGFacCabinas(gof).OnTramaLista:=@EjecComando;
   end;
   ctfNiloM: begin
     {Se aprovecha aquí para leer los archivos de configuración. No se encontró un mejor

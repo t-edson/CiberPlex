@@ -425,7 +425,7 @@ begin
           if OnSolicEjecAcc<>nil then begin
             if MsgYesNo('¿Trasladar boleta de cabina ' + arrastFuente + ' a ' +
                          ogFac.Fac.IdFac + '?') <> 1 then exit;
-             OnSolicEjecAcc(C_ACC_BOLET, ACCBOL_TRA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
+             OnSolicEjecAcc(CVIS_ACBOLET, ACCBOL_TRA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
           end;
         end;
       end else begin
@@ -434,7 +434,7 @@ begin
           if MsgYesNo('¿Trasladar cabina: ' + arrastFuente + ' a ' +
                        ogFac.Fac.IdFac + '?') <> 1 then exit;
           //Se traslada la cabina
-          OnSolicEjecAcc(C_ACC_CABIN, C_TRA_CABIN, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
+          OnSolicEjecAcc(CFAC_CABIN, C_CABIN_TRASLA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
         end;
       end;
       exit;
