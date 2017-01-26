@@ -10,7 +10,7 @@ unit CibGFacNiloM;
 interface
 uses
   Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, Menus, Forms, MisUtils,
-  crt, strutils, mmsystem, CibFacturables, CibNiloMConex, FormNiloMConex,
+  crt, strutils, {mmsystem, }CibFacturables, CibNiloMConex, FormNiloMConex,
   FormNiloMProp, CibNiloMTarifRut, Globales, CibRegistros, CibTramas, CibUtils;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
@@ -69,6 +69,8 @@ type
     procedure ConectarLlamada;
     procedure DesconectarLlamada;
     procedure InicioConteo;
+    procedure mnConectarClick(Sender: TObject);
+    procedure mnDesconecClick(Sender: TObject);
   protected  //"Getter" and "Setter"
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -101,6 +103,8 @@ type
     procedure TerminarLlamada(usuario: string; CategLocu: string);
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
       CategLocu: string);
+    procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
+    procedure MenuAcciones(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -184,10 +188,8 @@ type
     function Agregar(nomLoc: string; num_can: char; tabTar0: TNiloMTabTar
       ): TCibFacLocutor;
   public  //Campos para manejo de acciones
-    procedure EjecAccion(tram: TCPTrama); override;
+    procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
     procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
-    procedure mnConectarClick(Sender: TObject);
-    procedure mnDesconecClick(Sender: TObject);
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -726,6 +728,34 @@ begin
     else if copy(linea, 1, 2)  = 'd' + num_can then   //Llamada descolgada
         ProcesaDescolgado;
 end;
+procedure TCibFacLocutor.EjecAccion(idFacOrig: string; tram: TCPTrama;
+  traDat: string);
+begin
+  case tram.posX of  //Se usa el parámetro para ver la acción
+  ACCLOC_CONEC: begin
+    ConectarLlamada;
+    end;
+  ACCLOC_DESCO: begin
+    DesconectarLlamada;
+    end;
+  end;
+end;
+procedure TCibFacLocutor.MenuAcciones(MenuPopup: TPopupMenu);
+begin
+  InicLlenadoAcciones(MenuPopup);
+  AgregarAccion('&Desconectar', @mnDesconecClick);
+  AgregarAccion('&Conectar'   , @mnConectarClick);
+end;
+procedure TCibFacLocutor.mnConectarClick(Sender: TObject);
+begin
+  if OnSolicEjecCom<>nil then  //ejecuta evento
+    OnSolicEjecCom(CFAC_NILOM, ACCLOC_CONEC, 0, IdFac);
+end;
+procedure TCibFacLocutor.mnDesconecClick(Sender: TObject);
+begin
+  if OnSolicEjecCom<>nil then  //ejecuta evento
+    OnSolicEjecCom(CFAC_NILOM, ACCLOC_DESCO, 0, IdFac);
+end;
 //Constructor y destructor
 constructor TCibFacLocutor.Create;
 begin
@@ -1096,7 +1126,6 @@ begin
        end;
    end;
 end;
-
 function TCibGFacNiloM.Agregar(nomLoc: string; num_can: char; tabTar0: TNiloMTabTar): TCibFacLocutor;
 
 var
@@ -1110,7 +1139,7 @@ begin
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := loc;
 end;
-procedure TCibGFacNiloM.EjecAccion(tram: TCPTrama);
+procedure TCibGFacNiloM.EjecAccion(idFacOrig: string; tram: TCPTrama);
 var
   traDat, nom : String;
   facDest: TCibFac;
@@ -1121,18 +1150,9 @@ begin
   nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
   facDest := ItemPorNombre(nom);
   if facDest=nil then exit;
-  case tram.posX of  //Se usa el parámetro para ver la acción
-  ACCLOC_CONEC: begin  //Se pide grabar la boleta de una PC
-    //comando := 'u'+TCibFacLocutor(facDest).num_can;
-    //EnvComando(comando);
-    TCibFacLocutor(facDest).ConectarLlamada;
-    end;
-  ACCLOC_DESCO: begin  //Se pide grabar la boleta de una PC
-    //comando := 'x'+TCibFacLocutor(facDest).num_can;
-    //EnvComando(comando);
-    TCibFacLocutor(facDest).DesconectarLlamada;
-    end;
-  end;
+  facDest.EjecAccion(idFacOrig, tram, '');
+  {¿No és este código similar para todos los facturables?. AL menos para comandos
+   destinados a los facturables y no a los grupos.}
 end;
 procedure TCibGFacNiloM.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
 {Configura las acciones}
@@ -1141,20 +1161,8 @@ var
 begin
   facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
   if facSelec=nil then exit;
-  mn := MenuAccion('&Desconectar',@mnDesconecClick);
-  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
-  mn := MenuAccion('&Conectar',@mnConectarClick);
-  MenuPopup.Items.Insert(0, mn);  //Agrega al inicio
-end;
-procedure TCibGFacNiloM.mnConectarClick(Sender: TObject);
-begin
-  if OnSolicEjecCom<>nil then  //ejecuta evento
-    OnSolicEjecCom(C_ACC_NILOM, ACCLOC_CONEC, 0, facSelec.IdFac);
-end;
-procedure TCibGFacNiloM.mnDesconecClick(Sender: TObject);
-begin
-  if OnSolicEjecCom<>nil then  //ejecuta evento
-    OnSolicEjecCom(C_ACC_NILOM, ACCLOC_DESCO, 0, facSelec.IdFac);
+  InicLlenadoAcciones(MenuPopup);
+  //No hay acciones, aún, para el Grupo NiloM
 end;
 //Constructor y destructor
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
