@@ -59,8 +59,12 @@ begin
   else btnBloqDesb.Caption:='Bloquear';
 end;
 procedure TfrmExplorCab.picPantClick(Sender: TObject);
+var
+  cab: TCibFacCabina;
 begin
-
+  cab := TCibFacCabina(fac);
+  //Solicita captura de pantalla
+  cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_PANTA, 0, cab.IdFac);
 end;
 
 procedure TfrmExplorCab.btnBloqDesbClick(Sender: TObject);
@@ -70,9 +74,9 @@ begin
   cab := TCibFacCabina(fac);
   if btnBloqDesb.Caption='Bloquear' then begin
     //Manda comando de bloqueo
-    cab.OnSolicEjecCom(C_ACC_CABIN, C_BLO_CABIN, 0, cab.IdFac);
+    cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_BLOQU, 0, cab.IdFac);
   end else begin
-    cab.OnSolicEjecCom(C_ACC_CABIN, C_DBL_CABIN, 0, cab.IdFac);
+    cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_DESBL, 0, cab.IdFac);
   end;
 end;
 

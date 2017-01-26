@@ -225,7 +225,7 @@ End;
 function TfrmFijTiempo.CadActivacion: string;
 {Devuelve una cadena con información sobre la activación de la cabina}
 begin
-  Result := TCibFacCabina(fac).CadActivacion(tSolic, tLibre, horGra );
+  Result := TCibFacCabina(fac).CodCadConteo(tSolic, tLibre, horGra );
 end;
 
 

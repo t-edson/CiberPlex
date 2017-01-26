@@ -17,13 +17,15 @@ uses
   FormVisorMsjRed, CibUtils, FormAdminTarCab, FormAdminCabinas,
   FormFijTiempo, FormExplorCab;
 const //Acciones
-  C_INI_CTAPC = 1;  //Solicita iniciar la cuenta de una PC
-  C_DET_CTAPC = 2;  //Solicita detener la cuenta de una PC
-  C_MOD_CTAPC = 3;  //Solicita modificar la cuenta de una PC
-  C_PON_MANTN = 4;  //Solicita poner en mantenimiento a una PC
-  C_TRA_CABIN = 5;  //Solicita trasladar cabina
-  C_BLO_CABIN = 6;  //Solicita bloquear una cabina
-  C_DBL_CABIN = 7;  //Solicita desbloquear una cabina
+  C_CABIN_INICTA = 1;  //Solicita iniciar la cuenta de una PC
+  C_CABIN_DETCTA = 2;  //Solicita detener la cuenta de una PC
+  C_CABIN_MODCTA = 3;  //Solicita modificar la cuenta de una PC
+  C_CABIN_PONMAN = 4;  //Solicita poner en mantenimiento a una PC
+  C_CABIN_TRASLA = 5;  //Solicita trasladar cabina
+  C_CABIN_BLOQU = 6;  //Solicita bloquear una cabina
+  C_CABIN_DESBL = 7;  //Solicita desbloquear una cabina
+  C_CABIN_PANTA = 8;  //Solicita captura de pantalla
+  R_CABIN_PANTA = 9;  //Respuesta de captura de pantalla
 
 type
   TCibFacCabina = class;
@@ -33,8 +35,7 @@ type
   {El evento TEvCabTramaLista, se define con el primer parámetro como TCibFac, en lugar
   de TCibFacCabina, porque el manejador de este evento se usará como rutina general para
   el procesamiento de la mayoría de comandos de la aplicación.}
-  TEvCabTramaLista = procedure(nomOForig, nomGOForig: string; tram: TCPTrama;
-                               tramaLocal: boolean) of object;
+  TEvCabTramaLista = procedure(idFacOrig: string; tram: TCPTrama) of object;
   TEvCabRegMensaje = procedure(NomCab: string; msj: string) of object;
   TEvCabAccionCab = procedure(cab: TCibFacCabina) of object;
 //  TEvCabLogIBol = procedure(cab: TCPCabina; it: TCPItemBoleta; msj: string) of object;
@@ -51,6 +52,7 @@ type
     tic    : integer;   //contador para temporización
     SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
                         por Socket.}
+    PantallaPorEnviarA: string;
     procedure LimpiarCabina;
     procedure mnDetenCuenta(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
@@ -121,12 +123,19 @@ type
     procedure SincBloqueo;       //sicroniza el bloqueo de la pantalla
     procedure TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string=
       '');
-    function CadActivacion(tSolic0: TDateTime; tLibre0, horGra0: boolean): string;
+    function CodCadConteo(const tSolic0: TDateTime; const tLibre0, horGra0: boolean
+      ): string;
+    procedure DecodCadConteo(const cadConteo: string; out tSolic0: TDateTime; out
+      tLibre0, horGra0: boolean);
     procedure InicConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
+    procedure InicConteo(cadConteo: string);
     procedure ModifConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
+    procedure ModifConteo(cadConteo: string);
     procedure DetenConteo;
-    procedure PonerManten;     //pone cabina en mantenimiento
-    procedure SacarManten;     //pone cabina en mantenimiento
+    procedure PonerManten;     //Pone cabina en mantenimiento
+    procedure SacarManten;     //Saca cabina en mantenimiento
+    procedure TrasladarA(cab2: TCibFacCabina);  //Traslada a otra cabina
+    procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
     procedure MenuAcciones(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
     constructor Create(nombre0: string; ip0: string);
@@ -145,8 +154,7 @@ type
     timer1 : TTimer;
     frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
     procedure cab_RegMensaje(NomCab: string; msj: string);
-    procedure cab_TramaLista(nomOForig, nomGOForig: string; tram: TCPTrama;
-      tramaLocal: boolean);
+    procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
@@ -170,7 +178,7 @@ type
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
   public  //Campos para manejo de acciones
-    procedure EjecAccion(tram: TCPTrama); override;
+    procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
     procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
   public  //Constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
@@ -218,8 +226,37 @@ begin
   if OnCambiaEstado<>nil then OnCambiaEstado();
 end;
 procedure TCibFacCabina.cabConexTramaLista(NomCab: string; tram: TCPTrama);
+{Este es el punto de llegada de las tramas de una PC cliente, que puede ser un Punto
+de Venta, o una PC de alquiler. Aquí se discrimina para ver, qué tipo de trama es.}
+var
+  NombPC: string;
+  HorPC: TDateTime;
 begin
-  if OnTramaLista<>nil then OnTramaLista(Nombre, Grupo.Nombre , tram, false);
+  if tram.tipTra = M_ESTAD_CLI then begin
+    //Este mensaje se procesa aquí sin propagarlo
+    Decodificar_M_ESTAD_CLI(tram.traDat, NombPC, HorPC);
+    NombrePC:= NombPC;
+    HoraPC  := HorPC;
+    PantBloq:= (tram.posX = 1);
+    frmVisMsj.PonerMsje(' <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+  end else if tram.tipTra = M_PAN_COMP then begin
+    //Llego una captura de pantalla
+    //Debe comunicar al modelo que hay una pantalla lista
+    //Aquí oonvertimos esta trama Cabinas<->Grupo a una trama Visor<->Modelo
+    tram.tipTra := RFAC_CABIN;
+    tram.posX := R_CABIN_PANTA;
+    //Usa el Id de quien pidió una pantalla anteriormente, para devolverla
+debugln('+Recibida imagen en: '+ self.IdFac);
+    if PantallaPorEnviarA<>'' then begin
+      OnTramaLista(PantallaPorEnviarA, tram);
+      PantallaPorEnviarA := '';  //limpia bandera
+    end;
+  end else if tram.tipTra>=CVIS_SOLPROP then begin
+    //Como son comadnos de un punto de venta, los propaga hasta el modelo.
+    OnTramaLista(IdFac, tram);
+  end else begin
+    frmVisMsj.PonerMsje('!Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+  end;
 end;
 procedure TCibFacCabina.cabConexRegMensaje(NomCab: string; msj: string);
 begin
@@ -566,14 +603,23 @@ procedure TCibFacCabina.TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word;
 begin
   cabConex.TCP_envComando(comando, ParamX, ParamY, cad);    //desbloquea, si hay conexión
 end;
-function TCibFacCabina.CadActivacion(tSolic0: TDateTime; tLibre0,
-  horGra0: boolean): string;
-{Devuelve cadena con información de los campos usuales, para la activación o
- desactivación de la cabina.}
+function TCibFacCabina.CodCadConteo(const tSolic0: TDateTime;
+                                     const tLibre0, horGra0: boolean): string;
+{Codifica los campos usuales, para iniciar o modificar el conteo de la cabina.}
 begin
   Result := D2f(tSolic0)+ #9 +
             B2f(tLibre0)+ #9 +
             B2f(horGra0);
+end;
+procedure TCibFacCabina.DecodCadConteo(const cadConteo: string; out
+  tSolic0: TDateTime; out tLibre0, horGra0: boolean);
+var
+  campos: TStringDynArray;
+begin
+  campos := Explode(#9, cadConteo);
+  tSolic0 := f2D(campos[0]);
+  tLibre0 := f2B(campos[1]);
+  horGra0 := f2B(campos[2]);
 end;
 procedure TCibFacCabina.InicConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
 begin
@@ -591,6 +637,15 @@ begin
   if OnCambiaEstado<>nil then OnCambiaEstado();
   cabConex.TCP_envComando(C_DESB_PC, 0, 0);    //desbloquea, si hay conexión
 end;
+procedure TCibFacCabina.InicConteo(cadConteo: string);
+{Versión de InicConteo(), que recibe una "cadena de conteo".}
+var
+  tSolic0: TDateTime;
+  tLibre0, horGra0: boolean;
+begin
+  DecodCadConteo(cadConteo, tSolic0, tLibre0, horGra0);
+  InicConteo(tSolic0, tLibre0, horGra0);
+end;
 procedure TCibFacCabina.ModifConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
 begin
   if not Contando then
@@ -600,6 +655,15 @@ begin
   cabCuenta.horGra:=horGra0;
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
+end;
+procedure TCibFacCabina.ModifConteo(cadConteo: string);
+{Versión de ModifConteo(), que recibe una "cadena de conteo".}
+var
+  tSolic0: TDateTime;
+  tLibre0, horGra0: boolean;
+begin
+  DecodCadConteo(cadConteo, tSolic0, tLibre0, horGra0);
+  ModifConteo(tSolic0, tLibre0, horGra0);
 end;
 procedure TCibFacCabina.DetenConteo;
 var
@@ -671,6 +735,97 @@ begin
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
 end;
+procedure TCibFacCabina.TrasladarA(cab2: TCibFacCabina);
+{Traslada la cabina a otra cabina.}
+begin
+  //Verifica si se puede trasladar libre la cabina
+  If cab2.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
+      MsgExc('Cabina ocupada.');
+      exit;
+  end else if cab2.EstadoCta = EST_MANTEN then begin
+      MsgExc('Cabina en mantenimiento.');
+      exit;
+  end else if cab2.Boleta.items.Count > 0 then begin
+      MsgExc('Cabina con boleta pendiente');
+      exit;
+  end;
+  //Copia variables de estado, incluyendo la boleta.
+  cab2.CadEstado := CadEstado;
+  //Limpia cabina fuente
+  LimpiarCabina;
+  LimpiarBol;
+  //Envía comandos para restablecer estado
+  TCP_envComando(C_BLOQ_PC, 0, 0);
+  Application.ProcessMessages;    //Para darle tiempo a enviar
+  Sleep(200);
+  Application.ProcessMessages;    //Para darle tiempo a enviar
+  if cab2.EstadoCta = EST_CONTAN Then begin
+      cab2.TCP_envComando(C_DESB_PC, 0, 0)
+  end;
+end;
+procedure TCibFacCabina.EjecAccion(idFacOrig: string; tram: TCPTrama;
+  traDat: string);
+{Ejecuta la acción solicitada sobre este facturable.}
+var
+  Err: boolean;
+  nom, gru: String;
+  facDest2: TCibFac;
+  cab2: TCibFacCabina;
+  Gfac2: TCibGFac;
+begin
+  case tram.posX of  //Se usa el parámetro para ver la acción
+  C_CABIN_INICTA: begin   //Se pide iniciar la cuenta de una PC
+    InicConteo(traDat);
+    end;
+  C_CABIN_MODCTA: begin   //Se pide modificar la cuenta de una PC
+    ModifConteo(traDat);
+    end;
+  C_CABIN_DETCTA: begin  //Se pide detener la cuenta de las PC
+    DetenConteo;
+    end;
+  C_CABIN_PONMAN: begin  //Se pide detener la cuenta de las PC
+    PonerManten;
+    end;
+  C_CABIN_BLOQU: begin
+    TCP_envComando(C_BLOQ_PC, 0, 0);
+  end;
+  C_CABIN_DESBL: begin
+    TCP_envComando(C_DESB_PC, 0, 0);
+  end;
+  C_CABIN_PANTA: begin  //Solicitar captura de pantalla
+    //Guarda el id de quien pidió la pantalla, para poder devolverla adecuadamente
+debugln('+Solicitando imagen desde: '+ self.IdFac);
+    PantallaPorEnviarA := idFacOrig;
+    TCP_envComando(C_PAN_COMPL, 0, 0);
+  end;
+  R_CABIN_PANTA: begin
+    //Se ha recibido una captura de pantalla
+    StringToFile(traDat, 'd:\aaa.jpg');
+    frmExpArc.picPant.Picture.LoadFromFile('d:\aaa.jpg');
+//    frmPant.Image1.Picture.LoadFromFile('d:\aaa.jpg');
+  end;
+  C_CABIN_TRASLA: begin  //Se pide trasladar desde una cabina a otra
+    //Se supone que la cabina se moverá a "cab2"
+    //Ubica el facturable a donde se moverá
+    gru := ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+    //Identifica de acuerdo al grupo
+    if grupo.Nombre = gru then begin
+      //Es el mismo grupo
+      facDest2 := grupo.ItemPorNombre(nom);
+    end else begin
+      //Es otro grupo
+      Gfac2 := grupo.OnBuscarGFac(gru);   //consulta
+      if Gfac2 = nil then exit;
+      facDest2 := Gfac2.ItemPorNombre(nom);
+    end;
+    if facDest2=nil then exit;
+    cab2 := TCibFacCabina(facDest2);
+    //Ahora ya se puede mover la cabina
+    TrasladarA(cab2);
+    end;
+  end;
+end;
 procedure TCibFacCabina.MenuAcciones(MenuPopup: TPopupMenu);
 begin
   InicLlenadoAcciones(MenuPopup);
@@ -679,9 +834,9 @@ begin
   AgregarAccion('&Detener Cuenta'       , @mnDetenCuenta, 16);
   AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, 18);
 //  AgregarAccion('Pausar tiempo',@mnPonerManten, 18);
+  AgregarAccion('&Ver Explorador'      , @mnVerExplorad, 19);
   if grupo.ModoCopia then exit;
   //Acciones que son solo válidas en el servidor
-  AgregarAccion('&Ver Explorador'      , @mnVerExplorad, 19);
   AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, 13);
 //  AgregarAccion('Propiedades' , @mnVerMsjesRed, -1););
 end;
@@ -699,7 +854,7 @@ begin
   frmTiempos := TCibGFacCabinas(grupo).frmTiempos;
   frmTiempos.MostrarIni(self);  //modal
   if frmTiempos.cancelo then exit;  //canceló
-  OnSolicEjecCom(C_ACC_CABIN, C_INI_CTAPC, 0, IdFac + #9 + frmTiempos.CadActivacion);
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_INICTA, 0, IdFac + #9 + frmTiempos.CadActivacion);
 end;
 procedure TCibFacCabina.mnModifCuenta(Sender: TObject);
 var
@@ -713,13 +868,13 @@ begin
     //Está en medio de una cuenta
     frmTiempos.Mostrar(self);  //modal
     if frmTiempos.cancelo then exit;  //canceló
-    OnSolicEjecCom(C_ACC_CABIN, C_MOD_CTAPC, 0, IdFac + #9 + frmTiempos.CadActivacion);
+    OnSolicEjecCom(CFAC_CABIN, C_CABIN_MODCTA, 0, IdFac + #9 + frmTiempos.CadActivacion);
   end;
 end;
 procedure TCibFacCabina.mnDetenCuenta(Sender: TObject);
 begin
   if MsgYesNo('¿Desconectar Computadora: ' + nombre + '?') <> 1 then exit;
-  OnSolicEjecCom(C_ACC_CABIN, C_DET_CTAPC, 0, IdFac);
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_DETCTA, 0, IdFac);
 end;
 procedure TCibFacCabina.mnPonerManten(Sender: TObject);
 begin
@@ -727,7 +882,7 @@ begin
     MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
     exit;
   end;
-  OnSolicEjecCom(C_ACC_CABIN, C_PON_MANTN, 0, IdFac); //El mismo comando, pone en mantenimiento
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONMAN, 0, IdFac); //El mismo comando, pone en mantenimiento
 end;
 procedure TCibFacCabina.mnVerExplorad(Sender: TObject);
 {Muestra el explorador de archivos}
@@ -738,7 +893,6 @@ procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);
 begin
   frmVisMsj.Exec(Nombre);
 end;
-
 procedure TCibFacCabina.LimpiarCabina;
 //Pone la cabina limpia sin tiempos ni cuentas
 begin
@@ -792,10 +946,9 @@ begin
   if (frmAdminCabs<>nil) and frmAdminCabs.Visible then
     frmAdminCabs.RefrescarGrilla;  //actualiza
 end;
-procedure TCibGFacCabinas.cab_TramaLista(nomOForig, nomGOForig: string; tram: TCPTrama;
-  tramaLocal: boolean);
+procedure TCibGFacCabinas.cab_TramaLista(idFacOrig: string; tram: TCPTrama);
 begin
-  if OnTramaLista<>nil then OnTramaLista(nomOForig, nomGOForig, tram, tramaLocal);
+  if OnTramaLista<>nil then OnTramaLista(idFacOrig, tram);
 end;
 procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
 var
@@ -946,94 +1099,23 @@ begin
   if cab = nil then exit;
   cab.TCP_envComando(comando, ParamX, ParamY, cad);
 end;
-procedure TCibGFacCabinas.EjecAccion(tram: TCPTrama);
+procedure TCibGFacCabinas.EjecAccion(idFacOrig: string; tram: TCPTrama);
+{Ejecuta la acción sibre este grupo. Si la acción es para uno de sus facturables, le
+pasa la trama, para su ejecución.}
 var
-  traDat, nom, gru: String;
-  facDest, facDest2: TCibFac;
-  Err, tLibre0, horGra0: boolean;
-  cab, cab2: TCibFacCabina;
-  campos: TStringDynArray;
-  tSolic0: TDateTime;
-  Gfac: TCibGFac;
+  traDat, nom: String;
+  facDest: TCibFac;
+  Err: boolean;
 begin
 debugln('Acción solicitada a GFacCabinas:' + tram.traDat);
-  traDat := tram.traDat;  //crea copia para modificar
-  gru := ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
-  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+  traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
+                           deteriorar el rendimiento. Habría que verificar.}
+  ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
   facDest := ItemPorNombre(nom);
   if facDest=nil then exit;
-  cab := TCibFacCabina(facDest);
-  case tram.posX of  //Se usa el parámetro para ver la acción
-  C_INI_CTAPC: begin   //Se pide iniciar la cuenta de una PC
-    campos := Explode(#9, traDat);
-    tSolic0 := f2D(campos[0]);
-    tLibre0 := f2B(campos[1]);
-    horGra0 := f2B(campos[2]);
-    cab.InicConteo(tSolic0, tLibre0, horGra0);
-    end;
-  C_MOD_CTAPC: begin   //Se pide modificar la cuenta de una PC
-    campos := Explode(#9, traDat);
-    tSolic0 := f2D(campos[0]);
-    tLibre0 := f2B(campos[1]);
-    horGra0 := f2B(campos[2]);
-    cab.ModifConteo(tSolic0, tLibre0, horGra0);
-    end;
-  C_DET_CTAPC: begin  //Se pide detener la cuenta de las PC
-    cab.DetenConteo;
-    end;
-  C_PON_MANTN: begin  //Se pide detener la cuenta de las PC
-    cab.PonerManten;
-    end;
-  C_BLO_CABIN: begin
-    cab.TCP_envComando(C_BLOQ_PC, 0, 0);
-  end;
-  C_DBL_CABIN: begin
-    cab.TCP_envComando(C_DESB_PC, 0, 0);
-  end;
-  C_TRA_CABIN: begin  //Se pide trasladar desde una cabina a otra
-    //Se supone que la cabina se moverá de cab a cab2
-    //Ubica el facturable a donde se moverá
-    gru := ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
-    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
-    //Identifica de acuerdo al grupo
-    if self.Nombre = gru then begin
-      //Es el mismo grupo
-      facDest2 := ItemPorNombre(nom);
-    end else begin
-      //Es otro grupo
-      Gfac := OnBuscarGFac(gru);
-      if Gfac = nil then exit;
-      facDest2 := Gfac.ItemPorNombre(nom);
-    end;
-    if facDest2=nil then exit;
-    cab2 := TCibFacCabina(facDest2);
-    //Ahora ya se puede mover la cabina
-    //Verifica si se puede trasladar libre la cabina
-    If cab2.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
-        MsgExc('Cabina ocupada.');
-        exit;
-    end else if cab2.EstadoCta = EST_MANTEN then begin
-        MsgExc('Cabina en mantenimiento.');
-        exit;
-    end else if cab2.Boleta.items.Count > 0 then begin
-        MsgExc('Cabina con boleta pendiente');
-        exit;
-    end;
-    //Copia variables de estado, incluyendo la boleta.
-    cab2.CadEstado := cab.CadEstado;
-    //Limpia cabina fuente
-    cab.LimpiarCabina;
-    cab.LimpiarBol;
-    //Envía comandos para restablecer estado
-    cab.TCP_envComando(C_BLOQ_PC, 0, 0);
-    Application.ProcessMessages;    //Para darle tiempo a enviar
-    Sleep(200);
-    Application.ProcessMessages;    //Para darle tiempo a enviar
-    if cab2.EstadoCta = EST_CONTAN Then begin
-        cab2.TCP_envComando(C_DESB_PC, 0, 0)
-    end;
-    end;
-  end;
+  //Pasa el comando, incluyendo el origen, por si lo necesita
+  facDest.EjecAccion(idFacOrig, tram, traDat);
 end;
 procedure TCibGFacCabinas.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
 var
@@ -1042,7 +1124,7 @@ begin
   facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
   if facSelec=nil then exit;
   InicLlenadoAcciones(MenuPopup);
-
+  //No hay acciones, aún, para el Grupo Cabinas
 end;
 //constructor y destructor
 constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
