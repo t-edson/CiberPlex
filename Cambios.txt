@@ -1,0 +1,506 @@
+1.2
+===
+Se corrige la decodificación del mensaje M_ESTAD_CLI. El parámetro "bloqueado", se leía 
+incorrectamente.
+Se quita el procesamiento de M_ESTAD_CLI de TCibGruposFacturables.gof_TramaLista() y se 
+procesa directamente en TCibFacCabina.cabConexTramaLista(), sin propagarlo.
+Se cambia el orden de los comandos de TCPTipCom, para dejar a los comandos del Visor, con
+valores por encima de $E0.
+Se incluye el procesamiento de los comandos Modelo<->PC_cliente, directamente en la rutina
+TCibFacCabina.cabConexTramaLista().
+Se cambia de nombre a varios comandos y subcomandos, para hacerlos más consistentes.
+Se elimina el parámetro "tramaLocal" de TCibGruposFacturables.gof_TramaLista(), porque
+ya no es necesario.
+Se cambia de nombre a TCibGruposFacturables.gof_TramaLista(), por 
+TCibGruposFacturables.EjecComando()
+Se crea el método virtual TCibFac.EjecAccion(), para permitirle a los facturables, procesar 
+ellos mismos sus acciones.
+Se crea el método TCibGruposFacturables.TCP_envComando() para poder enviar la respuesta a 
+un comando, desde TCibGruposFacturables, simplificando TCibGruposFacturables.EjecComando().
+Se mejora la documentación técnica.
+Se cambia el nombre del evento TfraVisCPlex.OnSolicEjecAcc a TfraVisCPlex.OnSolicEjecCom.
+Se define el caracter '$', para identificar a los comandos que vengan de la vista.
+Se incluye el formulario "Acerca De ...".
+
+1.1
+===
+Se elimina el menú contextual para cabinas, porque este menú se construye dinámicamente.
+Se incluyen íconos en los menús creados dinámicamente.
+Se modifica el código del formulario principal, para que se procese el evento 
+OnSolicEjecAcc() que viene del visor, en lugar del que viene de Config.grupos (método FormShow).
+Se crea el método virtual MenuAcciones(), dentro de TCibFac.
+Se crean las funciones InicLlenadoAcciones y AgregarAccion, en CibUtils para simplificar 
+la configuración de las acciones de los facturables.
+Se crea el evento TCibFac.OnSolicEjecAcc, de modo que se permite a los facturables, ejecutar
+acciones.
+Se cambia de nombre a OnSolicEjecAcc, por OnSolicEjecCom.
+Se mueven las acciones a realizar sobre una cabina al objeto TCibFacCabina. Antes 
+estaban en TCibGFacCabinas.
+Se modifica el formulario explorador de archivos de cabinas de internet, para quitarle
+dependencias y poder usarlo desde dentro de CibGFacCabinas.
+Se habilitan las ventanas Explorador de Archivos y Visor de mensajes de Red, que estaban 
+inaccesibles, desde hace algunas versiones atrás.
+
+1.0.6
+=====
+Se modifica la rutina EscribeDatosAdicionales(), para que incluya la generación de sonido
+(deshabilitado por ahora).
+Se elimina la variable "bloquear_rx" de CibGFacNiloM, porque en el esquema de eventos de 
+Lazarus, no es necesario.
+Se cambia de nombre a EscribeDatosAdicionales por TerminarLlamada y se le agrega más 
+código.
+Se mejora la respuesta al evento, cuando el CDR no llega correctamente.
+Se mejora la interfaz, agregando nuevos botones e íconos.
+
+
+1.0.5
+=====
+Se modifican los campos de TRegLlamada, para hacer al sistema más consistente.
+Se eliminan funciones, campos o código redundante de CibGFacNiloM.
+Se mueveb funciones aisladas a clases en CibGFacNiloM y CibNiloMTarifRut.
+Se crea el tipo TRegCDRNiloM y se mueve la función LeeCdrNilo como parte de TRegCDRNiloM.
+Se corrige un error de inicialización de la llamada llamAct.
+Se verifican que los registros generados por las llamadas, sean consistentes con los del 
+NILOTER-m.
+
+1.0.4
+=====
+Se corrigen algunas rutinas de CibGFacNiloM, para conseguir el comportamiento similar
+al del NILOTER-m. 
+Se dehabilita el sonido, porque se detectó problemas en la ejecución secuencial despues de 
+generar el sonido.
+
+
+1.0.3
+=====
+Se incluye información de los Grupos de tarifas de alquiler y de tarifas de alquiler, en 
+el archivo XML. Ahora ya se mantienen en disco.
+Se corrige la generación de registros de ventas para los casos de item devuelto, y fragmentado.
+Se corrige la detección de llamadas en los locutorios del NILO-m.
+
+1.0.2
+=====
+Se corrige la generación de registros para el alquiler de cabinas de Internet.
+
+1.0.1
+=====
+Se activa la validación de usuarios. 
+Se activa mensajes adicionales en el registro para trabajar de forma similar al NILOTER-m.
+Se corrige las cadenas generadas en el archivo de registros.
+Se cambia de nombre a TCibBoleta.IngresarItem() por GrabarItem():
+
+Se puede decir que los registros generados, en las ventas de productos, son ahora 
+compatibles con los que generaría el NILOTER-m (salvo un detalle en los reg. b: ... ). 
+Faltaría verificar los registros de alquileres de cabina y de llamadas.
+
+1.0.0
+=====
+Se elimina el Popup para los locutorios, y se crean métodos para manejer dinámicamente los
+menús de los facturables.
+Se separan las acciones que son comunes a los facturables, en una categoría especial.
+Se quitan los manejadores de eventos de los menús, y se mueven a la unidad CibGFac.
+Se crea el evento TCibGfac.OnSolicEjecAcc y se propaga a TCibGruposFacturables.
+Se deja de crear estáticamente el formulario frmFijTiempo. Ahora es parte de los 
+GFacCabinas y se crea dinámicamente.
+Se eliminan varios comandos de las cabinas y se unifican en uno solo, para manejar luego 
+subcomandos, de la misma forma a como se hace con los locutorios.
+Se cambia de nombre a algunos métodos del formulario principal.
+Se quita la dependencia de la unidad FormIngVenta a FormBoleta, para hacerla más 
+indenpediente.
+Se incluye el evento OnAgregarItem() a FormBoleta para evitar llamar direcatmente al
+formualario FormIngVenta.
+Se quita la dependencia de la unidad Config a FormBoleta, para hacerla más indenpediente.
+Así se logra que ahora esta unidad pase a ser una unidad común y pueda usarse desde otros
+aplicativos de CiberPlex. 
+Se modifica a Ciberplex-Visor para manejar la nueva forma de enviar comandos al servidor,
+incluyendo la opción de mostrar boletas.
+Se cambia el nombre del comando C_SOL_T_PCS a C_SOL_ESTAD, ya que es más apropiado.
+Se incluye a la undiad FormNiloMProp, como parte del proyecto.
+Se crea la función TCibGFacNiloM.EnvCadena(), para que permita ingresar comandos de varias
+líneas al enrutador.
+Se implementa la ventana de conexiones en FormNiloMConex,incluyendo todas las funciones de
+su equivalente en VB, excepto la opción de capturar la imagen del estado de las salidas.
+Se implementa la ventana de enrutamiento como parte de la ventana de conexiones.
+Se implementa el contéo de las llamadas en los objetos TCibFacLocutor, con el método
+TCibFacLocutor.ActualizaLlamadaContestada.
+Se crean las propiedades GFacNiloM.IniLLamMan, GFacNiloM.IniLLamTemp  y GFacNiloM.PerLLamTemp
+para completar las opciones de control del NILO-m, y se habilita su admninistración en la 
+ventana de propiedades del enrutador.
+Se implementan diversos métodos en TCibFacLocutor, para el tratamiento de las llamadas,
+siguiendo el esquema del NILOTER-mC.
+Se agrega la variable global "rutSonidos", para direccionar a la carpeta en donde se 
+guardarán los archivos de sonido que deben reproducirse.
+Se mejora la creación de nuevos GFac desde el mnú principal.
+Se crea la clase TModEdicion2 en frameVisCPlex, para implementar en el editor, la posibilidad
+de arrastrar objetos gráficos y sus boletas.
+Se implementa el arrastre de boletas en todos los objetos facturables.
+Se crea el evento OnSolicEjecAcc para el visor fraVisCPlex.
+Se actualizó la librería Xpres a la versión 1.2.
+
+0.9.9
+=====
+Se redefine el evento TEvCabTramaLista, para que sea más general, y se cambian todas las
+rutinas relacionadas.
+Se corrigen las rutinas de acciones sobre cabinas en gof_TramaLista().
+Se corrige una falla en las funciones de moneda de la unidad FormConfig.
+Se agrupan todas las acciones de boleta en un solo comando C_ACC_BOLET, y se crea el 
+método TCibGFac.AccionesBoleta() para el procesamiento de los subcomandos de C_ACC_BOLET.
+Se implementan los comandos de conexión y desconexión sobre los locutorios.
+Se mejora la representación gráfica de los locutorios.
+Se procesa el estado de desconexión de los locutorios, para mostrarlo gráficamente. Se crea
+la propiedad TCibFacLocutor.descon.
+
+0.9.8
+=====
+Se continúa eliminando dependencias innecesarias, para hacer más modular al código.
+Se crea el método TCibBoleta.DevolItem, para ordenar mejor el código.
+Se reordena el código para que todos los accesos al registro de ventas se hagan desde la
+unidad CibFacturables.
+Se eliminan los eventos de TCibBoleta, para no tener un nivel de propagación de eventos 
+muy alto. Para acceder a información global, ahora se accede a través de eventos del 
+objeto padre.
+Se cambia de nombre a regIBol_ARegVen por RegVenta.
+Se cambia de nombre a regIBol_AReg por RegIngres.
+Se elimina el evento TCibFacLocutor.OnRegMsjError, y se activa TCibFac.OnLogError.
+Se elimina la referencia TCibFacLocutor.trm, ya que no es necesaria proque se tiene la
+referencia "Grupo".
+Se revisa a Ciberplex-Visor para actualizarlo con los últimos avances de Ciberplex-Server.
+Se modificó TCPDecodCadEstado.Inic, para que devuelva la línea inicial.
+Se habilitó la lectura de la propiedad "estadoCnx" en TCibGFacNiloM.SetCadEstado.
+Se agregó un temporizador al objeto NILO-m para que intenet conectarse si se encuentra 
+desconectado.
+Se agregó un ícono al objeto NILO-m para indicar el estado de desconectado.
+Se cambia de nombre al objeto TfrmPrincipal.VisorCabinas por TfrmPrincipal.Visor.
+
+0.9.7
+=====
+Se elimina el método "override" TCibGFacCabinas.SetModoCopia(), ya que se supone que
+el modo de copia, no va a cambiar en el transcurso de la ejecución. 
+Se modifican los constructores de las clases TCibGruposFacturables, TCibGFacCabinas y
+TCibGFacNiloM, para que incluyan el parámetro ModoCopia y se tenga definido el modo 
+de trabajo desde la creación del objeto.
+Se hace que la propiedad ModoCopia, sea de solo lectura, en las clases que la 
+implementan.
+Se agregan más opciones en el formulario de propiedades del NILO-m, y se modifica el
+formulario de conexiones del NILO-m.
+Se completa el código para la recuperación de estado de los locutorios.
+Se mueve la clase TCPDecodCadEstado de la unidad CibGFacCabinas a CibFacturables, de 
+modo que se puede usar ahora en todos los Grupos de facturables.
+Se mueve el campo decod de CibGFacCabinas a CibGFac, de modo que se puede usar ahora 
+en todos los Grupos de facturables.
+Se cambia el formato de la cadena de estado de los facturables, dejando de usar un 
+caracter especial para cada tipo de facturable. Ahora solo se usa '.'.
+Se modifica el formato de fecha (agregando las funciones T2f y f2T a la librería 
+MisUtils) de la cadena de estado de los facturables, de modo que ahora ocupen menos 
+espacio.
+Se amplía la cadena de estado de TCibFacLocutor, para que incluya a la llamada actual.
+Se implementó la visualización del teléfono descolgado y el número marcado en el objeto
+gráfico que representa a un locutorio.
+Se unifican las funciones de acceso a registro PLogInt y PLogIntD.
+Se elimina la dependencia de CPProductos, desde la unidad CibFacturables. Para ellos se
+crean nuevos eventos, que se propagan hasta la aplicación principal.
+Se crean los eventos TCibBoleta.OnLogVenta y TCibBoleta.OnActualizStock.
+Se crean los eventos TCibFac.OnLogVenta y TCibFac.OnActualizStock.
+Se quita la dependencia de FormInicio, a la unidad CibGFacCabinas.
+Se elimina el evento TCibGFacCabinas.OnDetenConteo
+Se eliminan varios métodos de acceso al archivo de registro, unificándolos.
+Se enpaquetan las rutinas de acceso a registro en la clase TCibArcReg.
+Se enpaquetan las rutinas de manejo de los productos en la clase TCibTabProduc.
+
+0.9.6
+=====
+Se implementa el tratamiento de errores al leer el tarifario.
+Se elimina la unidad CibNiloMPreproc, y se mueven sus rutinas a la unidad 
+CibNiloMTarifRut.
+Se unifican las rutinas que definen la sintaxis del tarifario para usar la misma 
+sintaxis, tanto para el resaltador, como para el lexer.
+Se encapsulan las rutinas de procesamiento de definiciones en una nueva clase TContextTar, 
+que es descendiente de un contexto.
+Se mueven campos y funciones independientes, para dentro de la clase TContextTar.
+Se corrige el procesamiento de las tarifas. Se simplifican y modifican diversas rutinas de 
+lectura del tarifario, para adaptarlas a la manera de trabajo de Object Pascal.
+Se crean las clases para los contenedores de las tablas de tarifas y de rutas: TNiloMTabTar
+ y TNiloMTabRut, y la clase padre TNiloMTab.
+Se habilita el procesamiento de las tablas de rutas del NILO-m.
+Se mejora la ventana de configuración "Config", en cuanto a propiedades de moneda y se 
+cambia el campo IGV para que acepte decimales.
+Se agregan los eventos OnRegConfigMon y TevReqCadMoneda en TCibGFac y en 
+TCibGruposFacturables, y se configuran.
+Se crea el método TConfig.CadMon().
+
+0.9.5
+=====
+Se crean las clases TogFac y TogGFac, en la unidad ObjGraficos, para servir de ancestro 
+a todos los objetos facturables y los grupos de facturables. 
+Se adecúa el código para usar la nueva definición de TogCabina y de TogGCabinas.
+Se corrige un problema en la actualización de los objetos gráficos a partir de los 
+modelos.
+Se crea el campo TCibGruposFacturables.DeshabEven, para inhabilitar eventos.
+Se implementa el cambio de coordenadas de los objetos, cuando se modifican en el visor.
+Se corrige la actualización de estado en CiberPlex Visor.
+Se corrige la actualización de propiedades y estados en los objetos gráficos, ya que 
+no son necesarios porque actualmente se usa referencias.
+Se modifican varios métodos dentro de frameVisCPlex, para generalizar el código, de 
+modo que sea más fácil agregar nuevos objetos gráficos, para cuando se crean 
+facturables nuevos y grupos nuevos.
+Se cambia de nombre a la unidad CibNiloMBase por CibNiloMConex. Se elimina el formulario 
+FormNiloTarifario y se crea la unidad CibNiloMTarifRut, para alojar a las definiciones
+para la tarificación y el enrutamiento.
+Se cambia de nombre al formulario FormNiloMTerminal a FormNiloMConex, y se habilita la
+administración del puerto serial.
+Se crea el formulario FormNiloMProp y se incluyen las principales propiedades de 
+configuración.
+
+
+0.9.4
+=====
+Se crea y activa el evento TCibGruposFacturables.OnLogInfo.
+Se cambia el nombre de CPRegistros a CibRegistros.
+Se cambia el nombre de CPTramas por CibTramas.
+Se mueve el procesamiento del evento OnDetenConteo a la unidad CPGrupFacturables.
+Se mueve la propiedad TCibFacCabina.Grupo al ancestro TCibGFac.
+Se mueve el procesamiento del evento OnTramaLista a la unidad CPGrupFacturables.
+Se deja de usar el objeto Grupo de cabinas como objeto estático, y se activa la opción
+de poder agregarlo dinámicamente, de modo que puede agregarse más de uno.
+Se soluciona el problema de liberación de memoria, que se observaba cuando no se 
+administraba correctamente a los grupos dinámicos.
+
+
+0.9.3
+=====
+Se cambia de nombre a TCPTipGrupoFactur por TCibTipGFact.
+Se quita el formulario de administración de Tarifas de cabina como objeto estático, y se 
+crea de forma dinámica, asociado a un objeto TCibGFacCabinas.
+Se modifica al formulario FormAdminCAbinas, para poder ser incluida en CibGFacCabinas, sin
+generar referencia circular.
+Se quita el formulario de administración de Cabina como objeto estático, y se 
+crea de forma dinámica, asociado a un objeto TCibGFacCabinas.
+Se mueven los ítems del menu para mostrar la ventana de administración de cabinas y la 
+ventana de administración de tarifas, del menú ">Sistema" al menú ">Cabinas", y se 
+incluyen también estas opciones en el menú contextual. Además se configura para que estas
+opciones reconozcan el objeto seleccionado y no apunten a un objeto estático, como antes.
+Se mueve la administración de las ventanas de mensajes de red de las cabinas a la clase
+TCibGFacCabinas.
+El cambio de la administración de objetos Grupos de facturables, genera aún, errores en 
+la liberación de memoria.
+
+
+0.9.2
+=====
+Se cambia de nombre a TCibGFacturable por TCibGFac.
+Se cambia de nombre a TCibFacturable por TCibFac.
+Se cambia de nombre a TObjGrafCabina por TogCabina.
+Se cambia de nombre a TCPGruposFacturables por TCibGruposFacturables
+Se mueven nuevas unidades a la carpeta \Comunes\Cabinas\ completando la clasificación
+iniciada en la versión anterior.
+Se crea el objeto gráfico TogGCabinas, para representar a los grupos de cabinas, y se 
+implementa su visualización en la pantalla.
+Se crea el menú Popup para los grupos de cabinas.
+El cambio de la administración de objetos Grupos de facturables, genera aún, errores en 
+la liberación de memoria.
+
+0.9.1
+=====
+Se cambian de nombre a varias unidades para que dejen de usar el prefijio de tipos "TCP",
+que puede confundirse con el protocolo TCP. Ahora se usará "TCib" y "Cib" como prefijos.
+Se completa la funcionalidad del los objetos TCibFacNiloM de generar su información de 
+propiedades y estados.
+Se crea el evento TCibGFacturable.OnCambiaPropied.
+Se clasifican los archivos de la carpeta \Comunes, creando dos carpetas nuevas: 
+\Comunes\Cabinas\ y \Comunes\NiloM\
+El cambio de la administración de objetos Grupos de facturables, genera errores en la 
+liberación de memoria.
+
+0.9
+===
+Se corrige el refresco de la ventana de administración de cabinas.
+Se incluye el objeto TGrupoTarAlquiler como parte de TCPGrupoCabinas, para 
+encapsular mejor a TCPGrupoCabinas y permitir manejar tarifas distintas por
+grupo de cabinas.
+los grupos de facturables.
+Se cambia la librería COnfigFrame por la nueva librería MiConfig, para 
+facilitar la serialización del singleton TCPGruposFacturables.
+Se crea la unidad CPGrupFacturables y se crea el objeto TCPGruposFacturables, 
+para contener y administrar a todos los grupos facturables.
+Se habilita el uso del objeto Config.grupos, como contenedor principal de la
+aplicación y se crea una copia en frameVisCPlex.
+Se elimina la propiedad Nombre de la clase TCabConexion.
+Se mueven los eventos OnCambiaEstado, OnCambiaPropied, y la propiedad "Nombre" de TCPCabina 
+a la clase base facturable.
+Se mueven las propiedades X e Y de TCPCabina a la clase base facturable.
+Se crean las propiedades TCPGruposFacturables.ModoCopia  TCPGrupoFacturable.ModoCopia
+
+0.8
+===
+Se cambia el formato del archivo de estado.
+Se amplía la clase TCPFacturable, con métodos virtuales.
+Se elimina la propiedad TNiloConexion.Nombre.
+Se cambia el nombre de la unidad CPBoletas a CPFacturables y se crea la clase genérica 
+TCPFacturable_list.
+Se crea el tipo TCPTipGrupoFactur.
+Se crea el concepto de "Grupo de facturables" o "Grupo facturable".
+Se crea la clase TCPGrupoFacturable, para poder definir a las clases que son Grupos 
+facturables.
+Se actualizan las clases TCPGrupoCabinas y TCPNiloM para que deriven de la clase 
+TCPGrupoFacturable y se adaptan los lazos de exploración para que trabajen con ítems de tipo 
+TCPFacturable.
+Se cambia el nombre de CadenaEstado a CadenaEstadoAplic y pasa a incluir el estado de los 
+diversos grupos facturables.
+
+0.7
+===
+Se crea el formulario FormBusProductos.
+Se crea el formulario FormIngVentas.
+Se mejora el mecanismo de ingreso de ventas, corrigiendo varias rutinas.
+Se corrige un error de la unidad Utilgrilla, sobre la activación del menú PopUpCells.
+Se crea la clase TUtilGrillaFil en la unidad Utilgrilla, para manejar atributos de filas.
+Se reordena el código de CPCabinaBase y se corrigen algunos errores en los comentarios.
+Se crean las unidades CPNiloM y CPNiloMBase, para implementar la conexión serial al NILO-m.
+Se crea el formulario FormNiloMTerminal.
+Se crea el formulario FormNiloTarifario para cargar las tarifas de llamadas y se migra gran 
+parte del código de VB del NILOTER-m.
+Se crea la unidad CPPreproc, para alojar a las rutinas de preprocesamiento de texto para los
+archivos de tarifas y rutas. 
+
+SERVER
+Se cambia el nombre de la unidad  CdrVentas a RegistrosVentas.
+Se crea la clase TCPCellValues para la creación de reportes.
+Se mejora el reporte agrupado por categorías y se crea el reporte agrupado por subcategorías.
+Se implementan las acciones sobre los ítems de las boletas y se reordena el código relacionado.
+
+
+0.6
+===
+11-Jun-2016
+Se elimina el evento TCPGrupoCabinas.OnCambiaEstado, porque se encontró que se podría generar
+muy frcuentemente y por lo tanto, pierde utilidad.
+Se mueve el parte del código de TfrmPrincipal.FormDestroy (liberación de eventos) al destructor 
+de TCPGrupoCabinas.
+Se modifican las rutinas GetEstadoCabinas y SetEstadoCabinas de TCPCabina, para incluir la 
+propiedad HoraPC. Esto hace incompatible el archivo de estado con las versiones anteriores.
+ 
+Se modifican las rutinas GetCadPropied y SetCadPropied de TCPCabina, para incluir la 
+propiedad NombrePC. Se mantiene la compatibilidad del archivo INI.
+Se agrega la propiedad PantBloq a TCPCabina.
+Se crea la clase TCPDecodCadEstado en CPGrupoCabinas, para que funcione como decodificador
+de las cadenas de estado de TCPgrupoCabinas.
+se elimina el método LinEst_EsCab(), porque ya no es encesario.
+Se actualizan los métodos: TfraVisCPlex.ActualizarEstado() y TCPGrupoCabinas.SetEstadoCabinas()
+para que trabajen con el objeto TCPDecodCadEstado y soporten el estado con ítems de boleta.
+Se activa la opción de enviar la cadena de estado recortada, para cabinas en estado NORMAL.
+Se quita la dependencia de la unidad CPREgistros a la unidad CPGRupoCabinas.
+
+SERVER
+Se implementa la opción de mostrar múltiples ventanas del explorador de archivos.
+Se trabaja sobre el formulario Explorador de Archivos, mejorando su implementación.
+Se activa la opción de mostrar el explorador con Doble-Click.
+Se cambia de nombre a las rutinas manejadoras de eventos de GrupoCabinas
+Se cambia el modo de activación de las cabinas, siguiendo en nuevo esquema de usar tramas para 
+todos los comandos de control de cabinas.
+Se crea el evento TCPCabina.OnDetenConteo() y se eliminan los métodos ComPonerManten(), 
+ComSacarManten() y ComDesactivar() de TCPGrupoCabinas.
+Se corrige un error en TCPCabina.Faltante(), y así se soluciona.
+Se corrigió un error en TCPCabina.VerCorteAutomatico, que hacía que la cabina se corte antes 
+de tiempo.
+Se cambia el nombre a TCPCabina.Transc por TCPCabina.TranscSeg.
+Se cambia el nombre de la clase TBoleta a TogBoleta en la unidad ObjGraficos. Además se 
+modifica la clase para usar a un objeto TCPBoleta, como contenedor de propiedades.
+Se crea el evento TCPGrupoCabinas.OnDetenConteo y se usa para actualizar el registro y la 
+boleta.
+Se activa el manejo de información de boleta como parte de la cadena de estado.
+Se crean los eventos: OnLogInfo y OnGrabBoleta, tanto en TCPGrupoCabinas como en TCPCabina,
+y se usan para registar los mensajes.
+Se habilita la geenración de información de las boletas en los registros.
+Se habilita la grabación de las boletas de las cabinas.
+Se crea una undiad con funciones para la lectura de los registros en el formato del 
+NILOTER-m.
+Se implementa la ventana de Reportes de Ingreso, con un solo reporte de registros.
+
+VISOR
+Se incluye el formulario Explorador de Archivos, para funcionar en el Visor.
+Se cambia de nombre a fraVisCPlex1 por VisorCabinas.
+Se deja de usar la rutina especial que se tenía para actualizar el estado de las cabinas
+y se pasa a usar TfraVisCPlex.ActualizarEstado().
+Se configura para que se actualicen los objetos al iniciar el aplicativo.
+  if MsgYesNo('Grabar Boleta de: ' + ogCab.nombre + '?')<>1 then exit;
+
+0.5
+===
+Se crea un tipo para definir a los tipos de comandos de las tramas, en lugar de usar 
+constantes.
+Se cambia todo el código de los proyectos, para que se adapten al nuevo tipo de datos.
+Se crean métodos nuevos en TCPTrama, para mostrar el nombre del tipo de comando, como cadena 
+y como hexadecimal, aprovechando las facilidades por tener el tipo de comando como enumerado.
+Se crean dos nuevos comandos, para solicitar y devolver el archivo INI, principal.
+Se cambia el nombre de TGrupoCabinas a TCPGrupoCabinas.
+Se cambia el nombre del tipo lista TCPCabinas a TCPCabina_list
+
+SERVER
+Se trabaja en elformulario explorador de archivos.
+Se crea un formulario para mostrar los mensajes de Red.
+Se incluye la opción de mostrar múltiples formularios de mensajes de Red, con los mensajes 
+correspondientes a cada cabina.
+Se crea el evento TCPCabina.OnRegMensaje, para recibir los mensajes de conexion.
+Se crea el evento TCPgrupoCabinas.OnRegMensaje.
+Se implementa el envío de captura de la pantalla local.
+Se cambia de nombre a fraVisCPlex1 por VisorCabinas.
+Se cambia de nombre a GrupCabinas por GrupoCabinas.
+Se cambia de nombre a TOgCabinaList.
+Se agegan los campos HoraPC y NombrePC a la clase TCPCabina.
+
+VISOR
+Se crea el evento OnRegMensaje() en TCabServidor y el código asociado para su implementación.
+Se mejora la ventana de registro de mensajes y se mejoran los mensajes para poder depurar mejor 
+la comunicación.
+Se agregó rutinas de verificación, para esperar a que se cierre el hilo de conexión, antes de 
+cerrar el programa y evitar goteras de memoria.
+
+0.4
+===
+Se habilita la propiedad "TCPTrama.Encab" para manejar el encabezado como texto y se elimina
+el método TCPTrama.LeeEncabezado
+
+VISOR
+Se eliminan las propiedades TCabServidor.sEncRpta y TCabServidor.sDatRpta y se pasa a usar un 
+objeto de tipo TPilaCom, para alamcenar los comandos.
+Se elimina una versión de EnviaResp(), y se renombra a PonerComando().
+Se cambia el nombre de "proceso" por "ServCab" en TForm1.
+Se cambia el nombre de la unidad "uCPlex_ConexClte" por CPServidorCab.
+Se elimina la bandera Form1.HayCom y se pasa a usar la propiedad HayComando de al pila de 
+comandos.
+Se agregan los parámetros X e Y a TCabServidor.PonerComando() 
+Se incluye el formulario de fijar tiempo, como parte del proyecto, para que se cargue 
+automáticamente.
+
+0.3
+===
+Se cambia de nombre al objeto TCPTrama por TCPProcTrama, para hacer su nombre más consistente
+con su función.
+Se convierte el objeto TCPProcTrama a una clase, para poder manejar constructor y destructor.
+Se convierte el registro TEncab, en clase y se renombra a TCPTrama.
+Se elimina el campo TCPProcTrama.traTmp. porque no se le encontró uso.
+Se incluye el campo "traDat", en TCPTRama, ya que el objetivo es que guarde toda la trama.
+Se eliminan todas las referencias a "traDat", porque ya no son necesarias.
+Se crea el objeto TPilaCom en CPTramas, como una pila de comandos.
+
+SERVER
+
+VISOR
+Se reemplazan en TCabServidor las rutinas de reconstrucción de tramas por un objeto 
+TCPProcTrama.
+Se corrige la rutina TCabServidor.Destroy, para que llame al destructor heredado y así evitar 
+una gotera de memoria.
+
+0.2
+===
+SERVER
+Se crea el campo TCabConexion.MsjsRed, para guardar los últimos mensajes de Red recibidos.
+Se crea el campo TSocketCabina.trama, para permitir procesar las tramas a TSocketCabina.
+Se crea el evento TSocketCabina.OnTramaLista, para indiCar cuando terminó de recibir una trama.
+Se crean los eventos TCabConexion.OnRegMensaje y TCabConexion.OnTramaLista.
+Se crea el evento TCPCabina.OnTramaLista.
+Se crea el evento TGrupoCabinas.OnTramaLista.
+Se habilita el procesamiento de mensajes recibidos de las cabinas cliente. Por ahora solo se 
+habilitó la respuesta al comando C_SOL_T_PCS.
+VISOR
+Se activa la decodificación del comando C_SOL_T_PCS. Para que se refresquen las cabinas.
