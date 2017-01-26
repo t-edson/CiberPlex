@@ -7,11 +7,10 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lazcontrols, FormPrincipal, FormConfig, CibFacturables, frameVisCPlex,
-  ObjGraficos, CibCabinaTarifas, FormBoleta, FormInicio, FormRepIngresos,
+  Forms, lazcontrols, FormPrincipal, FormConfig, frameVisCPlex,
+  CibCabinaTarifas, FormBoleta, FormInicio, FormRepIngresos,
   RegistrosVentas, FormBusProductos, FormIngVentas, FormAgrupVert, CibGFacNiloM,
-  FormNiloMConex, FormFijTiempo, FormAdminCabinas, FormAdminTarCab,
-  CibGFacCabinas, CibNiloMTarifRut, FormNiloMEnrutam, FormNiloMProp;
+  FormAdminCabinas, FormAdminTarCab, FormNiloMProp, FormAcercaDe;
 
 {$R *.res}
 
@@ -27,6 +26,7 @@ begin
   Application.CreateForm(TfrmAgrupVert, frmAgrupVert);
   Application.CreateForm(TfrmAdminCabinas, frmAdminCabinas);
   Application.CreateForm(TfrmInicio, frmInicio);
+  Application.CreateForm(TfrmAcercaDe, frmAcercaDe);
   Application.Run;
 end.
 

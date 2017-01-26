@@ -1,5 +1,5 @@
 object frmPrincipal: TfrmPrincipal
-  Left = 318
+  Left = 353
   Height = 660
   Top = 125
   Width = 874
@@ -13,10 +13,11 @@ object frmPrincipal: TfrmPrincipal
   OnShow = FormShow
   LCLVersion = '1.6.2.0'
   object ToolBar1: TToolBar
-    Left = 0
-    Height = 26
+    Left = 227
+    Height = 640
     Top = 0
-    Width = 874
+    Width = 40
+    Align = alLeft
     Caption = 'ToolBar1'
     Images = ImageList16
     ParentShowHint = False
@@ -28,52 +29,52 @@ object frmPrincipal: TfrmPrincipal
       Action = acFacAgrVen
     end
     object ToolButton2: TToolButton
-      Left = 47
-      Top = 2
+      Left = 1
+      Top = 46
       Action = acGCabAdmCab
     end
     object ToolButton3: TToolButton
-      Left = 70
-      Top = 2
+      Left = 1
+      Top = 68
       Action = acGCabAdmTarCab
     end
     object ToolButton4: TToolButton
-      Left = 93
-      Top = 2
+      Left = 1
+      Top = 90
       Action = acSisConfig
     end
     object ToolButton5: TToolButton
-      Left = 24
-      Top = 2
+      Left = 1
+      Top = 24
       Action = acFacVerBol
     end
   end
   object panLLam: TPanel
     Left = 0
-    Height = 614
-    Top = 26
+    Height = 640
+    Top = 0
     Width = 227
     Align = alLeft
     TabOrder = 1
   end
   object splPanLlam: TSplitter
-    Left = 227
-    Height = 614
-    Top = 26
+    Left = 267
+    Height = 640
+    Top = 0
     Width = 5
   end
   object panBolet: TPanel
     Left = 668
-    Height = 614
-    Top = 26
+    Height = 640
+    Top = 0
     Width = 206
     Align = alRight
     TabOrder = 3
   end
   object splPanBolet: TSplitter
     Left = 663
-    Height = 614
-    Top = 26
+    Height = 640
+    Top = 0
     Width = 5
     Align = alRight
     ResizeAnchor = akRight
@@ -221,6 +222,11 @@ object frmPrincipal: TfrmPrincipal
       Category = 'Fac'
       Caption = '&Trasladar Boleta'
       OnExecute = acFacMovBolExecute
+    end
+    object acAyuAcerca: TAction
+      Category = 'Ayu'
+      Caption = '&Acerca de ...'
+      OnExecute = acAyuAcercaExecute
     end
   end
   object MainMenu1: TMainMenu
@@ -475,6 +481,12 @@ object frmPrincipal: TfrmPrincipal
     end
     object MenuItem4: TMenuItem
       Caption = '&Locutorios'
+    end
+    object MenuItem6: TMenuItem
+      Caption = 'Ay&uda'
+      object MenuItem8: TMenuItem
+        Action = acAyuAcerca
+      end
     end
   end
   object ImageList16: TImageList

@@ -5,7 +5,7 @@ uses
   Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
   ComCtrls, Dialogs, MisUtils, ogDefObjGraf, FormIngVentas, FormConfig,
   frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
-  FormExplorCab, FormVisorMsjRed, FormBoleta, FormRepIngresos, FormBusProductos,
+  FormBoleta, FormRepIngresos, FormBusProductos, FormAcercaDe,
   FormInicio, CibRegistros, CibTramas, CibFacturables, CPProductos,
   CibGFacCabinas, CibGFacNiloM;
 type
@@ -35,6 +35,7 @@ type
     acArcRutTrab: TAction;
     acFacAgrVen: TAction;
     acFacMovBol: TAction;
+    acAyuAcerca: TAction;
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
@@ -71,8 +72,10 @@ type
     MenuItem44: TMenuItem;
     MenuItem45: TMenuItem;
     MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
     MenuItem61: TMenuItem;
     MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
     panLLam: TPanel;
     panBolet: TPanel;
@@ -90,6 +93,7 @@ type
     ToolButton5: TToolButton;
     procedure acArcRutTrabExecute(Sender: TObject);
     procedure acArcSalirExecute(Sender: TObject);
+    procedure acAyuAcercaExecute(Sender: TObject);
     procedure acBusGastosExecute(Sender: TObject);
     procedure acBusProducExecute(Sender: TObject);
     procedure acBusRutasExecute(Sender: TObject);
@@ -223,9 +227,8 @@ Observar que este método es similar a PonerComando(), pero allí llegan los com
 que se generan con acciones de FormPrincipal.}
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
-  //Llama como evento, indicando que es una trama local.
-  //No se incluye nombre del OF y GOF que generan la trama, proque es local.
-  Config.grupos.gof_TramaLista('', '', TramaTmp, true);
+  //Llama como evento, indicando que vista solicitante es la local '$'.
+  Config.grupos.EjecComando('$', TramaTmp);
 end;
 procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
@@ -261,13 +264,13 @@ begin
   Config.grupos.OnReqConfigGen := @grupos_ReqConfigGen;
   Config.grupos.OnReqCadMoneda := @Config.CadMon;
   Config.grupos.OnActualizStock:= @grupos_ActualizStock;
-  Config.grupos.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
-                            puedan responderse desde el mismo modelo (ver Visor_ClickDer)}
+//  Config.grupos.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
+//                            puedan responderse desde el mismo modelo (ver Visor_ClickDer)}
   //Configura Visor para comunicar sus eventos
   Visor.motEdi.OnClickDer := @Visor_ClickDer;
   Visor.OnDobleClick      := @Visor_DobleClick;
   Visor.OnObjectsMoved    := @Visor_ObjectsMoved;
-  Visor.OnSolicEjecAcc    := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento ed boletas
+  Visor.OnSolicEjecCom    := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento de boletas
   Visor.OnReqCadMoneda    := @Config.CadMon;   //Para que pueda mostrar monedas
   //Crea los objetos gráficos del visor de acuerdo al archivo INI.
   Visor.ActualizarPropiedades(config.grupos.CadPropiedades);
@@ -358,7 +361,8 @@ begin
     nomFac := ogFac.Fac.Grupo.Nombre;
     {A diferencia de los otros puntos de venta, aquí en el servidor, las acciones las
     ejecutará directamente el modelo, para tener acceso a todas las acciones disponible}
-    GFac := Config.grupos.BuscarPorNombre(nomFac);
+//    GFac := Config.grupos.BuscarPorNombre(nomFac);
+    GFac := Visor.grupos.BuscarPorNombre(nomFac);
     if GFac=nil then exit;
 //    //Deja que el facturable configure el menú contextual, con sus acciones
     PopupFac.Items.Clear;
@@ -485,7 +489,7 @@ var
   txt: string;
 begin
   txt := CibFac.IdFac + #9 + itBol;
-  PonerComando(C_ACC_BOLET, ACCITM_AGR, 0, txt);  //envía con tamaño en Y
+  PonerComando(CVIS_ACBOLET, ACCITM_AGR, 0, txt);  //envía con tamaño en Y
 end;
 procedure TfrmPrincipal.frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
 begin
@@ -495,7 +499,7 @@ procedure TfrmPrincipal.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
 {Graba el contenido de una boleta}
 begin
   if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
-  PonerComando(C_ACC_BOLET, ACCBOL_GRA, 0, CibFac.IdFac);
+  PonerComando(CVIS_ACBOLET, ACCBOL_GRA, 0, CibFac.IdFac);
 end;
 procedure TfrmPrincipal.frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -504,7 +508,7 @@ var
   txt: string;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
-  PonerComando(C_ACC_BOLET, ACCITM_DEV, 0, txt);  //envía con tamaño en Y
+  PonerComando(CVIS_ACBOLET, ACCITM_DEV, 0, txt);  //envía con tamaño en Y
 end;
 procedure TfrmPrincipal.frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -513,7 +517,7 @@ var
   txt: string;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
-  PonerComando(C_ACC_BOLET, ACCITM_DES, 0, txt);
+  PonerComando(CVIS_ACBOLET, ACCITM_DES, 0, txt);
 end;
 procedure TfrmPrincipal.frmBoleta_RecuperarItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -521,7 +525,7 @@ var
   txt: String;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
-  PonerComando(C_ACC_BOLET, ACCITM_REC, 0, txt);
+  PonerComando(CVIS_ACBOLET, ACCITM_REC, 0, txt);
 end;
 procedure TfrmPrincipal.frmBoleta_ComentarItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -529,7 +533,7 @@ var
   txt: String;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
-  PonerComando(C_ACC_BOLET, ACCITM_COM, 0, txt);
+  PonerComando(CVIS_ACBOLET, ACCITM_COM, 0, txt);
 end;
 procedure TfrmPrincipal.frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -537,7 +541,7 @@ var
   txt: String;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;  //aquí coment contiene un número
-  PonerComando(C_ACC_BOLET, ACCITM_DIV, 0, txt);
+  PonerComando(CVIS_ACBOLET, ACCITM_DIV, 0, txt);
 end;
 procedure TfrmPrincipal.frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -545,7 +549,7 @@ var
   txt: String;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
-  PonerComando(C_ACC_BOLET, ACCITM_GRA, 0, txt);
+  PonerComando(CVIS_ACBOLET, ACCITM_GRA, 0, txt);
 end;
 procedure TfrmPrincipal.PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
 {Envía un comando al modelo, de la misma forma a como si fuera un comando remoto.
@@ -554,7 +558,7 @@ begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
   //Llama como evento, indicando que es una trama local.
   //No se incluye nombre del OF y GOF que geenran la trama, proque es local.
-  Config.grupos.gof_TramaLista('', '', TramaTmp, true);
+  Config.grupos.EjecComando('', TramaTmp);
 end;
 //////////////// Acciones //////////////////////
 procedure TfrmPrincipal.acArcRutTrabExecute(Sender: TObject);
@@ -700,7 +704,7 @@ begin
   if cabDest='' then exit;
   Fac2 := ogFac.gru.ItemPorNombre(cabDest);
   if Fac2 = nil then exit;
-  PonerComando(C_ACC_BOLET, ACCBOL_TRA, 0, ogFac.Fac.IdFac + #9 + Fac2.idFac);
+  PonerComando(CVIS_ACBOLET, ACCBOL_TRA, 0, ogFac.Fac.IdFac + #9 + Fac2.idFac);
 end;
 //Acciones de Grupo NILO-m
 procedure TfrmPrincipal.acNilConexExecute(Sender: TObject);
@@ -733,6 +737,9 @@ procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
   Config.Mostrar;
 end;
-
+procedure TfrmPrincipal.acAyuAcercaExecute(Sender: TObject);
+begin
+  frmAcercaDe.ShowModal;
+end;
 end.
 
