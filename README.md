@@ -7,21 +7,23 @@ Como controlador de cabinas de internet, incluye todas las funcionalidades comun
 
 ![Tito's Terminal](http://blog.pucp.edu.pe/blog/tito/wp-content/uploads/sites/610/2017/01/cp.png "Título de la imagen")
 
-== Librerías
+## Librerías
 
 El programa se compila con Lazarus. En esta etapa solo es compilable para Windows.
 
 El código fuente utiliza diversas librerías. Estas son:
  
 * MisUtils
+* UtilsGrilla
 * ogEditGraf
 * MiConfig
-* UtilsGrilla
+* SynFacilSyn
+* SynFacilCompletion
 * SynFacilUtils
 * Xpres-1.2
 * Synapse
 
-== CIBERPLEX - Introducción
+## CIBERPLEX - Introducción
 CiberPlex, es en general, un software de control de ventas, que puede aplicarse a diversos rubros de negocio, pero que en la versión actual, solo incluye control de alquiler de cabinas de internet y control de llamadas usando enrutadores NILO-m.
 
 Sus principales características son:
@@ -39,7 +41,7 @@ Una de sus característica particulares de CIBERPLEX, es que usa una interfaz gr
 
 El control de llamadas, se usa en negocios de Locutorios o Centros de llamadas. Trabaja solamente cuando se usan los equipos enrutadores NILO-m, de la serie NILO-mB, NILO-mC, NILO-mD y NILO-mE.
 
-== CIBERPLEX - Facturación
+## CIBERPLEX - Facturación
 
 Las ventas dentro de CIBERPLEX, se realizan siempre en objetos especiales llamados Facturables. Un objeto facturable es un objeto que puede generar consumo. Todo consumo se escribe en una boleta.
 
@@ -56,14 +58,14 @@ Los objetos facturables o FAC son elementos que pueden generar consumo, porque i
 Los GFAC o Grupo Facturables son elementos que agrupan a los FAC. Pueden contener muchos o ningún FAC. Pueden tener o no, representación gráfica en pantalla. Manejan propiedades independientes que por lo general afectan a todos los FAC que contienen.Se les identifica por un nombre, que debe ser único dentro de la aplicación.
 
 
-== CIBERPLEX - Server
+## CIBERPLEX - Server
 
 Esta es la aplicación principal donde se encuentran los contenedores de los datos. CiberPlex, no usa base de datos (al igual que NILOTER-m) sino que guarda toda su información en archivos de texto, INI y XML.
 
 CiberPlex-Server permite configurar a todos los elementos visuales, y no visuales. También incluye a una interfaz visual para trabajar de la misma forma a como lo hace CiberPlex-Visor.
 
 
-== Diseño
+## Diseño
 
 Ciberplex, es una versión mejorada de la serie de programas NILOTER-m.
 
