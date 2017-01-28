@@ -7,7 +7,7 @@ Como controlador de cabinas de internet, incluye todas las funcionalidades comun
 
 ![Tito's Terminal](http://blog.pucp.edu.pe/blog/tito/wp-content/uploads/sites/610/2017/01/cp.png "Título de la imagen")
 
-== Dependencias
+== Librerías ==
 
 El programa se compila con Lazarus. En esta etapa solo es compilable para Windows.
 
