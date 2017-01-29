@@ -26,16 +26,29 @@ const //Acciones
   C_CABIN_DESBL = 7;  //Solicita desbloquear una cabina
   C_CABIN_PANTA = 8;  //Solicita captura de pantalla
   R_CABIN_PANTA = 9;  //Respuesta de captura de pantalla
+  C_CABIN_FIJRUT = 10; //Comando Fija la ruta de la cabina
+  C_CABIN_SOLRUT_A = 11;  //Solicitar ruta actual
+  R_CABIN_SOLRUT_A = 12; //Respuesta ruta actual de la cabina
+
+  C_CABIN_LISARC = 13; //Commando pedir Lista de archivos (directorio actual)
+  R_CABIN_LISARC = 14; //Respuesta pedir Lista de archivos (directorio actual)
+
+  C_CABIN_ARCSOL = 15;  //Traer archivo
+  R_CABIN_ARCSOL = 16;  //Archivo recibido
+
+  C_CABIN_ARCENV = 17;   //Enviar archivo
+  C_CABIN_FIJARSAL = 18;  //Fijar nombre de archivo
+
+  C_CABIN_ELIARCHI = 19;  //Elimina archivo
+
+  C_CABIN_REINPC = 20;  //Comando para reiniciar PC
+  C_CABIN_APAGPC = 21;  //Comando para apagar PC
 
 type
   TCibFacCabina = class;
   TCibGFacCabinas = class;
 
   //TEvCabCambiaEstado = procedure(nuevoEstado: TCabEstadoConex) of object;
-  {El evento TEvCabTramaLista, se define con el primer parámetro como TCibFac, en lugar
-  de TCibFacCabina, porque el manejador de este evento se usará como rutina general para
-  el procesamiento de la mayoría de comandos de la aplicación.}
-  TEvCabTramaLista = procedure(idFacOrig: string; tram: TCPTrama) of object;
   TEvCabRegMensaje = procedure(NomCab: string; msj: string) of object;
   TEvCabAccionCab = procedure(cab: TCibFacCabina) of object;
 //  TEvCabLogIBol = procedure(cab: TCPCabina; it: TCPItemBoleta; msj: string) of object;
@@ -52,7 +65,7 @@ type
     tic    : integer;   //contador para temporización
     SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
                         por Socket.}
-    PantallaPorEnviarA: string;
+    ResponderA: string;  //Id de a dónde se debe responder el mensaje
     procedure LimpiarCabina;
     procedure mnDetenCuenta(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
@@ -83,7 +96,8 @@ type
     property Mac: string read cabConex.mac write SetMac;
     property ConConexion: boolean read FConConexion write SetConConexion;
   public  //campos diversos
-    OnTramaLista  : TEvCabTramaLista;   //indica que hay una trama lista esperando
+    arcSal   : string;   //Archivo de salida. Usado para guardar el nombre de un archivo solicitado.
+    OnTramaLista  : TEvTramaLista;   //indica que hay una trama lista esperando
     OnRegMensaje  : TEvCabRegMensaje;   //indica que se ha generado un mensaje de la conexión
     //OnGrabBoleta  : TEvCabAccionCab;    //Indica que se ha grabado la boleta
     function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
@@ -135,6 +149,8 @@ type
     procedure PonerManten;     //Pone cabina en mantenimiento
     procedure SacarManten;     //Saca cabina en mantenimiento
     procedure TrasladarA(cab2: TCibFacCabina);  //Traslada a otra cabina
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+      override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
     procedure MenuAcciones(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
@@ -157,7 +173,7 @@ type
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
-    OnTramaLista   : TEvCabTramaLista; //indica que hay una trama lista esperando
+    OnTramaLista   : TEvTramaLista; //indica que hay una trama lista esperando
     OnRegMensaje   : TEvCabRegMensaje; //indica que se ha generado un mensaje de la conexión
   protected //Getters and Setters
     function GetCadPropied: string; override;
@@ -178,6 +194,7 @@ type
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
   public  //Campos para manejo de acciones
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
     procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
   public  //Constructor y destructor
@@ -227,11 +244,18 @@ begin
 end;
 procedure TCibFacCabina.cabConexTramaLista(NomCab: string; tram: TCPTrama);
 {Este es el punto de llegada de las tramas de una PC cliente, que puede ser un Punto
-de Venta, o una PC de alquiler. Aquí se discrimina para ver, qué tipo de trama es.}
+de Venta, o una PC de alquiler. Aquí se discrimina para ver, qué tipo de trama es.
+Esto corre en el modelo.}
 var
   NombPC: string;
   HorPC: TDateTime;
 begin
+  if tram.tipTra>=CVIS_SOLPROP then begin
+    //Como son comandos de un punto de venta, los propaga hasta el modelo.
+    OnTramaLista(IdFac, tram);
+    exit;
+  end;
+  //Estos mensajes son de una PC cliente. Hayque procesarlos
   if tram.tipTra = M_ESTAD_CLI then begin
     //Este mensaje se procesa aquí sin propagarlo
     Decodificar_M_ESTAD_CLI(tram.traDat, NombPC, HorPC);
@@ -239,21 +263,43 @@ begin
     HoraPC  := HorPC;
     PantBloq:= (tram.posX = 1);
     frmVisMsj.PonerMsje(' <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+  end else if tram.tipTra = M_PRESENCIA then begin
+    //Recibido mensaje de presencia
+    frmVisMsj.PonerMsje(' <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+  end else if tram.tipTra = C_MENS_PC then begin  //Llegó un mensaje de la PC remota
+    {Este mensaje se podría mostrar aquí mismo con un MsgBox(), pero formalmente,
+    habría que enviarlo a la vista que solicitó el mensaje}
+    if ResponderA='' then exit;   //no hay a quien reponder
+    //Notar que este comando va dirigido a la vista, no a un facturable específico,
+    //por eso no incluye el ID del facturable.
+    OnRespComando(ResponderA, CVIS_MSJEPC, 0, 0,
+                  tram.traDat);
   end else if tram.tipTra = M_PAN_COMP then begin
     //Llego una captura de pantalla
-    //Debe comunicar al modelo que hay una pantalla lista
-    //Aquí oonvertimos esta trama Cabinas<->Grupo a una trama Visor<->Modelo
-    tram.tipTra := RFAC_CABIN;
-    tram.posX := R_CABIN_PANTA;
-    //Usa el Id de quien pidió una pantalla anteriormente, para devolverla
-debugln('+Recibida imagen en: '+ self.IdFac);
-    if PantallaPorEnviarA<>'' then begin
-      OnTramaLista(PantallaPorEnviarA, tram);
-      PantallaPorEnviarA := '';  //limpia bandera
-    end;
-  end else if tram.tipTra>=CVIS_SOLPROP then begin
-    //Como son comadnos de un punto de venta, los propaga hasta el modelo.
-    OnTramaLista(IdFac, tram);
+    if ResponderA='' then exit;   //no hay a quien reponder
+    //Genera la trama de respuesta.
+    //Incluye en los datos al ID de la cabina a la que debe llegar la respuesta
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_PANTA, length(IdFac),
+                  IdFac + #9 + tram.traDat);
+//    ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = M_SOL_RUT_A then begin
+    //Llego la ruta actual
+    if ResponderA='' then exit;   //no hay a quien reponder
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_SOLRUT_A, 0,
+                  IdFac + #9 + tram.traDat);
+//    ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = M_SOL_L_ARC then begin
+    //Llego la ruta actual
+    if ResponderA='' then exit;   //no hay a quien reponder
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_LISARC, 0,
+                    IdFac + #9 + tram.traDat);
+//      ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = M_ARC_SOLIC then begin
+    //Llego un archivo
+    if ResponderA='' then exit;   //no hay a quien reponder
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_ARCSOL, 0,
+                  IdFac + #9 + tram.traDat);
+//    ResponderA := '';  //Para que no acepte més respuestas
   end else begin
     frmVisMsj.PonerMsje('!Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end;
@@ -763,9 +809,42 @@ begin
       cab2.TCP_envComando(C_DESB_PC, 0, 0)
   end;
 end;
+procedure TCibFacCabina.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+{Ejecuta la respuesta a un comando envíado, supuestamente,  desde el Visor.
+Este método se debe ejecutar siempre en el lado Visor.}
+var
+  rutArc: string;
+begin
+  case ParamX of
+  R_CABIN_PANTA: begin
+      //Se ha recibido una captura de pantalla. Se supone que ya la parte del id, ha sido
+      //extraído de los datos.
+      StringToFile(cad, 'd:\aaa.jpg');
+      frmExpArc.picPant.Picture.LoadFromFile('d:\aaa.jpg');
+      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
+    end;
+  R_CABIN_SOLRUT_A: begin  //Llegó al ruta actual
+      frmExpArc.Edit1.Text:=cad;
+      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
+      frmExpArc.EstadoControles(true);
+    end;
+  R_CABIN_LISARC: begin  //Llego la lista de archivos
+      frmExpArc.LlenarLista(cad);
+      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
+      frmExpArc.EstadoControles(true);
+    end;
+  R_CABIN_ARCSOL: begin   //Llego un archivo solicitado "arcSal"
+      rutArc :=  ExtractFilePath(Application.ExeName)+'archivos';  {Mejor sería que genere un evento para pedir esta ruta}
+      StringToFile(cad, rutArc + '\' + arcSal);
+      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
+      frmExpArc.EstadoControles(true);
+    end;
+  end;
+end;
 procedure TCibFacCabina.EjecAccion(idFacOrig: string; tram: TCPTrama;
   traDat: string);
-{Ejecuta la acción solicitada sobre este facturable.}
+{Ejecuta la acción solicitada sobre este facturable. Se ejecuta siempre en el
+Modelo.}
 var
   Err: boolean;
   nom, gru: String;
@@ -793,17 +872,11 @@ begin
     TCP_envComando(C_DESB_PC, 0, 0);
   end;
   C_CABIN_PANTA: begin  //Solicitar captura de pantalla
-    //Guarda el id de quien pidió la pantalla, para poder devolverla adecuadamente
-debugln('+Solicitando imagen desde: '+ self.IdFac);
-    PantallaPorEnviarA := idFacOrig;
-    TCP_envComando(C_PAN_COMPL, 0, 0);
-  end;
-  R_CABIN_PANTA: begin
-    //Se ha recibido una captura de pantalla
-    StringToFile(traDat, 'd:\aaa.jpg');
-    frmExpArc.picPant.Picture.LoadFromFile('d:\aaa.jpg');
-//    frmPant.Image1.Picture.LoadFromFile('d:\aaa.jpg');
-  end;
+      //Guarda el id de quien pidió la pantalla, para poder devolverla adecuadamente
+  debugln('+Solicitando imagen desde: '+ self.IdFac);
+      ResponderA := idFacOrig;
+      TCP_envComando(C_PAN_COMPL, 0, 0);   //Este comando va a la PC remota
+    end;
   C_CABIN_TRASLA: begin  //Se pide trasladar desde una cabina a otra
     //Se supone que la cabina se moverá a "cab2"
     //Ubica el facturable a donde se moverá
@@ -823,6 +896,40 @@ debugln('+Solicitando imagen desde: '+ self.IdFac);
     cab2 := TCibFacCabina(facDest2);
     //Ahora ya se puede mover la cabina
     TrasladarA(cab2);
+    end;
+  C_CABIN_FIJRUT: begin
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_FIJ_RUT_A, 0, 0, traDat);
+    end;
+  C_CABIN_REINPC: begin   //Comando para reiniciar PC
+      TCP_envComando(C_REIN_PC, 0, 0);
+    end;
+  C_CABIN_APAGPC: begin   //Comando para apagar PC
+      TCP_envComando(C_APAG_PC, 0, 0);
+    end;
+  C_CABIN_SOLRUT_A: begin  //Solicita ruta actual
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_SOL_RUT_A, 0, 0);
+    end;
+  C_CABIN_LISARC: begin   //Solicita lista de archivos
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_SOL_L_ARC, 0, 0);
+    end;
+  C_CABIN_ARCSOL: begin  //Solicita traer un archivo
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_ARC_SOLIC, 0, 0, traDat);
+    end;
+  C_CABIN_FIJARSAL: begin  //Fija nombre de archivo
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_FIJ_ARSAL, 0, 0, traDat);
+    end;
+  C_CABIN_ARCENV: begin  //Enviar archivo
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_ARC_ENVIA, 0, 0, traDat);
+    end;
+  C_CABIN_ELIARCHI:  begin  //Elimina archivo
+      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_ELI_ARCHI, 0, 0, traDat);
     end;
   end;
 end;
@@ -1098,6 +1205,20 @@ begin
   cab := CabPorNombre(nom);
   if cab = nil then exit;
   cab.TCP_envComando(comando, ParamX, ParamY, cad);
+end;
+procedure TCibGFacCabinas.EjecRespuesta(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+var
+  Err: boolean;
+  facDest: TCibFac;
+  nom: String;
+begin
+  //Extrae el nombre, porque se supone que sya se extrajo el grupo
+  nom := ExtraerHasta(cad, #9, Err);
+  facDest := ItemPorNombre(nom);
+  if facDest=nil then exit;
+  //Pasa el comando. Notar que yas e quitó de "cad", el ID completo.
+  facDest.EjecRespuesta(comando, ParamX, ParamY, cad);
 end;
 procedure TCibGFacCabinas.EjecAccion(idFacOrig: string; tram: TCPTrama);
 {Ejecuta la acción sibre este grupo. Si la acción es para uno de sus facturables, le
