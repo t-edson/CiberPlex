@@ -143,6 +143,9 @@ type
   TevFacLogError = function(msj: string): integer of object;
   //Solicita ejecutar un comando
   TEvSolicEjecCom = procedure(comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
+  TEvRespComando = procedure(idVista: string; comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
+  //Evento para uso con tramas
+  TEvTramaLista = procedure(idFacOrig: string; tram: TCPTrama) of object;
 
   TCibGFac = class;
   { TCibFac }
@@ -169,7 +172,8 @@ type
     OnLogIngre     : TEvBolLogVenta;      //Requiere escribir un ingreso en registro
     OnLogError     : TevFacLogError;      //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;      //cuando se requiere actualizar el stock
-    OnSolicEjecCom : TEvSolicEjecCom;
+    OnSolicEjecCom : TEvSolicEjecCom;     //Cuando solicita ejecutar un comando
+    OnRespComando  : TEvRespComando;      //Cuando se solicta responder a un comando.
   public
     tipo    : TCibTipFact; //tipo de grupo facturable
     Boleta  : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
@@ -184,6 +188,9 @@ type
     property y: double read Fy write Sety;  //coordenada Y
     procedure LimpiarBol;      //Limpia la boleta
     function RegVenta(usu: string): string; virtual;
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
+    procedure EjecAccion(idFacOrig: string; tram: TCPTrama;
+                         traDat: string); virtual;
     procedure MenuAcciones(MenuPopup: TPopupMenu); virtual;
   public //Constructor y destructor
     constructor Create;
@@ -221,6 +228,8 @@ type
    objetos facturables.}
   TCibGFac = class
   private
+    procedure fac_RespComando(idVista: string; comando: TCPTipCom; ParamX,
+      ParamY: word; cad: string);
     procedure fac_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
     function fac_LogError(msj: string): integer;
@@ -263,7 +272,8 @@ type
     procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
   public  //Campos para manejo de acciones
     facSelec: TCibFac;   //Facturable seleccionado (en la interfaz gráfica)
-    procedure EjecAccion(tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
+    procedure EjecAccion(idFacOrig: string; tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
     procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); virtual;
   public  //Eventos para que el grupo se comunique con la aplicación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
@@ -276,6 +286,7 @@ type
     OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
     OnSolicEjecCom : TEvSolicEjecCom;   //Solicita ejecutar acciones
+    OnRespComando  : TEvRespComando;      //Cuando se solicta responder a un comando.
     OnBuscarGFac   : TEvBuscarGFac;
   public  //Constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipFact);
@@ -671,6 +682,22 @@ sistema, ya que es un campo usado comúnmente para generar el registro de ventas
 begin
   Result := '<sin información>'
 end;
+procedure TCibFac.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
+  cad: string);
+{Se usa para comunicar una respuesta a la vista, de algún comando enviado.}
+begin
+
+end;
+procedure TCibFac.EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string);
+{Ejecuta la acción solicitada para este facturable. El campo "traDat", es el campo de
+datos de la trama, al que se le ha extraído ya, el identificador de grupo y de
+facturable. Se incluye porque por lo general, el trabajo de identificación lo hace ya
+el grupo, antes de llamar a este método, así que para no hacer doble trabajo, se pasa
+la cadena ya procesada.
+Este método, debe ser ejecutado en el Modelo.}
+begin
+
+end;
 procedure TCibFac.MenuAcciones(MenuPopup: TPopupMenu);
 {Configura las acciones que deben realizarse para este objeto facturable.}
 begin
@@ -712,6 +739,11 @@ procedure TCibGFac.fac_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string);
 begin
   if OnSolicEjecCom<>nil then OnSolicEjecCom(comando, ParamX, ParamY, cad);
+end;
+procedure TCibGFac.fac_RespComando(idVista: string; comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+begin
+  if OnRespComando<>nil then OnRespComando(idVista, comando, ParamX, ParamY, cad);
 end;
 function TCibGFac.fac_LogError(msj: string): integer;
 begin
@@ -771,6 +803,7 @@ begin
   fac.OnCambiaPropied:= @fac_CambiaPropied;
   fac.OnActualizStock:= @fac_ActualizStock;
   fac.OnSolicEjecCom := @fac_SolicEjecCom;
+  fac.OnRespComando  := @fac_RespComando;
   items.Add(fac);
 end;
 procedure TCibGFac.Setx(AValue: double);
@@ -928,7 +961,13 @@ begin
     end;
   end;
 end;
-procedure TCibGFac.EjecAccion(tram: TCPTrama);
+procedure TCibGFac.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
+  cad: string);
+{Se usa para comunicar una respuesta a la vista, de algún comando enviado.}
+begin
+
+end;
+procedure TCibGFac.EjecAccion(idFacOrig: string; tram: TCPTrama);
 {Ejecuta alguna acción en el objeto.}
 begin
 

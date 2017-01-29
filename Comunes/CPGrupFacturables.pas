@@ -17,6 +17,8 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
+    procedure gof_RespComando(idVista: string; comando: TCPTipCom; ParamX,
+      ParamY: word; cad: string);
     procedure gof_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
     function gof_LogIngre(ident: char; msje: string; dCosto: Double): integer;
@@ -28,8 +30,8 @@ type
     function gof_LogInfo(msj: string): integer;
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
-    function ExtraerBloqueEstado(lisEstado: TStringList; var estado, nomGrup: string;
-      var tipo: TCibTipFact): boolean;
+    function ExtraerBloqueEstado(lisEstado: TStringList; out estado,
+      nomGrup: string; var tipo: TCibTipFact): boolean;
     procedure gof_RequiereInfo(var NombProg, NombLocal, Usuario: string);
   public  //Eventos.
     {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
@@ -45,10 +47,12 @@ type
     OnReqConfigGen : TEvReqConfigGen;  //Se requiere información de configruación
     OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     OnActualizStock: TEvBolActStock;   //Se requiere actualizar el stock
+    OnRespComando  : TEvRespComando;  //Indica que tiene la respuesta de un comando
+    //Estos eventos se generan cuando este objeto forma parte de un Visor.
     OnSolicEjecCom : TEvSolicEjecCom;  //Se solicita ejecutar una acción
   public
-    nombre : string;      //Es un identificador del grupo. Es útil solo para depuración.
-    items  : TCibGFact_list;  //lista de grupos facturables
+    nombre : string;         //Es un identificador del grupo. Es útil solo para depuración.
+    items  : TCibGFact_list; //lista de grupos facturables
     DeshabEven: boolean;     //deshabilita los eventos
     property ModoCopia: boolean  {Indica si se quiere manejar al objeto sin conexión (como en un visor),
                                   debería hacerse antes de que se agreguen objetos a "items"}
@@ -57,9 +61,11 @@ type
     property CadEstado: string read GetCadEstado write SetCadEstado;
     function NumGrupos: integer;
     function BuscarPorNombre(nomb: string): TCibGFac;
+    function BuscarPorID(idFac: string): TCibFac;
     procedure Agregar(gof: TCibGFac);
     procedure Eliminar(gf: TCibGFac);
-    procedure EjecComando(nomFac, nomGFac: string; tram: TCPTrama);
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+    procedure EjecComando(idVista: string; tram: TCPTrama);
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean=false);
     destructor Destroy; override;
@@ -69,7 +75,7 @@ implementation
 
 { TCibGruposFacturables }
 function TCibGruposFacturables.ExtraerBloqueEstado(lisEstado: TStringList;
-  var estado, nomGrup: string; var tipo: TCibTipFact): boolean;
+  out estado, nomGrup: string; var tipo: TCibTipFact): boolean;
 {Extrae de la cadena de estado de la aplicación (guardada en lisEstado), el fragmento
 que corresponde al estado de un grupo facturable. El estado se devuelve en "estado"
 Normalmente lisEstado , tendrá la forma:
@@ -142,9 +148,23 @@ begin
   if not DeshabEven and (OnLogError<>nil) then
     Result := OnLogError(msj);
 end;
-procedure TCibGruposFacturables.EjecComando(nomFac, nomGFac: string;
-  tram: TCPTrama);
-{Rutina que centraliza todas las acciones a realizar sobre el modelo.
+procedure TCibGruposFacturables.EjecRespuesta(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+{Método que recibe la respuesta a un comando. Debe ejecutarse siempre en el Visor.}
+var
+  Grupo: String;
+  GFac: TCibGFac;
+  Err: boolean;
+begin
+  //Se supone que la respuesta debe tener, al menos el identificador del grupo
+  Grupo := ExtraerHasta(cad, SEP_IDFAC, Err);  //El grupo viene en el primer campo
+  GFac := BuscarPorNombre(Grupo);  //Ubica al grupo facturable
+  if GFac=nil then exit;
+  //Notar que ya se estrajo el identificador de grupo  de "cad".
+  Gfac.EjecRespuesta(comando, ParamX, ParamY, cad);
+end;
+procedure TCibGruposFacturables.EjecComando(idVista: string; tram: TCPTrama);
+{Rutina que centraliza todas las acciones a realizar sobre el Modelo.
  Es llamada de las siguientes formas:
  1. Como respuesta al evento OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
     En este caso, las tramas pueden indicar respuesta a un comando enviado a una cabina
@@ -156,59 +176,35 @@ procedure TCibGruposFacturables.EjecComando(nomFac, nomGFac: string;
  3. Como repsuesta a comandos llegados desde la Web (NO IMPLEMENTADO AÚN)
 
  Parámetros:
- * nomFac -> Es el nombre del objeto facturable que genera la petición. Para comandos
-            locales, está en blanco.
- * nomGFac -> Es el nombre del Grupo de facturables del facturable que genera la petición.
-              Para comandos locales, está en blanco.
+ * idVista -> Identifica a la vista que genera la petición. Para comandos
+              locales, está en blanco.
  * tram -> Es la trama que contiene el comando que debe ejecutarse.
 
 Como este método ejecuta todos los comandos solicitados por la cabinas de Internet, o de
 la aplicación, hace uso de eventos para acceder a información que no está en este ámbito.}
-  function IdentificaCabinaOrig(var cab: TCibFacCabina; var gru: TCibGFacCabinas): boolean;
-  {Identifica al facturable nomGFac-nomFac, para ver si es un cabina. De ser así, devuelve
-  la referencia al objeto y al grupo en los parámetros y retorna TRUE, sino devuelve
-  FALSE.}
-  var
-    gfac: TCibGFac;
-  begin
-    //Identifica al grupo.
-    gfac := BuscarPorNombre(nomGFac);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
-    if gfac = nil then exit(false);  //no debería pasar
-    if gfac.tipo <> ctfCabinas then exit(false);  //no es cabina
-    gru := TCibGFacCabinas(gfac);  //se supone que es de este tipo
-    //Identifica objeto cabina en el modelo, porque
-    cab := gru.CabPorNombre(nomFac);
-    exit(true);
-  end;
 var
   arch: RawByteString;
   tmp, Grupo: string;
   Err: boolean;
-  cabOrig: TCibFacCabina;
-  gruOrig: TCibGFacCabinas;
   GFac: TCibGFac;
 begin
   case tram.tipTra of
   CVIS_SOLPROP: begin  //Se solicita el archivo INI (No está bien definido)
-      //Identifica a la cabina origen para entregarle la información
-      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
       tmp := CadPropiedades;
-      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ARINI, 0, 0, tmp);
+      if OnRespComando<>nil then OnRespComando(idVista, RVIS_SOLPROP, 0, 0, tmp);
     end;
   CVIS_SOLESTA: begin  //Se solicita el estado de todos los objetos del modelo
       //Identifica a la cabina origen para entregarle la información
-      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-      debugln(cabOrig.Nombre + ': Estado solicitado.');
+      debugln(idVista+ ': Estado solicitado.');
       tmp := CadEstado;
-      gruOrig.TCP_envComando(cabOrig.Nombre, M_SOL_ESTAD, 0, 0, tmp);
+      if OnRespComando<>nil then OnRespComando(idVista, RVIS_SOLESTA, 0, 0, tmp);
     end;
   CVIS_CAPPANT: begin  //se pide una captura de pantalla
       //Identifica a la cabina origen para entregarle la información
-      if not IdentificaCabinaOrig(cabOrig, gruOrig) then exit;  //valida que venga de cabina
-      debugln(cabOrig.Nombre+ ': Pantalla completa solicitada.');
+      debugln(idVista+ ': Pantalla completa solicitada.');
       arch := ExtractFilePath(Application.ExeName) + '~00.tmp';
       PantallaAArchivo(arch);
-      gruOrig.TCP_envComando(cabOrig.Nombre, RVIS_CAPPANT, 0, 0, StringFromFile(arch));
+      if OnRespComando<>nil then OnRespComando(idVista, RVIS_CAPPANT, 0, 0, StringFromFile(arch));
     end;
   CVIS_ACBOLET: begin  //Acciones sobre Boletas
       //Identifica al facturable sobre el que se aplica
@@ -225,24 +221,26 @@ begin
       GFac := BuscarPorNombre(Grupo);
       if GFac=nil then exit;
       if Gfac.tipo <> ctfCabinas then exit;
-      //Ejecuta acción
-      Gfac.EjecAccion(tram);
+      //Ejecuta acción, indicando la PC origen del comando
+      Gfac.EjecAccion(idVista, tram);
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
       { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
       de estado, (como se hace actualmente con el Timer) , ya que se está detectando cada
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automática, o algún otro evento similar que requiera guardar el estado.}
-  end;
+    end;
   CFAC_NILOM: begin  //Acciones sobre un NILO-m
       //Identifica a la cabina sobre la que aplica
-    Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
+      Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := BuscarPorNombre(Grupo);
       if GFac=nil then exit;
       if Gfac.tipo <> ctfNiloM then exit;
       //Ejecuta acción
-      Gfac.EjecAccion(tram);
+      Gfac.EjecAccion(idVista, tram);
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-  end;
+      { TODO : ¿No es este código similar a CFAC_CABIN? ¿No se puede unificar para todos
+       los grupos facturables? }
+    end;
   else
     debugln('  ¡¡Comando no implementado!!');
   end;
@@ -275,7 +273,26 @@ procedure TCibGruposFacturables.gof_SolicEjecCom(comando: TCPTipCom; ParamX,
   ParamY: word; cad: string);
 {Un Gfac solicita ejecutar una acción, en uno de sus elementos.}
 begin
-  if not DeshabEven and (OnSolicEjecCom<>nil) then OnSolicEjecCom(comando, ParamX, ParamY, cad);
+  if not DeshabEven and (OnSolicEjecCom<>nil) then
+    OnSolicEjecCom(comando, ParamX, ParamY, cad);
+end;
+procedure TCibGruposFacturables.gof_RespComando(idVista: string;
+  comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+begin
+  if not DeshabEven and (OnRespComando<>nil) then
+    OnRespComando(idVista, comando, ParamX, ParamY, cad);
+end;
+function TCibGruposFacturables.BuscarPorNombre(nomb: string): TCibGFac;
+{Busca a uno de los grupos de facturables, por su nombre. Si no encuentra, devuelve NIL}
+var
+  gf : TCibGFac;
+begin
+//  debugln('-busc:'+nomb);
+  for gf in items do begin
+    if gf.Nombre = nomb then exit(gf);
+  end;
+  //no encontró
+  exit(nil);
 end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
@@ -380,17 +397,25 @@ function TCibGruposFacturables.NumGrupos: integer;
 begin
   Result := items.Count;
 end;
-function TCibGruposFacturables.BuscarPorNombre(nomb: string): TCibGFac;
-{Busca a uno de los grupos de facturables, por su nombre. Si no encuentra, devuelve NIL}
+function TCibGruposFacturables.BuscarPorID(idFac: string): TCibFac;
+{Busca un facturable en todo este objeto. Si no encuentra devuelve NIL.}
 var
-  gf : TCibGFac;
+  campos: TStringDynArray;
+  nomGFac, nomFac: String;
+  gfac: TCibGFac;
 begin
-//  debugln('-busc:'+nomb);
-  for gf in items do begin
-    if gf.Nombre = nomb then exit(gf);
-  end;
-  //no encontró
-  exit(nil);
+  if idFac='' then exit(nil);
+  //Extrae nombre de grupo y de facturable
+  campos := Explode(SEP_IDFAC, idFac);
+  if high(campos)<>1 then
+    exit(nil);  //No hay 2 campos. Debe haber un errro
+  nomGFac := campos[0];
+  nomFac := campos[1];
+  //Identifica al grupo.
+  gfac := BuscarPorNombre(nomGFac);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
+  if gfac = nil then
+    exit(nil);
+  Result := gfac.ItemPorNombre(nomFac);
 end;
 procedure TCibGruposFacturables.Agregar(gof: TCibGFac);
 {Agrega un grupo de facturables al objeto. Notar que esta rutina solo configura
@@ -406,6 +431,7 @@ begin
   gof.OnReqCadMoneda := @gof_ReqCadMoneda;
   gof.OnActualizStock:= @gof_ActualizStock;
   gof.OnSolicEjecCom := @gof_SolicEjecCom;
+  gof.OnRespComando  := @gof_RespComando;
   gof.OnBuscarGFac   := @BuscarPorNombre;
   case gof.tipo of
   ctfCabinas: begin

@@ -58,7 +58,7 @@ type
     procedure ActualizarOgGrupos(items: TCibGFact_list);
     function AgregarOgGrupo(GFac: TCibGFac): TogGFac;
     function gruposReqCadMoneda(valor: double): string;
-    procedure gruposSolicEjecAcc(comando: TCPTipCom; ParamX, ParamY: word;
+    procedure gruposSolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
     procedure motEdi_DblClick(Sender: TObject);
     procedure motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
@@ -68,7 +68,7 @@ type
   public
     motEdi         : TModEdicion2;  //motor de edición
     OnObjectsMoved : procedure of object;  //Los objetos se han movido
-    OnSolicEjecAcc : TEvSolicEjecCom;  //Se solicita ejecutar una acción
+    OnSolicEjecCom : TEvSolicEjecCom;  //Se solicita ejecutar una acción
     OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     OnDobleClick   : TNotifyEvent;
     grupos: TCibGruposFacturables; {Esta lista de grupos facturables, será una copia
@@ -85,6 +85,7 @@ type
     function GNiloMSeleccionado: TogGNiloM;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
   public  //Constructor y destructor.
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
@@ -235,10 +236,10 @@ begin
   if OnReqCadMoneda = nil then exit('');
   Result := OnReqCadMoneda(valor);   //pasa el evento
 end;
-procedure TfraVisCPlex.gruposSolicEjecAcc(comando: TCPTipCom; ParamX,
+procedure TfraVisCPlex.gruposSolicEjecCom(comando: TCPTipCom; ParamX,
   ParamY: word; cad: string);
 begin
-  if OnSolicEjecAcc<>nil then OnSolicEjecAcc(comando, ParamX, ParamY, cad);
+  if OnSolicEjecCom<>nil then OnSolicEjecCom(comando, ParamX, ParamY, cad);
 end;
 function TfraVisCPlex.BuscarOgCabina(const nom: string): TogCabina;
 {Devuelve la referencia a una cabina. Si no encuentra devuelve NIL}
@@ -422,10 +423,12 @@ begin
         //Se soltó una boleta
         if TogFac(og).Boleta.LoSelec(X,Y) then begin
           //Se ha soltado sobre una boleta
-          if OnSolicEjecAcc<>nil then begin
+          if OnSolicEjecCom<>nil then begin
             if MsgYesNo('¿Trasladar boleta de cabina ' + arrastFuente + ' a ' +
                          ogFac.Fac.IdFac + '?') <> 1 then exit;
-             OnSolicEjecAcc(CVIS_ACBOLET, ACCBOL_TRA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
+             //Solicita ejecutar el comando. No se indica el idVista, porque no se sabe
+             //si esta vista es local o remota.
+             OnSolicEjecCom(CVIS_ACBOLET, ACCBOL_TRA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
           end;
         end;
       end else begin
@@ -434,7 +437,7 @@ begin
           if MsgYesNo('¿Trasladar cabina: ' + arrastFuente + ' a ' +
                        ogFac.Fac.IdFac + '?') <> 1 then exit;
           //Se traslada la cabina
-          OnSolicEjecAcc(CFAC_CABIN, C_CABIN_TRASLA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
+          OnSolicEjecCom(CFAC_CABIN, C_CABIN_TRASLA, 0, arrastFuente + #9 + ogFac.Fac.IdFac);
         end;
       end;
       exit;
@@ -527,6 +530,26 @@ begin
   //Los objetos gráficos "verán" los cambios, porque tienen referencias a sus objetos fuente
   motEdi.Refrescar;
 end;
+procedure TfraVisCPlex.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
+  cad: string);
+{Se envía una respuesta al visor. Debe ser la respuesta a un comando.}
+begin
+  case comando of
+  RVIS_SOLESTA: begin   //se recibe cadena de estado
+      ActualizarEstado(cad);
+    end;
+  RVIS_SOLPROP: begin  //Se recibe archivo ini
+      ActualizarPropiedades(cad);  //actualiza propeidades de objetos
+    end;
+  CVIS_MSJEPC: begin  //Esto más que una respuesta, es un comando, pero se debe procesar
+      MsgExc(cad);
+    end;
+  RFAC_CABIN: begin  //Es respuesta para una cabina
+      //Envía a la vista
+      grupos.EjecRespuesta(comando, ParamX, ParamY, cad);
+    end;
+  end;
+end;
 procedure TfraVisCPlex.motEdi_ObjectsMoved;
 //Se ha producido el movimiento de uno o más objetos
 begin
@@ -565,7 +588,7 @@ begin
   decod := TCPDecodCadEstado.Create;
   grupos:= TCibGruposFacturables.Create('GrupVis', true);  //Crea en modo copia
   grupos.OnReqCadMoneda  :=@gruposReqCadMoneda;
-  grupos.OnSolicEjecCom  :=@gruposSolicEjecAcc;
+  grupos.OnSolicEjecCom  :=@gruposSolicEjecCom;
    //Para el evento
 end;
 destructor TfraVisCPlex.Destroy;

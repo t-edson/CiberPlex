@@ -47,8 +47,6 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     M_SOL_LD_AR = $1B,  //Mensaje con lista detallada de archivos
     M_SOL_CPUME = $1C,  //Mensaje con información de CPU y Memoria
 
-    M_SOL_ARINI = $24,  //Envía archivo de configuración
-    M_SOL_ESTAD = $25,  //Mensaje con el estado de los objetos
     M_SOL_T_LOC = $26,  //Mensaje tiempos de locutorios
 
     //---------------------------------------------------------------------
@@ -114,12 +112,16 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     //identificarlos fácilmente.
     ////////////////////////////////////////////////////////////////////////////////
     CVIS_SOLPROP = $E0,  //Solicita archivo de configuración principal (Aplicable a SERVIDOR Y CLIENTE).
-    CVIS_SOLESTA = $E1,  //Solicita estado de objetos
-    CVIS_CAPPANT = $E2,  //Solicita captura de pantalla del servidor
-    RVIS_CAPPANT = $E3,  //Respuesta a captura de pantalla del servidor
-    CVIS_ACBOLET = $E4,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
+    RVIS_SOLPROP = $E1,  //Envía archivo de configuración
+    CVIS_SOLESTA = $E2,  //Solicita estado de objetos
+    RVIS_SOLESTA = $E3,  //Mensaje con el estado de los objetos
+    CVIS_CAPPANT = $E4,  //Solicita captura de pantalla del servidor
+    RVIS_CAPPANT = $E5,  //Respuesta a captura de pantalla del servidor
+    CVIS_MSJEPC  = $E6,  //Se solicita mostrar un mensaje en la vista.
+    CVIS_ACBOLET = $E7,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
     CFAC_CABIN = $F0,  //Acción sobre una cabina (Incluye sub-somandos en ParamX)
-    CFAC_NILOM = $F1   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
+    RFAC_CABIN = $F1,  //Respuesta de una cabina (Incluye sub-somandos en ParamX)
+    CFAC_NILOM = $F2   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
   );
 
 type
