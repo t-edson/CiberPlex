@@ -89,14 +89,14 @@ type
 
 var
   Config: TConfig;
-
+  //Funciones de acceso rápido
   function CadMoneda(valor: double): string; inline;
   function LeeMoneda(txt: string): double;
+  function Modelo: TCibGruposFacturables;
 
 implementation
 {$R *.lfm}
 { TConfig }
-
 function CadMoneda(valor: double): string; inline;
 begin
   Result := Config.CadMon(valor);
@@ -104,6 +104,10 @@ end;
 function LeeMoneda(txt: string): double;
 begin
   Result := Config.LeeMon(txt);
+end;
+function Modelo: TCibGruposFacturables;
+begin
+  Result := Config.grupos;
 end;
 
 procedure TConfig.FormCreate(Sender: TObject);

@@ -117,7 +117,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Visor_ClickDer(xp, yp: integer);
-    procedure grupos_CambiaPropied;
+    procedure Modelo_CambiaPropied;
     procedure Timer1Timer(Sender: TObject);
   private
     log : TCibArcReg;
@@ -126,17 +126,19 @@ type
     TramaTmp    : TCPTrama;    //Trama temporal
     fallasesion : boolean;  //indica si se cancela el inicio de sesión
     tic : integer;
+    procedure Modelo_RespComando(idVista: string; comando: TCPTipCom;
+      ParamX, ParamY: word; cad: string);
     procedure frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
     procedure Visor_DobleClick(Sender: TObject);
     procedure Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
-    function grupos_LogIngre(ident: char; msje: string; dCosto: Double
+    function Modelo_LogIngre(ident: char; msje: string; dCosto: Double
       ): integer;
-    function grupos_LogError(msj: string): integer;
-    function grupos_LogVenta(ident:char; msje:string; dCosto:Double): integer;
-    procedure grupos_ActualizStock(const codPro: string;
+    function Modelo_LogError(msj: string): integer;
+    function Modelo_LogVenta(ident:char; msje:string; dCosto:Double): integer;
+    procedure Modelo_ActualizStock(const codPro: string;
       const Ctdad: double);
-    procedure grupos_ReqConfigGen(var NombProg, NombLocal, Usuario: string);
+    procedure Modelo_ReqConfigGen(var NombProg, NombLocal, Usuario: string);
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol, coment: string);
@@ -145,8 +147,8 @@ type
     procedure frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol, coment: string);
     procedure frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string);
-    function grupos_LogInfo(msj: string): integer;
-    procedure grupos_EstadoArchivo;
+    function Modelo_LogInfo(msj: string): integer;
+    procedure Modelo_EstadoArchivo;
     procedure LeerEstadoDeArchivo;
     procedure NiloM_RegMsjError(NomObj: string; msj: string);
     procedure PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
@@ -161,32 +163,32 @@ var
 implementation
 {$R *.lfm}
 
-procedure TfrmPrincipal.grupos_CambiaPropied;
+procedure TfrmPrincipal.Modelo_CambiaPropied;
 {Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
 begin
   debugln('** Cambio de propiedades: ');
   Config.escribirArchivoIni;  //guarda cambios
   Visor.ActualizarPropiedades(Config.grupos.CadPropiedades);
 end;
-function TfrmPrincipal.grupos_LogInfo(msj: string): integer;
+function TfrmPrincipal.Modelo_LogInfo(msj: string): integer;
 begin
   Result := log.PLogInf(usuario, msj);
 end;
-function TfrmPrincipal.grupos_LogVenta(ident: char; msje: string; dCosto: Double
+function TfrmPrincipal.Modelo_LogVenta(ident: char; msje: string; dCosto: Double
   ): integer;
 begin
   Result := log.PLogVenta(ident, msje, dCosto);
 end;
-function TfrmPrincipal.grupos_LogIngre(ident: char; msje: string;
+function TfrmPrincipal.Modelo_LogIngre(ident: char; msje: string;
   dCosto: Double): integer;
 begin
   Result := log.PLogIngre(ident, msje, dCosto);
 end;
-function TfrmPrincipal.grupos_LogError(msj: string): integer;
+function TfrmPrincipal.Modelo_LogError(msj: string): integer;
 begin
   Result := log.PLogErr(usuario, msj);
 end;
-procedure TfrmPrincipal.grupos_EstadoArchivo;
+procedure TfrmPrincipal.Modelo_EstadoArchivo;
 {Guarda el estado de los objetos al archivo de estado}
 var
   lest: TStringList;
@@ -196,14 +198,14 @@ begin
   lest.SaveToFile(arcEstado);
   lest.Destroy;
 end;
-procedure TfrmPrincipal.grupos_ReqConfigGen(var NombProg, NombLocal,
+procedure TfrmPrincipal.Modelo_ReqConfigGen(var NombProg, NombLocal,
   Usuario: string);
 begin
   NombProg  := NOM_PROG;
   NombLocal := Config.Local;
   Usuario   := FormInicio.usuario;
 end;
-procedure TfrmPrincipal.grupos_ActualizStock(const codPro: string;
+procedure TfrmPrincipal.Modelo_ActualizStock(const codPro: string;
   const Ctdad: double);
 {Se está solicitando actualizar el stock. Esta petición usualmente viene desde una
 boleta.}
@@ -213,6 +215,30 @@ begin
       //Se muestra aquí porque no se va a detener el flujo del programa por
       //un error, porque es prioritario registrar la venta.
       MsgBox(msjError);
+  end;
+end;
+procedure TfrmPrincipal.Modelo_RespComando(idVista: string; comando: TCPTipCom;
+  ParamX, ParamY: word; cad: string);
+{El modelo está solitando responder un comando, a una vista}
+var
+  fac: TCibFac;
+  cab: TCibFacCabina;
+begin
+  if idVista = '$' then begin
+    //La respuesta es para la vista local
+    Visor.EjecRespuesta(comando, ParamX, ParamY, cad);
+  end else begin
+    //La respuesta es para una vista en una PC de la red.
+    //Para enviar a una PC remota, se debe hacer a través del propio modelo
+    fac := Modelo.BuscarPorID(idVista);  //Se ubica a quien responder, con "idVista".
+    if fac = nil then
+      exit;  //No debería pasar. ¿Habrá desaparecido?
+    if not (fac is TCibFacCabina) then begin
+      exit;  {No es PC. ¿Qué raro?. Se supone que, por ahora, solo las PC
+              CIBERPLEX-PVenta, CIBERPLEX-Admin), son capaces de generar comandos.}
+    end;
+    cab := TCibFacCabina(FAC);
+    cab.TCP_envComando(comando, ParamX, ParamY, cad);
   end;
 end;
 procedure TfrmPrincipal.Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
@@ -230,145 +256,26 @@ begin
   //Llama como evento, indicando que vista solicitante es la local '$'.
   Config.grupos.EjecComando('$', TramaTmp);
 end;
-procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
-begin
-  log.PLogErr(usuario, msj);
-end;
-procedure TfrmPrincipal.FormCreate(Sender: TObject);
-begin
-  Caption := NOM_PROG + ' ' + VER_PROG;
-  //Crea un grupo de cabinas
-  TramaTmp := TCPTrama.Create;
-  log := TCibArcReg.Create;
-  tabPro:= TCibTabProduc.Create;
-  {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
-  Visor := TfraVisCPlex.Create(self);
-  Visor.Parent := self;
-  Visor.Align := alClient;
-  tic := 0;   //inicia contador
-end;
-procedure TfrmPrincipal.FormShow(Sender: TObject);
-var
-  Err: String;
-begin
-  Config.Iniciar;  //lee configuración
-  Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
-  LeerEstadoDeArchivo;   //Lee después de leer la configuración
-  //Inicializa Grupos
-  Config.grupos.OnCambiaPropied:= @grupos_CambiaPropied;
-  Config.grupos.OnLogInfo      := @grupos_LogInfo;
-  Config.grupos.OnLogVenta     := @grupos_LogVenta;
-  Config.grupos.OnLogIngre     := @grupos_LogIngre;
-  Config.grupos.OnLogError     := @grupos_LogError;
-  Config.grupos.OnGuardarEstado:= @grupos_EstadoArchivo;
-  Config.grupos.OnReqConfigGen := @grupos_ReqConfigGen;
-  Config.grupos.OnReqCadMoneda := @Config.CadMon;
-  Config.grupos.OnActualizStock:= @grupos_ActualizStock;
-//  Config.grupos.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
-//                            puedan responderse desde el mismo modelo (ver Visor_ClickDer)}
-  //Configura Visor para comunicar sus eventos
-  Visor.motEdi.OnClickDer := @Visor_ClickDer;
-  Visor.OnDobleClick      := @Visor_DobleClick;
-  Visor.OnObjectsMoved    := @Visor_ObjectsMoved;
-  Visor.OnSolicEjecCom    := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento de boletas
-  Visor.OnReqCadMoneda    := @Config.CadMon;   //Para que pueda mostrar monedas
-  //Crea los objetos gráficos del visor de acuerdo al archivo INI.
-  Visor.ActualizarPropiedades(config.grupos.CadPropiedades);
-  {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
-   de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
-  ConfigfcVistaUpdateChanges;
-  //Verifica si se puede abrir el archivo de registro principal
-  log.AbrirPLog(rutDatos, Config.Local);
-  If msjError <> '' then begin
-     MsgErr(msjError);
-     //No tiene sentido seguir, si no se puede abrir registro
-     Close;
-  end;
-
-  //verifica si hay información de usuarios
-  if usuarios.Count = 0 Then begin
-    //crea usuarios por defecto
-    CreaUsuario('admin', '', PER_ADMIN);  //Usuario por defecto
-    CreaUsuario('oper', '', PER_OPER);    //Usuario por defecto
-  end;
-
-  log.PLogInf(usuario, '----------------- Inicio de Programa ---------------');
-  Err := tabPro.CargarProductos(arcProduc);
-  if Err<>'' then begin
-    log.PLogErr(usuario, Err);
-    MsgErr(Err);
-  end;
-  //Configura formulario de ingreso de ventas
-  frmIngVentas.TabPro := tabPro;
-  frmIngVentas.LeerDatos;
-  frmIngVentas.OnAgregarVenta:=@frmIngVentas_AgregarVenta;
-  //Configrua formualrio de boleta
-  frmBoleta.OnAgregarItem  := @frmBoleta_AgregarItem;
-  frmBoleta.OnGrabarBoleta := @frmBoleta_GrabarBoleta;
-  frmBoleta.OnDevolverItem := @frmBoleta_DevolverItem;
-  frmBoleta.OnDesecharItem := @frmBoleta_DesecharItem;
-  frmBoleta.OnRecuperarItem:= @frmBoleta_RecuperarItem;
-  frmBoleta.OnComentarItem := @frmBoleta_ComentarItem;
-  frmBoleta.OnDividirItem  := @frmBoleta_DividirItem;
-  frmBoleta.OnGrabarItem   := @frmBoletaGrabarItem;
-  frmBoleta.OnReqCadMoneda := @Config.CadMon;
-  log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados');
-  frmInicio.edUsu.Text := 'admin';
-  frmInicio.ShowModal;
-  if frmInicio.cancelo then begin
-    fallasesion := True;
-    Close;
-  end;
-  log.PLogInf(usuario, 'Sesión iniciada: ' + usuario);
-//usuario := 'admin';
-//perfil  := PER_ADMIN;
-  self.Activate;
-  self.SetFocus;
-  //self.Show;
-end;
-procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-begin
-  log.PLogInf(usuario, 'Sesión terminada: ' + usuario);
-  Config.escribirArchivoIni;  //guarda la configuración actual
-  grupos_EstadoArchivo;       //guarda estado
-end;
-procedure TfrmPrincipal.FormDestroy(Sender: TObject);
-begin
-  log.PLogInf(usuario, '----------------- Fin de Programa ---------------');
-  Debugln('Terminando ... ');
-  tabPro.Destroy;
-  log.Destroy;
-  TramaTmp.Destroy;
-  //Matar a los hilos de ejecución, puede tomar tiempo
-end;
 procedure TfrmPrincipal.Visor_ClickDer(xp, yp: integer);
 {Se ha hecho click derecho en el Visor.
 Aunque podría ser posible incluri este código en el mismo Visor, se pone aquí porque se
 quiere teenr acceso a los objetos del modelo.}
 var
   ogFac: TogFac;
-  nomFac, Nombre: String;
-  GFac: TCibGFac;
-  fac : TCibFac;
   mn: TMenuItem;
+  fac: TCibFac;
 begin
   if Visor.Seleccionado = nil then exit;
   //Hay objeto seleccionado
   if Visor.Seleccionado is TogFac then begin
-    //Se ha seleccionado un facturable
-    ogFac := TogFac(Visor.Seleccionado);
-    Nombre := ogFac.Fac.Nombre;
-    nomFac := ogFac.Fac.Grupo.Nombre;
-    {A diferencia de los otros puntos de venta, aquí en el servidor, las acciones las
-    ejecutará directamente el modelo, para tener acceso a todas las acciones disponible}
-//    GFac := Config.grupos.BuscarPorNombre(nomFac);
-    GFac := Visor.grupos.BuscarPorNombre(nomFac);
-    if GFac=nil then exit;
-//    //Deja que el facturable configure el menú contextual, con sus acciones
+    //Se ha seleccionado un facturable. Configura acciones.
+    ogFac := Visor.FacSeleccionado;
     PopupFac.Items.Clear;
-    fac := Gfac.ItemPorNombre(Nombre);
-    if fac=nil then exit;
-    fac.MenuAcciones(PopupFac);
+    ogFac.fac.MenuAccionesVista(PopupFac);
+    //Agrega acciones que solo correrán en el Servidor, en Modelo
+    fac := Modelo.BuscarPorID(ogFac.fac.IdFac);  //ubica facturable en el modelo
+    if fac = nil then exit;   //no debería pasar
+    fac.MenuAccionesModelo(PopupFac);
     //Agrega los ítems del menú que son comunes a todos los facturables
     mn :=  TMenuItem.Create(nil);
     mn.Caption:='-';
@@ -431,6 +338,118 @@ begin
   Config.grupos.DeshabEven:=false;   //restaura estado
   Config.grupos.OnCambiaPropied;
 end;
+procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
+begin
+  log.PLogErr(usuario, msj);
+end;
+procedure TfrmPrincipal.FormCreate(Sender: TObject);
+begin
+  Caption := NOM_PROG + ' ' + VER_PROG;
+  //Crea un grupo de cabinas
+  TramaTmp := TCPTrama.Create;
+  log := TCibArcReg.Create;
+  tabPro:= TCibTabProduc.Create;
+  {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
+  Visor := TfraVisCPlex.Create(self);
+  Visor.Parent := self;
+  Visor.Align := alClient;
+  tic := 0;   //inicia contador
+end;
+procedure TfrmPrincipal.FormShow(Sender: TObject);
+var
+  Err: String;
+begin
+  Config.Iniciar;  //lee configuración
+  Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
+  LeerEstadoDeArchivo;   //Lee después de leer la configuración
+  //Inicializa Grupos
+  Modelo.OnCambiaPropied:= @Modelo_CambiaPropied;
+  Modelo.OnLogInfo      := @Modelo_LogInfo;
+  Modelo.OnLogVenta     := @Modelo_LogVenta;
+  Modelo.OnLogIngre     := @Modelo_LogIngre;
+  Modelo.OnLogError     := @Modelo_LogError;
+  Modelo.OnGuardarEstado:= @Modelo_EstadoArchivo;
+  Modelo.OnReqConfigGen := @Modelo_ReqConfigGen;
+  Modelo.OnReqCadMoneda := @Config.CadMon;
+  Modelo.OnActualizStock:= @Modelo_ActualizStock;
+  Modelo.OnRespComando  := @Modelo_RespComando;
+//  Modelo.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
+//                            puedan responderse desde el mismo modelo (ver Visor_ClickDer)}
+  //Configura Visor para comunicar sus eventos
+  Visor.motEdi.OnClickDer:= @Visor_ClickDer;
+  Visor.OnDobleClick     := @Visor_DobleClick;
+  Visor.OnObjectsMoved   := @Visor_ObjectsMoved;
+  Visor.OnSolicEjecCom   := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento de boletas
+  Visor.OnReqCadMoneda   := @Config.CadMon;   //Para que pueda mostrar monedas
+  //Crea los objetos gráficos del visor de acuerdo al archivo INI.
+  Visor.ActualizarPropiedades(Modelo.CadPropiedades);
+  {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
+   de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
+  ConfigfcVistaUpdateChanges;
+  //Verifica si se puede abrir el archivo de registro principal
+  log.AbrirPLog(rutDatos, Config.Local);
+  If msjError <> '' then begin
+     MsgErr(msjError);
+     //No tiene sentido seguir, si no se puede abrir registro
+     Close;
+  end;
+
+  //verifica si hay información de usuarios
+  if usuarios.Count = 0 Then begin
+    //crea usuarios por defecto
+    CreaUsuario('admin', '', PER_ADMIN);  //Usuario por defecto
+    CreaUsuario('oper', '', PER_OPER);    //Usuario por defecto
+  end;
+
+  log.PLogInf(usuario, '----------------- Inicio de Programa ---------------');
+  Err := tabPro.CargarProductos(arcProduc);
+  if Err<>'' then begin
+    log.PLogErr(usuario, Err);
+    MsgErr(Err);
+  end;
+  //Configura formulario de ingreso de ventas
+  frmIngVentas.TabPro := tabPro;
+  frmIngVentas.LeerDatos;
+  frmIngVentas.OnAgregarVenta:=@frmIngVentas_AgregarVenta;
+  //Configrua formualrio de boleta
+  frmBoleta.OnAgregarItem  := @frmBoleta_AgregarItem;
+  frmBoleta.OnGrabarBoleta := @frmBoleta_GrabarBoleta;
+  frmBoleta.OnDevolverItem := @frmBoleta_DevolverItem;
+  frmBoleta.OnDesecharItem := @frmBoleta_DesecharItem;
+  frmBoleta.OnRecuperarItem:= @frmBoleta_RecuperarItem;
+  frmBoleta.OnComentarItem := @frmBoleta_ComentarItem;
+  frmBoleta.OnDividirItem  := @frmBoleta_DividirItem;
+  frmBoleta.OnGrabarItem   := @frmBoletaGrabarItem;
+  frmBoleta.OnReqCadMoneda := @Config.CadMon;
+  log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados');
+  frmInicio.edUsu.Text := 'admin';
+  frmInicio.ShowModal;
+  if frmInicio.cancelo then begin
+    fallasesion := True;
+    Close;
+  end;
+  log.PLogInf(usuario, 'Sesión iniciada: ' + usuario);
+//usuario := 'admin';
+//perfil  := PER_ADMIN;
+  self.Activate;
+  self.SetFocus;
+  //self.Show;
+end;
+procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  log.PLogInf(usuario, 'Sesión terminada: ' + usuario);
+  Config.escribirArchivoIni;  //guarda la configuración actual
+  Modelo_EstadoArchivo;       //guarda estado
+end;
+procedure TfrmPrincipal.FormDestroy(Sender: TObject);
+begin
+  log.PLogInf(usuario, '----------------- Fin de Programa ---------------');
+  Debugln('Terminando ... ');
+  tabPro.Destroy;
+  log.Destroy;
+  TramaTmp.Destroy;
+  //Matar a los hilos de ejecución, puede tomar tiempo
+end;
 procedure TfrmPrincipal.LeerEstadoDeArchivo;
 {Lee el estado de los objetos del archivo de estado}
 var
@@ -458,7 +477,7 @@ begin
 //  end;
   //Guarda en disco, por si acaso.
   if tic mod 60 = 0 then begin  //para evitar escribir muchas veces en disco
-    grupos_EstadoArchivo; //Por si ha habido cambios
+    Modelo_EstadoArchivo; //Por si ha habido cambios
   end;
 end;
 procedure TfrmPrincipal.ConfigfcVistaUpdateChanges;

@@ -7,10 +7,10 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lazcontrols, FormPrincipal, FormConfig, frameVisCPlex,
-  CibCabinaTarifas, FormBoleta, FormInicio, FormRepIngresos,
-  RegistrosVentas, FormBusProductos, FormIngVentas, FormAgrupVert, CibGFacNiloM,
-  FormAdminCabinas, FormAdminTarCab, FormNiloMProp, FormAcercaDe;
+  Forms, lazcontrols, FormPrincipal, FormConfig,
+  FormBoleta, FormInicio, FormRepIngresos,
+  RegistrosVentas, FormBusProductos, FormIngVentas, FormAgrupVert,
+  FormAdminCabinas, FormAcercaDe;
 
 {$R *.res}
 
