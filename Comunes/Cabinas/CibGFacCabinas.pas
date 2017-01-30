@@ -96,7 +96,6 @@ type
     property Mac: string read cabConex.mac write SetMac;
     property ConConexion: boolean read FConConexion write SetConConexion;
   public  //campos diversos
-    arcSal   : string;   //Archivo de salida. Usado para guardar el nombre de un archivo solicitado.
     OnTramaLista  : TEvTramaLista;   //indica que hay una trama lista esperando
     OnRegMensaje  : TEvCabRegMensaje;   //indica que se ha generado un mensaje de la conexión
     //OnGrabBoleta  : TEvCabAccionCab;    //Indica que se ha grabado la boleta
@@ -152,7 +151,8 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAcciones(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
     constructor Create(nombre0: string; ip0: string);
     constructor CreateSinRed;  //Crea objeto sin red
@@ -249,6 +249,7 @@ Esto corre en el modelo.}
 var
   NombPC: string;
   HorPC: TDateTime;
+  descon: Boolean;
 begin
   if tram.tipTra>=CVIS_SOLPROP then begin
     //Como son comandos de un punto de venta, los propaga hasta el modelo.
@@ -256,16 +257,15 @@ begin
     exit;
   end;
   //Estos mensajes son de una PC cliente. Hayque procesarlos
+  descon := false;
   if tram.tipTra = M_ESTAD_CLI then begin
     //Este mensaje se procesa aquí sin propagarlo
     Decodificar_M_ESTAD_CLI(tram.traDat, NombPC, HorPC);
     NombrePC:= NombPC;
     HoraPC  := HorPC;
     PantBloq:= (tram.posX = 1);
-    frmVisMsj.PonerMsje(' <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end else if tram.tipTra = M_PRESENCIA then begin
     //Recibido mensaje de presencia
-    frmVisMsj.PonerMsje(' <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end else if tram.tipTra = C_MENS_PC then begin  //Llegó un mensaje de la PC remota
     {Este mensaje se podría mostrar aquí mismo con un MsgBox(), pero formalmente,
     habría que enviarlo a la vista que solicitó el mensaje}
@@ -301,7 +301,12 @@ begin
                   IdFac + #9 + tram.traDat);
 //    ResponderA := '';  //Para que no acepte més respuestas
   end else begin
-    frmVisMsj.PonerMsje('!Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+    descon := true;
+  end;
+  if descon then begin
+    frmVisMsj.PonerMsje('    <<Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+  end else begin
+    frmVisMsj.PonerMsje('    <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end;
 end;
 procedure TCibFacCabina.cabConexRegMensaje(NomCab: string; msj: string);
@@ -495,7 +500,8 @@ begin
          Nombre + #9 +    {el nombre es obligatorio para identificar unívocamente a la cabina}
          I2f(cabConex.estadoN)+ #9 + {se coloca primero el Estado de la conexión, porque
              es el campo que siempre debe actualizarse, cuando hay conexión remota activada}
-         T2f(HoraPC);  //Este campo no tiene significado si no hay conexión
+         T2f(HoraPC) + #9 +  //Este campo no tiene significado si no hay conexión
+         B2f(PantBloq);  //Este campo no tiene significado si no hay conexión
   if cabCuenta.estado <> EST_NORMAL then begin
     // En el estado EST_NORMAL, no es necesario enviar los demás campos
     Result += #9 +
@@ -530,15 +536,16 @@ begin
     cabConex.estadoN  := f2I(campos[1]);
   end;
   HoraPC := f2T(campos[2]);
-  if high(campos)>=3 then begin
+  PantBloq := f2B(campos[3]);
+  if high(campos)>=4 then begin
     //Hay información de campos adicionaleas
-    cabCuenta.estadoN := f2I(campos[3]);
-    cabCuenta.hor_ini := f2T(campos[4]);
-    cabCuenta.tSolic  := f2T(campos[5]);
-    cabCuenta.tLibre  := f2B(campos[6]);
-    cabCuenta.horGra  := f2B(campos[7]);
-    FTransc           := f2I(campos[8]);   //el tiempo transcurrido se lee directamente
-    FCosto            := f2N(campos[9]);   //el costo se lee directamente en el campo FCosto
+    cabCuenta.estadoN := f2I(campos[4]);
+    cabCuenta.hor_ini := f2T(campos[5]);
+    cabCuenta.tSolic  := f2T(campos[6]);
+    cabCuenta.tLibre  := f2B(campos[7]);
+    cabCuenta.horGra  := f2B(campos[8]);
+    FTransc           := f2I(campos[9]);   //el tiempo transcurrido se lee directamente
+    FCosto            := f2N(campos[10]);   //el costo se lee directamente en el campo FCosto
   end else begin
     //No hay información adicional, se asumen valores por defecto
     cabCuenta.estado := EST_NORMAL;
@@ -812,34 +819,10 @@ end;
 procedure TCibFacCabina.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
 {Ejecuta la respuesta a un comando envíado, supuestamente,  desde el Visor.
 Este método se debe ejecutar siempre en el lado Visor.}
-var
-  rutArc: string;
 begin
-  case ParamX of
-  R_CABIN_PANTA: begin
-      //Se ha recibido una captura de pantalla. Se supone que ya la parte del id, ha sido
-      //extraído de los datos.
-      StringToFile(cad, 'd:\aaa.jpg');
-      frmExpArc.picPant.Picture.LoadFromFile('d:\aaa.jpg');
-      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
-    end;
-  R_CABIN_SOLRUT_A: begin  //Llegó al ruta actual
-      frmExpArc.Edit1.Text:=cad;
-      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
-      frmExpArc.EstadoControles(true);
-    end;
-  R_CABIN_LISARC: begin  //Llego la lista de archivos
-      frmExpArc.LlenarLista(cad);
-      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
-      frmExpArc.EstadoControles(true);
-    end;
-  R_CABIN_ARCSOL: begin   //Llego un archivo solicitado "arcSal"
-      rutArc :=  ExtractFilePath(Application.ExeName)+'archivos';  {Mejor sería que genere un evento para pedir esta ruta}
-      StringToFile(cad, rutArc + '\' + arcSal);
-      frmExpArc.StatusBar1.Panels[0].Text:='Recibido.';
-      frmExpArc.EstadoControles(true);
-    end;
-  end;
+  {Distribuye la respuesta en lo smódulos que corresponda. En este caso, lo envía al
+  formulario explorador, que es el único, por el momento, que genera respuestas tardías.}
+  frmExpArc.EjecRespuesta(comando, ParamX, ParamY, cad);
 end;
 procedure TCibFacCabina.EjecAccion(idFacOrig: string; tram: TCPTrama;
   traDat: string);
@@ -933,7 +916,9 @@ begin
     end;
   end;
 end;
-procedure TCibFacCabina.MenuAcciones(MenuPopup: TPopupMenu);
+procedure TCibFacCabina.MenuAccionesVista(MenuPopup: TPopupMenu);
+{Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejcuten
+desde aquí.}
 begin
   InicLlenadoAcciones(MenuPopup);
   AgregarAccion('&Iniciar Cuenta'       , @mnInicCuenta, 14);
@@ -942,10 +927,13 @@ begin
   AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, 18);
 //  AgregarAccion('Pausar tiempo',@mnPonerManten, 18);
   AgregarAccion('&Ver Explorador'      , @mnVerExplorad, 19);
-  if grupo.ModoCopia then exit;
-  //Acciones que son solo válidas en el servidor
-  AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, 13);
 //  AgregarAccion('Propiedades' , @mnVerMsjesRed, -1););
+end;
+procedure TCibFacCabina.MenuAccionesModelo(MenuPopup: TPopupMenu);
+{Configura acciones que solo correran en el Modelo}
+begin
+  InicLlenadoAcciones(MenuPopup);
+  AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, 13);
 end;
 procedure TCibFacCabina.mnInicCuenta(Sender: TObject);
 var
@@ -1228,7 +1216,7 @@ var
   facDest: TCibFac;
   Err: boolean;
 begin
-debugln('Acción solicitada a GFacCabinas:' + tram.traDat);
+debugln('Acción solicitada a GFacCabinas:' + tram.TipTraNom);
   traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
                            deteriorar el rendimiento. Habría que verificar.}
   ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo

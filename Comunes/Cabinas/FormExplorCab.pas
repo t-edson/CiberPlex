@@ -6,12 +6,10 @@ uses
   Classes, SysUtils, FileUtil, LazFileUtils, Forms, Controls, Graphics, Dialogs,
   StdCtrls, ExtCtrls, Buttons, ActnList, Menus, ComCtrls, Grids, CibFacturables,
   CibTramas, UtilsGrilla, MisUtils;
-
 type
-
   { TfrmExplorCab }
-
   TfrmExplorCab = class(TForm)
+  published
     acArcTraer: TAction;
     acPCVerPant: TAction;
     acPCReinic: TAction;
@@ -21,13 +19,15 @@ type
     acArcPoner: TAction;
     acArcElim: TAction;
     acArcAbrir: TAction;
+    acArcAbrirRem: TAction;
+    acArcFijRut: TAction;
+    acHerCancelTran: TAction;
     acVerRefresc: TAction;
     ActionList1: TActionList;
-    BitBtn1: TBitBtn;
-    BitBtn2: TBitBtn;
+    btnChat: TBitBtn;
+    btnMsje: TBitBtn;
     btnReinic: TBitBtn;
     btnApagar: TBitBtn;
-    BitBtn5: TBitBtn;
     btnBloqDesb: TButton;
     Edit1: TEdit;
     ImageList1: TImageList;
@@ -44,7 +44,13 @@ type
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
     MenuItem18: TMenuItem;
+    MenuItem19: TMenuItem;
     MenuItem2: TMenuItem;
+    MenuItem20: TMenuItem;
+    MenuItem21: TMenuItem;
+    MenuItem22: TMenuItem;
+    MenuItem23: TMenuItem;
+    MenuItem24: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -58,6 +64,7 @@ type
     picPant: TImage;
     lblNomPC: TStaticText;
     PopupMenu1: TPopupMenu;
+    btnIr: TSpeedButton;
     Splitter1: TSplitter;
     StatusBar1: TStatusBar;
     StringGrid1: TStringGrid;
@@ -65,9 +72,12 @@ type
     TreeView1: TTreeView;
     txtFec: TStaticText;
     procedure acArcAbrirExecute(Sender: TObject);
+    procedure acArcAbrirRemExecute(Sender: TObject);
     procedure acArcElimExecute(Sender: TObject);
+    procedure acArcFijRutExecute(Sender: TObject);
     procedure acArcPonerExecute(Sender: TObject);
     procedure acArcTraerExecute(Sender: TObject);
+    procedure acHerCancelTranExecute(Sender: TObject);
     procedure acPCApagExecute(Sender: TObject);
     procedure acPCBloquearExecute(Sender: TObject);
     procedure acPCDesbloqExecute(Sender: TObject);
@@ -85,13 +95,24 @@ type
     procedure TreeView1DblClick(Sender: TObject);
   private
     fac: TCibFac;
+    FEsperandoRpta: boolean;
     UtilGrilla: TUtilGrilla;
+    CancelEsp: Boolean;   //Para cancelar la espera de datos
+    arcSal   : string;    //Archivo de salida. Usado para guardar el nombre de un archivo solicitado.
+    ConectadoAnt: Boolean;
+    function CarpetaSelec(out nom: string): boolean;
+    function ArchivoSelec(out nom: string): boolean;
+    procedure SetEsperandoRpta(AValue: boolean);
     procedure StringGrid1DrawCell(Sender: TObject; aCol, aRow: Integer;
       aRect: TRect; aState: TGridDrawState);
-  public
     procedure EstadoControles(estad: boolean);
+  public
+    property EsperandoRpta: boolean //Indica que se espera la llegada de una respuesta
+       read FEsperandoRpta write SetEsperandoRpta;
     procedure LlenarLista(lista: string);
     procedure Exec(fac0: TCibFac);
+    procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
+      cad: string);
   end;
 
 var
@@ -100,7 +121,45 @@ var
 implementation
 uses CibGFacCabinas;
 {$R *.lfm}
+const
+  D_FOLDER = ' ';  //Descripción de tipo para carpetas
+  COL_NOMB = 1;   //Columna con el nombre de archivo
+  COL_TIPO = 2;   //Columna con el tipo de archivo
 { TfrmExplorCab }
+function TfrmExplorCab.CarpetaSelec(out nom: string): boolean;
+{Indica si hay una carpeta seleccionada. De ser así, devuelve TRUE, y el nombre en "nom".}
+var
+  fil: Integer;
+  tip: String;
+begin
+  fil := StringGrid1.Row;
+  if fil = -1 then exit(false);   //Verifica archivo seleccionado
+  if fil = 0 then exit(false);   //Es el encabezado
+  nom := StringGrid1.Cells[COL_NOMB, fil];  //lee nombre
+  tip := StringGrid1.Cells[COL_TIPO, fil];
+  if tip <> D_FOLDER then exit(false);   //es carpeta
+  exit(true);
+end;
+function TfrmExplorCab.ArchivoSelec(out nom: string): boolean;
+{Indica si hay un archivo seleccionado. De ser así, devuelve TRUE, y el nombre en "nom".}
+var
+  fil: Integer;
+  tip: String;
+begin
+  fil := StringGrid1.Row;
+  if fil = -1 then exit(false);   //Verifica archivo seleccionado
+  if fil = 0 then exit(false);   //Es el encabezado
+  nom := StringGrid1.Cells[COL_NOMB, fil];  //lee nombre
+  tip := StringGrid1.Cells[COL_TIPO, fil];
+  if tip = D_FOLDER then exit(false);   //es carpeta
+  exit(true);
+end;
+procedure TfrmExplorCab.SetEsperandoRpta(AValue: boolean);
+begin
+//  if FEsperandoRpta=AValue then Exit;
+  FEsperandoRpta:=AValue;
+  Timer1Timer(self);   //Actualizamos de una vez, para no esperar al Timer
+end;
 procedure TfrmExplorCab.Timer1Timer(Sender: TObject);
 var
   cab : TCibFacCabina;
@@ -108,11 +167,30 @@ begin
   if not self.Visible then exit;
   cab := TCibFacCabina(fac);
   //Actualiza campos
-  lblNomPC.Caption:=cab.NombrePC;
-  txtFec.Caption:= DateToStr(cab.HoraPC) + LineEnding +
-                   TimeToStr(cab.HoraPC);
-  if cab.PantBloq then btnBloqDesb.Caption:='Desbloquear'
-  else btnBloqDesb.Caption:='Bloquear';
+  if cab.Conectado then begin
+    if not ConectadoAnt then begin
+      //Ha retomado la conexión
+      fEsperandoRpta := false;  //Cancela si había alguna transferencia anterior
+    end;
+    //Hay conexión con la PC remota
+    if EsperandoRpta then EstadoControles(false) else EstadoControles(true);
+    acHerCancelTran.Enabled:=true;
+    //Actualiza información de estado
+    lblNomPC.Caption:=cab.NombrePC;
+    txtFec.Caption:= DateToStr(cab.HoraPC) + LineEnding +
+                     TimeToStr(cab.HoraPC);
+    if cab.PantBloq then
+      btnBloqDesb.Caption:='Desbloquear'
+    else
+      btnBloqDesb.Caption:='Bloquear';
+    StatusBar1.Panels[2].Text:='Conectado.';
+  end else begin
+    //No hay conexión remota
+     EstadoControles(false);
+     acHerCancelTran.Enabled:=false;
+     StatusBar1.Panels[2].Text:='Desconectado.';
+  end;
+  ConectadoAnt := cab.Conectado;  //Estado anterior
 end;
 procedure TfrmExplorCab.picPantClick(Sender: TObject);
 var
@@ -151,13 +229,13 @@ begin
   if TreeView1.Selected=nil then exit;
   cab := TCibFacCabina(fac);
   rut := TreeView1.Selected.Text;
-  EstadoControles(false);
-  case rut of
-  'Escritorio': cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJRUT, 0, cab.IdFac);
-  'C:\'       : cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJRUT, 0, cab.IdFac + #9 + rut);
-  'D:\'       : cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJRUT, 0, cab.IdFac + #9 + rut);
+  if rut = 'Escritorio' then begin
+      Edit1.Text := '';  //Para el escritorio, se usa cadena vacía
+  end else begin
+      Edit1.Text := rut;  //pone ruta en la casilla de ruta
   end;
-  StatusBar1.Panels[0].Text:='Leyendo directorio...';
+  acArcFijRutExecute(self);  //Ejecuta la acción
+  Edit1.Text := '';   //limpara para que se actualice, cuando llegue la respuesta
 end;
 procedure TfrmExplorCab.LlenarLista(lista: string);
 {Recibe la lista de archivos y la llena en la grilla}
@@ -165,6 +243,7 @@ var
   archivos: TStringList;
   fil: Integer;
   lin: String;
+  ext: String;
 begin
   archivos := TStringList.Create;
   archivos.Text:=lista;   //divide en filas
@@ -172,7 +251,7 @@ begin
   //Agrega entrada al directoprio padre
   fil := 1;
   StringGrid1.Cells[1,fil] := '..';
-  StringGrid1.Cells[2,fil] := 'Folder';
+  StringGrid1.Cells[2,fil] := D_FOLDER;
   Inc(fil);
   //Agrega el resto de archivos
   for lin in archivos do begin
@@ -182,10 +261,15 @@ begin
     end;
     if lin[1] = '[' then begin  //Es carpeta
       StringGrid1.Cells[1,fil] := copy(lin,2,length(lin)-2);
-      StringGrid1.Cells[2,fil] := 'Folder';
+      StringGrid1.Cells[2,fil] := D_FOLDER;
     end else begin   //Es archivo
-      StringGrid1.Cells[1,fil] := lin;
-      StringGrid1.Cells[2,fil] := ExtractFileExt(lin);
+      StringGrid1.Cells[1,fil] := lin;   //pone nombre
+      ext := ExtractFileExt(lin);  //extrae extensión
+      if ext = '' then begin
+        StringGrid1.Cells[2,fil] := 'sin tipo';
+      end else begin
+        StringGrid1.Cells[2,fil] := copy(ext, 2, length(ext));  //quita "."
+      end;
     end;
     Inc(fil);
   end;
@@ -214,12 +298,30 @@ begin
     end else begin
       cv.Brush.Color := clWhite;  //fondo blanco
     end;
+    if not StringGrid1.Enabled then begin
+      //Si está deshabilitado, usa un solo color
+      cv.Brush.Color := clBtnFace;
+    end;
     cv.FillRect(aRect);   //fondo
     cv.TextOut(aRect.Left + 2, aRect.Top + 2, txt);
     // Dibuja ícono
     if (aCol=0) and (aRow>0) then begin
-      case StringGrid1.Cells[2,ARow] of
-      'Folder': ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 4);
+      case lowercase(StringGrid1.Cells[2,ARow]) of
+      D_FOLDER: ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 4);
+      'exe','com':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 16);
+      'doc', 'docx':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 17);
+      'xls', 'xlsx':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 18);
+      'pdf':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 19);
+      'bmp','jpg','png','gif','ico':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 20);
+      'dll','ocx':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 21);
+      'htm','html':
+        ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 22);
       else
         ImageList1.Draw(StringGrid1.Canvas, aRect.Left, aRect.Top, 5);
       end;
@@ -289,24 +391,73 @@ begin
   acArcAbrir.Enabled:=estad;
   acArcTraer.Enabled:=estad;
   acArcPoner.Enabled:=estad;
+  acArcAbrirRem.Enabled:=estad;
   acArcElim.Enabled :=estad;
+  acArcFijRut.Enabled:=estad;
+
+  acPCVerPant.Enabled:=estad;
+  acPCBloquear.Enabled:=estad;
+  acPCDesbloq.Enabled:=estad;
+  acPCReinic.Enabled:=estad;
+  acPCApag.Enabled:=estad;
+
+  acVerRefresc.Enabled:=estad;
+
+  lblNomPC.Enabled:=estad;
+  txtFec.Enabled:=estad;
+  btnBloqDesb.Enabled:=estad;
+
+  btnChat.Enabled:=estad;
+  btnMsje.Enabled:=estad;
+  btnReinic.Enabled:=estad;
+  btnApagar.Enabled:=estad;
+
+  Edit1.Enabled:=estad;
+  TreeView1.Enabled:=estad;
   StringGrid1.Enabled:=estad;
   Invalidate;
+end;
+procedure TfrmExplorCab.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+{Recibe respuesras de los comandos. Se ejecuta en el Visor.}
+var
+  rutArc: string;
+begin
+  case ParamX of
+  R_CABIN_PANTA: begin
+      //Se ha recibido una captura de pantalla. Se supone que ya la parte del id, ha sido
+      //extraído de los datos.
+      StringToFile(cad, 'd:\aaa.jpg');
+      picPant.Picture.LoadFromFile('d:\aaa.jpg');
+    end;
+  R_CABIN_SOLRUT_A: begin  //Llegó al ruta actual
+      Edit1.Text:=cad;
+    end;
+  R_CABIN_LISARC: begin  //Llego la lista de archivos
+      LlenarLista(cad);
+    end;
+  R_CABIN_ARCSOL: begin   //Llego un archivo solicitado "arcSal"
+      rutArc :=  ExtractFilePath(Application.ExeName)+'archivos';  {Mejor sería que genere un evento para pedir esta ruta}
+      StringToFile(cad, rutArc + '\' + arcSal);
+    end;
+  else
+    MsgExc('Trama de respuesta desconocida.');
+  end;
+  //Se acepta cualquier respuesta, para salir del estado de "Esperando respuesta", pero
+  //se podría ser más específico, para esperar la respuesta apropiada.
+  EsperandoRpta := false;  //Para indicar que llego una respuesta
+  StatusBar1.Panels[0].Text:='Recibido.';
 end;
 // Acciones de archivo
 procedure TfrmExplorCab.acArcTraerExecute(Sender: TObject);
 var
   cab: TCibFacCabina;
-  fil: Integer;
   arc: String;
 begin
   cab := TCibFacCabina(fac);
-  fil := StringGrid1.Row;
-  if fil = -1 then exit;   //Verifica archivo seleccionado
-  arc := StringGrid1.Cells[1, fil];
+  if not ArchivoSelec(arc) then exit;
   //Envía solicitud de listar archivos a la PC cliente
-  EstadoControles(false);
-  cab.arcSal := arc;    {Fija nombre de archivo para cuando llegue, porque la trama no
+  EsperandoRpta := true;
+  arcSal := arc;    {Fija nombre de archivo para cuando llegue, porque la trama no
                          incluye el nombre de archivo (Ojo que estamos en el visor).
 }
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_ARCSOL, 0, cab.IdFac + #9 + arc);
@@ -322,87 +473,94 @@ begin
   arc := OpenDialog1.FileName;
   if not FileExistsUTF8(arc) then exit;
   //Fija nombre
+  EsperandoRpta := true;
   cad := ExtractFileName(arc);
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJARSAL, 0, cab.IdFac + #9 + cad);
   //Envía contenido
   cad := StringFromFile(arc);
+  if length(cad) > 259*256*256-1 then begin
+    MsgExc('Archivo muy grande. No se puede enviar por Red.');
+    exit;
+  end;
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_ARCENV, 0, cab.IdFac + #9 + cad);
   StatusBar1.Panels[0].Text:='Enviando archivo ...';
 end;
 procedure TfrmExplorCab.acArcElimExecute(Sender: TObject);
 var
   cab: TCibFacCabina;
-  fil: Integer;
   arc: String;
 begin
   cab := TCibFacCabina(fac);
-  fil := StringGrid1.Row;
-  if fil = -1 then exit;   //Verifica archivo seleccionado
-  arc := StringGrid1.Cells[1, fil];
+  if CarpetaSelec(arc) then begin
+    MsgExc('No se puede eliminar una carpeta.');
+    exit;
+  end;
+  if not ArchivoSelec(arc) then exit;
+  if MsgYesNo('¿Está seguro de que desea eliminar el archivo "%s"?',[arc])<>1 then exit;
   //Envía solicitud de listar archivos a la PC cliente
-  cab.arcSal := arc;    {Fija nombre de archivo para cuando llegue, porque la trama no
-                         incluye el nombre de archivo (Ojo que estamos en el visor).
-}
+  EsperandoRpta := true;
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_ELIARCHI, 0, cab.IdFac + #9 + arc);
   StatusBar1.Panels[0].Text:='Eliminando archivo ...';
 end;
-procedure TfrmExplorCab.acArcAbrirExecute(Sender: TObject);
+procedure TfrmExplorCab.acArcFijRutExecute(Sender: TObject);
+{Solicita fijar la ruta a la indicada en la barra de dirección.}
 var
-  fil: Integer;
-  arc: String;
+  rut: string;
   cab: TCibFacCabina;
 begin
   cab := TCibFacCabina(fac);
-  fil := StringGrid1.Row;
-  if fil = -1 then exit;
-  //Verifica si es carpeta
-  arc := StringGrid1.Cells[1, fil];
-  if StringGrid1.Cells[2,fil] = 'Folder' then begin
+  rut := Edit1.Text;
+  EsperandoRpta := true;
+  cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJRUT, 0, cab.IdFac + #9 + rut);
+  StatusBar1.Panels[0].Text:='Leyendo directorio...';
+end;
+procedure TfrmExplorCab.acArcAbrirExecute(Sender: TObject);
+var
+  arc: String;
+  cab: TCibFacCabina;
+  nesp: Integer;
+  rutArc: RawByteString;
+begin
+  cab := TCibFacCabina(fac);
+  if CarpetaSelec(arc) then begin
     //Doble Click en Folder Envía comando de cambio de ruta
     cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJRUT, 0, cab.IdFac + #9 + arc);
     StatusBar1.Panels[0].Text:='Accediendo directorio...';
     exit;
   end;
-  //Es acrhivo
-  acArcTraerExecute(self);
-  //Espera a que llegue
-{  Me.mnEliminar.Enabled = False
-  Me.mnAbrirRem.Enabled = False
-  Me.mnEliminar.Enabled = False
-  Me.mnRefres.Enabled = False
-  Me.mnTraer.Enabled = False
-  Me.mnPoner.Enabled = False
-  nesp = 0
-  CancelEsp = False
-  ArcRecib = False
-  While Not ArcRecib And nesp < 300 And Not CancelEsp
-      Sleep 100
-      DoEvents
-      nesp = nesp + 1
-  Wend
-  Me.mnEliminar.Enabled = True
-  Me.mnAbrirRem.Enabled = True
-  Me.mnEliminar.Enabled = True
-  Me.mnRefres.Enabled = True
-  Me.mnTraer.Enabled = True
-  Me.mnPoner.Enabled = True
-  If nesp >= 300 Then
-      'Se desbordó
-      lblEstado = "Tiempo de espera excedido."
-  ElseIf CancelEsp Then
-      'se canceló la transferencia
-      lblEstado = "Transferencia cancelada."
-  Else
-      CambiaDir CarpetaArc    'nos movemos
-      'luego lo ejecuta
-      Shell "CMD /C start ""TITULO"" """ & arcSal & """"
-  End If
-  On Error GoTo 0
-  Exit Sub
-ErrCEL:
-  MsgBox "Error abriendo archivo: " & arc, vbExclamation
-  On Error GoTo 0
-}
+  if ArchivoSelec(arc) then begin
+    //Es acrhivo
+    acArcTraerExecute(self);   //Lo trae. Aquí se deshabilitan los controls
+    //Espera a que llegue, verificando si se habilita la acción "acArcTraer".
+    nesp := 0;
+    CancelEsp := False;
+    while (nesp < 300) and (Not CancelEsp) and EsperandoRpta do begin
+        Sleep(100);
+        Application.ProcessMessages;
+        inc(nesp);
+    end;
+    if nesp >= 300 then begin
+        //Salio por desbordó
+        StatusBar1.Panels[0].Text := 'Tiempo de espera excedido.';
+    end else if CancelEsp then begin
+        //Se canceló la transferencia
+        StatusBar1.Panels[0].Text := 'Transferencia cancelada.';
+    end else begin
+        //Llego normal
+        rutArc :=  ExtractFilePath(Application.ExeName)+'archivos';  {Mejor sería que genere un evento para pedir esta ruta}
+        //En windows, para ejecutar Start, es mejor movernos a la carpeta, primero.
+        try
+          chDir(rutArc);
+          MisUtils.Exec('CMD', '/C start "TITULO" "' + arc + '"');
+        except
+          MsgErr('Error abriendo "&s"', [arc]);
+        end;
+    end;
+  end;
+end;
+procedure TfrmExplorCab.acArcAbrirRemExecute(Sender: TObject);
+begin
+
 end;
 // Acciones Ver
 procedure TfrmExplorCab.acVerRefrescExecute(Sender: TObject);
@@ -415,12 +573,14 @@ begin
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_LISARC, 0, cab.IdFac);
   StatusBar1.Panels[0].Text:='Refrescando ...';
 end;
+// Acciones PC
 procedure TfrmExplorCab.acPCVerPantExecute(Sender: TObject);
 var
   cab: TCibFacCabina;
 begin
   cab := TCibFacCabina(fac);
   //Solicita captura de pantalla
+  EsperandoRpta := true;
   picPant.Picture := nil;
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_PANTA, 0, cab.IdFac);
   StatusBar1.Panels[0].Text:='Leyendo pantalla...';
@@ -456,6 +616,13 @@ var
 begin
   cab := TCibFacCabina(fac);
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_DESBL, 0, cab.IdFac);
+end;
+// Acciones Herramientas
+procedure TfrmExplorCab.acHerCancelTranExecute(Sender: TObject);
+{Cancela la oepración de transferencia de datos actual.}
+begin
+  CancelEsp := true;
+  EsperandoRpta := false;
 end;
 
 end.

@@ -309,7 +309,7 @@ begin
     exit;
   //Se debe enviar una trama
   writestr(s, comando);
-  RegMensaje('   Enviado: ' + s + ' ');
+  RegMensaje('  >>Enviado: ' + s + ' ');
   //ENvía
   if cad='' then begin
     //es una ProcTrama simple
