@@ -82,7 +82,7 @@
         <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
-        <Filename Value="FormConfig.pas"/>
+        <Filename Value="..\..\Comunes\FormConfig.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="Config"/>
         <HasResources Value="True"/>
@@ -252,7 +252,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="..\CpxServer"/>
+      <Filename Value="..\CpxServer_$(TargetCPU)"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
