@@ -1,5 +1,5 @@
 object frmBoleta: TfrmBoleta
-  Left = 285
+  Left = 317
   Height = 292
   Top = 285
   Width = 401

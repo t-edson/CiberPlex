@@ -6,7 +6,7 @@ object frmVisorMsjRed: TfrmVisorMsjRed
   Caption = 'Mensajes de Red'
   ClientHeight = 350
   ClientWidth = 320
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object Panel1: TPanel
     Left = 0
     Height = 42
@@ -26,16 +26,16 @@ object frmVisorMsjRed: TfrmVisorMsjRed
       TabOrder = 0
     end
     object btnAgrSalto: TButton
-      Left = 224
+      Left = 208
       Height = 25
       Top = 8
-      Width = 91
-      Caption = '&Agregar Salto'
+      Width = 99
+      Caption = '&Agregar Separad.'
       OnClick = btnAgrSaltoClick
       TabOrder = 1
     end
     object btnCopiar: TButton
-      Left = 112
+      Left = 104
       Height = 25
       Top = 8
       Width = 99
@@ -50,6 +50,11 @@ object frmVisorMsjRed: TfrmVisorMsjRed
     Top = 0
     Width = 320
     Align = alClient
+    Color = clBackground
+    Font.Color = clWindow
+    Font.Height = -12
+    Font.Name = 'Courier New'
+    ParentFont = False
     ScrollBars = ssAutoBoth
     TabOrder = 1
     WordWrap = False

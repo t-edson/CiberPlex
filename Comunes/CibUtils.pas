@@ -98,7 +98,7 @@ end;
 procedure InicLlenadoAcciones(MenuPopup0: TPopupMenu);
 {Se usa para empezar a llenar acciones sobre un menú PopUp}
 begin
-  idxMenu := 0;
+  idxMenu := MenuPopup0.Items.Count;   //empieza a agregar desde el final
   MenuPopup := MenuPopup0;
 end;
 function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;

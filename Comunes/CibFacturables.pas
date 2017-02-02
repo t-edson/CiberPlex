@@ -191,7 +191,8 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama;
                          traDat: string); virtual;
-    procedure MenuAcciones(MenuPopup: TPopupMenu); virtual;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu); virtual;
+    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); virtual;
   public //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -487,6 +488,10 @@ var
 begin
   it.Cant   := -it.Cant;   //pone cantidad negativa
   it.subtot := -it.subtot; //pone total negativo
+  //Actualiza stock
+  if it.conStk then begin
+    padre.OnActualizStock(it.codPro, it.Cant);  //Debería mostrar mensaje de error si amerita
+  end;
   //Recupera información de configuración
   padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
   //registra mensaje
@@ -698,11 +703,19 @@ Este método, debe ser ejecutado en el Modelo.}
 begin
 
 end;
-procedure TCibFac.MenuAcciones(MenuPopup: TPopupMenu);
-{Configura las acciones que deben realizarse para este objeto facturable.}
+procedure TCibFac.MenuAccionesVista(MenuPopup: TPopupMenu);
+{Configura las acciones que deben realizarse para este objeto facturable, en la
+instancia Vista.}
 begin
 
 end;
+procedure TCibFac.MenuAccionesModelo(MenuPopup: TPopupMenu);
+{Configura las acciones que deben realizarse para este objeto facturable, en la
+instancia Modelo}
+begin
+
+end;
+
 //Constructor y destructor
 constructor TCibFac.Create;
 begin

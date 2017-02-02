@@ -37,8 +37,11 @@ begin
   Clipboard.AsText:=Memo1.Text;
 end;
 procedure TfrmVisorMsjRed.btnAgrSaltoClick(Sender: TObject);
+var
+  str: string;
 begin
-  Memo1.Lines.Add('');
+  DateTimeToString(str, 'hh:nn:ss', now);
+  Memo1.Lines.Add(str  + ' --------------------------------------');
 end;
 procedure TfrmVisorMsjRed.Exec(nomCab0: string);
 begin
@@ -47,11 +50,14 @@ begin
   self.Show;
 end;
 procedure TfrmVisorMsjRed.PonerMsje(msj: string);
+var
+  str: string;
 begin
   while Memo1.Lines.Count>100 do begin
     Memo1.Lines.Delete(0);  //limita el tamaño
   end;
-  Memo1.Lines.Add(msj);
+  DateTimeToString(str, 'hh:nn:ss', now);
+  Memo1.Lines.Add(str + ' ' + msj);
 end;
 
 end.

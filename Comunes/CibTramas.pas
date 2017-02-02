@@ -125,6 +125,7 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
   );
 
 type
+  TEvRegMensaje = procedure(NomPC: string; msj: string) of object;
   { TCPTrama }
   {Objeto que representa a una trama de comunicación del Servidor con las PC cliente.}
   TCPTrama = class
@@ -164,6 +165,8 @@ type
     msjErr    : string;   //mensaje de error
     procedure DatosRecibidos(var s: string; ProcesarTrama: TEvTramaRecibida);
   public
+    OnRegMensaje  : TEvRegMensaje;   {Para generar un mensaje. Ya que no sabemos si esta
+                                     trama, está dentro de un hilo o no.}
     procedure AcumularTrama(dat: string; pos_ini: Longint=0; pos_fin: Longint=0);
     procedure FinTrama;
   public  //Constructor y Destructor
@@ -366,7 +369,8 @@ begin
         FinTrama;
       end Else If BytesRecib < BytesEsper Then begin
         //Parte de los datos llegarán en otro(s) paquete
-debugln('Se esperan otros paquetes para completar trama');
+        if OnRegMensaje<>nil then
+          OnRegMensaje('', '-Se esperan otros paquetes para completar trama');
         AcumularTrama(s, TAM_ENCABEZ+1);
         estad_tra := EST_REC_TRAMA;   //pone en estado de recepción
       end Else begin
@@ -384,7 +388,8 @@ debugln('Se esperan otros paquetes para completar trama');
     //Otro paquete que contiene datos de una trama anterior o puede ser basura
     If BytesEsper = 0 Then begin  //No se esperaba este paquete
       //No se toma ninguna acción. Se ignora
-      debugln('Error. Paquete no esperado de ', IntToStr(bytesTotal), ' bytes.');
+      if OnRegMensaje<>nil then
+        OnRegMensaje('', '-Paquete no esperado de ' + IntToStr(bytesTotal) + ' bytes.');
       //Debería verificarse si corresponde al inicio de otra trama
       //Si es que ha habido error al transmitir los paquetes anteriores
       //    If datos(0) = ID_ENCABEZ Then
@@ -393,12 +398,16 @@ debugln('Se esperan otros paquetes para completar trama');
       BytesRecib += bytesTotal;   //Actualiza contador
 //          Log "Llegó paquete de " & bytesTotal & " bytes. Acumulados: " & BytesRecib
       If BytesRecib = BytesEsper Then begin
-//        Plog "Trama completada con este paquete"
+        if OnRegMensaje<>nil then
+          OnRegMensaje('', '-Trama completada con este paquete');
         AcumularTrama(s);
         if ProcesarTrama<>nil then ProcesarTrama;
         FinTrama;
       end Else If BytesRecib < BytesEsper Then begin
         //Todavía hay más paquetes de la trama que deben llegar
+        if OnRegMensaje<>nil then
+          OnRegMensaje('', '-Acumulando paquetes de trama: ' + IntToStr(BytesRecib)+
+                           '/' + IntToStr(BytesEsper) + ' bytes.');
 //        Plog "Acumulando paquetes para completar trama: " & BytesRecib
         AcumularTrama(s);
       end Else begin

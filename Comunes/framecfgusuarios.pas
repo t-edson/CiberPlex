@@ -1,4 +1,4 @@
-{Frame de configuración par usuarios.}
+{Frame de configuración para usuarios.}
 unit frameCfgUsuarios;
 {$mode objfpc}{$H+}
 interface
