@@ -104,7 +104,7 @@ type
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
       CategLocu: string);
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAcciones(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -740,7 +740,7 @@ begin
     end;
   end;
 end;
-procedure TCibFacLocutor.MenuAcciones(MenuPopup: TPopupMenu);
+procedure TCibFacLocutor.MenuAccionesVista(MenuPopup: TPopupMenu);
 begin
   InicLlenadoAcciones(MenuPopup);
   AgregarAccion('&Desconectar', @mnDesconecClick);
