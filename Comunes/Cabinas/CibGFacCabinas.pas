@@ -16,33 +16,65 @@ uses
   Menus, MisUtils, CibTramas, CibFacturables, CibCabinaBase, CibCabinaTarifas,
   FormVisorMsjRed, CibUtils, FormAdminTarCab, FormAdminCabinas,
   FormFijTiempo, FormExplorCab;
-const //Acciones
-  C_CABIN_INICTA = 1;  //Solicita iniciar la cuenta de una PC
-  C_CABIN_DETCTA = 2;  //Solicita detener la cuenta de una PC
-  C_CABIN_MODCTA = 3;  //Solicita modificar la cuenta de una PC
-  C_CABIN_PONMAN = 4;  //Solicita poner en mantenimiento a una PC
-  C_CABIN_TRASLA = 5;  //Solicita trasladar cabina
-  C_CABIN_BLOQU = 6;  //Solicita bloquear una cabina
-  C_CABIN_DESBL = 7;  //Solicita desbloquear una cabina
-  C_CABIN_PANTA = 8;  //Solicita captura de pantalla
-  R_CABIN_PANTA = 9;  //Respuesta de captura de pantalla
-  C_CABIN_FIJRUT = 10; //Comando Fija la ruta de la cabina
-  C_CABIN_SOLRUT_A = 11;  //Solicitar ruta actual
-  R_CABIN_SOLRUT_A = 12; //Respuesta ruta actual de la cabina
+const //Acciones sobre las PC
+  /////// Comandos que se ejecutan en el moelo ////////
+  C_CABIN_INICTA = 01;  //Solicita iniciar la cuenta de una PC
+  C_CABIN_DETCTA = 02;  //Solicita detener la cuenta de una PC
+  C_CABIN_MODCTA = 03;  //Solicita modificar la cuenta de una PC
+  C_CABIN_PONMAN = 04;  //Solicita poner en mantenimiento a una PC
+  C_CABIN_TRASLA = 05;  //Solicita trasladar cabina
 
-  C_CABIN_LISARC = 13; //Commando pedir Lista de archivos (directorio actual)
-  R_CABIN_LISARC = 14; //Respuesta pedir Lista de archivos (directorio actual)
+  /////// Comandos que se ejecutan remótamente ////////
+  //Se ha tratado de respetar el nombre de los comandos del NILOTER-m
+  //Comandos cortos que no devuelven mensajes
+  C_CABIN_BLOQ_PC = 20;  //Solicita bloquear una cabina
+  C_CABIN_DESB_PC = 21;  //Solicita desbloquear una cabina
+//  C_CABIN_FIJ_RAT = 22; //Fija coordenadas de ratón
+  C_CABIN_REIN_PC = 23;  //Comando para reiniciar PC
+//  CCABIN_MOS_TPO = 24;
+  C_CABIN_APAG_PC = 25;  //Comando para apagar PC
+//  C_CABIN_ENCEPC = 26;  //Encender PC
+//  C_CABIN_MENS_PC = 27;  //Comando de envío de mensaje a PC
+//  C_CABIN_GEN_TEC = 28;  //Comando de generar tecla pulsada
+//  C_CABIN_DE_SCSV = 29;  //Comando para desactivar protector de pantalla
+//  C_CABIN_CER_PRO = 30;  //Comando para cerrar todos los programas
+//  C_CABIN_MIN_VEN = 32;  //Comando para minimizar todas las ventanas
+//  C_CABIN_MAX_VEN = 33;  //Comando para maximizar todas las ventanas
+//  C_CABIN_MEN_TIT = 34;  //Comando para mostrar mensaje en al barra de título
 
-  C_CABIN_ARCSOL = 15;  //Traer archivo
-  R_CABIN_ARCSOL = 16;  //Archivo recibido
+  //Otros comandos
+  C_CABIN_PAN_COMP = 40;  //Solicita captura de pantalla
+  R_CABIN_PAN_COMP = 41;  //Respuesta de captura de pantalla
+//  C_CABIN_COORD_RAT = 42;
+//  R_CABIN_COORD_RAT = 43;
+//  C_CABIN_PRESENCIA = 44;  //Comando de solicitud de presencia
+//  C_CABIN_PRESENCIA = 45;  //Comando de solicitud de presencia
+//  C_CABIN_ESTAD_CLI = 46;  //Solicitud de estado del cliente.(APLICABLE A PC CLIENTE)
+//  C_CABIN_ESTAD_CLI = 47;  //Solicitud de estado del cliente.(APLICABLE A PC CLIENTE)
+//  C_CABIN_FIJ_ESCRI = 48;,  //Comando para cambiar el escritorio (APLICABLE A PC CLIENTE)
 
-  C_CABIN_ARCENV = 17;   //Enviar archivo
-  C_CABIN_FIJARSAL = 18;  //Fijar nombre de archivo
+  C_CABIN_ARC_SOLIC = 50;  //Traer archivo
+  R_CABIN_ARC_SOLIC = 51;  //Archivo recibido
+  C_CABIN_ARC_ENVIA = 52;   //Enviar archivo
 
-  C_CABIN_ELIARCHI = 19;  //Elimina archivo
+  C_CABIN_FIJ_ARSAL = 53;  //Fijar nombre de archivo
 
-  C_CABIN_REINPC = 20;  //Comando para reiniciar PC
-  C_CABIN_APAGPC = 21;  //Comando para apagar PC
+  C_CABIN_SOL_L_ARC = 60; //Commando pedir Lista de archivos (directorio actual)
+  R_CABIN_SOL_L_ARC = 61; //Respuesta pedir Lista de archivos (directorio actual)
+  C_CABIN_SOL_RUT_A = 62;  //Solicitar ruta actual
+  R_CABIN_SOL_RUT_A = 63; //Respuesta ruta actual de la cabina
+  C_CABIN_FIJ_RUT_A = 64; //Comando Fija la ruta de la cabina
+  C_CABIN_ELI_ARCHI = 65;  //Elimina archivo
+  C_CABIN_EJE_ARCHI = 66;  //Ejecutar archivo en PC cliente
+//  C_CABIN_CAN_TRANS = 67;  //Cancela una transferencia en curso
+  C_CABIN_ARC_SOLIP = 68;  //Archivo solicitado parcialmente
+  R_CABIN_ARC_SOLIP = 69;  //Archivo solicitado parcialmente
+//  C_CABIN_CRECARPE = 70;  //Crea carpeta
+//  C_CABIN_ELICARPE = 71;  //Elimina carpeta
+//  C_CABIN_NOMARCHI = 72;  //Cambia nombre a archivo
+
+  //Mensaje que no existen en NILOTER
+  R_CABIN_DAT_RECIB = 80;  //Se usa para indicar al visor que están llegando datos remotos
 
 type
   TCibFacCabina = class;
@@ -65,7 +97,8 @@ type
     tic    : integer;   //contador para temporización
     SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
                         por Socket.}
-    ResponderA: string;  //Id de a dónde se debe responder el mensaje
+    ResponderA: string;  //Id de vista, a dónde se debe responder el mensaje
+    DatosjRecib: Boolean;   //bandera para saber cuándo llegan datos de la PC remota
     procedure LimpiarCabina;
     procedure mnDetenCuenta(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
@@ -150,7 +183,7 @@ type
     procedure TrasladarA(cab2: TCibFacCabina);  //Traslada a otra cabina
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
-    procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
+    procedure EjecAccion(idVista: string; tram: TCPTrama; traDat: string); override;
     procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
     procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
@@ -247,9 +280,8 @@ procedure TCibFacCabina.cabConexTramaLista(NomCab: string; tram: TCPTrama);
 de Venta, o una PC de alquiler. Aquí se discrimina para ver, qué tipo de trama es.
 Esto corre en el modelo.}
 var
-  NombPC: string;
+  NombPC, arc: string;
   HorPC: TDateTime;
-  descon: Boolean;
 begin
   if tram.tipTra>=CVIS_SOLPROP then begin
     //Como son comandos de un punto de venta, los propaga hasta el modelo.
@@ -257,7 +289,7 @@ begin
     exit;
   end;
   //Estos mensajes son de una PC cliente. Hayque procesarlos
-  descon := false;
+  frmVisMsj.PonerMsje('    <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   if tram.tipTra = M_ESTAD_CLI then begin
     //Este mensaje se procesa aquí sin propagarlo
     Decodificar_M_ESTAD_CLI(tram.traDat, NombPC, HorPC);
@@ -266,6 +298,33 @@ begin
     PantBloq:= (tram.posX = 1);
   end else if tram.tipTra = M_PRESENCIA then begin
     //Recibido mensaje de presencia
+  end else if tram.tipTra = M_PAN_COMP then begin
+    //Llego una captura de pantalla
+    if ResponderA='' then exit;   //no hay a quien reponder
+    //Genera la trama de respuesta.
+    //Incluye en los datos al ID de la cabina a la que debe llegar la respuesta
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_PAN_COMP, length(IdFac),
+                  IdFac + #9 + tram.traDat);
+//    ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = M_SOL_RUT_A then begin
+    //Llego la ruta actual
+    if ResponderA='' then exit;   //no hay a quien reponder
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_SOL_RUT_A, 0,
+                  IdFac + #9 + tram.traDat);
+//    ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = M_SOL_L_ARC then begin
+    //Llego la ruta actual
+    if ResponderA='' then exit;   //no hay a quien reponder
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_SOL_L_ARC, 0,
+                    IdFac + #9 + tram.traDat);
+//      ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = M_ARC_SOLIC then begin
+    //Llego un archivo
+    if ResponderA='' then exit;   //no hay a quien reponder
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_ARC_SOLIC, 0,
+                  IdFac + #9 + tram.traDat);
+//    ResponderA := '';  //Para que no acepte més respuestas
+  //Comandos
   end else if tram.tipTra = C_MENS_PC then begin  //Llegó un mensaje de la PC remota
     {Este mensaje se podría mostrar aquí mismo con un MsgBox(), pero formalmente,
     habría que enviarlo a la vista que solicitó el mensaje}
@@ -274,39 +333,23 @@ begin
     //por eso no incluye el ID del facturable.
     OnRespComando(ResponderA, CVIS_MSJEPC, 0, 0,
                   tram.traDat);
-  end else if tram.tipTra = M_PAN_COMP then begin
-    //Llego una captura de pantalla
-    if ResponderA='' then exit;   //no hay a quien reponder
-    //Genera la trama de respuesta.
-    //Incluye en los datos al ID de la cabina a la que debe llegar la respuesta
-    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_PANTA, length(IdFac),
-                  IdFac + #9 + tram.traDat);
-//    ResponderA := '';  //Para que no acepte més respuestas
-  end else if tram.tipTra = M_SOL_RUT_A then begin
-    //Llego la ruta actual
-    if ResponderA='' then exit;   //no hay a quien reponder
-    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_SOLRUT_A, 0,
-                  IdFac + #9 + tram.traDat);
-//    ResponderA := '';  //Para que no acepte més respuestas
-  end else if tram.tipTra = M_SOL_L_ARC then begin
-    //Llego la ruta actual
-    if ResponderA='' then exit;   //no hay a quien reponder
-    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_LISARC, 0,
-                    IdFac + #9 + tram.traDat);
-//      ResponderA := '';  //Para que no acepte més respuestas
-  end else if tram.tipTra = M_ARC_SOLIC then begin
-    //Llego un archivo
-    if ResponderA='' then exit;   //no hay a quien reponder
-    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_ARCSOL, 0,
-                  IdFac + #9 + tram.traDat);
-//    ResponderA := '';  //Para que no acepte més respuestas
+  end else if tram.tipTra = C_ARC_SOLIC then begin  //Se está pidiendo un archivo
+    {Se pide un archivo. Notar que este es un comando, generado por una PC remota (algín
+     punto de venta de la red), no local. No es que sea la respuesta a un comando
+    anterior.
+    Pareciera que este debe ser un comando de tipo "Punto de Venta", y se debería tratar,
+    con los demás comandos de puntos de venta, pero se mantiene aquí por compatibilidad.}
+    if not FileExists(tram.traDat) then begin
+      frmVisMsj.PonerMsje('      !!Archivo no existe: ' + tram.traDat);  //Envía mensaje a su formulario
+      TCP_envComando(C_MENS_PC, 0, 0, 'Archivo no existe.');  //Responde a la PC
+      exit;
+    end;
+    arc := StringFromFile(tram.traDat);
+    //Notar que se responde directamente por Red a la PC que solicitó el comando.
+    TCP_envComando(C_FIJ_ARSAL, 0, 0, tram.traDat);
+    TCP_envComando(M_ARC_SOLIC, 0, 0, arc);
   end else begin
-    descon := true;
-  end;
-  if descon then begin
-    frmVisMsj.PonerMsje('    <<Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
-  end else begin
-    frmVisMsj.PonerMsje('    <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
+    frmVisMsj.PonerMsje('      !!Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end;
 end;
 procedure TCibFacCabina.cabConexRegMensaje(NomCab: string; msj: string);
@@ -314,6 +357,10 @@ begin
   //pasa mensaje a Visor de mensaje, si está abierto
   frmVisMsj.PonerMsje(msj);  //Envía mensaje a su formaulario
   if OnRegMensaje<>nil then OnRegMensaje(Nombre, msj);
+  if (msj<>'') and (msj[1]='-') then begin
+    //LLegaron mensajes de pedazos de tramas recibidas.
+    DatosjRecib := true;  //Cctualiza bandera
+  end;
 end;
 function TCibFacCabina.GetIP: string;
 begin
@@ -432,7 +479,7 @@ begin
 end;
 procedure TCibFacCabina.Contar1seg;
 {Rutina de temporización. Se encarga de actualizar los campos FTransc y FCosto.
- Es recomendabla llamarla cada segundo.}
+ Es recomendabla llamarla cada segundo. Solo se aplica al Modelo.}
 begin
   ActualizaTranscYCosto ; //para tener a "TranscSeg" y "Costo" actualizados
   //Generación de mensajes se sincronía de tiempo y bloqueo
@@ -460,6 +507,15 @@ begin
       end;
   end else begin
     //Estado Normal o en mantenimiento
+  end;
+  {Genera mensajes a cliente. Se temporiza a un segundo, para evitar mandar demasiados
+  mensajes, a los Visores. }
+  if DatosjRecib then begin
+    //Hubo datos recibidos en este intervalo
+    //Este mensaje es útil para ver el estado, cuando se piden archivos grandes y
+    //no hay manera de saber, en el Visor, si los datos están llegando.
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_DAT_RECIB, 0, IdFac + #9 + '');
+    DatosjRecib := false;
   end;
 end;
 function TCibFacCabina.Faltante: integer;
@@ -824,10 +880,10 @@ begin
   formulario explorador, que es el único, por el momento, que genera respuestas tardías.}
   frmExpArc.EjecRespuesta(comando, ParamX, ParamY, cad);
 end;
-procedure TCibFacCabina.EjecAccion(idFacOrig: string; tram: TCPTrama;
+procedure TCibFacCabina.EjecAccion(idVista: string; tram: TCPTrama;
   traDat: string);
-{Ejecuta la acción solicitada sobre este facturable. Se ejecuta siempre en el
-Modelo.}
+{Ejecuta la acción solicitada sobre este facturable.
+Se ejecuta siempre en el Modelo.}
 var
   Err: boolean;
   nom, gru: String;
@@ -836,29 +892,18 @@ var
   Gfac2: TCibGFac;
 begin
   case tram.posX of  //Se usa el parámetro para ver la acción
+  //COmandos locales
   C_CABIN_INICTA: begin   //Se pide iniciar la cuenta de una PC
     InicConteo(traDat);
-    end;
-  C_CABIN_MODCTA: begin   //Se pide modificar la cuenta de una PC
-    ModifConteo(traDat);
     end;
   C_CABIN_DETCTA: begin  //Se pide detener la cuenta de las PC
     DetenConteo;
     end;
+  C_CABIN_MODCTA: begin   //Se pide modificar la cuenta de una PC
+    ModifConteo(traDat);
+    end;
   C_CABIN_PONMAN: begin  //Se pide detener la cuenta de las PC
     PonerManten;
-    end;
-  C_CABIN_BLOQU: begin
-    TCP_envComando(C_BLOQ_PC, 0, 0);
-  end;
-  C_CABIN_DESBL: begin
-    TCP_envComando(C_DESB_PC, 0, 0);
-  end;
-  C_CABIN_PANTA: begin  //Solicitar captura de pantalla
-      //Guarda el id de quien pidió la pantalla, para poder devolverla adecuadamente
-  debugln('+Solicitando imagen desde: '+ self.IdFac);
-      ResponderA := idFacOrig;
-      TCP_envComando(C_PAN_COMPL, 0, 0);   //Este comando va a la PC remota
     end;
   C_CABIN_TRASLA: begin  //Se pide trasladar desde una cabina a otra
     //Se supone que la cabina se moverá a "cab2"
@@ -880,39 +925,55 @@ begin
     //Ahora ya se puede mover la cabina
     TrasladarA(cab2);
     end;
-  C_CABIN_FIJRUT: begin
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
-      TCP_envComando(C_FIJ_RUT_A, 0, 0, traDat);
-    end;
-  C_CABIN_REINPC: begin   //Comando para reiniciar PC
+  //Comandos remotos
+  C_CABIN_BLOQ_PC: begin
+    TCP_envComando(C_BLOQ_PC, 0, 0);
+  end;
+  C_CABIN_DESB_PC: begin
+    TCP_envComando(C_DESB_PC, 0, 0);
+  end;
+  C_CABIN_REIN_PC: begin   //Comando para reiniciar PC
       TCP_envComando(C_REIN_PC, 0, 0);
     end;
-  C_CABIN_APAGPC: begin   //Comando para apagar PC
+  C_CABIN_APAG_PC: begin   //Comando para apagar PC
       TCP_envComando(C_APAG_PC, 0, 0);
     end;
-  C_CABIN_SOLRUT_A: begin  //Solicita ruta actual
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+  C_CABIN_PAN_COMP: begin  //Solicitar captura de pantalla
+      //Guarda el id de quien pidió la pantalla, para poder devolverla adecuadamente
+  debugln('+Solicitando imagen desde: '+ self.IdFac);
+      ResponderA := idVista;
+      TCP_envComando(C_PAN_COMPL, 0, 0);   //Este comando va a la PC remota
+    end;
+  C_CABIN_FIJ_RUT_A: begin
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
+      TCP_envComando(C_FIJ_RUT_A, 0, 0, traDat);
+    end;
+  C_CABIN_SOL_RUT_A: begin  //Solicita ruta actual
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
       TCP_envComando(C_SOL_RUT_A, 0, 0);
     end;
-  C_CABIN_LISARC: begin   //Solicita lista de archivos
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+  C_CABIN_SOL_L_ARC: begin   //Solicita lista de archivos
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
       TCP_envComando(C_SOL_L_ARC, 0, 0);
     end;
-  C_CABIN_ARCSOL: begin  //Solicita traer un archivo
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+  C_CABIN_ARC_SOLIC: begin  //Solicita traer un archivo
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
       TCP_envComando(C_ARC_SOLIC, 0, 0, traDat);
     end;
-  C_CABIN_FIJARSAL: begin  //Fija nombre de archivo
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+  C_CABIN_FIJ_ARSAL: begin  //Fija nombre de archivo
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
       TCP_envComando(C_FIJ_ARSAL, 0, 0, traDat);
     end;
-  C_CABIN_ARCENV: begin  //Enviar archivo
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+  C_CABIN_ARC_ENVIA: begin  //Enviar archivo
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
       TCP_envComando(C_ARC_ENVIA, 0, 0, traDat);
     end;
-  C_CABIN_ELIARCHI:  begin  //Elimina archivo
-      ResponderA := idFacOrig;   //Porque es comando de respuesta tardía
+  C_CABIN_ELI_ARCHI:  begin  //Elimina archivo
+      ResponderA := idVista;   //Porque es comando de respuesta tardía
       TCP_envComando(C_ELI_ARCHI, 0, 0, traDat);
+    end;
+  C_CABIN_EJE_ARCHI: begin  //Ejecutar un archivo remótamente
+      TCP_envComando(C_EJE_ARCHI, 0, 0, traDat);
     end;
   end;
 end;

@@ -71,7 +71,6 @@ type
   );
 
   TEvCambiaEstado = procedure(nuevoEstado: TCabEstadoConex) of object;
-  TEvRegMensaje = procedure(NomCab: string; msj: string) of object;
   TEvTramaLista = procedure(NomCab: string; tram: TCPTrama) of object;
 
   { TSocketCabina }
@@ -91,6 +90,7 @@ type
     procedure EventoTramaLista;
     procedure EventoCambiaEstado;
     procedure EventoRegMensaje;
+    procedure ProcTramaRegMensaje(NomPC: string; msj: string);
   protected
     //Acciones sincronizadas
     procedure ProcesarTrama;
@@ -231,6 +231,12 @@ begin
     OnRegMensaje('', regMsje);
   end;
 end;
+procedure TSocketCabina.ProcTramaRegMensaje(NomPC: string; msj: string);
+{Este mensaje es geenrado por el procesador de tramas}
+begin
+ regMsje := msj;
+ Synchronize(@EventoRegMensaje);
+end;
 procedure TSocketCabina.EventoTramaLista;
 begin
   if OnTramaLista<>nil then begin
@@ -297,7 +303,6 @@ begin
     end;
     sleep(100);  //periodo del lazo
   end;
-
 end;
 procedure TSocketCabina.TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string='');
@@ -329,6 +334,7 @@ begin
   sock := TTCPBlockSocket.Create;
   FreeOnTerminate := False;  //para controlar el fin
   ProcTrama:= TCPProcTrama.Create;
+  ProcTrama.OnRegMensaje:=@ProcTramaRegMensaje;
   inherited Create(true);  //crea suspendido
 end;
 destructor TSocketCabina.Destroy;
