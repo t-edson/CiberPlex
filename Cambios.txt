@@ -1,3 +1,42 @@
+1.3
+===
+SERVER:
+Se crea el evento TCibGruposFacturables.OnRespComando, para permitir a la vista responder
+a los comandos.
+Se crea la función Modelo, en Config, como forma de acceso corto para el modelo, y se 
+reemplaza en varios puntos del programa.
+Se cambia de nombre a los eventos de tipo Grupo_XXX por Modelo_XXX, para hacerlos más 
+legibles.
+Se elimina TCP_envComando() de TCibGruposFacturables.
+Se crea el evento TfraVisCPlex.EjecRespuesta() para responder comandos solicitados por 
+el visor.
+Se crea el evento OnRespComando, en los facturables y grupos, para responder a los 
+comandos.
+Se incluyó el campo PantBloq, como parte de los estados de una cabina.
+Se habilita la captura de pantalla en el servidor, como respuesta el comando CVIS_CAPPANT.
+Se habilita la captura de pantalla en las PC cliente.
+Se habilita la ventana exploradora de archivos, con todas las funcionalidades del 
+NILOTER-m, incluyendo validaciones e informaciones adicionales.
+Se cambia el nombre del método MenuAcciones a MenuAccionesVista, y se crea 
+MenuAccionesModelo.
+Se corrige una falla al devolver ítems de la boleta. No estaba actualizando el stock.
+Se activó el formulario para reporte de ingresos.
+Se cambia de nombre al módulo Visor, para llamarlo ahora Punto de Venta o Venta.
+Se modifica la unidad CibTramas, para agregarle el evento OnRegMensaje.
+Se mueve la unidad FormConfig a la carpeta comunes, para poder usarla desde diversos 
+módulos. Se modifica también, para poder usarlo en modo copia.
+
+
+VENTA:
+Se cambia de nombre a la unidad CabServidor por CibServidorPC, y se cambia de nombre a la
+clase principal por TCibServidorPC.
+Se mueve la unidad CibServidorPC, a la carpeta Comunes, porque servirá para otros módulos
+de CIBERPLEX.
+Se agrega rutina de verificación de la conexión, para retomarla, en CibServidorPC. 
+SE crea el formulario FormSincronBD, para sincronizar los archivos locales con los del 
+Servidor.
+
+
 1.2
 ===
 Se corrige la decodificación del mensaje M_ESTAD_CLI. El parámetro "bloqueado", se leía 
