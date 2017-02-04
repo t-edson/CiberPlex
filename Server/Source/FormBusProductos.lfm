@@ -10,7 +10,7 @@ object frmBusProductos: TfrmBusProductos
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object grilla: TStringGrid
     Left = 0
     Height = 262

@@ -65,7 +65,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="32">
+    <Units Count="35">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -89,7 +89,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\..\Comunes\CPProductos.pas"/>
+        <Filename Value="..\..\Comunes\CibProductos.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
@@ -188,7 +188,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit21>
       <Unit22>
-        <Filename Value="..\..\Comunes\Cabinas\framecptarifdia.lfm"/>
+        <Filename Value="..\..\Comunes\Cabinas\FrameCPTarifDia.lfm"/>
         <IsPartOfProject Value="True"/>
       </Unit22>
       <Unit23>
@@ -246,6 +246,25 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit31>
+      <Unit32>
+        <Filename Value="FormCalcul.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmCalcul"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="..\..\Comunes\NiloM\FormBuscTarif.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmBuscTarif"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="FormContDinero.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmContDinero"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit34>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

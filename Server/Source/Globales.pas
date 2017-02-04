@@ -36,10 +36,10 @@ initialization
   //inicia directorios de la aplicación
   rutApp :=  ExtractFilePath(Application.ExeName);
   rutApp :=  copy(rutApp, 1, length(rutApp)-1);  //no incluye el '\' final
-  rutTemp := rutApp + '\temp';
-  rutDatos := rutApp + '\datos';
-  rutArchivos := rutApp + '\archivos';
-  rutSonidos := rutApp + '\sonidos';
+  rutTemp := rutApp + DirectorySeparator + 'temp';
+  rutDatos := rutApp + DirectorySeparator + 'datos';
+  rutArchivos := rutApp + DirectorySeparator + 'archivos';
+  rutSonidos := rutApp + DirectorySeparator + 'sonidos';
   //verifica existencia de carpetas de trabajo
   try
     if not DirectoryExists(rutTemp) then begin

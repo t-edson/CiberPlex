@@ -4,7 +4,7 @@ unit FormBusProductos;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Grids,
-  ExtCtrls, Buttons, Menus, ActnList, StdCtrls, UtilsGrilla, CPProductos,
+  ExtCtrls, Buttons, Menus, ActnList, StdCtrls, UtilsGrilla, CibProductos,
   FormConfig, FrameUtilsGrilla;
 type
   { TfrmBusProductos }

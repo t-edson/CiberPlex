@@ -10,7 +10,7 @@ uses
   Forms, lazcontrols, FormPrincipal, FormConfig,
   FormBoleta, FormInicio, FormRepIngresos,
   RegistrosVentas, FormBusProductos, FormIngVentas, FormAgrupVert,
-  FormAdminCabinas, FormAcercaDe;
+  FormAdminCabinas, FormAcercaDe, FormCalcul, FormBuscTarif, FormContDinero;
 
 {$R *.res}
 
@@ -27,6 +27,9 @@ begin
   Application.CreateForm(TfrmAdminCabinas, frmAdminCabinas);
   Application.CreateForm(TfrmInicio, frmInicio);
   Application.CreateForm(TfrmAcercaDe, frmAcercaDe);
+  Application.CreateForm(TfrmCalcul, frmCalcul);
+  Application.CreateForm(TfrmBuscTarif, frmBuscTarif);
+  Application.CreateForm(TfrmContDinero, frmContDinero);
   Application.Run;
 end.
 

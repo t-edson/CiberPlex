@@ -4,9 +4,9 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
   ComCtrls, Dialogs, MisUtils, ogDefObjGraf, FormIngVentas, FormConfig,
-  frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
-  FormBoleta, FormRepIngresos, FormBusProductos, FormAcercaDe,
-  FormInicio, CibRegistros, CibTramas, CibFacturables, CPProductos,
+  frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos, FormBoleta,
+  FormRepIngresos, FormBusProductos, FormAcercaDe, FormCalcul, FormContDinero,
+  FormInicio, CibRegistros, CibTramas, CibFacturables, CibProductos,
   CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
@@ -18,24 +18,19 @@ type
     acRefPan: TAction;
     acSisConfig: TAction;
     acArcSalir: TAction;
-    acGCabAdmCab: TAction;
-    acGCabAdmTarCab: TAction;
-    acCabMsjesRed: TAction;
-    acCabPropied: TAction;
     acFacVerBol: TAction;
-    acBusTarif: TAction;
-    acBusRutas: TAction;
     acBusProduc: TAction;
     acBusGastos: TAction;
-    acNilPropied: TAction;
     acEdiInsEnrut: TAction;
     acEdiInsGrCab: TAction;
     acEdiElimGru: TAction;
-    acNilConex: TAction;
     acArcRutTrab: TAction;
     acFacAgrVen: TAction;
     acFacMovBol: TAction;
     acAyuAcerca: TAction;
+    acAyuCalcul: TAction;
+    acAyuBlocNot: TAction;
+    acAyuContDin: TAction;
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
@@ -43,15 +38,16 @@ type
     ImageList16: TImageList;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
+    MenuItem10: TMenuItem;
+    MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem22: TMenuItem;
     MenuItem23: TMenuItem;
     MenuItem24: TMenuItem;
-    MenuItem25: TMenuItem;
-    MenuItem26: TMenuItem;
     MenuItem27: TMenuItem;
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
@@ -60,17 +56,9 @@ type
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
     MenuItem33: TMenuItem;
-    MenuItem34: TMenuItem;
-    MenuItem35: TMenuItem;
     MenuItem36: TMenuItem;
     MenuItem37: TMenuItem;
-    MenuItem38: TMenuItem;
     MenuItem4: TMenuItem;
-    MenuItem41: TMenuItem;
-    MenuItem42: TMenuItem;
-    MenuItem43: TMenuItem;
-    MenuItem44: TMenuItem;
-    MenuItem45: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem61: TMenuItem;
@@ -80,8 +68,6 @@ type
     panLLam: TPanel;
     panBolet: TPanel;
     PopupFac: TPopupMenu;
-    PopupGCabina: TPopupMenu;
-    PopupGNiloM: TPopupMenu;
     splPanLlam: TSplitter;
     splPanBolet: TSplitter;
     Timer1: TTimer;
@@ -91,13 +77,16 @@ type
     ToolButton3: TToolButton;
     ToolButton4: TToolButton;
     ToolButton5: TToolButton;
+    ToolButton6: TToolButton;
+    ToolButton7: TToolButton;
     procedure acArcRutTrabExecute(Sender: TObject);
     procedure acArcSalirExecute(Sender: TObject);
     procedure acAyuAcercaExecute(Sender: TObject);
+    procedure acAyuBlocNotExecute(Sender: TObject);
+    procedure acAyuCalculExecute(Sender: TObject);
+    procedure acAyuContDinExecute(Sender: TObject);
     procedure acBusGastosExecute(Sender: TObject);
     procedure acBusProducExecute(Sender: TObject);
-    procedure acBusRutasExecute(Sender: TObject);
-    procedure acBusTarifExecute(Sender: TObject);
     procedure acFacAgrVenExecute(Sender: TObject);
     procedure acFacGraBolExecute(Sender: TObject);
     procedure acFacMovBolExecute(Sender: TObject);
@@ -105,18 +94,15 @@ type
     procedure acEdiElimGruExecute(Sender: TObject);
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
-    procedure acNilConexExecute(Sender: TObject);
-    procedure acNilPropiedExecute(Sender: TObject);
-    procedure acGCabAdmCabExecute(Sender: TObject);
-    procedure acGCabAdmTarCabExecute(Sender: TObject);
     procedure acSisConfigExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
     procedure ConfigfcVistaUpdateChanges;
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
-    procedure Visor_ClickDer(xp, yp: integer);
+    procedure Visor_ClickDerFac(ogFac: TogFac; X, Y: Integer);
     procedure Modelo_CambiaPropied;
     procedure Timer1Timer(Sender: TObject);
   private
@@ -129,7 +115,9 @@ type
     procedure Modelo_RespComando(idVista: string; comando: TCPTipCom;
       ParamX, ParamY: word; cad: string);
     procedure frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
-    procedure Visor_DobleClick(Sender: TObject);
+    procedure Visor_ClickDerGFac(ogGFac: TogGFac; X, Y: Integer);
+    procedure Visor_DobleClickFac(ogFac: TogFac; X, Y: Integer);
+    procedure Visor_DobleClickGFac(ogGFac: TogGFac; X, Y: Integer);
     procedure Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
     function Modelo_LogIngre(ident: char; msje: string; dCosto: Double
@@ -212,14 +200,14 @@ boleta.}
 begin
   tabPro.ActualizarStock(arcProduc, codPro, Ctdad);
   if msjError <> '' Then begin
-      //Se muestra aquí porque no se va a detener el flujo del programa por
+      //Se muestra aquí porque no se va acAyuCalcul detener el flujo del programa por
       //un error, porque es prioritario registrar la venta.
       MsgBox(msjError);
   end;
 end;
 procedure TfrmPrincipal.Modelo_RespComando(idVista: string; comando: TCPTipCom;
   ParamX, ParamY: word; cad: string);
-{El modelo está solitando responder un comando, a una vista}
+{El modelo está solitando responder un comando, acAyuCalcul una vista}
 var
   fac: TCibFac;
   cab: TCibFacCabina;
@@ -229,10 +217,10 @@ begin
     Visor.EjecRespuesta(comando, ParamX, ParamY, cad);
   end else begin
     //La respuesta es para una vista en una PC de la red.
-    //Para enviar a una PC remota, se debe hacer a través del propio modelo
-    fac := Modelo.BuscarPorID(idVista);  //Se ubica a quien responder, con "idVista".
+    //Para enviar acAyuCalcul una PC remota, se debe hacer acAyuCalcul través del propio modelo
+    fac := Modelo.BuscarPorID(idVista);  //Se ubica acAyuCalcul quien responder, con "idVista".
     if fac = nil then
-      exit;  //No debería pasar. ¿Habrá desaparecido?
+      exit;  //No deberíacAyuCalcul pasar. ¿Habrá desaparecido?
     if not (fac is TCibFacCabina) then begin
       exit;  {No es PC. ¿Qué raro?. Se supone que, por ahora, solo las PC
               CIBERPLEX-PVenta, CIBERPLEX-Admin), son capaces de generar comandos.}
@@ -246,68 +234,89 @@ procedure TfrmPrincipal.Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
 {Aquí se llega por dos vías, ambas de tipo local (ya que los comandos remotos no llegan
 por aquí):
 1. Un GFac ha solicitado ejecutar un comando. Estos comandos son los que los objetos
-facturables generan a través de su método TCibGFac.EjecAccion.
+facturables generan acAyuCalcul través de su método TCibGFac.EjecAccion.
 2. El visor ha generado un evento, como el arrastre de objetos, que requiere ejecutar
 una acción sobre el modelo.
-Observar que este método es similar a PonerComando(), pero allí llegan los comandos
+Observar que este método es similar acAyuCalcul PonerComando(), pero allí llegan los comandos
 que se generan con acciones de FormPrincipal.}
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
   //Llama como evento, indicando que vista solicitante es la local '$'.
   Config.grupos.EjecComando('$', TramaTmp);
 end;
-procedure TfrmPrincipal.Visor_ClickDer(xp, yp: integer);
-{Se ha hecho click derecho en el Visor.
-Aunque podría ser posible incluri este código en el mismo Visor, se pone aquí porque se
-quiere teenr acceso a los objetos del modelo.}
+procedure TfrmPrincipal.Visor_ClickDerFac(ogFac: TogFac; X, Y: Integer);
+{Se ha hecho click derecho en un facturable del visor.
+Aunque se podría incluir este código en el mismo Visor, se pone aquí porque se
+quiere dar a la aplicación la libertad de manejar estos eventos.}
 var
-  ogFac: TogFac;
   mn: TMenuItem;
   fac: TCibFac;
 begin
-  if Visor.Seleccionado = nil then exit;
-  //Hay objeto seleccionado
-  if Visor.Seleccionado is TogFac then begin
-    //Se ha seleccionado un facturable. Configura acciones.
-    ogFac := Visor.FacSeleccionado;
-    PopupFac.Items.Clear;
-    ogFac.fac.MenuAccionesVista(PopupFac);
-    //Agrega acciones que solo correrán en el Servidor, en Modelo
-    fac := Modelo.BuscarPorID(ogFac.fac.IdFac);  //ubica facturable en el modelo
-    if fac = nil then exit;   //no debería pasar
-    fac.MenuAccionesModelo(PopupFac);
-    //Agrega los ítems del menú que son comunes a todos los facturables
-    mn :=  TMenuItem.Create(nil);
-    mn.Caption:='-';
-    PopupFac.Items.Add(mn);
+  //Se ha seleccionado un facturable. Configura acciones.
+  PopupFac.Items.Clear;
+  ogFac.fac.MenuAccionesVista(PopupFac);
+  //Agrega acciones que solo correrán en el Servidor, en Modelo
+  fac := Modelo.BuscarPorID(ogFac.fac.IdFac);  //ubica facturable en el modelo
+  if fac = nil then exit;   //no deberíacAyuCalcul pasar
+  fac.MenuAccionesModelo(PopupFac);
+  //Agrega los ítems del menú que son comunes acAyuCalcul todos los facturables
+  mn :=  TMenuItem.Create(nil);
+  mn.Caption:='-';
+  PopupFac.Items.Add(mn);
 
-    mn :=  TMenuItem.Create(nil);
-    mn.Action := acFacVerBol;
-    PopupFac.Items.Add(mn);
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acFacVerBol;
+  PopupFac.Items.Add(mn);
 
-    mn :=  TMenuItem.Create(nil);
-    mn.Action := acFacAgrVen;
-    PopupFac.Items.Add(mn);
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acFacAgrVen;
+  PopupFac.Items.Add(mn);
 
-    mn :=  TMenuItem.Create(nil);
-    mn.Action := acFacGraBol;
-    PopupFac.Items.Add(mn);
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acFacGraBol;
+  PopupFac.Items.Add(mn);
 
-    mn :=  TMenuItem.Create(nil);
-    mn.Action := acFacMovBol;
-    PopupFac.Items.Add(mn);
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acFacMovBol;
+  PopupFac.Items.Add(mn);
 
-    PopupFac.PopUp;  //muestra
-  end;
-
-  if Visor.Seleccionado.Id = ID_GCABINA then PopupGCabina.PopUp;
-  if Visor.Seleccionado.Id = ID_GNILOM then PopupGNiloM.PopUp;
+  PopupFac.PopUp;  //muestra
 end;
-procedure TfrmPrincipal.Visor_DobleClick(Sender: TObject);
-{Se ha hecho doble click en el visor. Se debe seguir el mismo esquema que Visor_ClickDer}
+procedure TfrmPrincipal.Visor_ClickDerGFac(ogGFac: TogGFac; X, Y: Integer);
+{Se ha hecho click derecho en un grupo del visor.}
+var
+  gfac: TCibGFac;
+  mn: TMenuItem;
 begin
-  if Visor.Seleccionado = nil then exit;
+  PopupFac.Items.Clear;   //reusamos el PopUp
+  ogGFac.GFac.MenuAccionesVista(PopupFac);
+  gfac := Modelo.BuscarPorNombre(ogGFac.GFac.Nombre);
+  if gfac = nil then exit;
+  gfac.MenuAccionesModelo(PopupFac);
+
+  //Agrega acciones comunes
+  mn :=  TMenuItem.Create(nil);
+  mn.Caption:='-';
+  PopupFac.Items.Add(mn);
+
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acEdiElimGru;
+  PopupFac.Items.Add(mn);
+
+  PopupFac.PopUp;  //muestra
+end;
+procedure TfrmPrincipal.Visor_DobleClickFac(ogFac: TogFac; X, Y: Integer);
+{Se ha hecho doble click en un fcaturable. Se debe seguir el mismo esquema que
+Visor_ClickDer}
+begin
   //Hay objeto seleccionado
+  if ogFac.Fac is TCibFacCabina then begin
+    //Abre explorador
+    TCibFacCabina(ogFac.Fac).mnVerExplorad(self);
+  end;
+end;
+procedure TfrmPrincipal.Visor_DobleClickGFac(ogGFac: TogGFac; X, Y: Integer);
+begin
 
 end;
 procedure TfrmPrincipal.Visor_ObjectsMoved;
@@ -328,7 +337,7 @@ begin
       Gfac.y := og.y;
     end else if og.Tipo = OBJ_FACT then begin
       //Es un facturable
-      Gfac := Config.grupos.BuscarPorNombre(TogFac(og).NomGrupo);  //ubica a su grupo
+      Gfac := Config.grupos.BuscarPorNombre(TogFac(og).NomGrupo);  //ubica acAyuCalcul su grupo
       if Gfac=nil then exit;
       fac := Gfac.ItemPorNombre(og.Nombre);
       fac.x := og.x;
@@ -374,13 +383,15 @@ begin
   Modelo.OnActualizStock:= @Modelo_ActualizStock;
   Modelo.OnRespComando  := @Modelo_RespComando;
 //  Modelo.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
-//                            puedan responderse desde el mismo modelo (ver Visor_ClickDer)}
+//                            puedan responderse desde el mismo modelo (ver Visor_ClickDerFac)}
   //Configura Visor para comunicar sus eventos
-  Visor.motEdi.OnClickDer:= @Visor_ClickDer;
-  Visor.OnDobleClick     := @Visor_DobleClick;
-  Visor.OnObjectsMoved   := @Visor_ObjectsMoved;
-  Visor.OnSolicEjecCom   := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento de boletas
-  Visor.OnReqCadMoneda   := @Config.CadMon;   //Para que pueda mostrar monedas
+  Visor.OnClickDerFac   := @Visor_ClickDerFac;
+  Visor.OnClickDerGFac  := @Visor_ClickDerGFac;
+  Visor.OnDobleClickFac := @Visor_DobleClickFac;
+  Visor.OnDobleClickGFac:= @Visor_DobleClickGFac;
+  Visor.OnObjectsMoved  := @Visor_ObjectsMoved;
+  Visor.OnSolicEjecCom  := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento de boletas
+  Visor.OnReqCadMoneda  := @Config.CadMon;   //Para que pueda mostrar monedas
   //Crea los objetos gráficos del visor de acuerdo al archivo INI.
   Visor.ActualizarPropiedades(Modelo.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
@@ -411,7 +422,7 @@ begin
   frmIngVentas.TabPro := tabPro;
   frmIngVentas.LeerDatos;
   frmIngVentas.OnAgregarVenta:=@frmIngVentas_AgregarVenta;
-  //Configrua formualrio de boleta
+  //Configrua formulario de boleta
   frmBoleta.OnAgregarItem  := @frmBoleta_AgregarItem;
   frmBoleta.OnGrabarBoleta := @frmBoleta_GrabarBoleta;
   frmBoleta.OnDevolverItem := @frmBoleta_DevolverItem;
@@ -448,7 +459,23 @@ begin
   tabPro.Destroy;
   log.Destroy;
   TramaTmp.Destroy;
-  //Matar a los hilos de ejecución, puede tomar tiempo
+  //Matar acAyuCalcul los hilos de ejecución, puede tomar tiempo
+end;
+procedure TfrmPrincipal.FormKeyPress(Sender: TObject; var Key: char);
+{El formulario, intercepta el teclado}
+begin
+  if Key in ['0'..'9'] then begin
+    if frmCalcul.Visible then begin
+      //Si ya es visible, solo actualizamos
+      frmCalcul.Edit1.Text:=Key;
+      frmCalcul.Edit1.SelStart:=1;
+      frmCalcul.Edit1.SelLength:=0;
+      frmCalcul.Show;   //por si estaba sin enfoque
+    end else begin
+      frmCalcul.txtIni:=Key;
+      frmCalcul.Show;
+    end;
+  end;
 end;
 procedure TfrmPrincipal.LeerEstadoDeArchivo;
 {Lee el estado de los objetos del archivo de estado}
@@ -503,12 +530,12 @@ begin
 end;
 procedure TfrmPrincipal.frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string
   );
-{Este evento se genera cuando se solicita ingresar una venta a la boleta de un objeto.}
+{Este evento se genera cuando se solicita ingresar una venta acAyuCalcul la boleta de un objeto.}
 var
   txt: string;
 begin
   txt := CibFac.IdFac + #9 + itBol;
-  PonerComando(CVIS_ACBOLET, ACCITM_AGR, 0, txt);  //envía con tamaño en Y
+  PonerComando(CVIS_ACBOLET, ACCITM_AGR, 0, txt);  //envíacAyuCalcul con tamaño en Y
 end;
 procedure TfrmPrincipal.frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
 begin
@@ -527,7 +554,7 @@ var
   txt: string;
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
-  PonerComando(CVIS_ACBOLET, ACCITM_DEV, 0, txt);  //envía con tamaño en Y
+  PonerComando(CVIS_ACBOLET, ACCITM_DEV, 0, txt);  //envíacAyuCalcul con tamaño en Y
 end;
 procedure TfrmPrincipal.frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol,
   coment: string);
@@ -571,7 +598,7 @@ begin
   PonerComando(CVIS_ACBOLET, ACCITM_GRA, 0, txt);
 end;
 procedure TfrmPrincipal.PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
-{Envía un comando al modelo, de la misma forma a como si fuera un comando remoto.
+{EnvíacAyuCalcul un comando al modelo, de la misma forma acAyuCalcul como si fuera un comando remoto.
 }
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
@@ -643,14 +670,6 @@ begin
   end;
 end;
 //Acciones Buscar
-procedure TfrmPrincipal.acBusTarifExecute(Sender: TObject);
-begin
-
-end;
-procedure TfrmPrincipal.acBusRutasExecute(Sender: TObject);
-begin
-
-end;
 procedure TfrmPrincipal.acBusProducExecute(Sender: TObject);
 begin
   frmBusProductos.Exec(tabPro);
@@ -658,32 +677,6 @@ end;
 procedure TfrmPrincipal.acBusGastosExecute(Sender: TObject);
 begin
 
-end;
-//Acciones de Grupos de Cabinas
-procedure TfrmPrincipal.acGCabAdmTarCabExecute(Sender: TObject);
-var
-  ogGcab: TogGCabinas;
-  gcab: TCibGFac;
-begin
-  ogGcab := Visor.GCabinasSeleccionado;
-  if ogGcab = nil then exit;
-  {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
-  de administración de la copia, no del modelo original.}
-  gcab := Config.grupos.BuscarPorNombre(ogGcab.GFac.Nombre);  //Busca grupo en el modelo
-  TCibGFacCabinas(gcab).frmAdminTar.Show;
-end;
-procedure TfrmPrincipal.acGCabAdmCabExecute(Sender: TObject);
-{Muestra la ventana de administración de cabinas.}
-var
-  ogGcab: TogGCabinas;
-  gcab: TCibGFac;
-begin
-  ogGcab := Visor.GCabinasSeleccionado;
-  if ogGcab = nil then exit;
-  {Aquí sería fácil acceder a "ogGcab.gcab.frmAdminCabs", pero esta sería la ventana
-  de administración de la copia, no del modelo original.}
-  gcab := Config.grupos.BuscarPorNombre(ogGcab.GFac.Nombre);  //Busca grupo en el modelo
-  TCibGFacCabinas(gcab).frmAdminCabs.Show;  //abre su ventana de administración
 end;
 //Acciones sobre Facturables
 procedure TfrmPrincipal.acFacGraBolExecute(Sender: TObject);
@@ -725,27 +718,6 @@ begin
   if Fac2 = nil then exit;
   PonerComando(CVIS_ACBOLET, ACCBOL_TRA, 0, ogFac.Fac.IdFac + #9 + Fac2.idFac);
 end;
-//Acciones de Grupo NILO-m
-procedure TfrmPrincipal.acNilConexExecute(Sender: TObject);
-var
-  ogGnil: TogGNiloM;
-  gnil: TCibGFac;
-begin
-  ogGnil := Visor.GNiloMSeleccionado;
-  if ogGnil = nil then exit;
-  gnil := Config.grupos.BuscarPorNombre(ogGnil.GFac.Nombre);  //Busca grupo en el modelo
-  TCibGFacNiloM(gnil).frmNilomConex.Show;
-end;
-procedure TfrmPrincipal.acNilPropiedExecute(Sender: TObject);
-var
-  ogGnil: TogGNiloM;
-  gnil: TCibGFac;
-begin
-  ogGnil := Visor.GNiloMSeleccionado;
-  if ogGnil = nil then exit;
-  gnil := Config.grupos.BuscarPorNombre(ogGnil.GFac.Nombre);  //Busca grupo en el modelo
-  TCibGFacNiloM(gnil).frmNilomProp.Show;
-end;
 // Acciones Ver
 procedure TfrmPrincipal.acVerRepIngExecute(Sender: TObject);
 begin
@@ -756,9 +728,25 @@ procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
   Config.Mostrar;
 end;
+//Acciones de Ayuda
+procedure TfrmPrincipal.acAyuCalculExecute(Sender: TObject);
+begin
+  frmCalcul.Show;
+end;
+
+procedure TfrmPrincipal.acAyuContDinExecute(Sender: TObject);
+begin
+  frmContDinero.Show;
+end;
+
 procedure TfrmPrincipal.acAyuAcercaExecute(Sender: TObject);
 begin
   frmAcercaDe.ShowModal;
 end;
+procedure TfrmPrincipal.acAyuBlocNotExecute(Sender: TObject);
+begin
+  MisUtils.Exec('CMD', '/C start "TITULO" "notepad"');
+end;
+
 end.
 
