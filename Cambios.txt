@@ -1,3 +1,46 @@
+1.4.3
+=====
+Se definen las acciones del Grupo de Cabinas, como acciones dinámicas, de modo que ya
+todos los grupos, crean su menú conextual de forma dinámica.
+
+
+1.4.2
+=====
+Se quita la rutina de apertura automática del puerto en TCibGFacNiloM.timer1Timer(), 
+porque no dejaba cambiar de puerto en el formulario de conexiones. Ahora solo intenta una 
+vez al inicio.
+Se agregan los eventos OnClickDerGFac y OnDobleClickGFac en el TfraVisCPlex.
+Se crean los métodos virtuales MenuAccionesVista y MenuAccionesModelo en los objetos 
+TCibGFacCabinas.
+Se elimina del formulario principal el PopUp para NILO-m, porque ahora se crEa dinámicamente.
+Se incluye un formulario para buscar tarifas y rutas en los enrutadores NILO-m, y se incluye
+la acción en los objetos NILO-m.
+Se incluye un formulario para el contéo de dinero.
+Se incluye la opción de cambio de color en las cabinas, para indicar cuando se ha superado 
+el tiempo solicitado.
+Se eliminan los ítems de búsqueda de tarifas y rutas del menú principal.
+
+1.4.1
+=====
+Se agregan eventos a frameVisCPlex.
+Se cambiar de nombre a TEvArrstreFac por TEvMouseFac.
+Se activa el evento "doble Click", para las cabinas.
+Se crea la calculadora como herramienta.
+Se corrige un error al momento de escribir la descripción de algunas ventas (con tilde), en 
+el archivo de registro.
+Se cambia de nombre a la unidad CPProductos por CibProductos
+Se incluyen rutinas de transformación de codificación de texto, para trabajar con Windows.
+
+1.4
+===
+Se corrige un error de traslado de números, en la ventana de conexiones de los enrutadores
+NILO-m.
+Se modifica MisUtils, para agregar protecciones adicionales.
+Se modifica Globales, para usar el separador de directorios, de acuerdo al sistema operativo.a
+Se agrega e implementa el comando C_CABIN_FIJCTA, que permite fijar el tiempo inicial para 
+una cabina en alquiler.
+Se adapta el código para trabajar bien en 32 bits.
+
 1.3
 ===
 SERVER:
