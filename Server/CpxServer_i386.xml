@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <version Val="CiberPlex Server"/>
+  <local Val="CANADA"/>
+  <grupo Val="GRUPO1"/>
+  <inform Val=""/>
+  <PVenDef Val="COUNTER"/>
+  <SimbMon Val="S/"/>
+  <NumDec Val="2"/>
+  <ImpVen Val="18"/>
+  <PanLlamadas Val="False"/>
+  <PanBoletas Val="False"/>
+  <ModDiseno Val="False"/>
+  <StateStatusbar Val="1"/>
+  <GrpsFact Val="
+[[0
+Cabinas1	COUNTER	21	-1		
++Tarifa2	60|1.5	30|1	15|0.5
+*300
+*Lunes	0|86399|Tarifa2
+*Martes	0|86399|Tarifa2
+*Miércoles	0|86399|Tarifa2
+*Jueves	0|86399|Tarifa2
+*Viernes	0|86399|Tarifa2
+*Sábado	0|86399|Tarifa2
+*Domingo	0|86399|Tarifa2
+*Feriado	0|86399|Tarifa2
+1	192.168.1.11		10	44	F					
+2	192.168.1.12		110	44	F	SES-D149513C3F1				
+3	192.168.1.13		210	44	F	SES-D149513C3F1				
+4	192.168.1.14		310	44	F					
+5	192.168.1.15		410	44	F	CN05				
+6	192.168.1.16		510	44	F					
+7	192.168.1.17		10	204	F					
+8	192.168.1.18		110	204	F					
+9	192.168.1.19		210	204	F					
+10	192.168.1.20		310	204	F					
+11	192.168.1.21		410	204	F					
+12	192.168.1.22		510	204	F					
+]]
+[[1
+NILO-m	COUNTER	12	339	4	0.1	F	F	10		
+LOCUTORIO 1	0	0	0	13	398				
+LOCUTORIO 2	1	0	0	146	397				
+LOCUTORIO 3	2	0	0	267	395				
+LOCUTORIO 4	3	0	0	387	393				
+]]
+"/>
+  <usuarios Val="8884201482X248257253258192192196
+888420148259260249262192192197
+888420148264253264259192197198199192197
+8884201482632592502532X192197198199192197
+8884201482622492692582X256248259192197198199192197
+"/>
+</CONFIG>
