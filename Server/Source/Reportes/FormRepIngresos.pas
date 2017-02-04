@@ -123,6 +123,8 @@ procedure TfrmRepIngresos.ReporteRegistros;
 var
   f: Integer;
   reg: regIng;
+  tot: Double;
+
 begin
   //LLena grilla
   //DbgOut('Llenando grilla...');
@@ -130,12 +132,16 @@ begin
   grilla.BeginUpdate;
   grilla.RowCount:=1+regs.Count;  //hace espacio
   f := 1;
+  tot := 0.0;
   for reg in regs do begin
     LlenarRegistro(f, reg);
     inc(f);
+    tot := tot + reg.total;
   end;
   grilla.EndUpdate();
   //consoleTickCount('');
+  StatusBar1.Panels[1].Text:='Num. Ventas = ' + IntToSTr(regs.Count) +
+                             ', Total Ingresos = ' + CadMoneda(tot);
 end;
 procedure TfrmRepIngresos.CreaCategoriasHoriz(campo: integer);
   function CreaCategoriaHoriz(const categ: string): integer;
@@ -190,6 +196,7 @@ var
   valores: TCPCellValues;
   numAno, numSem: Word;
   fec2: TDate;
+  tot: Extended;
 begin
   case agrupVert of
   tavDia: fmtFecha := 'yyyy/mm/dd';
@@ -198,6 +205,7 @@ begin
   end;
   catsVer.Clear;
   //////// Crea dispersión vertical y acumula contador
+  tot := 0.0;
   for reg in regs do begin
     if agrupVert = tavSem then begin
       //Se debe generar el número de año y semana: yyyy-ww
@@ -220,7 +228,10 @@ begin
       valores.items[reg.posHor] += reg.total  //acumula en la celda que corresponde
     else
       valores.items[reg.posHor] += reg.Cant; //acumula en la celda que corresponde
+    tot := tot + reg.total;
   end;
+  StatusBar1.Panels[1].Text:='Num. Ventas = ' + IntToSTr(regs.Count) +
+                             ', Total Ingresos = ' + CadMoneda(tot);
 end;
 procedure TfrmRepIngresos.LLenarGrilla(conColSem: boolean);
 {Llena la grilla con datos de las listas catsHor y catsVer.}
@@ -297,7 +308,7 @@ begin
   //Genera lista de archivos
   consoleTickStart;
   DbgOut('Llenando lista de registros...');
-  CreaListaArchivos(lstArchivos, dat1.Date, dat2.Date, rutApp + '\datos', 'CANADA');
+  CreaListaArchivos(lstArchivos, dat1.Date, dat2.Date, rutApp + '\datos', Config.Local);
   //Genera lista de registros en "regs".
   regs.Clear;
   reg:= regIng.Create;  //crea primer objeto
@@ -356,8 +367,8 @@ begin
   lstArchivos:= TStringList.Create;
   regs:= regIng_list.Create(true);
   //reportes:= TCenReporte_list.Create(true);
-  dat1.Date:=now-1;
-  dat2.Date:=now-1;
+  dat1.Date:=now;
+  dat2.Date:=now;
   //Configura grilla de reporte de registros
   griRegistros := TUtilGrilla.Create(nil);
   griRegistros.IniEncab;
