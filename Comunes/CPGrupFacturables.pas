@@ -183,7 +183,7 @@ procedure TCibGruposFacturables.EjecComando(idVista: string; tram: TCPTrama);
 Como este método ejecuta todos los comandos solicitados por la cabinas de Internet, o de
 la aplicación, hace uso de eventos para acceder a información que no está en este ámbito.}
 var
-  arch: RawByteString;
+  arch: string;
   tmp, Grupo: string;
   Err: boolean;
   GFac: TCibGFac;

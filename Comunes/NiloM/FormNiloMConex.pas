@@ -677,7 +677,7 @@ begin
   if Source = Sender then exit;  //no nos soltamos a nosotros mismos
   if Source is TEdit  then begin
     edit := TEdit(Source);
-    txtMarcNum.TextHint:=edit.Text;
+    txtMarcNum.Text:= edit.Text;
   end;
 end;
 

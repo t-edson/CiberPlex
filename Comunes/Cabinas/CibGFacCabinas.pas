@@ -13,16 +13,17 @@ unit CibGFacCabinas;
 interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
-  Menus, MisUtils, CibTramas, CibFacturables, CibCabinaBase, CibCabinaTarifas,
-  FormVisorMsjRed, CibUtils, FormAdminTarCab, FormAdminCabinas,
-  FormFijTiempo, FormExplorCab;
+  Menus, Dialogs, MisUtils, CibTramas, CibFacturables, CibCabinaBase,
+  CibCabinaTarifas, FormVisorMsjRed, CibUtils, FormAdminTarCab,
+  FormAdminCabinas, FormFijTiempo, FormExplorCab;
 const //Acciones sobre las PC
-  /////// Comandos que se ejecutan en el moelo ////////
+  /////// Comandos que se ejecutan en el modelo y no requieren conexión. ////////
   C_CABIN_INICTA = 01;  //Solicita iniciar la cuenta de una PC
   C_CABIN_DETCTA = 02;  //Solicita detener la cuenta de una PC
   C_CABIN_MODCTA = 03;  //Solicita modificar la cuenta de una PC
   C_CABIN_PONMAN = 04;  //Solicita poner en mantenimiento a una PC
   C_CABIN_TRASLA = 05;  //Solicita trasladar cabina
+  C_CABIN_FIJCTA = 06;  //Fija el tiempo de una cabina.
 
   /////// Comandos que se ejecutan remótamente ////////
   //Se ha tratado de respetar el nombre de los comandos del NILOTER-m
@@ -101,10 +102,10 @@ type
     DatosjRecib: Boolean;   //bandera para saber cuándo llegan datos de la PC remota
     procedure LimpiarCabina;
     procedure mnDetenCuenta(Sender: TObject);
+    procedure mnFijTiempoInic(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
     procedure mnModifCuenta(Sender: TObject);
     procedure mnPonerManten(Sender: TObject);
-    procedure mnVerExplorad(Sender: TObject);
     procedure mnVerMsjesRed(Sender: TObject);
     function VerCorteAutomatico: boolean;
     procedure cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
@@ -135,6 +136,7 @@ type
     function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
     function RegVenta(usu: string): string; override; //línea para registro de venta
     procedure Contar1seg;      //usado para temporización
+    procedure mnVerExplorad(Sender: TObject);
   public  //campos de estado
     HoraPC : TDateTime;  //Fecha-hora que tiene la PC cliente, localmente.
     PantBloq: Boolean;   //Indica si la PC cliente tiene la pantalla bloqueada
@@ -204,6 +206,9 @@ type
     frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
     procedure cab_RegMensaje(NomCab: string; msj: string);
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
+    procedure mnAdminEquipos(Sender: TObject);
+    procedure mnAdminTarifas(Sender: TObject);
+    procedure mnPropiedades(Sender: TObject);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvTramaLista; //indica que hay una trama lista esperando
@@ -229,7 +234,8 @@ type
   public  //Campos para manejo de acciones
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
-    procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -894,7 +900,7 @@ begin
   case tram.posX of  //Se usa el parámetro para ver la acción
   //COmandos locales
   C_CABIN_INICTA: begin   //Se pide iniciar la cuenta de una PC
-    InicConteo(traDat);
+      InicConteo(traDat);
     end;
   C_CABIN_DETCTA: begin  //Se pide detener la cuenta de las PC
     DetenConteo;
@@ -924,6 +930,10 @@ begin
     cab2 := TCibFacCabina(facDest2);
     //Ahora ya se puede mover la cabina
     TrasladarA(cab2);
+    end;
+  C_CABIN_FIJCTA: begin
+      InicConteo(0, true, false);
+      cabCuenta.hor_ini:=Now - tram.posY/60/24;
     end;
   //Comandos remotos
   C_CABIN_BLOQ_PC: begin
@@ -988,6 +998,7 @@ begin
   AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, 18);
 //  AgregarAccion('Pausar tiempo',@mnPonerManten, 18);
   AgregarAccion('&Ver Explorador'      , @mnVerExplorad, 19);
+  AgregarAccion('&Fijar Tiempo Inic.'  , @mnFijTiempoInic, -1);
 //  AgregarAccion('Propiedades' , @mnVerMsjesRed, -1););
 end;
 procedure TCibFacCabina.MenuAccionesModelo(MenuPopup: TPopupMenu);
@@ -1046,8 +1057,31 @@ begin
   frmExpArc.Exec(self);
 end;
 procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);
+{Muestra el formulario para ver los mensajes de red.}
 begin
   frmVisMsj.Exec(Nombre);
+end;
+procedure TCibFacCabina.mnFijTiempoInic(Sender: TObject);
+{Fija el tiempo inicial de una cabina.}
+var
+  nnStr: String;
+  nn: Longint;
+begin
+  if EstadoCta = EST_MANTEN then begin
+    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
+//  end else if not Detenida then begin
+//    msgExc('No se puede iniciar una cuenta en esta cabina.');
+//    exit;
+  end;
+  //Lee número de minutos
+  nnStr := InputBox('', 'Número de minutos:', '');
+  if nnStr='' then exit;
+  if not TryStrToInt(nnStr, nn) then begin
+    MsgExc('Error en número');
+    exit;
+  end;
+  //Fija minutos
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJCTA, nn, IdFac);
 end;
 procedure TCibFacCabina.LimpiarCabina;
 //Pone la cabina limpia sin tiempos ni cuentas
@@ -1287,15 +1321,31 @@ debugln('Acción solicitada a GFacCabinas:' + tram.TipTraNom);
   //Pasa el comando, incluyendo el origen, por si lo necesita
   facDest.EjecAccion(idFacOrig, tram, traDat);
 end;
-procedure TCibGFacCabinas.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
-var
-  mn: TMenuItem;
+procedure TCibGFacCabinas.MenuAccionesVista(MenuPopup: TPopupMenu);
 begin
-  facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
-  if facSelec=nil then exit;
   InicLlenadoAcciones(MenuPopup);
   //No hay acciones, aún, para el Grupo Cabinas
 end;
+procedure TCibGFacCabinas.MenuAccionesModelo(MenuPopup: TPopupMenu);
+begin
+  InicLlenadoAcciones(MenuPopup);
+  AgregarAccion('Administrador de &Tarifas', @mnAdminTarifas, 8);
+  AgregarAccion('Administrador de &Equipos', @mnAdminEquipos, 7);
+//  AgregarAccion('&Propiedades', @mnPropiedades, 6);
+end;
+procedure TCibGFacCabinas.mnAdminTarifas(Sender: TObject);
+begin
+  frmAdminTar.Show;
+end;
+procedure TCibGFacCabinas.mnAdminEquipos(Sender: TObject);
+begin
+  frmAdminCabs.Show;
+end;
+procedure TCibGFacCabinas.mnPropiedades(Sender: TObject);
+begin
+
+end;
+
 //constructor y destructor
 constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
 begin

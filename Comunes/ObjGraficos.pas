@@ -9,20 +9,12 @@ uses
   CibGFacCabinas, CibGFacNiloM, CibFacturables;
 const
   //Constantes de Colores
- COL_AZUL_CLARO = 230 * 256 *256 + 255 *256 + 255;
- COL_AZUL_CLARO2 = $FFA8A8;
+ COL_ROJO_CLARO = $8080FF;          //gris
  COL_GRIS = $808080;          //gris
  COL_GRIS_CLARO = $D0D0D0;    //gris claro
- COL_VERD_CLARO = $C0FFC0;   //RGB(200, 255, 200)
+ COL_VERD_CLARO = $80FF80;   //RGB(200, 255, 200)
  COL_VERDE = $B0FFB0;        //RGB(200, 255, 200)
- COL_AMAR_CLARO = $B4FFFF;   //RGB(255, 255, 180)
-
-  //Constantes geométricas para CEdGrafOQ
-  ALT_ENCAB_DEF = 22 ;   //Espacio que se deja al inicio
-  ALT_FILA_DEF = 17  ;   //Alto de las filas por defecto
-  ANC_ZON_CHECK = 24 ;   //ancho del área del check
-  ALT_MIN_TABLA = 40 ;   //Alto mínimo de una tabla
-  ALT_MIN_FILTRO = 44;   //Alto mínimo de una tabla
+ COL_AMAR_CLARO = $80FFFF;   //RGB(255, 255, 180)
 
 type
 {TipTTab = (   //tipo de tabla normal
@@ -307,7 +299,22 @@ var
 begin
   //dibuja cuadro de estado
   v2d.SetText(clBlack, 10,'',false);
-  v2d.FijaRelleno(TColor($80ff80));
+  if cab.tLibre then begin
+    v2d.FijaRelleno(COL_VERD_CLARO);   //siempre verde
+  end else begin
+     //Hay tiempo, verificar si falta poco
+     if cab.Faltante <= 0 then begin
+       //Genera parpadeo
+       if cab.TranscSeg mod 2 = 0 then
+         v2d.FijaRelleno(COL_ROJO_CLARO)
+       else
+         v2d.FijaRelleno(COL_AMAR_CLARO);
+     end else if cab.Faltante < 5*60 then begin
+       v2d.FijaRelleno(COL_AMAR_CLARO);
+     end else begin
+       v2d.FijaRelleno(COL_VERD_CLARO);
+     end;
+  end;
   v2d.RectangR(x, y, x+60, y+36);
   //muestra tiempo transcurrido
 //  DateTimeToString(tmp, 'hh:mm:ss', now-Fac.hor_ini);  //convierte

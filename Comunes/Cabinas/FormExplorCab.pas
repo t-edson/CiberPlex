@@ -504,7 +504,7 @@ end;
 procedure TfrmExplorCab.SubirArchivo(arc: string);
 {Envía un archivo a la PC remota}
 var
-  cad: RawByteString;
+  cad: string;
   cab: TCibFacCabina;
 begin
   cab := TCibFacCabina(fac);
@@ -581,7 +581,7 @@ procedure TfrmExplorCab.acArcAbrirExecute(Sender: TObject);
 var
   arc: String;
   cab: TCibFacCabina;
-  rutArc: RawByteString;
+  rutArc: string;
 begin
   cab := TCibFacCabina(fac);
   if CarpetaSelec(arc) then begin

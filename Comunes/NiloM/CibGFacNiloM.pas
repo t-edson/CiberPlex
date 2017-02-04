@@ -10,8 +10,8 @@ unit CibGFacNiloM;
 interface
 uses
   Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, Menus, Forms, MisUtils,
-  crt, strutils, {mmsystem, }CibFacturables, CibNiloMConex, FormNiloMConex,
-  FormNiloMProp, CibNiloMTarifRut, Globales, CibRegistros, CibTramas, CibUtils;
+  crt, strutils, CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
+  CibNiloMTarifRut, FormBuscTarif, Globales, CibRegistros, CibTramas, CibUtils;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 const //Acciones
@@ -64,7 +64,7 @@ type
 
   { TCibFacLocutor }
   TCibFacLocutor = class(TCibFac)
-  private //Variables actualizadas automáticamente
+  private
     procedure ActualizaLlamadaContestada;
     procedure ConectarLlamada;
     procedure DesconectarLlamada;
@@ -122,11 +122,15 @@ type
     timer1    : TTimer;      //temporizador
     tic       : integer;     //contador
     llego_prompt: boolean; //bandera para indicar la llegada del prompt del NILO
+    frmBusTar : TfrmBuscTarif;
     //Funciones para manejo del registro
     procedure AbrirRegistro;
     procedure CerrarRegistro;
     procedure frmNilomProp_CambiaProp;
     procedure ErrorLog(mensaje: string);
+    procedure mnBuscarTarif(Sender: TObject);
+    procedure mnPropiedades(Sender: TObject);
+    procedure mnVerConexiones(Sender: TObject);
     procedure timer1Timer(Sender: TObject);
   private //Funciones para escribir en los archivos de registros
     procedure VolcarErrorLog;
@@ -189,7 +193,8 @@ type
       ): TCibFacLocutor;
   public  //Campos para manejo de acciones
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
-    procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -743,8 +748,8 @@ end;
 procedure TCibFacLocutor.MenuAccionesVista(MenuPopup: TPopupMenu);
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('&Desconectar', @mnDesconecClick);
-  AgregarAccion('&Conectar'   , @mnConectarClick);
+  AgregarAccion('&Desconectar'   , @mnDesconecClick);
+  AgregarAccion('&Conectar'      , @mnConectarClick);
 end;
 procedure TCibFacLocutor.mnConectarClick(Sender: TObject);
 begin
@@ -762,11 +767,9 @@ begin
   inherited Create;
   tipo := ctfNiloM;   //se identifica
   listLLamadas:= regLlamada_list.Create(true);
-//  llam  := TRegLlamada.Create;
 end;
 destructor TCibFacLocutor.Destroy;
 begin
-//  llam.Destroy;
   listLLamadas.Destroy;
   inherited Destroy;
 end;
@@ -816,7 +819,8 @@ begin
     TCibFacLocutor(it).ActualizaLlamadaContestada;
   end;
   //Cödigo para la conexión automática por el puerto serial
-  if (tic+3) mod 5 = 0 then begin   //se suma 3 para que la primera vez se ejecute antes
+//  if (tic+3) mod 5 = 0 then begin   //se suma 3 para que la primera vez se ejecute antes
+  if tic = 3 then begin   //intenta una conexión al iniciar
     if estadoCnx in [necMuerto, necDetenido] then begin
       //Intenta conectarse
       Conectar;
@@ -1154,15 +1158,30 @@ begin
   {¿No és este código similar para todos los facturables?. AL menos para comandos
    destinados a los facturables y no a los grupos.}
 end;
-procedure TCibGFacNiloM.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
-{Configura las acciones}
-var
-  mn: TMenuItem;
+procedure TCibGFacNiloM.MenuAccionesVista(MenuPopup: TPopupMenu);
+{Configura las acciones para ejecutarse en la vista}
 begin
-  facSelec := ItemPorNombre(NomFac);  //Busca facturable seleccionado en el modelo y lo guarda.
-  if facSelec=nil then exit;
   InicLlenadoAcciones(MenuPopup);
   //No hay acciones, aún, para el Grupo NiloM
+end;
+procedure TCibGFacNiloM.MenuAccionesModelo(MenuPopup: TPopupMenu);
+begin
+  InicLlenadoAcciones(MenuPopup);
+  AgregarAccion('Cone&xiones' , @mnVerConexiones, 13);
+  AgregarAccion('B&uscar Tarifas', @mnBuscarTarif, 5);
+  AgregarAccion('&Propiedades' , @mnPropiedades, 6);
+end;
+procedure TCibGFacNiloM.mnVerConexiones(Sender: TObject);
+begin
+  frmNilomConex.Show;
+end;
+procedure TCibGFacNiloM.mnPropiedades(Sender: TObject);
+begin
+  frmNilomProp.Show;
+end;
+procedure TCibGFacNiloM.mnBuscarTarif(Sender: TObject);
+begin
+  frmBusTar.Exec(self);
 end;
 //Constructor y destructor
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
@@ -1218,10 +1237,13 @@ debugln('-Creando: '+ nombre0);
   IniLLamMan  := false;
   IniLLamTemp := false;
   PerLLamTemp := 10;   //inicia
+  //Formulario para búsqueda de tarifas
+  frmBusTar := TfrmBuscTarif.Create(nil);
 end;
 destructor TCibGFacNiloM.Destroy;
 begin
 debugln('-destruyendo: '+ self.Nombre);
+  frmBusTar.Destroy;
   mens_error.Destroy;
   rutas.Destroy;
   tarif.Destroy;

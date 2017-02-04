@@ -18,14 +18,15 @@ const
   ID_GNILOM  = 3;  //Grupo NiloM
 
 type
-  TEvArrstreFac = procedure(fac: TogFac; X, Y: Integer) of object;
+  TEvMouseFac = procedure(ogFac: TogFac; X, Y: Integer) of object;
+  TEvMouseGFac = procedure(ogGFac: TogGFac; X, Y: Integer) of object;
   { TModEdicion2 }
   {Versión personalizada del motro de edición, para agregar características adicionales,
   como el arrastre de boletas.}
   TModEdicion2 = class(TModEdicion)
   public
     ObjBloqueados: boolean;    //bandera de bloqueo de objetos
-    OnInicArrastreFac: TEvArrstreFac;  //Se inicia el arrastre en un objeto facturable
+    OnInicArrastreFac: TEvMouseFac;  //Se inicia el arrastre en un objeto facturable
   protected
     procedure MouseMove(Sender: TObject; Shift: TShiftState; X,  Y: Integer); override;
   end;
@@ -60,17 +61,23 @@ type
     function gruposReqCadMoneda(valor: double): string;
     procedure gruposSolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
+    procedure motEdi_ClickDer(x, y: integer);
     procedure motEdi_DblClick(Sender: TObject);
     procedure motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
     procedure motEdi_ObjectsMoved;
     procedure SetObjBloqueados(AValue: boolean);
     procedure ActualizarOgFacturables(grupo: TCibGFac);
   public
-    motEdi         : TModEdicion2;  //motor de edición
-    OnObjectsMoved : procedure of object;  //Los objetos se han movido
-    OnSolicEjecCom : TEvSolicEjecCom;  //Se solicita ejecutar una acción
-    OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
-    OnDobleClick   : TNotifyEvent;
+    motEdi          : TModEdicion2;  //motor de edición
+    OnObjectsMoved  : procedure of object;  //Los objetos se han movido
+    OnSolicEjecCom  : TEvSolicEjecCom;  //Se solicita ejecutar una acción
+    OnReqCadMoneda  : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
+    OnClickDer      : TOnClickDer;      //Click derecho en el visor
+    OnClickDerFac   : TEvMouseFac;      //Click derecho en un facturable del visor
+    OnClickDerGFac  : TEvMouseGFac;     //Click derecho en un grupo del visor
+    OnDobleClick    : TNotifyEvent;     //Doble click en el visor
+    OnDobleClickFac : TEvMouseFac;      //Doble click en un facturable del visor
+    OnDobleClickGFac: TEvMouseGFac;      //Doble click en un grupo del visor
     grupos: TCibGruposFacturables; {Esta lista de grupos facturables, será una copia
                                     de la lista que existe en el servidor.}
     property ObjBloqueados: boolean read FObjBloqueados write SetObjBloqueados;
@@ -79,6 +86,7 @@ type
     function NumSelecionados: integer;
     function Seleccionado: TObjGraf;
     function FacSeleccionado: TogFac;
+    function GFacSeleccionado: TogGFac;
     function CabSeleccionada: TogCabina;
     function GCabinasSeleccionado: TogGCabinas;
     function LocSeleccionado: TogNiloM;
@@ -279,6 +287,19 @@ begin
   if not (og is TogFac) then exit(nil);
   Result := TogFac(og);
 end;
+function TfraVisCPlex.GFacSeleccionado: TogGFac;
+var
+  og: TObjGraf;
+begin
+  if NumSelecionados>1 then begin
+    //MsgExc('Se debe seleccionar solo una cabina.');
+    exit(nil);
+  end;
+  og := Seleccionado;
+  if og = nil then exit(nil);
+  if not (og is TogGFac) then exit(nil);
+  Result := TogGFac(og);
+end;
 
 function TfraVisCPlex.CabSeleccionada: TogCabina;
 {Devuelve la cabina seleccionada. Si no hay ninguna, devuelve NIL.}
@@ -326,7 +347,6 @@ begin
   if not (og is TogNiloM) then exit(nil);
   Result := TogNiloM(og);
 end;
-
 function TfraVisCPlex.GNiloMSeleccionado: TogGNiloM;
 var
   og: TObjGraf;
@@ -444,7 +464,6 @@ begin
     end;
   end;
 end;
-
 procedure TfraVisCPlex.ActualizarOgGrupos(items: TCibGFact_list);
 {Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
 habrá un grupo.}
@@ -575,16 +594,45 @@ begin
   end;
 end;
 procedure TfraVisCPlex.motEdi_DblClick(Sender: TObject);
+var
+  ogFac: TogFac;
+  ogGfac: TogGFac;
 begin
   if OnDobleClick<>nil then OnDobleClick(Sender);
+  if Seleccionado = nil then exit;
+  if Seleccionado is TogFac then begin //Se ha seleccionado un facturable.
+    ogFac := FacSeleccionado;
+    if OnDobleClickFac<>nil then OnDobleClickFac(ogFac, Mouse.CursorPos.x, Mouse.CursorPos.y);
+  end;
+  if Seleccionado is TogGFac then begin
+    ogGfac := GFacSeleccionado;
+    if OnDobleClickGFac<>nil then OnDobleClickGFac(ogGFac, Mouse.CursorPos.x, Mouse.CursorPos.y);
+  end;
+end;
+procedure TfraVisCPlex.motEdi_ClickDer(x, y: integer);
+var
+  ogFac: TogFac;
+  ogGfac: TogGFac;
+begin
+  if OnClickDer<>nil then OnClickDer(x, y);
+  if Seleccionado = nil then exit;
+  if Seleccionado is TogFac then begin //Se ha seleccionado un facturable.
+    ogFac := FacSeleccionado;
+    if OnClickDerFac<>nil then OnClickDerFac(ogFac, x, y);
+  end;
+  if Seleccionado is TogGFac then begin
+    ogGfac := GFacSeleccionado;
+    if OnClickDerGFac<>nil then OnClickDerGFac(ogGFac, x, y);
+  end;
 end;
 constructor TfraVisCPlex.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   motEdi := TModEdicion2.Create(PaintBox1);
-  motEdi.OnObjectsMoved   := @motEdi_ObjectsMoved;
-  motEdi.OnInicArrastreFac:= @motEdi_InicArrastreFac;
-  motEdi.OnDblClick       := @motEdi_DblClick;
+  motEdi.OnObjectsMoved    := @motEdi_ObjectsMoved;
+  motEdi.OnInicArrastreFac := @motEdi_InicArrastreFac;
+  motEdi.OnClickDer        := @motEdi_ClickDer;
+  motEdi.OnDblClick        := @motEdi_DblClick;
   decod := TCPDecodCadEstado.Create;
   grupos:= TCibGruposFacturables.Create('GrupVis', true);  //Crea en modo copia
   grupos.OnReqCadMoneda  :=@gruposReqCadMoneda;

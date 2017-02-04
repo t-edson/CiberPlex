@@ -11,7 +11,7 @@ object frmNiloMProp: TfrmNiloMProp
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   OnShow = FormShow
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.2.0.2'
   object Panel2: TPanel
     Left = 0
     Height = 49
@@ -62,17 +62,17 @@ object frmNiloMProp: TfrmNiloMProp
     Height = 366
     Top = 0
     Width = 367
-    ActivePage = tabGenerales
+    ActivePage = tabTarif
     Align = alClient
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 1
     object tabGenerales: TTabSheet
       Caption = 'Generales'
-      ClientHeight = 338
+      ClientHeight = 340
       ClientWidth = 359
       object txtCategVenta: TEdit
         Left = 248
-        Height = 23
+        Height = 21
         Top = 16
         Width = 99
         TabOrder = 0
@@ -98,7 +98,7 @@ object frmNiloMProp: TfrmNiloMProp
       end
       object txtNombre: TEdit
         Left = 72
-        Height = 23
+        Height = 21
         Top = 16
         Width = 99
         TabOrder = 1
@@ -114,7 +114,7 @@ object frmNiloMProp: TfrmNiloMProp
       end
       object spnX: TFloatSpinEdit
         Left = 80
-        Height = 23
+        Height = 21
         Top = 56
         Width = 72
         Alignment = taRightJustify
@@ -126,7 +126,7 @@ object frmNiloMProp: TfrmNiloMProp
       end
       object spnY: TFloatSpinEdit
         Left = 273
-        Height = 23
+        Height = 21
         Top = 56
         Width = 74
         Alignment = taRightJustify
@@ -164,7 +164,7 @@ object frmNiloMProp: TfrmNiloMProp
         TabOrder = 4
       end
       object btnCfgConex: TButton
-        Left = 232
+        Left = 236
         Height = 25
         Top = 304
         Width = 88
@@ -178,14 +178,14 @@ object frmNiloMProp: TfrmNiloMProp
         Top = 192
         Width = 240
         Caption = 'Detección de inicio de llamada'
-        ClientHeight = 77
+        ClientHeight = 79
         ClientWidth = 236
         TabOrder = 6
         object CheckBox1: TCheckBox
           Left = 16
-          Height = 19
+          Height = 17
           Top = 0
-          Width = 137
+          Width = 125
           Caption = '&Inversión de polaridad'
           Checked = True
           Enabled = False
@@ -194,24 +194,24 @@ object frmNiloMProp: TfrmNiloMProp
         end
         object CheckBox2: TCheckBox
           Left = 16
-          Height = 19
+          Height = 17
           Top = 24
-          Width = 92
+          Width = 80
           Caption = 'Inicio &Manual'
           TabOrder = 1
         end
         object CheckBox3: TCheckBox
           Left = 16
-          Height = 19
+          Height = 17
           Top = 48
-          Width = 122
+          Width = 107
           Caption = 'Inicio Temporizado'
           OnChange = CheckBox3Change
           TabOrder = 2
         end
         object SpinEdit1: TSpinEdit
           Left = 144
-          Height = 23
+          Height = 21
           Top = 44
           Width = 50
           Alignment = taRightJustify
@@ -219,7 +219,7 @@ object frmNiloMProp: TfrmNiloMProp
         end
         object Label9: TLabel
           Left = 200
-          Height = 15
+          Height = 13
           Top = 52
           Width = 21
           Caption = 'seg.'
@@ -232,28 +232,28 @@ object frmNiloMProp: TfrmNiloMProp
         Top = 96
         Width = 340
         Caption = 'Archivos de configuración'
-        ClientHeight = 60
+        ClientHeight = 62
         ClientWidth = 336
         TabOrder = 7
         object Label1: TLabel
           Left = 8
-          Height = 15
+          Height = 13
           Top = 7
-          Width = 95
+          Width = 89
           Caption = 'Archivo de tarifas:'
           ParentColor = False
         end
         object Label8: TLabel
           Left = 8
-          Height = 15
+          Height = 13
           Top = 32
-          Width = 89
+          Width = 83
           Caption = 'Archivo de rutas:'
           ParentColor = False
         end
         object filTarif: TFileNameEdit
           Left = 136
-          Height = 23
+          Height = 21
           Top = 0
           Width = 192
           FileName = 'tarifario.txt'
@@ -264,11 +264,10 @@ object frmNiloMProp: TfrmNiloMProp
           Enabled = False
           MaxLength = 0
           TabOrder = 0
-          Text = 'tarifario.txt'
         end
         object filRut: TFileNameEdit
           Left = 136
-          Height = 23
+          Height = 21
           Top = 28
           Width = 192
           FileName = 'rutas.txt'
@@ -279,13 +278,12 @@ object frmNiloMProp: TfrmNiloMProp
           Enabled = False
           MaxLength = 0
           TabOrder = 1
-          Text = 'rutas.txt'
         end
       end
     end
     object tabMoneda: TTabSheet
       Caption = 'Moneda'
-      ClientHeight = 338
+      ClientHeight = 340
       ClientWidth = 359
       object Label2: TLabel
         Left = 8
@@ -312,10 +310,10 @@ object frmNiloMProp: TfrmNiloMProp
       end
       object cmbFacMon: TComboBox
         Left = 196
-        Height = 23
+        Height = 21
         Top = 24
         Width = 52
-        ItemHeight = 15
+        ItemHeight = 13
         ItemIndex = 2
         Items.Strings = (
           '0.01'
@@ -334,7 +332,7 @@ object frmNiloMProp: TfrmNiloMProp
         Top = 160
         Width = 241
         Caption = 'Contador Interno del Enrutador'
-        ClientHeight = 124
+        ClientHeight = 126
         ClientWidth = 237
         TabOrder = 2
         object btnActCI: TButton
@@ -348,7 +346,7 @@ object frmNiloMProp: TfrmNiloMProp
         end
         object Edit1: TEdit
           Left = 8
-          Height = 23
+          Height = 21
           Top = 8
           Width = 80
           Alignment = taRightJustify
@@ -366,11 +364,11 @@ object frmNiloMProp: TfrmNiloMProp
     end
     object tabTarif: TTabSheet
       Caption = 'Tarifario'
-      ClientHeight = 338
+      ClientHeight = 340
       ClientWidth = 359
       inline editTarif: TSynEdit
         Left = 0
-        Height = 338
+        Height = 340
         Top = 0
         Width = 359
         Align = alClient
@@ -693,15 +691,15 @@ object frmNiloMProp: TfrmNiloMProp
             ShortCut = 41010
           end        
           item
-            Command = EcFoldLevel3
+            Command = ecNone
             ShortCut = 41011
           end        
           item
-            Command = EcFoldLevel4
+            Command = ecNone
             ShortCut = 41012
           end        
           item
-            Command = EcFoldLevel5
+            Command = ecNone
             ShortCut = 41013
           end        
           item
@@ -809,14 +807,12 @@ object frmNiloMProp: TfrmNiloMProp
             ShortCut = 57379
           end>
         MouseActions = <>
-        MouseTextActions = <>
         MouseSelActions = <>
         Lines.Strings = (
           'editTarif'
-          'áéíóúTgA_A'
-          'áéíóúTgA_A'
         )
         VisibleSpecialChars = [vscSpace, vscTabAtLast]
+        SelectedColor.FrameEdges = sfeAround
         SelectedColor.BackPriority = 50
         SelectedColor.ForePriority = 50
         SelectedColor.FramePriority = 50
@@ -824,17 +820,23 @@ object frmNiloMProp: TfrmNiloMProp
         SelectedColor.ItalicPriority = 50
         SelectedColor.UnderlinePriority = 50
         SelectedColor.StrikeOutPriority = 50
+        IncrementColor.FrameEdges = sfeAround
+        HighlightAllColor.FrameEdges = sfeAround
         BracketHighlightStyle = sbhsBoth
         BracketMatchColor.Background = clNone
         BracketMatchColor.Foreground = clNone
+        BracketMatchColor.FrameEdges = sfeAround
         BracketMatchColor.Style = [fsBold]
         FoldedCodeColor.Background = clNone
         FoldedCodeColor.Foreground = clGray
         FoldedCodeColor.FrameColor = clGray
+        FoldedCodeColor.FrameEdges = sfeAround
         MouseLinkColor.Background = clNone
         MouseLinkColor.Foreground = clBlue
+        MouseLinkColor.FrameEdges = sfeAround
         LineHighlightColor.Background = clNone
         LineHighlightColor.Foreground = clNone
+        LineHighlightColor.FrameEdges = sfeAround
         inline SynLeftGutterPartList1: TSynGutterPartList
           object SynGutterMarks1: TSynGutterMarks
             Width = 24
@@ -846,6 +848,7 @@ object frmNiloMProp: TfrmNiloMProp
             MouseActions = <>
             MarkupInfo.Background = clBtnFace
             MarkupInfo.Foreground = clNone
+            MarkupInfo.FrameEdges = sfeAround
             DigitCount = 2
             ShowOnlyLineNumbersMultiplesOf = 1
             ZeroStart = False
@@ -862,12 +865,14 @@ object frmNiloMProp: TfrmNiloMProp
             MouseActions = <>
             MarkupInfo.Background = clWhite
             MarkupInfo.Foreground = clGray
+            MarkupInfo.FrameEdges = sfeAround
           end
           object SynGutterCodeFolding1: TSynGutterCodeFolding
             Visible = False
             MouseActions = <>
             MarkupInfo.Background = clNone
             MarkupInfo.Foreground = clGray
+            MarkupInfo.FrameEdges = sfeAround
             MouseActionsExpanded = <>
             MouseActionsCollapsed = <>
           end
@@ -884,11 +889,11 @@ object frmNiloMProp: TfrmNiloMProp
     end
     object tabRutas: TTabSheet
       Caption = 'Rutas'
-      ClientHeight = 338
+      ClientHeight = 340
       ClientWidth = 359
       inline editRutas: TSynEdit
         Left = 0
-        Height = 338
+        Height = 340
         Top = 0
         Width = 359
         Align = alClient
@@ -1211,15 +1216,15 @@ object frmNiloMProp: TfrmNiloMProp
             ShortCut = 41010
           end        
           item
-            Command = EcFoldLevel3
+            Command = ecNone
             ShortCut = 41011
           end        
           item
-            Command = EcFoldLevel4
+            Command = ecNone
             ShortCut = 41012
           end        
           item
-            Command = EcFoldLevel5
+            Command = ecNone
             ShortCut = 41013
           end        
           item
@@ -1327,12 +1332,12 @@ object frmNiloMProp: TfrmNiloMProp
             ShortCut = 57379
           end>
         MouseActions = <>
-        MouseTextActions = <>
         MouseSelActions = <>
         Lines.Strings = (
           'SynEdit1'
         )
         VisibleSpecialChars = [vscSpace, vscTabAtLast]
+        SelectedColor.FrameEdges = sfeAround
         SelectedColor.BackPriority = 50
         SelectedColor.ForePriority = 50
         SelectedColor.FramePriority = 50
@@ -1340,17 +1345,23 @@ object frmNiloMProp: TfrmNiloMProp
         SelectedColor.ItalicPriority = 50
         SelectedColor.UnderlinePriority = 50
         SelectedColor.StrikeOutPriority = 50
+        IncrementColor.FrameEdges = sfeAround
+        HighlightAllColor.FrameEdges = sfeAround
         BracketHighlightStyle = sbhsBoth
         BracketMatchColor.Background = clNone
         BracketMatchColor.Foreground = clNone
+        BracketMatchColor.FrameEdges = sfeAround
         BracketMatchColor.Style = [fsBold]
         FoldedCodeColor.Background = clNone
         FoldedCodeColor.Foreground = clGray
         FoldedCodeColor.FrameColor = clGray
+        FoldedCodeColor.FrameEdges = sfeAround
         MouseLinkColor.Background = clNone
         MouseLinkColor.Foreground = clBlue
+        MouseLinkColor.FrameEdges = sfeAround
         LineHighlightColor.Background = clNone
         LineHighlightColor.Foreground = clNone
+        LineHighlightColor.FrameEdges = sfeAround
         inline SynLeftGutterPartList1: TSynGutterPartList
           object SynGutterMarks1: TSynGutterMarks
             Width = 24
@@ -1362,6 +1373,7 @@ object frmNiloMProp: TfrmNiloMProp
             MouseActions = <>
             MarkupInfo.Background = clBtnFace
             MarkupInfo.Foreground = clNone
+            MarkupInfo.FrameEdges = sfeAround
             DigitCount = 2
             ShowOnlyLineNumbersMultiplesOf = 1
             ZeroStart = False
@@ -1378,12 +1390,14 @@ object frmNiloMProp: TfrmNiloMProp
             MouseActions = <>
             MarkupInfo.Background = clWhite
             MarkupInfo.Foreground = clGray
+            MarkupInfo.FrameEdges = sfeAround
           end
           object SynGutterCodeFolding1: TSynGutterCodeFolding
             Visible = False
             MouseActions = <>
             MarkupInfo.Background = clNone
             MarkupInfo.Foreground = clGray
+            MarkupInfo.FrameEdges = sfeAround
             MouseActionsExpanded = <>
             MouseActionsCollapsed = <>
           end

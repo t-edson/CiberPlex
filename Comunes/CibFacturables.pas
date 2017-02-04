@@ -10,8 +10,8 @@ unit CibFacturables;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, types, LCLProc, Menus, CibTramas, CibUtils, dateutils,
-  MisUtils;
+  Classes, SysUtils, fgl, types, LCLProc, Menus, LConvEncoding, CibTramas,
+  CibUtils, dateutils, MisUtils;
 type
   //Tipos de objetos Grupos Facturables
   TCibTipFact = (
@@ -272,10 +272,10 @@ type
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
     procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
   public  //Campos para manejo de acciones
-    facSelec: TCibFac;   //Facturable seleccionado (en la interfaz gráfica)
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
-    procedure MenuAcciones(MenuPopup: TPopupMenu; NomFac: string); virtual;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu); virtual;
+    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); virtual;
   public  //Eventos para que el grupo se comunique con la aplicación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
@@ -353,11 +353,18 @@ end;
 function TCibItemBoleta.RegVenta: string;
 {Devuelve cadena, para escribir en el archivo de registro, como un registro de Venta.
 Se ha tratado de uniformizar con "regIBol_AReg".}
+var
+  descr0: RawByteString;
 begin
+  {$IFDEF Windows}
+    descr0 := UTF8ToCP1252(descr);
+  {$ELSE}
+    descr0 := descr;
+  {$ENDIF}
   Result := '' + #9 + subcat + #9 +
           N2f(Cant) + #9 + N2f(pUnit) + #9 + N2f(subtot) + #9 +
           D2f(vfec) + #9 + '' + #9 + '' + #9 +
-          S2f(descr) + #9 + S2f(coment) + #9 + #9 +
+          S2f(descr0) + #9 + S2f(coment) + #9 + #9 +
           cat + #9 + codPro + #9 + '' + #9 +
           '' + #9 + N2f(stkIni) + #9 + N2f(pUnitR) + #9 + #9 + #9 + #9;
 end;
@@ -365,11 +372,18 @@ function TCibItemBoleta.RegIngres: string;
 {Devuelve cadena para escribir en el archivo de registro como registro de Ingreso.
 Se mantiene estructura base del registro para mantener la compatibilidad
 con el NILOTER-m.}
+var
+  descr0: RawByteString;
 begin
+  {$IFDEF Windows}
+    descr0 := UTF8ToCP1252(descr);
+  {$ELSE}
+    descr0 := descr;
+  {$ENDIF}
   Result := I2f(vser) + #9 + subcat + #9 +
         N2f(Cant) + #9 + N2f(pUnit) + #9 + N2f(subtot) + #9 +
         D2f(vfec) + #9 + I2f(estadoN) + #9 + I2f(Index) + #9 +
-        S2f(descr) + #9 + S2f(coment) + #9 + I2f(fragmen) + #9 +
+        S2f(descr0) + #9 + S2f(coment) + #9 + I2f(fragmen) + #9 +
         cat + #9 + codPro + #9 + pVen + #9 +
         B2f(conStk) + #9 + #9 + N2f(pUnitR) + #9 + #9 + #9;
 end;
@@ -985,10 +999,18 @@ procedure TCibGFac.EjecAccion(idFacOrig: string; tram: TCPTrama);
 begin
 
 end;
-procedure TCibGFac.MenuAcciones(MenuPopup: TPopupMenu; NomFac: string);
-{Configura un menú PopUp con las acciones sobre el facturable.}
+procedure TCibGFac.MenuAccionesVista(MenuPopup: TPopupMenu);
+{Configura un menú PopUp con las acciones sobre el grupo, que se pueden
+ejecutar en la vista (y también en el modelo).}
 begin
 end;
+procedure TCibGFac.MenuAccionesModelo(MenuPopup: TPopupMenu);
+{Configura un menú PopUp con las acciones sobre el grupo, que se pueden
+ejecutar solo en el modelo.}
+begin
+
+end;
+
 ////Constructor y destructor
 constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipFact
   );

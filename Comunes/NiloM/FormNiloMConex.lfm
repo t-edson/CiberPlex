@@ -1,7 +1,7 @@
 object frmNiloMConex: TfrmNiloMConex
-  Left = 747
+  Left = 415
   Height = 445
-  Top = 131
+  Top = 215
   Width = 586
   Caption = 'Conexiones'
   ClientHeight = 445
@@ -171,9 +171,9 @@ object frmNiloMConex: TfrmNiloMConex
       ClientHeight = 417
       ClientWidth = 578
       object btnRefres: TButton
-        Left = 16
+        Left = 12
         Height = 41
-        Top = 8
+        Top = 10
         Width = 78
         Caption = '&REFRESCAR'
         OnClick = btnRefresClick
@@ -427,7 +427,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 17
         Text = 'L7'
-        TextHintFontColor = clBtnFace
       end
       object lbl6: TEdit
         Left = 528
@@ -444,7 +443,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 18
         Text = 'L6'
-        TextHintFontColor = clBtnFace
       end
       object lbl1: TEdit
         Left = 528
@@ -461,7 +459,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 19
         Text = 'L1'
-        TextHintFontColor = clBtnFace
       end
       object lbl2: TEdit
         Left = 528
@@ -478,7 +475,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 20
         Text = 'L2'
-        TextHintFontColor = clBtnFace
       end
       object lbl3: TEdit
         Left = 528
@@ -495,7 +491,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 21
         Text = 'L3'
-        TextHintFontColor = clBtnFace
       end
       object lbl4: TEdit
         Left = 528
@@ -512,7 +507,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 22
         Text = 'L4'
-        TextHintFontColor = clBtnFace
       end
       object lbl5: TEdit
         Left = 528
@@ -529,7 +523,6 @@ object frmNiloMConex: TfrmNiloMConex
         ParentFont = False
         TabOrder = 23
         Text = 'L5'
-        TextHintFontColor = clBtnFace
       end
       object cmdVerEstado: TSpeedButton
         Left = 512
@@ -556,7 +549,6 @@ object frmNiloMConex: TfrmNiloMConex
         ReadOnly = True
         TabOrder = 24
         Text = 'E3'
-        TextHintFontColor = clBtnFace
       end
       object lblE2: TEdit
         Left = 296
@@ -575,7 +567,6 @@ object frmNiloMConex: TfrmNiloMConex
         ReadOnly = True
         TabOrder = 25
         Text = 'E2'
-        TextHintFontColor = clBtnFace
       end
       object lblE1: TEdit
         Left = 376
@@ -594,7 +585,6 @@ object frmNiloMConex: TfrmNiloMConex
         ReadOnly = True
         TabOrder = 26
         Text = 'E1'
-        TextHintFontColor = clBtnFace
       end
       object lblE0: TEdit
         Left = 456
@@ -613,7 +603,6 @@ object frmNiloMConex: TfrmNiloMConex
         ReadOnly = True
         TabOrder = 27
         Text = 'E0'
-        TextHintFontColor = clBtnFace
       end
       object Shape12: TShape
         Left = 240
