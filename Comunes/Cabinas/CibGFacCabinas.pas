@@ -13,7 +13,7 @@ unit CibGFacCabinas;
 interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
-  Menus, Dialogs, MisUtils, CibTramas, CibFacturables, CibCabinaBase,
+  Menus, Dialogs, Controls, MisUtils, CibTramas, CibFacturables, CibCabinaBase,
   CibCabinaTarifas, FormVisorMsjRed, CibUtils, FormAdminTarCab,
   FormAdminCabinas, FormFijTiempo, FormExplorCab;
 const //Acciones sobre las PC
@@ -24,6 +24,8 @@ const //Acciones sobre las PC
   C_CABIN_PONMAN = 04;  //Solicita poner en mantenimiento a una PC
   C_CABIN_TRASLA = 05;  //Solicita trasladar cabina
   C_CABIN_FIJCTA = 06;  //Fija el tiempo de una cabina.
+  C_CABIN_PONPAU = 07;  //Pone una cabina en pausa
+  C_CABIN_QUIPAU = 08;  //Quita a una cabina, el estado de pausa
 
   /////// Comandos que se ejecutan remótamente ////////
   //Se ha tratado de respetar el nombre de los comandos del NILOTER-m
@@ -98,14 +100,19 @@ type
     tic    : integer;   //contador para temporización
     SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
                         por Socket.}
+    //Vaiables temporales
     ResponderA: string;  //Id de vista, a dónde se debe responder el mensaje
     DatosjRecib: Boolean;   //bandera para saber cuándo llegan datos de la PC remota
+    arcSal : string;   //Variable para procesar el comando C_FIJ_ARSAL
+    RutaActual: string;  //Ruta de trabajo actual de la cabina
     procedure LimpiarCabina;
     procedure mnDetenCuenta(Sender: TObject);
-    procedure mnFijTiempoInic(Sender: TObject);
+    procedure mnFijTiempoIni(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
     procedure mnModifCuenta(Sender: TObject);
+    procedure mnPausarCuent(Sender: TObject);
     procedure mnPonerManten(Sender: TObject);
+    procedure mnReinicCuent(Sender: TObject);
     procedure mnVerMsjesRed(Sender: TObject);
     function VerCorteAutomatico: boolean;
     procedure cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
@@ -208,7 +215,6 @@ type
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
     procedure mnAdminEquipos(Sender: TObject);
     procedure mnAdminTarifas(Sender: TObject);
-    procedure mnPropiedades(Sender: TObject);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvTramaLista; //indica que hay una trama lista esperando
@@ -224,7 +230,6 @@ type
     function Agregar(nombre0: string; ip0: string): TCibFacCabina;
     function Eliminar(nombre0: string): boolean;
     procedure Conectar;
-    function ListaCabinas: string;
     function CabPorNombre(nom: string): TCibFacCabina;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
     function Toleran: TDateTime;   //acceso a la tolerancia
     procedure MuestraConexionCabina;
@@ -241,10 +246,49 @@ type
     destructor Destroy; override;
   end;
 
-
+  procedure CargarIconos(imagList16, imagList32: TImageList);
   function VarCampoNombreCP(const cad: string): string;
 
 implementation
+const
+  RUT_ICONOS = '..\Iconos\Cabinas';
+
+var
+  icoInicCuenta: integer;
+  icoModifCuenta: integer;
+  icoDetenCuenta: integer;
+  icoPonerManten: integer;
+  icoPausarCuent: integer;
+  icoReinicCuent: integer;
+  icoVerExplorad: integer;
+  icoFijTiempoIni: integer;
+  icoVerMsjesRed: integer;
+  icoAdminTarifas: integer;
+  icoAdminEquipos: integer;
+  icoProp: integer;
+
+procedure CargarIconos(imagList16, imagList32: TImageList);
+{Carga los íconos que necesita esta unida }
+var
+  rutImag: RawByteString;
+begin
+  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
+  //Iconos del facturable
+  icoInicCuenta  := CargaPNG(imagList16, imagList32, rutImag, 'xclock');
+  icoModifCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clockEdit');
+  icoDetenCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clock_stop');
+  icoPonerManten := CargaPNG(imagList16, imagList32, rutImag, 'PcMant');
+  icoPausarCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
+  icoReinicCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
+  icoVerExplorad := CargaPNG(imagList16, imagList32, rutImag, 'folderSearch');
+  icoFijTiempoIni:= CargaPNG(imagList16, imagList32, rutImag, '');
+  icoVerMsjesRed := CargaPNG(imagList16, imagList32, rutImag, 'terminal');
+  //Íconos del grupo
+  icoAdminTarifas := CargaPNG(imagList16, imagList32, rutImag, 'PcDollar');
+  icoAdminEquipos := CargaPNG(imagList16, imagList32, rutImag, 'cabinas');
+  icoProp   := CargaPNG(imagList16, imagList32, rutImag, 'properties');
+end;
+
 function VarCampoNombreCP(const cad: string): string;
 {Devuelve el campo nombre de una lista de campos separados por tabulaciones.}
 var
@@ -286,7 +330,7 @@ procedure TCibFacCabina.cabConexTramaLista(NomCab: string; tram: TCPTrama);
 de Venta, o una PC de alquiler. Aquí se discrimina para ver, qué tipo de trama es.
 Esto corre en el modelo.}
 var
-  NombPC, arc: string;
+  NombPC, arc, tmp, archivo: string;
   HorPC: TDateTime;
 begin
   if tram.tipTra>=CVIS_SOLPROP then begin
@@ -294,17 +338,20 @@ begin
     OnTramaLista(IdFac, tram);
     exit;
   end;
-  //Estos mensajes son de una PC cliente. Hayque procesarlos
+  //Estos mensajes son de una PC cliente. Hay que procesarlos
   frmVisMsj.PonerMsje('    <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
-  if tram.tipTra = M_ESTAD_CLI then begin
+  case tram.tipTra of
+  M_ESTAD_CLI : begin
     //Este mensaje se procesa aquí sin propagarlo
     Decodificar_M_ESTAD_CLI(tram.traDat, NombPC, HorPC);
     NombrePC:= NombPC;
     HoraPC  := HorPC;
     PantBloq:= (tram.posX = 1);
-  end else if tram.tipTra = M_PRESENCIA then begin
+  end;
+  M_PRESENCIA : begin
     //Recibido mensaje de presencia
-  end else if tram.tipTra = M_PAN_COMP then begin
+  end;
+  M_PAN_COMP  : begin
     //Llego una captura de pantalla
     if ResponderA='' then exit;   //no hay a quien reponder
     //Genera la trama de respuesta.
@@ -312,26 +359,40 @@ begin
     OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_PAN_COMP, length(IdFac),
                   IdFac + #9 + tram.traDat);
 //    ResponderA := '';  //Para que no acepte més respuestas
-  end else if tram.tipTra = M_SOL_RUT_A then begin
+  end;
+  M_SOL_RUT_A : begin
     //Llego la ruta actual
     if ResponderA='' then exit;   //no hay a quien reponder
     OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_SOL_RUT_A, 0,
                   IdFac + #9 + tram.traDat);
 //    ResponderA := '';  //Para que no acepte més respuestas
-  end else if tram.tipTra = M_SOL_L_ARC then begin
+  end;
+  M_SOL_L_ARC : begin
     //Llego la ruta actual
     if ResponderA='' then exit;   //no hay a quien reponder
     OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_SOL_L_ARC, 0,
                     IdFac + #9 + tram.traDat);
 //      ResponderA := '';  //Para que no acepte més respuestas
-  end else if tram.tipTra = M_ARC_SOLIC then begin
+  end;
+  M_ARC_SOLIC : begin
     //Llego un archivo
     if ResponderA='' then exit;   //no hay a quien reponder
     OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_ARC_SOLIC, 0,
                   IdFac + #9 + tram.traDat);
 //    ResponderA := '';  //Para que no acepte més respuestas
   //Comandos
-  end else if tram.tipTra = C_MENS_PC then begin  //Llegó un mensaje de la PC remota
+  end;
+  {Notar que los siguientes identifiacdores, son comandos generado por una PC remota
+  (algún punto de venta de la red), no local. No es que sea la respuesta a un comando
+   anterior.
+   Estos comandos podrían agruparse en un solo comando de tipo "Manejo de archivos", y
+   se podría manejar con un objeto especializado. Se mantiene así por compatibilidad.}
+  C_PAN_COMPL : begin
+    arc := ExtractFilePath(Application.ExeName) + '~00.tmp';
+    PantallaAArchivo(arc);
+    TCP_envComando(M_PAN_COMP, 0, 0, StringFromFile(arc));
+  end;
+  C_MENS_PC   : begin  //Llegó un mensaje de la PC remota
     {Este mensaje se podría mostrar aquí mismo con un MsgBox(), pero formalmente,
     habría que enviarlo a la vista que solicitó el mensaje}
     if ResponderA='' then exit;   //no hay a quien reponder
@@ -339,22 +400,115 @@ begin
     //por eso no incluye el ID del facturable.
     OnRespComando(ResponderA, CVIS_MSJEPC, 0, 0,
                   tram.traDat);
-  end else if tram.tipTra = C_ARC_SOLIC then begin  //Se está pidiendo un archivo
-    {Se pide un archivo. Notar que este es un comando, generado por una PC remota (algín
-     punto de venta de la red), no local. No es que sea la respuesta a un comando
-    anterior.
-    Pareciera que este debe ser un comando de tipo "Punto de Venta", y se debería tratar,
-    con los demás comandos de puntos de venta, pero se mantiene aquí por compatibilidad.}
+  end;
+  C_GEN_TEC: ;
+  C_ARC_SOLIC : begin  //Se está pidiendo un archivo
+    {Se pide un archivo. }
+    if RutaActual = '' then       //No se tiene definida la ruta de trabajo.
+      CambiaDir(ExtractFilePath(Application.ExeName))
+    else  //Normalmente, se debe haber definido primero una ruta de trabajo
+      CambiaDir(RutaActual);
     if not FileExists(tram.traDat) then begin
       frmVisMsj.PonerMsje('      !!Archivo no existe: ' + tram.traDat);  //Envía mensaje a su formulario
       TCP_envComando(C_MENS_PC, 0, 0, 'Archivo no existe.');  //Responde a la PC
       exit;
     end;
     arc := StringFromFile(tram.traDat);
-    //Notar que se responde directamente por Red a la PC que solicitó el comando.
-    TCP_envComando(C_FIJ_ARSAL, 0, 0, tram.traDat);
+    if tram.posY = 1 then begin
+      //Esto es nuevo en CIBERPLEX. Se usa "posY" para indicar que debe usarse C_FIJ_ARSAL
+      //antes de enviar el archivo.
+      TCP_envComando(C_FIJ_ARSAL, 0, 0, tram.traDat);
+    end;
     TCP_envComando(M_ARC_SOLIC, 0, 0, arc);
-  end else begin
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  C_ARC_SOLIP: ;
+  C_ARC_ENVIA: begin
+    CambiaDir(RutaActual);
+    //Genera archivo físico en el escritorio.
+    archivo := arcSal;  //archivo a generar
+    If FileExists(archivo) Then DeleteFile(archivo);
+    StringToFile(tram.traDat, archivo);
+    //Envía lista actualizada
+    msjError := '';
+    tmp := ListarArchivosD;
+    TCP_envComando(M_SOL_LD_AR, 0, 0, tmp);
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  C_FIJ_ARSAL : begin  //Se está pidiendo fijar el nombre
+    arcSal := tram.traDat;
+  end;
+  C_SOL_L_ARC: begin
+    CambiaDir(RutaActual);
+    //envìa lista detallada de archivos
+    tmp := ListarArchivos();
+    TCP_envComando(M_SOL_L_ARC, 0, 0, tmp);
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  C_SOL_RUT_A: begin
+    TCP_envComando(M_SOL_RUT_A, 0, 0, RutaActual);
+  end;
+  C_FIJ_RUT_A : begin  //Se está pidiendo fijar la ruta actual
+    tmp := tram.traDat;
+    if tmp = '' Then tmp := RutaEscritorio; //sin ruta se asume el escritorio
+    if tmp = '-' Then tmp := ExtractFilePath(Application.ExeName);
+    if not StringLike(tmp, '?:*') then begin  //la ruta es relativa
+        //la vuelve ansoluta
+        if StringLike(RutaActual, '*\') then begin
+            tmp := RutaActual + tmp + '\';
+        end else begin
+            tmp := RutaActual + '\' + tmp + '\';
+        end;
+    end;
+    if CambiaDir(tmp) Then begin
+      RutaActual := GetCurrentDir;    //actualiza ruta
+      TCP_envComando(M_SOL_RUT_A, 0, 0, RutaActual);
+      //Envìa lista de archivos
+      if tram.posY = 1 then begin
+        //Esto es nuevo en Ciberplex
+        tmp := ListarArchivosD();
+        TCP_envComando(M_SOL_LD_AR, 0, 0, tmp)
+      end else begin
+        tmp := ListarArchivos();
+        TCP_envComando(M_SOL_L_ARC, 0, 0, tmp)
+      end;
+    end else  begin   //No lo logró
+      msjError := 'Error fijando ruta actual';
+      TCP_envComando(C_MENS_PC, 0, 0, msjError);
+    end;
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  C_ELI_ARCHI : begin
+    CambiaDir(RutaActual);
+    msjError := '';
+    try
+      DeleteFile(tram.traDat);
+      tmp := ListarArchivosD();
+      TCP_envComando(M_SOL_LD_AR, 0, 0, tmp);
+    except
+      TCP_envComando(C_MENS_PC, 0, 0, 'No se puede eliminar: ' + tram.traDat);
+    end;
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  C_EJE_ARCHI : begin
+    CambiaDir(RutaActual);
+    msjError := '';
+    if not MisUtils.Exec('CMD', '/C start "TITULO" "' + tram.traDat + '"') then begin
+      TCP_envComando(C_MENS_PC, 0, 0, 'Error ejecutando: ' +  tram.traDat);
+    end;
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  C_CAN_TRANS : ;
+  C_CRE_CARPE : ;
+  C_ELI_CARPE : ;
+  C_SOL_LD_AR : begin
+    CambiaDir(RutaActual);
+    //envìa lista detallada de archivos
+    tmp := ListarArchivosD();
+    TCP_envComando(M_SOL_LD_AR, 0, 0, tmp);
+    CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+  end;
+  else
     frmVisMsj.PonerMsje('      !!Trama desconocida: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   end;
 end;
@@ -747,6 +901,7 @@ begin
   cabCuenta.tLibre:=tLibre0;
   cabCuenta.horGra:=horGra0;
   cabCuenta.estado:=EST_CONTAN;
+  PausadS:=0;     //reinicia contador de tiempo pausado
   ActualizaTranscYCosto;  //para inciar FTransc y FCosto
   //Se considera un cambio de Estado
   if OnCambiaEstado<>nil then OnCambiaEstado();
@@ -784,13 +939,13 @@ procedure TCibFacCabina.DetenConteo;
 var
   nser: integer;
   r: TCibItemBoleta;
-  NombProg, NombLocal, Usuario: string;
+  Usuario: string;
 begin
   if not Contando then
     exit;   //No se puede detener cuenta en este Estado
   //Pide información global, porque se va a usar
   if Grupo.OnReqConfigGen<>nil then
-      Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+      Grupo.OnReqConfigUsu(Usuario);
   //Registra la venta en el archivo de registro
   if horGra then begin
     nser := OnLogVenta(IDE_INT_GRA, RegVenta(Usuario), Costo);
@@ -898,7 +1053,7 @@ var
   Gfac2: TCibGFac;
 begin
   case tram.posX of  //Se usa el parámetro para ver la acción
-  //COmandos locales
+  //Comandos locales. No llegan directamente hasta la PC remota
   C_CABIN_INICTA: begin   //Se pide iniciar la cuenta de una PC
       InicConteo(traDat);
     end;
@@ -935,6 +1090,14 @@ begin
       InicConteo(0, true, false);
       cabCuenta.hor_ini:=Now - tram.posY/60/24;
     end;
+  C_CABIN_PONPAU: begin
+    if cabCuenta.estado <> EST_CONTAN then exit;
+    cabCuenta.estado := EST_PAUSAD;
+  end;
+  C_CABIN_QUIPAU: begin
+    if cabCuenta.estado <> EST_PAUSAD then exit;
+    cabCuenta.estado := EST_CONTAN;
+  end;
   //Comandos remotos
   C_CABIN_BLOQ_PC: begin
     TCP_envComando(C_BLOQ_PC, 0, 0);
@@ -992,20 +1155,28 @@ procedure TCibFacCabina.MenuAccionesVista(MenuPopup: TPopupMenu);
 desde aquí.}
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('&Iniciar Cuenta'       , @mnInicCuenta, 14);
-  AgregarAccion('&Modif. Tiempo'        , @mnModifCuenta, 15);
-  AgregarAccion('&Detener Cuenta'       , @mnDetenCuenta, 16);
-  AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, 18);
-//  AgregarAccion('Pausar tiempo',@mnPonerManten, 18);
-  AgregarAccion('&Ver Explorador'      , @mnVerExplorad, 19);
-  AgregarAccion('&Fijar Tiempo Inic.'  , @mnFijTiempoInic, -1);
+  AgregarAccion('&Iniciar Cuenta'       , @mnInicCuenta , icoInicCuenta );
+  AgregarAccion('&Modificar Tiempo'     , @mnModifCuenta, icoModifCuenta);
+  AgregarAccion('&Detener Cuenta'       , @mnDetenCuenta, icoDetenCuenta);
+  AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, icoPonerManten);
+  if cabCuenta.estado = EST_CONTAN then begin
+    AgregarAccion('Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent);
+  end else if cabCuenta.estado = EST_PAUSAD then begin
+    AgregarAccion('Reiniciar Cuenta'      , @mnReinicCuent, icoReinicCuent);
+  end else begin
+    //Agrega siempre un ítem, aunque sea desactivado, para no perder la secuencia de
+    //acciones (Que siempre haya la misma cantidad).
+    AgregarAccion('Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent).Enabled:=false;
+  end;
+  AgregarAccion('&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
+  AgregarAccion('&Fijar Tiempo Inic.'   , @mnFijTiempoIni, -1);
 //  AgregarAccion('Propiedades' , @mnVerMsjesRed, -1););
 end;
 procedure TCibFacCabina.MenuAccionesModelo(MenuPopup: TPopupMenu);
 {Configura acciones que solo correran en el Modelo}
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, 13);
+  AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, icoVerMsjesRed);
 end;
 procedure TCibFacCabina.mnInicCuenta(Sender: TObject);
 var
@@ -1049,8 +1220,25 @@ begin
     MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
     exit;
   end;
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONMAN, 0, IdFac); //El mismo comando, pone en mantenimiento
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONMAN, 0, IdFac);
 end;
+procedure TCibFacCabina.mnPausarCuent(Sender: TObject);
+begin
+  if cabCuenta.estado <> EST_CONTAN then begin
+    MsgExc('No se puede pausar una cabina en este estado.');
+    exit;
+  end;
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONPAU, 0, IdFac);
+end;
+procedure TCibFacCabina.mnReinicCuent(Sender: TObject);
+begin
+  if cabCuenta.estado <> EST_PAUSAD then begin
+    MsgExc('La cabina no está en pausa.');
+    exit;
+  end;
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_QUIPAU, 0, IdFac);
+end;
+
 procedure TCibFacCabina.mnVerExplorad(Sender: TObject);
 {Muestra el explorador de archivos}
 begin
@@ -1061,7 +1249,7 @@ procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);
 begin
   frmVisMsj.Exec(Nombre);
 end;
-procedure TCibFacCabina.mnFijTiempoInic(Sender: TObject);
+procedure TCibFacCabina.mnFijTiempoIni(Sender: TObject);
 {Fija el tiempo inicial de una cabina.}
 var
   nnStr: String;
@@ -1141,8 +1329,6 @@ begin
   if OnTramaLista<>nil then OnTramaLista(idFacOrig, tram);
 end;
 procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
-var
-  frm: TfrmVisorMsjRed;
 begin
   if OnRegMensaje<>nil then OnRegMensaje(NomCab, msj);
 end;
@@ -1229,7 +1415,7 @@ begin
   GrupTarAlquiler.StrObj:=lin;
   //Busca líneas con información de Tarifas de Alquiler
   lin := '';
-  while lineas[0][1] = '*' do begin
+  while (lineas.Count>0) and (lineas[0][1] = '*') do begin
     //Acumula
     lin := lin + lineas[0] + LineEnding;
     lineas.Delete(0);  //elimima línea
@@ -1244,17 +1430,6 @@ begin
     cab.CadPropied := lin;
   end;
   lineas.Destroy;
-end;
-function TCibGFacCabinas.ListaCabinas: string;
-{Devuelve la lista de cabinas creadas. La idea es leer con poca frecuencia, esta
- información ya que no es muy cambiante. }
-var
-  c : TCibFac;
-begin
-  Result := '';
-  for c in items do begin
-    Result += TCibFacCabina(c).CadPropied + LineEnding;
-  end;
 end;
 function TCibGFacCabinas.CabPorNombre(nom: string): TCibFacCabina;
 {Devuelve la referencia a una cabina, ubicándola por su nombre. Si no la enuentra
@@ -1329,9 +1504,9 @@ end;
 procedure TCibGFacCabinas.MenuAccionesModelo(MenuPopup: TPopupMenu);
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('Administrador de &Tarifas', @mnAdminTarifas, 8);
-  AgregarAccion('Administrador de &Equipos', @mnAdminEquipos, 7);
-//  AgregarAccion('&Propiedades', @mnPropiedades, 6);
+  AgregarAccion('Administrador de &Tarifas', @mnAdminTarifas, icoAdminTarifas);
+  AgregarAccion('Administrador de &Equipos', @mnAdminEquipos, icoAdminEquipos);
+  AgregarAccion('&Propiedades', @mnPropiedades, icoProp);
 end;
 procedure TCibGFacCabinas.mnAdminTarifas(Sender: TObject);
 begin
@@ -1341,11 +1516,6 @@ procedure TCibGFacCabinas.mnAdminEquipos(Sender: TObject);
 begin
   frmAdminCabs.Show;
 end;
-procedure TCibGFacCabinas.mnPropiedades(Sender: TObject);
-begin
-
-end;
-
 //constructor y destructor
 constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
 begin

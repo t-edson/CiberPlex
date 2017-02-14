@@ -10,13 +10,13 @@ type
 
   { regProdu }
   TregProdu = class
-      cod     : String;   //ALFANUMÉRICO. Código de producto
-      cat     : String;   //ALFANUMÉRICO. Categoría de producto
-      subcat  : String;   //ALFANUMÉRICO. Sub-categoría
-      //nom    : String   'CADENA. Nombre
-      desc    : String;   //CADENA. Descripción
-  //    est     : Boolean  'BOLEAN. Estado: Activado o desactivado
-  //    not:   : String   'CADENA. Comentarios
+      cod     : string;   //ALFANUMÉRICO. Código de producto
+      cat     : string;   //ALFANUMÉRICO. Categoría de producto
+      subcat  : string;   //ALFANUMÉRICO. Sub-categoría
+      nom     : string;   //CADENA. Nombre
+      desc    : string;   //CADENA. Descripción
+      Marca   : string;   //Cadena. Indica la marca o marcas que se compran.
+      UnidComp: string;   //Cadena. Unidad en que se compra el insumo (docena, bolsa de ...).
   //    img     : String   'CADENA. Archivo de imagen
       pUnit   : Double;   //Precio unitario
       stock   : Double;   //Stock de producto
@@ -25,7 +25,7 @@ type
       tPre    : Double;   //NUMÉRICO. Tiempo de preparación
       //fCre  : date      'FECHA. fecha de creación
       //fMod  : date      'FECHA. fecha de modificación.
-      ind     : Integer;  //NUMÉRICO. Posición dentro de la matriz
+//    est     : Boolean  'BOLEAN. Estado: Activado o desactivado
   public
     OnLogError     : TevProLogError;    //Requiere escribir un Msje de error en el registro
     function regProd_ADisco: String;
@@ -37,15 +37,17 @@ type
   {Define a una tabla de productos.}
   TCibTabProduc = class
   private
+    archivo: string;
     function BuscarProd(codigo: String): TregProdu;
-    procedure ProdADisco(arcProduc: string);
     function VerificaProducto(r: TregProdu): string;
+    procedure ProdADisco(arcProduc: string);
   public
     Productos: TregProdu_list;  //Almacena los productos
     msjError: string;
     OnLogError     : TevProLogError;    //Requiere escribir un Msje de error en el registro
     procedure ActualizarStock(arcProduc, codPro: string; Cant: Double);
-    function CargarProductos(archivo: string): string;
+    function CargarProductos(archivo0: string): string;
+    function GrabarProductos: string;
   public  //Constructor y detsructor
     constructor Create;
     destructor Destroy; override;
@@ -66,13 +68,16 @@ begin
     desc0 := descr;
   {$ENDIF}
   Result := cod + #9 +
-              cat + #9 +
-              subcat + #9 + #9 +
-              S2f(desc0) + #9 + #9 + #9 + #9 +
-              N2f(pUnit) + #9 +
-              N2f(stock) + #9 + #9 + #9 +
-              N2f(tPre) + #9 +
-              D2f(Time) + #9 + D2f(Time) + #9 + #9 + #9;
+            cat + #9 +
+            subcat + #9 + nom + #9 +
+            S2f(desc0) + #9 +
+            Marca + #9 +
+            UnidComp + #9 + #9 +
+            N2f(pUnit) + #9 +
+            N2f(stock) + #9 +
+            #9 + #9 +
+            N2f(tPre) + #9 +
+            D2f(Time) + #9 + D2f(Time) + #9 + #9 + #9;
 end;
 procedure TRegProdu.regProd_DeDisco(cad: String);
 //Convierte cadena de texto en registro
@@ -80,18 +85,20 @@ var
   a: TStringDynArray;
 begin
     a :=  explode(#9, cad);
-    cod := a[0];      //Carga código
-    cat := a[1];      //Carga categoría
-    subcat := a[2];   //Carga sub-categoría
-
-    desc := f2S(a[4]);   //Carga descripción
-
-    pUnit := f2N(a[8]);  //Carga precio unitario
-    stock := f2N(a[9]);  //Carga stock
+    cod     := a[0];      //Carga código
+    cat     := a[1];      //Carga categoría
+    subcat  := a[2];   //Carga sub-categoría
+    nom     := a[3];
+    desc    := f2S(a[4]);   //Carga descripción
+    Marca   := a[5];
+    UnidComp:= a[6];
+    pUnit   := f2N(a[8]);  //Carga precio unitario
+    stock   := f2N(a[9]);  //Carga stock
+    tPre    := f2N(a[12]);
     {$IFDEF Windows}
-      desc := CP1252ToUTF8(desc);
+    desc := CP1252ToUTF8(desc);
     {$ELSE}
-      desc := descr;
+    desc := descr;
     {$ENDIF}
 end;
 { TCibTabProduc }
@@ -109,36 +116,6 @@ begin
   end;
   //No encontró
   exit(nil);
-end;
-procedure TCibTabProduc.ProdADisco(arcProduc: string);
-{Vuelca la información de la tabla de productos a disco. Usa un archivo
-temporal para proteger los datos del archivo original.
-Actualiza la bandera "msjeError".}
-var
-  arc: TextFile;    //manejador de archivo
-  pro: TRegProdu;
-  //linea : string;
-  tmp_produc : string;
-begin
-  //Abre archivo de entrada y salida
-  try
-    tmp_produc := arcProduc + '.tmp';
-    AssignFile(arc, tmp_produc);
-    rewrite(arc);
-    for pro in Productos do begin
-      writeLn(arc, pro.regProd_ADisco);
-    end;
-    CloseFile(arc);
-    //Actualiza archivo de productos
-    DeleteFile(arcProduc);     //Borra anterior
-    RenameFile(tmp_produc, arcProduc); //Renombra nuevo
-  except
-    on e: Exception do begin
-      msjError := 'Error actualizando productos: ' + e.Message;
-      if OnLogError<>nil then OnLogError(msjError);
-      CloseFile(arc);
-    end;
-  end;
 end;
 function TCibTabProduc.VerificaProducto(r: TregProdu): string;
 {Verifica si el registro de producto cumple con la definición.
@@ -165,6 +142,37 @@ begin
         end;
     end;
 end;
+procedure TCibTabProduc.ProdADisco(arcProduc: string);
+{Vuelca la información de la tabla de productos a disco. Usa un archivo
+temporal para proteger los datos del archivo original.
+Actualiza la bandera "msjError".}
+var
+  arc: TextFile;    //manejador de archivo
+  pro: TRegProdu;
+  //linea : string;
+  tmp_produc : string;
+begin
+  msjError := '';
+  //Abre archivo de entrada y salida
+  try
+    tmp_produc := arcProduc + '.tmp';
+    AssignFile(arc, tmp_produc);
+    rewrite(arc);
+    for pro in Productos do begin
+      writeLn(arc, pro.regProd_ADisco);
+    end;
+    CloseFile(arc);
+    //Actualiza archivo de productos
+    DeleteFile(arcProduc);     //Borra anterior
+    RenameFile(tmp_produc, arcProduc); //Renombra nuevo
+  except
+    on e: Exception do begin
+      msjError := 'Error actualizando productos: ' + e.Message;
+      if OnLogError<>nil then OnLogError(msjError);
+      CloseFile(arc);
+    end;
+  end;
+end;
 procedure TCibTabProduc.ActualizarStock(arcProduc, codPro: string; Cant: Double);
 {Actualiza el stock del producto indicado en el archivo de productos
 Se crea una copia actualizada y luego se reemplaza la anterior}
@@ -189,19 +197,20 @@ begin
     pro.stock := stock;     //actualiza estado en memoria
     ProdADisco(arcProduc);     //Actualiza msjError
 end;
-function TCibTabProduc.CargarProductos(archivo: string): string;
+function TCibTabProduc.CargarProductos(archivo0: string): string;
 {Carga el archivo de productos indicado.
 Si encuentra error, devuelve una cadena con el mensaje de error.}
 var
   narc: text;
-  linea : String;
+  linea: String;
   n , nlin: Integer;        //Número de productos leidas
   reg: TregProdu;
   a: TStringDynArray;
 begin
   Result := '';
+  archivo := archivo0;  //guarda archivo de dónde se carga
   try
-    AssignFile(narc , archivo);
+    AssignFile(narc , archivo0);
     reset(narc);
     n := 1;
     nlin := 0;
@@ -217,7 +226,6 @@ begin
             end;
             reg:= TregProdu.Create;  //crea registro de producto
             reg.regProd_DeDisco(linea);
-            reg.ind := n;        //Carga ubicación
             Result := VerificaProducto(reg);  //Verifica consistencia
             Productos.Add(reg);
             If Result <> '' Then break;
@@ -235,10 +243,16 @@ begin
     exit;  //Puede salir con mensaje de error en "Result".
   except
     on e:Exception do begin
-      Result := 'Error cargando productos (' + archivo + '): ' + e.Message;
+      Result := 'Error cargando productos (' + archivo0 + '): ' + e.Message;
       //Close(narc);  No cierra ya que si falló al abrir, (lo más común) genera error al intentar cerralo.
     end;
   end;
+end;
+function TCibTabProduc.GrabarProductos: string;
+begin
+
+  ProdADisco(archivo);   //usa el mismo archivo
+  Result := msjError;   //Devuelve mensaje dee rror
 end;
 constructor TCibTabProduc.Create;
 begin

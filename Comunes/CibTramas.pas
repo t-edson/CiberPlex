@@ -121,7 +121,9 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     CVIS_ACBOLET = $E7,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
     CFAC_CABIN = $F0,  //Acción sobre una cabina (Incluye sub-somandos en ParamX)
     RFAC_CABIN = $F1,  //Respuesta de una cabina (Incluye sub-somandos en ParamX)
-    CFAC_NILOM = $F2   //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
+    CFAC_NILOM = $F2,  //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
+    CFAC_CLIEN = $F3,  //Acciones sobre un cliente
+    CFAC_MESA  = $F4   //Acciones sobre una mesa
   );
 
 type

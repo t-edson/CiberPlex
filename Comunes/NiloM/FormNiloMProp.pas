@@ -82,11 +82,12 @@ type
     edRutas: TSynFacilEditor;
   public
     onEnviarCom: TEvCibNiloMEnviarCom;
-    padre      : TObject;   //referencia genérica a la clase TCibGFacNiloM
+    gfac      : TCibGFac;   //referencia genérica a la clase TCibGFacNiloM
     onCambiaProp: procedure of object;  //indica que se han cambiado propiedades
     procedure CargarArchivosConfig;
     function ValidarTarifario: boolean;
     function ValidarRutas: boolean;
+    procedure Exec(gfac0: TCibGFac);
   end;
 
 
@@ -101,8 +102,8 @@ uses CibGFacNiloM, CibNiloMConex;
 procedure TfrmNiloMProp.CargarArchivosConfig;
 {Carga en los editores, los archivos de configuración}
 begin
-  edTarif.LoadFile(TCibGFacNiloM(padre).ArcTarif);  //carga reconociendo la codificación
-  edRutas.LoadFile(TCibGFacNiloM(padre).ArcRutas);  //carga reconociendo la codificación
+  edTarif.LoadFile(TCibGFacNiloM(gfac).ArcTarif);  //carga reconociendo la codificación
+  edRutas.LoadFile(TCibGFacNiloM(gfac).ArcRutas);  //carga reconociendo la codificación
 end;
 function TfrmNiloMProp.ValidarTarifario: boolean;
 {Valida el contenido del tarifario, que debe estar cargado en el editor.
@@ -114,7 +115,7 @@ Si no encuentra error -> devuelve TRUE y sale.
 var
   GFacNiloM: TCibGFacNiloM;
 begin
-  GFacNiloM := TCibGFacNiloM(padre);
+  GFacNiloM := TCibGFacNiloM(gfac);
   GFacNiloM.tarif.msjError := '';
   GFacNiloM.tarif.CargarTarifas(editTarif.Lines, GFacNiloM.facCmoneda);
   if GFacNiloM.tarif.msjError<>'' then begin
@@ -140,7 +141,7 @@ Si no encuentra error -> devuelve TRUE y sale.
 var
   GFacNiloM: TCibGFacNiloM;
 begin
-  GFacNiloM := TCibGFacNiloM(padre);
+  GFacNiloM := TCibGFacNiloM(gfac);
   GFacNiloM.rutas.msjError := '';
   GFacNiloM.rutas.CargarRutas(editRutas.Lines);
   if GFacNiloM.rutas.msjError<>'' then begin
@@ -168,7 +169,7 @@ var
   fc: Double;
   GFacNiloM: TCibGFacNiloM;
 begin
-  GFacNiloM := TCibGFacNiloM(padre);
+  GFacNiloM := TCibGFacNiloM(gfac);
   HayError := true;
   //Valida factor de corrección de moneda
   if not TryStrToFloat(cmbFacMon.Text, fc) then begin
@@ -201,7 +202,7 @@ begin
 end;
 procedure TfrmNiloMProp.btnCfgConexClick(Sender: TObject);
 begin
-  TCibGFacNiloM(padre).frmNilomConex.Show;
+  TCibGFacNiloM(gfac).frmNilomConex.Show;
 end;
 procedure TfrmNiloMProp.CheckBox3Change(Sender: TObject);
 begin
@@ -223,7 +224,7 @@ procedure TfrmNiloMProp.FormShow(Sender: TObject);
 var
   GFacNiloM: TCibGFacNiloM;
 begin
-  GFacNiloM := TCibGFacNiloM(padre);
+  GFacNiloM := TCibGFacNiloM(gfac);
   //Carga las propiedades
   txtNombre.Text    := GFacNiloM.Nombre;
   spnX.Value        := GFacNiloM.x;
@@ -264,7 +265,7 @@ procedure TfrmNiloMProp.Timer1Timer(Sender: TObject);
 begin
   if self.Visible then begin
     //Refresca estado de la conexión
-    case TCibGFacNiloM(padre).estadoCnx of
+    case TCibGFacNiloM(gfac).estadoCnx of
     necConectado: begin
       txtEstConex.Caption:='Conectado';
     end;
@@ -284,7 +285,7 @@ var
   OnReqCadMoneda: TevReqCadMoneda;
 begin
   //Obtiene función para conversión de moneda
-  OnReqCadMoneda := TCibGFacNiloM(padre).OnReqCadMoneda;
+  OnReqCadMoneda := TCibGFacNiloM(gfac).OnReqCadMoneda;
   //Actualiza información
   if OnReqCadMoneda=nil then begin
     //No se tiene acceso
@@ -300,16 +301,24 @@ begin
     Memo1.Text:='ERROR en factor de conversión de moneda.';
   end;
 end;
+procedure TfrmNiloMProp.Exec(gfac0: TCibGFac);
+{Inicializa y muestra el formulario de búsqueda de tarifas. Se necesita la
+referencia a un NILO-m , ya que se ha diseñado para trabajar con este objeto
+como fuente de datos.}
+begin
+  gfac := gfac0;
+  self.Show;
+end;
 ///////////////////// Acciones ///////////////////////
 procedure TfrmNiloMProp.acTarVerEstadExecute(Sender: TObject);
 var
   tarif: TNiloMTabTar;
   OnReqCadMoneda: TevReqCadMoneda;
 begin
-  OnReqCadMoneda := TCibGFacNiloM(padre).OnReqCadMoneda;
+  OnReqCadMoneda := TCibGFacNiloM(gfac).OnReqCadMoneda;
   if OnReqCadMoneda=nil then exit;
   if ValidarTarifario then begin
-    tarif := TCibGFacNiloM(padre).tarif;
+    tarif := TCibGFacNiloM(gfac).tarif;
     MsgBox('Número de tarifas =' + IntToStr(tarif.tarifas.Count) + LineEnding +
            'Mínimo costo =' + OnReqCadMoneda(tarif.minCostop) + LineEnding +
            'Máximo Costo =' + OnReqCadMoneda(tarif.maxCostop));
@@ -322,7 +331,6 @@ begin
   if MsgYesNo('¿Tranferir tarifario al enrutador?')<>1 then exit;
 
 end;
-
 procedure TfrmNiloMProp.acRutTransExecute(Sender: TObject);
 begin
   if MsgYesNo('¿Tranferir tabla de rutas al enrutador?')<>1 then exit;

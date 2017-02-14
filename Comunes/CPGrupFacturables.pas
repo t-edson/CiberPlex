@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils, Types, LCLProc, Forms, CibFacturables,
   //Aquí se incluyen las unidades que definen clases descendientes de TCPFacturables
-  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CibUtils;
+  CibGFacCabinas, CibGFacNiloM, MisUtils, CibTramas, CibUtils, CibGFacMesas,
+  CibGFacClientes;
 type
   { TCibGruposFacturables }
   {Objeto que engloba a todos los grupos facturables. Debe haber solo una instancia para
@@ -17,6 +18,7 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
+    procedure gof_ReqConfigUsu(var Usuario: string);
     procedure gof_RespComando(idVista: string; comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
     procedure gof_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
@@ -32,7 +34,8 @@ type
     procedure SetCadPropiedades(AValue: string);
     function ExtraerBloqueEstado(lisEstado: TStringList; out estado,
       nomGrup: string; var tipo: TCibTipFact): boolean;
-    procedure gof_RequiereInfo(var NombProg, NombLocal, Usuario: string);
+    procedure gof_ReqConfigGen(var NombProg, NombLocal: string;
+      var ModDiseno: boolean);
   public  //Eventos.
     {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
     para leer información o ejecutar acciones. Para esto se usan los eventos.}
@@ -45,6 +48,7 @@ type
 //    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
     OnGuardarEstado: procedure of object;
     OnReqConfigGen : TEvReqConfigGen;  //Se requiere información de configruación
+    OnReqConfigUsu : TEvReqConfigUsu;   //Se requiere información general
     OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     OnActualizStock: TEvBolActStock;   //Se requiere actualizar el stock
     OnRespComando  : TEvRespComando;  //Indica que tiene la respuesta de un comando
@@ -60,7 +64,8 @@ type
     property CadPropiedades: string read GetCadPropiedades write SetCadPropiedades;
     property CadEstado: string read GetCadEstado write SetCadEstado;
     function NumGrupos: integer;
-    function BuscarPorNombre(nomb: string): TCibGFac;
+    function ItemPorNombre(nomb: string): TCibGFac;
+    function BuscaNombreItem(StrBase: string): string;
     function BuscarPorID(idFac: string): TCibFac;
     procedure Agregar(gof: TCibGFac);
     procedure Eliminar(gf: TCibGFac);
@@ -158,7 +163,7 @@ var
 begin
   //Se supone que la respuesta debe tener, al menos el identificador del grupo
   Grupo := ExtraerHasta(cad, SEP_IDFAC, Err);  //El grupo viene en el primer campo
-  GFac := BuscarPorNombre(Grupo);  //Ubica al grupo facturable
+  GFac := ItemPorNombre(Grupo);  //Ubica al grupo facturable
   if GFac=nil then exit;
   //Notar que ya se estrajo el identificador de grupo  de "cad".
   Gfac.EjecRespuesta(comando, ParamX, ParamY, cad);
@@ -209,19 +214,18 @@ begin
   CVIS_ACBOLET: begin  //Acciones sobre Boletas
       //Identifica al facturable sobre el que se aplica
       Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
-      GFac := BuscarPorNombre(Grupo);
+      GFac := ItemPorNombre(Grupo);
       if GFac=nil then exit;
       Gfac.AccionesBoleta(tram);  //ejecuta la acción
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
   //Acciones sobre objetos facturables
-  CFAC_CABIN: begin   //Acciones sobre una cabina
+  CFAC_CLIEN, CFAC_CABIN, CFAC_NILOM: begin   //Acciones sobre una cabina
       //Identifica a la cabina sobre la que aplica
       Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
-      GFac := BuscarPorNombre(Grupo);
+      GFac := ItemPorNombre(Grupo);
       if GFac=nil then exit;
-      if Gfac.tipo <> ctfCabinas then exit;
-      //Ejecuta acción, indicando la PC origen del comando
+      //Solicita al grupo ejecutar acción.
       Gfac.EjecAccion(idVista, tram);
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
       { TODO : Por lo que se ve aquí, no sería necesario guardar regularmente el archivo
@@ -229,30 +233,25 @@ begin
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automática, o algún otro evento similar que requiera guardar el estado.}
     end;
-  CFAC_NILOM: begin  //Acciones sobre un NILO-m
-      //Identifica a la cabina sobre la que aplica
-      Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
-      GFac := BuscarPorNombre(Grupo);
-      if GFac=nil then exit;
-      if Gfac.tipo <> ctfNiloM then exit;
-      //Ejecuta acción
-      Gfac.EjecAccion(idVista, tram);
-      if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
-      { TODO : ¿No es este código similar a CFAC_CABIN? ¿No se puede unificar para todos
-       los grupos facturables? }
-    end;
   else
     debugln('  ¡¡Comando no implementado!!');
   end;
 end;
-procedure TCibGruposFacturables.gof_RequiereInfo(var NombProg,
-  NombLocal, Usuario: string);
+procedure TCibGruposFacturables.gof_ReqConfigGen(var NombProg, NombLocal: string; var ModDiseno: boolean);
 begin
   if OnReqConfigGen<>nil then begin
-    OnReqConfigGen(NombProg, NombLocal, Usuario);
+    OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   end else begin
     NombProg := '';
     NombLocal := '';
+    ModDiseno := false;
+  end;
+end;
+procedure TCibGruposFacturables.gof_ReqConfigUsu(var Usuario: string);
+begin
+  if OnReqConfigUsu<>nil then begin
+    OnReqConfigUsu(Usuario);
+  end else begin
     Usuario := '';
   end;
 end;
@@ -282,7 +281,7 @@ begin
   if not DeshabEven and (OnRespComando<>nil) then
     OnRespComando(idVista, comando, ParamX, ParamY, cad);
 end;
-function TCibGruposFacturables.BuscarPorNombre(nomb: string): TCibGFac;
+function TCibGruposFacturables.ItemPorNombre(nomb: string): TCibGFac;
 {Busca a uno de los grupos de facturables, por su nombre. Si no encuentra, devuelve NIL}
 var
   gf : TCibGFac;
@@ -293,6 +292,21 @@ begin
   end;
   //no encontró
   exit(nil);
+end;
+function TCibGruposFacturables.BuscaNombreItem(StrBase: string): string;
+{Genera un nombre de ítem que no exista en el grupo. Para ello se toma un nombre base
+y se le va agregando un ordinal.}
+var
+  idx: Integer;
+  nomb: String;
+begin
+  idx := items.Count+1;   //Inicia en 1
+  nomb := StrBase + IntToStr(idx);
+  while ItemPorNombre(nomb) <> nil do begin
+    Inc(idx);
+    nomb := StrBase + IntToStr(idx);
+  end;
+  Result := nomb;
 end;
 function TCibGruposFacturables.GetCadPropiedades: string;
 var
@@ -314,6 +328,8 @@ var
   tipGru: LongInt;
   grupCab: TCibGFacCabinas;
   gruNiloM: TCibGFacNiloM;
+  grupCli: TCibGFacClientes;
+  grupMes: TCibGFacMesas;
 begin
   if trim(AValue) = '' then exit;
   lineas := TStringList.Create;
@@ -331,6 +347,11 @@ begin
       //Ya se tiene la cadena de propiedades para el nuevo grupo
       //Crea al grupo, en el mismo modo (ModoCopia), con que se ha creado esre objeto.
       case TCibTipFact(tipGru) of
+      ctfClientes: begin
+        grupCli := TCibGFacClientes.Create('CliSinProp', ModoCopia);
+        grupCli.CadPropied:=tmp;
+        Agregar(grupCli);
+      end;
       ctfCabinas: begin
         grupCab := TCibGFacCabinas.Create('CabsSinProp', ModoCopia);  //crea la instancia
         grupCab.CadPropied:=tmp;    //asigna propiedades
@@ -340,6 +361,11 @@ begin
         gruNiloM := TCibGFacNiloM.Create('NiloSinProp', ModoCopia);
         gruNiloM.CadPropied:=tmp;
         Agregar(gruNiloM);         //agrega a la lista
+      end;
+      ctfMesas: begin
+        grupMes := TCibGFacMesas.Create('MesSinProp', ModoCopia);
+        grupMes.CadPropied:=tmp;
+        Agregar(grupMes);
       end;
       end;
     end else begin
@@ -382,7 +408,7 @@ begin
   while lest.Count>0 do begin
     res := ExtraerBloqueEstado(lest, cad, nombGrup, tipo);
     if not res then break;  //se mostró mensaje de error
-    gf := BuscarPorNombre(nombGrup);
+    gf := ItemPorNombre(nombGrup);
     if gf = nil then begin
       //Llegó el estado de un grupo que no existe.
       debugln('Grupo no existente: ' + nombGrup);   //WARNING
@@ -412,7 +438,7 @@ begin
   nomGFac := campos[0];
   nomFac := campos[1];
   //Identifica al grupo.
-  gfac := BuscarPorNombre(nomGFac);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
+  gfac := ItemPorNombre(nomGFac);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
   if gfac = nil then
     exit(nil);
   Result := gfac.ItemPorNombre(nomFac);
@@ -427,12 +453,13 @@ begin
   gof.OnLogVenta     := @gof_LogVenta;
   gof.OnLogIngre     := @gof_LogIngre;
   gof.OnLogError     := @gof_LogError;
-  gof.OnReqConfigGen := @gof_RequiereInfo;
+  gof.OnReqConfigGen := @gof_ReqConfigGen;
+  gof.OnReqConfigUsu:=@gof_ReqConfigUsu;
   gof.OnReqCadMoneda := @gof_ReqCadMoneda;
   gof.OnActualizStock:= @gof_ActualizStock;
   gof.OnSolicEjecCom := @gof_SolicEjecCom;
   gof.OnRespComando  := @gof_RespComando;
-  gof.OnBuscarGFac   := @BuscarPorNombre;
+  gof.OnBuscarGFac   := @ItemPorNombre;
   case gof.tipo of
   ctfCabinas: begin
     TCibGFacCabinas(gof).OnTramaLista:=@EjecComando;

@@ -3,8 +3,8 @@ unit CibUtils;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Types, dateutils, Graphics, LCLType, LCLIntf, Menus,
-  MisUtils;
+  Classes, windows, SysUtils, Types, dateutils, Graphics, LCLType,
+  LCLIntf, Menus, Controls, Forms, ExtCtrls, MisUtils, ShellApi;
 
   procedure PantallaAArchivo(arch: String);
   procedure Decodificar_M_ESTAD_CLI(cad: string; out nombrePC: string; out HoraPC: TDateTime);
@@ -13,13 +13,34 @@ uses
   //Funciones para control de menú
   procedure InicLlenadoAcciones(MenuPopup0: TPopupMenu );
   function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
-  procedure AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1);
+  function AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
+  function CreaYCargaImagen(arcPNG: string): TImage;
+  function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
+  function ListarArchivos(): String;
+  function ListarArchivosD(): string;
+  Function CambiaDir(direct: string): Boolean;
+  function RutaEscritorio(): string;
 
 implementation
 var  //variables para el lleado de acciones de facturables
   idxMenu: Integer;
   MenuPopup: TPopupMenu;
-
+function CreaYCargaImagen(arcPNG: string): TImage;
+{Crea un objeto TImage, y carga una archivo PNG en él. Devuelve la referencia.}
+begin
+  Result := TImage.Create(nil);
+  if not FileExists(arcPNG) then exit;
+  Result.Picture.LoadFromFile(arcPNG);
+end;
+function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
+{Carga archivos PNG, de 16 y 32 pixeles, a un TImageList. Al nombre de lso archivos
+se les añadirá el sufijo "_16.png" y "_32.png", para obteenr el nombre final.
+Devuelve el índice de la imagen cargada.}
+begin
+  if nombPNG = '' then exit(-1);   //protección
+  Result := LoadPNGToImageList(imagList16, rut + nombPNG + '_16.png');
+  Result := LoadPNGToImageList(imagList32, rut + nombPNG + '_32.png');
+end;
 procedure PantallaAArchivo(arch: String);
 //Captura el contenido de la pantalla, y lo guarda en el archivo indicado
 var
@@ -114,7 +135,7 @@ begin
   para agregarla a un menú, de modo que será el propieo menú el encargado de destruirla.}
   Result := nuevMen;
 end;
-procedure AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1);
+function AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
 {Agrega una acción sobre el menú PopUp indicado. Debe llamarse desoués de llamar a
 InicLlenadoAcciones. El ítem del menú se agrega, justo después del último ítem agregado.}
 var
@@ -123,7 +144,93 @@ begin
   mn := MenuAccion(etiq, accion, id_icon);
   MenuPopup.Items.Insert(idxMenu, mn);  //Agrega al inicio
   inc(idxMenu);
+  Result := mn;
 end;
+function ListarArchivos(): string;
+//Lista los directorios y archivos de la carpeta actual
+var
+  sPath, tmp: String;
+  SR: TSearchRec;
+begin
+  tmp := '';
+  sPath := GetCurrentDir;
+  if sPath[Length(sPath)]<>'\' then sPath := sPath+'\';
+  //Lee primero directorios
+  if FindFirst(sPath+'*', faAnyFile, SR) = 0 then begin
+    repeat
+      if (SR.Attr AND faDirectory) <> 0 then begin
+        if (SR.Name = '.') or (SR.Name = '..') then continue;
+        tmp := tmp + '[' + SR.Name + ']'  + LineEnding;
+      end;
+    until FindNext(SR)<>0;
+    FindClose(SR);
+  end;
+  //Lee archivos
+  if FindFirst(sPath+'*.*', faAnyFile, SR) = 0 then begin
+    repeat
+      if (SR.Attr AND faDirectory) = 0 then begin
+        tmp := tmp + SR.Name + LineEnding;
+      end;
+    until FindNext(SR)<>0;
+    FindClose(SR);
+  end;
+  TrimEndLine(tmp);  //quita salto final
+  Result := tmp;
+end;
+function ListarArchivosD(): string;
+//Lista los directorios y archivos de la carpeta actual incluyendo tamaño y fecha.
+var
+  sPath, tmp: String;
+  SR: TSearchRec;
+begin
+  tmp := '';
+  sPath := GetCurrentDir;
+  if sPath[Length(sPath)]<>'\' then sPath := sPath+'\';
+  //Lee primero directorios
+  if FindFirst(sPath+'*', faAnyFile, SR) = 0 then begin
+    repeat
+      if (SR.Attr AND faDirectory) <> 0 then begin
+        if (SR.Name = '.') or (SR.Name = '..') then continue;
+        tmp := tmp + '[' + SR.Name + ']' + #9 + #9 + LineEnding;
+      end;
+    until FindNext(SR)<>0;
+    FindClose(SR);
+  end;
+  //Lee archivos
+  if FindFirst(sPath+'*.*', faAnyFile, SR) = 0 then begin
+    repeat
+      if (SR.Attr AND faDirectory) = 0 then begin
+        tmp := tmp + SR.Name + #9 + IntToStr(SR.Size) + #9 + IntToStr(SR.Time) + LineEnding;
+      end;
+    until FindNext(SR)<>0;
+    FindClose(SR);
+  end;
+  TrimEndLine(tmp);  //quita salto final
+  Result := tmp;
+end;
+Function CambiaDir(direct: string): boolean;
+//Mueve la ruta actual al directorio actual. Si lo logra devuelve TRUE
+begin
+  Result := SetCurrentDir(direct);
+//    On Error GoTo errCMBD
+//    If direct Like "?:*" Then
+//        ChDrive Left(direct, 1)
+//    End If
+//    If direct <> "" Then
+//        ChDir direct
+//    End If
+end;
+function RutaEscritorio(): string;
+//Devuelve la ruta del escritorio de Windows
+var
+  SFolder: LPITEMIDLIST;
+  SpecialPath : Array[0..MAX_PATH] Of Char;
+begin
+  SHGetSpecialFolderLocation(Application.MainForm.Handle, CSIDL_DESKTOP, SFolder);
+  SHGetPathFromIDList(SFolder, SpecialPath);
+  Result := SpecialPath;
+end;
+
 
 end.
 

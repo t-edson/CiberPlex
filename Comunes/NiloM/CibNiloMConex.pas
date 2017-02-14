@@ -29,7 +29,7 @@ unit CibNiloMConex;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Types, fgl, strutils, synaser, MisUtils;
+  Classes, SysUtils, synaser, MisUtils;
 type
 
   // Estados de la conexión de la cabina.

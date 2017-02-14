@@ -9,9 +9,10 @@ unit CibGFacNiloM;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, Menus, Forms, MisUtils,
-  crt, strutils, CibFacturables, CibNiloMConex, FormNiloMConex, FormNiloMProp,
-  CibNiloMTarifRut, FormBuscTarif, Globales, CibRegistros, CibTramas, CibUtils;
+  Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, Menus, Forms, Controls,
+  Graphics, MisUtils, crt, strutils, CibFacturables, CibNiloMConex,
+  FormNiloMConex, FormNiloMProp, CibNiloMTarifRut, FormBuscTarif, Globales,
+  CibRegistros, CibTramas, CibUtils;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 const //Acciones
@@ -204,9 +205,28 @@ var
   grabando_nilo   : Boolean;  //Bandera para indicar que se está grabando
   cancelar_envio  : Boolean;  //Bandera para cancelar el envío de un archivo CNL
 
+  procedure CargarIconos(imagList16, imagList32: TImageList);
+
 implementation
 const
+  RUT_ICONOS = '..\Iconos\NiloM';
   MAX_ERROR_LOG_LLAM = 200; //Máximo número de errores permitidos en una llamada
+
+var
+  icoConexi: integer;   //índice de imagen
+  icoBusTar: integer;   //índice de imagen
+  icoPropie: integer;   //índice de imagen
+
+procedure CargarIconos(imagList16, imagList32: TImageList);
+{Carga los íconos que necesita esta unida }
+var
+  rutImag: RawByteString;
+begin
+  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
+  icoConexi := CargaPNG(imagList16, imagList32, rutImag, 'terminal');
+  icoBusTar := CargaPNG(imagList16, imagList32, rutImag, 'search');
+  icoPropie := CargaPNG(imagList16, imagList32, rutImag, 'properties');
+end;
 
 function NombFinal(camino : string; nom_loc: string; extension : String): String;
 {Devuelve el nombre final con el que se genera un archivo de registro.
@@ -382,7 +402,6 @@ procedure TCibFacLocutor.CalcularCostoTotNumLLam();
  saber al menos lo mínimo sobre las llamadas.}
 var
   l: TRegLlamada;
-  Costo : String;
 begin
     //Calcula el costo total de listLLamadas
     costo_tot := 0;
@@ -681,7 +700,6 @@ procedure TCibFacLocutor.ProcesarLinea(linea: string; facCmoneda: double;
               (linea[6] = num_can);
   end;
 var
-  L : TRegTarifa;
   cdr: TRegCDRNiloM;
 begin
     If linea = 'Ctda' + num_can then begin
@@ -778,11 +796,12 @@ end;
 procedure TCibGFacNiloM.AbrirRegistro();
 {Actualiza nombre final de archivo de registro}
 var
-  NombProg, NombLocal, Usuario: string;
+  NombProg, NombLocal: string;
+  ModDiseno: boolean;
 begin
   if ModoCopia then exit;
   if OnReqConfigGen<>nil then  //Pide información global
-      OnReqConfigGen(NombProg, NombLocal, Usuario);
+      OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   ArcReg := NombFinal(rutDatos, NombLocal + '.' + nilConex.puertoN, '.dat');
   if msjError <> '' then exit;
   EscribeLog('');
@@ -1002,7 +1021,7 @@ procedure TCibGFacNiloM.nilConex_TermWriteLn(const subcad: string; const lin: st
 {Se usa para refrescar al terminal y escribir en el registro.}
 var
   fac: TCibFac;
-  NombProg, NombLocal, Usuario: string;
+  Usuario: string;
 begin
   lin_serial := lin_serial + subcad;
   msjError := arcLog.EscribReg(ArcReg, lin_serial);  //en el registro, escibe la línea completa.
@@ -1026,7 +1045,7 @@ que acceder a objetos fuera del alcance de esta librería. }
     frmContadorI.txtHistNilo = "Actualizado a las " & Time}
   end else begin
     if OnReqConfigGen<>nil then  //Pide información global
-        OnReqConfigGen(NombProg, NombLocal, Usuario);
+        OnReqConfigUsu(Usuario);
     //Pasa el mensaje a las cabinas.
     for fac in items do begin
       //Aquí se puede escribir datos adicionales en el terminal y el registro
@@ -1167,9 +1186,9 @@ end;
 procedure TCibGFacNiloM.MenuAccionesModelo(MenuPopup: TPopupMenu);
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('Cone&xiones' , @mnVerConexiones, 13);
-  AgregarAccion('B&uscar Tarifas', @mnBuscarTarif, 5);
-  AgregarAccion('&Propiedades' , @mnPropiedades, 6);
+  AgregarAccion('Cone&xiones' , @mnVerConexiones, icoConexi);
+  AgregarAccion('B&uscar Tarifas', @mnBuscarTarif, icoBusTar);
+  AgregarAccion('&Propiedades' , @mnPropiedades, icoPropie);
 end;
 procedure TCibGFacNiloM.mnVerConexiones(Sender: TObject);
 begin
@@ -1177,7 +1196,7 @@ begin
 end;
 procedure TCibGFacNiloM.mnPropiedades(Sender: TObject);
 begin
-  frmNilomProp.Show;
+  frmNilomProp.Exec(self);
 end;
 procedure TCibGFacNiloM.mnBuscarTarif(Sender: TObject);
 begin
@@ -1204,7 +1223,9 @@ debugln('-Creando: '+ nombre0);
     //Configura ventaba de propiedades
     frmNilomProp:= TfrmNiloMProp.Create(nil);
     frmNilomProp.onCambiaProp:=@frmNilomProp_CambiaProp;
-    frmNilomProp.padre := self;
+    frmNilomProp.gfac := self;  {Este formulario requiere que se asigne esta referecncia,
+                                 desde el principio, porque necesita procesar las tarifas
+                                 y rutas, tempranamente.}
     //COnfigura la conexión serial
     nilConex    := TNiloConexion.Create;
     nilConex.OnCambiaEstado:= @nilConex_CambiaEstado;

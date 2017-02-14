@@ -11,12 +11,14 @@ unit CibFacturables;
 interface
 uses
   Classes, SysUtils, fgl, types, LCLProc, Menus, LConvEncoding, CibTramas,
-  CibUtils, dateutils, MisUtils;
+  CibUtils, FormPropGFac, dateutils, MisUtils;
 type
   //Tipos de objetos Grupos Facturables
   TCibTipFact = (
+    ctfClientes= 2,   //Grupo de clientes
     ctfCabinas = 0,   //Grupo de Cabinas
-    ctfNiloM = 1      //Grupo de locutorios de enrutador NILO-m
+    ctfNiloM   = 1,   //Grupo de locutorios de enrutador NILO-m
+    ctfMesas   = 3    //Mesas de restaurant
   );
 const  //Caracteres identificadores para el archivo registros
   {Estos identificadores se usan para poder facilitar rápidamente el tipo de registro
@@ -199,8 +201,10 @@ type
   end;
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
 
-  //Para requerir información de configuración general a la aplicaicón
-  TEvReqConfigGen = procedure(var NombProg, NombLocal, Usuario: string) of object;
+  //Para requerir información de configuración general a la aplicación
+  TEvReqConfigGen = procedure(var NombProg, NombLocal: string; var ModDiseno: boolean) of object;
+  //Para requerir información de configuración general a la aplicación
+  TEvReqConfigUsu = procedure(var Usuario: string) of object;
   //Para requerir información de configuración de moneda a la aplicaicón
   TEvReqConfigMon = procedure(var SimbMon: string; var numDec: integer; var IGV: Double) of object;
   //Requiere convertir a formato de moneda, usando el formato de la aplicación
@@ -243,6 +247,7 @@ type
     Fy: double;
     FModoCopia: boolean;
     decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
+    frmProp: TfrmPropGFac;     //formulario de propiedades por defecto
     function GetCadPropied: string; virtual; abstract;
     procedure SetCadPropied(AValue: string); virtual; abstract;
     function GetCadEstado: string; virtual;
@@ -252,10 +257,10 @@ type
     procedure AgregarItem(fac: TCibFac);
     procedure fac_CambiaPropied;
   public
-    Nombre : string;          //Nombre de grupo facturable
-    tipo   : TCibTipFact;   //tipo de grupo facturable
-    CategVenta: string;       //categoría de Venta para este grupo
-    items  : TCibFac_list;   //lista de objetos facturables
+    Nombre : string;         //Nombre de grupo facturable
+    tipo   : TCibTipFact;    //Tipo de grupo facturable
+    CategVenta: string;      //Categoría de Venta para este grupo
+    items  : TCibFac_list;   //Lista de objetos facturables
     {El campo ModoCopia indica si se quiere trabajar sin conexión (como en un visor).
     Debería fijarse justo después de crear el objeto, para que los ítems a crear, se
     creen con la conexión configurada desde el inicio. No todos los objetos descendientes
@@ -270,15 +275,19 @@ type
     property y: double read Fy write Sety;  //coordenada Y
     procedure SetXY(x0, y0: double);
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
+    function BuscaNombreItem(StrBase: string): string;
     procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
+    function tipoStr: string;
   public  //Campos para manejo de acciones
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); virtual;  //Ejecuta acción en el objeto
     procedure MenuAccionesVista(MenuPopup: TPopupMenu); virtual;
     procedure MenuAccionesModelo(MenuPopup: TPopupMenu); virtual;
+    procedure mnPropiedades(Sender: TObject);
   public  //Eventos para que el grupo se comunique con la aplicación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
     OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
+    OnReqConfigUsu : TEvReqConfigUsu;   //Se requiere información general
     OnReqConfigMon : TEvReqConfigMon;   //Se requiere información de moneda
     OnReqCadMoneda : TevReqCadMoneda;   //Se requiere convertir a foramto de moneda
     OnLogInfo      : TEvFacLogInfo;     //se quiere registrar un mensaje en el registro
@@ -469,7 +478,7 @@ procedure TCibBoleta.VentaItem(it: TCibItemBoleta; RegisVenta: Boolean);
 Este debe ser el punto de entrada único para agregar una venta a la boleta.}
 var
   nser: integer;
-  NombProg, NombLocal, Usuario: string;
+  Usuario: string;
 begin
     //Actualiza stock
     if it.conStk then begin
@@ -479,7 +488,7 @@ begin
       padre.OnActualizStock(it.codPro, it.Cant);  //Debería mostrar mensaje de error si amerita
     end;
     //Recupera información de configuración
-    padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+    padre.Grupo.OnReqConfigUsu(Usuario);
     //Guarda registro de la Venta, si se indica
     {Notar que el registro de la venta se agrega siempre, independientemente de si se
     grabará o no. El ítem también se podrá devolver, pero el registro se mantiene.}
@@ -498,7 +507,7 @@ procedure TCibBoleta.DevolItem(it: TCibItemBoleta);
 {Realiza la devolución de un ítem. Básicamente lo que se hace es quitar el ítem de la
 lista y escribir en el registro, el ítem con costo y cantidad negativos.}
 var
-  NombProg, NombLocal, Usuario: string;
+  Usuario: string;
 begin
   it.Cant   := -it.Cant;   //pone cantidad negativa
   it.subtot := -it.subtot; //pone total negativo
@@ -507,7 +516,7 @@ begin
     padre.OnActualizStock(it.codPro, it.Cant);  //Debería mostrar mensaje de error si amerita
   end;
   //Recupera información de configuración
-  padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+  padre.Grupo.OnReqConfigUsu(Usuario);
   //registra mensaje
   padre.OnLogVenta(IDE_REG_VEND, Usuario + #9 + it.RegVenta, -it.subtot);
   ItemDelete(it.Id);  //quita de la lista
@@ -515,10 +524,10 @@ end;
 procedure TCibBoleta.GrabarItemNoElim(it: TCibItemBoleta);
 {Graba un ítem de una boleta pero sin eliminarlo.}
 var
-  NombProg, NombLocal, Usuario: string;
+  Usuario: string;
 begin
   //Recupera información de configuración
-  padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+  padre.Grupo.OnReqConfigUsu(Usuario);
   //Registra el ingreso en el archivo de registro
   if it.estado = IT_EST_NORMAL Then begin
     //Ítem normal
@@ -563,10 +572,10 @@ function TCibBoleta.RegVenta: string;
 {Devuelve la cadena que debe ser grabada en el registro. Se define para que sea
  compatible con el NILOTER-m}
 var
-  NombProg, NombLocal, Usuario: string;
+  Usuario: string;
 begin
   //Recupera información de configuración
-  padre.Grupo.OnReqConfigGen(NombProg, NombLocal, Usuario);
+  padre.Grupo.OnReqConfigUsu(Usuario);
   Result := usuario + #9 +
          B2f(usarIGV) + #9 + N2f(subtot) + #9 +
          N2f(TotPag) + #9 + nombre + #9 +
@@ -863,6 +872,21 @@ begin
   end;
   exit(nil);
 end;
+function TCibGFac.BuscaNombreItem(StrBase: string): string;
+{Genera un nombre de ítem que no exista en el grupo. Para ello se toma un nombre base
+y se le va agregando un ordinal.}
+var
+  idx: Integer;
+  nomb: String;
+begin
+  idx := items.Count+1;   //Inicia en 1
+  nomb := StrBase + IntToStr(idx);
+  while ItemPorNombre(nomb) <> nil do begin
+    Inc(idx);
+    nomb := StrBase + IntToStr(idx);
+  end;
+  Result := nomb;
+end;
 procedure TCibGFac.AccionesBoleta(tram: TCPTrama);
 {Ejecuta acciones sobre la boleta}
 var
@@ -988,6 +1012,15 @@ begin
     end;
   end;
 end;
+function TCibGFac.tipoStr: string;  //Tipo de facturable, como cadena
+begin
+  try
+    writestr(Result, tipo);
+  except
+    Result := '<<Descon.>>'
+  end;
+end;
+
 procedure TCibGFac.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string);
 {Se usa para comunicar una respuesta a la vista, de algún comando enviado.}
@@ -1010,6 +1043,10 @@ ejecutar solo en el modelo.}
 begin
 
 end;
+procedure TCibGFac.mnPropiedades(Sender: TObject);
+begin
+  frmProp.Exec(self);
+end;
 
 ////Constructor y destructor
 constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipFact
@@ -1019,9 +1056,11 @@ begin
   nombre := nombre0;
   tipo   := tipo0;
   decod  := TCPDecodCadEstado.Create;
+  frmProp:= TfrmPropGFac.Create(nil);   //Crea su formulario de propiedades.
 end;
 destructor TCibGFac.Destroy;
 begin
+  frmProp.Destroy;
   decod.Destroy;
   items.Destroy;
   inherited Destroy;

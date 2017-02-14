@@ -24,11 +24,11 @@ type
     acHerCancelTran: TAction;
     acVerRefresc: TAction;
     ActionList1: TActionList;
+    btnBloqDesb: TButton;
     btnChat: TBitBtn;
     btnMsje: TBitBtn;
     btnReinic: TBitBtn;
     btnApagar: TBitBtn;
-    btnBloqDesb: TButton;
     Edit1: TEdit;
     ImageList1: TImageList;
     Label1: TLabel;
@@ -206,8 +206,6 @@ begin
   ConectadoAnt := cab.Conectado;  //Estado anterior
 end;
 procedure TfrmExplorCab.picPantClick(Sender: TObject);
-var
-  cab: TCibFacCabina;
 begin
   acPCVerPantExecute(self);
 end;
@@ -216,10 +214,7 @@ begin
   acArcAbrirExecute(self);
 end;
 procedure TfrmExplorCab.btnBloqDesbClick(Sender: TObject);
-var
-  cab: TCibFacCabina;
 begin
-  cab := TCibFacCabina(fac);
   if btnBloqDesb.Caption='Bloquear' then begin
     acPCBloquearExecute(self);//Manda comando de bloqueo
   end else begin
@@ -236,11 +231,9 @@ begin
 end;
 procedure TfrmExplorCab.TreeView1DblClick(Sender: TObject);
 var
-  cab: TCibFacCabina;
   rut: String;
 begin
   if TreeView1.Selected=nil then exit;
-  cab := TCibFacCabina(fac);
   rut := TreeView1.Selected.Text;
   if rut = 'Escritorio' then begin
       Edit1.Text := '';  //Para el escritorio, se usa cadena vacía
