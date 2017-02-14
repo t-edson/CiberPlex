@@ -24,11 +24,11 @@
           <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
-            <Filename Value="..\CpxServer"/>
+            <Filename Value="..\CpxServer_$(TargetCPU)"/>
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\..\Comunes\Synapse;..\..\..\Lazarus\_Librerias\MisUtils 0.3;..\..\..\Lazarus\_Librerias\ogEditGraf 1.4b;..\..\Comunes"/>
+            <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Synapse;Reportes;..;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -42,6 +42,11 @@
               <GenerateDebugInfo Value="False"/>
             </Debugging>
             <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
           </Linking>
         </CompilerOptions>
       </Item2>
@@ -65,7 +70,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="35">
+    <Units Count="40">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -123,9 +128,9 @@
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="FormBusProductos.pas"/>
+        <Filename Value="FormAdminProduc.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmBusProductos"/>
+        <ComponentName Value="frmAdminProduc"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit11>
@@ -148,123 +153,150 @@
         <IsPartOfProject Value="True"/>
       </Unit14>
       <Unit15>
-        <Filename Value="..\..\Comunes\Cabinas\CibCabinaTarifas.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit15>
-      <Unit16>
-        <Filename Value="..\..\Comunes\Cabinas\FormFijTiempo.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmFijTiempo"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit16>
-      <Unit17>
-        <Filename Value="..\..\Comunes\Cabinas\CibCabinaBase.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit17>
-      <Unit18>
-        <Filename Value="..\..\Comunes\Cabinas\FormExplorCab.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmExplorCab"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit18>
-      <Unit19>
-        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit19>
-      <Unit20>
-        <Filename Value="..\..\Comunes\NiloM\FormNiloMConex.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmNiloMConex"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit20>
-      <Unit21>
-        <Filename Value="..\..\Comunes\Cabinas\FormAdminCabinas.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmAdminCabinas"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit21>
-      <Unit22>
-        <Filename Value="..\..\Comunes\Cabinas\FrameCPTarifDia.lfm"/>
-        <IsPartOfProject Value="True"/>
-      </Unit22>
-      <Unit23>
-        <Filename Value="..\..\Comunes\Cabinas\FormAdminTarCab.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmAdminTarCab"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit23>
-      <Unit24>
-        <Filename Value="..\..\Comunes\NiloM\CibNiloMTarifRut.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit24>
-      <Unit25>
         <Filename Value="..\..\Comunes\frameVisCPlex.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fraVisCPlex"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Frame"/>
-      </Unit25>
-      <Unit26>
+      </Unit15>
+      <Unit16>
         <Filename Value="..\..\Comunes\ObjGraficos.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit26>
-      <Unit27>
-        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit27>
-      <Unit28>
-        <Filename Value="..\..\Comunes\NiloM\FormNiloMProp.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmNiloMProp"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit28>
-      <Unit29>
-        <Filename Value="..\..\Comunes\NiloM\FormNiloMEnrutam.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmNiloMEnrutam"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit29>
-      <Unit30>
+      </Unit16>
+      <Unit17>
         <Filename Value="..\..\Comunes\forminicio.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmInicio"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="FormInicio"/>
-      </Unit30>
-      <Unit31>
+      </Unit17>
+      <Unit18>
         <Filename Value="FormAcercaDe.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmAcercaDe"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit31>
-      <Unit32>
+      </Unit18>
+      <Unit19>
         <Filename Value="FormCalcul.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmCalcul"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="FormContDinero.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmContDinero"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\..\Comunes\Cabinas\CibCabinaTarifas.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\..\Comunes\Cabinas\FormFijTiempo.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmFijTiempo"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\..\Comunes\Cabinas\CibCabinaBase.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="..\..\Comunes\Cabinas\FormExplorCab.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmExplorCab"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\..\Comunes\Cabinas\FormAdminCabinas.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminCabinas"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="..\..\Comunes\Cabinas\FormAdminTarCab.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminTarCab"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="..\..\Comunes\Cabinas\FrameCPTarifDia.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="..\..\Comunes\NiloM\FormNiloMConex.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmNiloMConex"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="..\..\Comunes\NiloM\CibNiloMTarifRut.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="..\..\Comunes\NiloM\FormNiloMProp.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmNiloMProp"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit32>
       <Unit33>
+        <Filename Value="..\..\Comunes\NiloM\FormNiloMEnrutam.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmNiloMEnrutam"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit33>
+      <Unit34>
         <Filename Value="..\..\Comunes\NiloM\FormBuscTarif.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmBuscTarif"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit33>
-      <Unit34>
-        <Filename Value="FormContDinero.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmContDinero"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit34>
+      <Unit35>
+        <Filename Value="..\..\Comunes\Clientes\CibGFacClientes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="..\..\Comunes\NiloM\CibNiloMConex.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="..\..\Comunes\FormPropGFac.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmPropGFac"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="..\..\Comunes\Mesas\CibGFacMesas.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="..\..\Comunes\Mesas\FormPropMesa.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmPropMesa"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit39>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -275,7 +307,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.5b;..\..\..\_Librerias\ogEditGraf 1.5b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Comunes\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;Reportes;.."/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Synapse;Reportes;..;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
