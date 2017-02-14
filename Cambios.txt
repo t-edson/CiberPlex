@@ -1,7 +1,80 @@
+1.5.2
+=====
+Se agregó el grupo "Mesas" y se implementan las unidades y cambios necesarios.
+Se crea el formulario de configuración para los facturables mesa.
+Se corrigió un problema en la asignación inicial del estado de "TfraVisCPlex.ModDiseno".
+Se cambia la propiedad arrastFuente por facArrastrado, que es ahora un facturable y permite
+identificar el tipo de objeto arrastrado (ya que actualmentese permite arrastrar también 
+a una mesa.)
+Se cambia de nombre a la carpeta "íconos" a "Iconos" y se mueven los íconos 
+correspondientes a cada grupo.
+
+
+1.5.1
+=====
+Se activan nuevos campos del registro de producto, y se incluye la grabación en disco.
+Se mejora considerablemente la ventana de productos, y se incluye un panel de árbol para 
+facilitar la búsqueda por categoría-subcategoría.
+Se implementa en TCibFacCabina.cabConexTramaLista(), respuesta a diversos comandos de
+administración de archivo, para que el servidor, pueda también soportar exploración
+remota de archivos.
+Se activa el explorador de archivos remoto en el módulo CIBERPLEX-Venta.
+
+1.5
+===
+Se crea la carpeta "/grupos", para organizar las carpetas que definen a los grupos. En estas
+carpetas se incluye ahora, los íconos que deben cargarse para cada grupo facturable.
+Se incluye código para poder cargar dinámicamente, al iniciar, los íconos a usar en el 
+menú de acciones de los grupos y facturables.
+Se configura a los facturables clientes, Cabinas y NILO-m, para que generen sus íconos de 
+forma dinámica.
+Se simplifica TCibGruposFacturables.EjecComando, para que trate por igual a los grupos 
+facturables.
+Se corrige la rutina para agregar grupos de clientes, en cuanto a la generación de nombres 
+únicos.
+Se agrega pregunta de confirmación para antes de eliminar un grupo.
+Se reordenan los íconos, del ImageList del formulario principal, eliminando los que ya no son 
+necesarios, y reubicando, de acuerdo a función.
+Se eliminan menús no usados de la interfaz principal.
+Se habilita la creación dinámica de botones, en la barra de herramientas, de acuerdo al 
+objeto seleccionado en el visor. No se usa actualmente.
+Se cambia de nombre la propiedad del Visor "objBloqueados", por "ModoDiseno".
+Se crea el evento "TCibGFac.OnReqConfigUsu" y se modifica "TCibGFac.OnReqConfigGen", para 
+poder obtener más información de la aplicaión.
+Se cambian las referencias Config.Grupos, por Modelo.
+Se crea un formulario para mostrar las propiedades de los Grupos.
+
+
+1.4.4
+=====
+Se incluye la creación y destrucción de objetos gráficos boleta, directamente en la clase 
+TogFac.Create(), para evitar que todas las clases descendientes tengan que crearla.
+Se completa la creación de objetos de tipo Cliente.
+Se incluyen opciones en el menú principal para alinear los objetos de forma horizontal y
+vertical.
+Se incluyen opciones en el menú principal para espaciar los objetos de forma horizontal y
+vertical.
+Se incluyen ocpiones para pausar la cuenta de las cabinas.
+Se actualiza CIBERPLEX-Venta para poder cambiar el nombre del archivo de congiguración.
+
 1.4.3
 =====
 Se definen las acciones del Grupo de Cabinas, como acciones dinámicas, de modo que ya
 todos los grupos, crean su menú conextual de forma dinámica.
+Se crea el nuevo grupo facturable "Clientes".
+Se corrige un error en el método TfraVisCPlex.ActualizarOgGrupos(), que generaba error
+en tiempo de ejecución al eliminar grupos.
+Se corrige un error en TCibGFacCabinas.SetCadPropied(), que generaba error, cuando intentaba 
+cargar un grupo sin cabinas.
+Se simplifica y corrige TfrmPrincipal.acEdiElimGruExecute(), para que no de error al eliminar
+grupos. 
+Se elimina TCibGFacCabinas.ListaCabinas, proque no se usa. 
+Se elimina TfraVisCPlex.BuscarOgCabina, proque no se usa.
+Se deshabilita el uso de la propiedad "TObjVsible.Id", para evitar manejar nuevas constantes
+y así simplificar el código.
+
+Él código actual, permite agregar y eliminar grupos facturables sin problemas. Pero aún no se 
+pueden agregar los facturables CLiente.
 
 
 1.4.2
