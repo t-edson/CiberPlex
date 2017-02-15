@@ -10,13 +10,13 @@
   <NumDec Val="2"/>
   <ImpVen Val="18"/>
   <PanLlamadas Val="False"/>
-  <PanBoletas Val="True"/>
-  <ModDiseno Val="True"/>
+  <PanBoletas Val="False"/>
+  <ModDiseno Val="False"/>
   <StateStatusbar Val="1"/>
   <GrpsFact Val="
 [[3
 Mesas1	COUNTER	48	228		
-Mesa1	185	293	3		
+Mesa1	187	310	3		
 Mesa2	41	313	0		
 ]]
 [[2
@@ -25,7 +25,7 @@ Cliente1	52	104
 Cliente2	146	106			
 ]]
 "/>
-  <usuarios Val="1217982183153183273Y328262262266
-1217982183293303193322622622W
+  <usuarios Val="374865166263266275271276210210214
+3748651662772782W280210210215
 "/>
 </CONFIG>
