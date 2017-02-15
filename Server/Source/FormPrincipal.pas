@@ -3,11 +3,11 @@ unit FormPrincipal;
 interface
 uses
   Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
-  ComCtrls, Dialogs, MisUtils, ogDefObjGraf, FormIngVentas, FormConfig,
-  frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos, FormBoleta,
-  FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul, FormContDinero,
-  FormInicio, CibRegistros, CibTramas, CibFacturables, CibProductos,
-  CibGFacMesas, CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
+  ComCtrls, Dialogs, StdCtrls, MisUtils, ogDefObjGraf, FormIngVentas,
+  FormConfig, frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
+  FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul,
+  FormContDinero, FormInicio, CibRegistros, CibTramas, CibFacturables,
+  CibProductos, CibGFacMesas, CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -40,6 +40,8 @@ type
     acVerRepIng: TAction;
     ActionList1: TActionList;
     acVerPant: TAction;
+    Button1: TButton;
+    Edit1: TEdit;
     ImageList32: TImageList;
     ImageList16: TImageList;
     MainMenu1: TMainMenu;
@@ -115,6 +117,7 @@ type
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
     procedure Visor_ClickDerFac(ogFac: TogFac; X, Y: Integer);
@@ -553,20 +556,42 @@ begin
   TramaTmp.Destroy;
   //Matar a los hilos de ejecución, puede tomar tiempo
 end;
+
+procedure TfrmPrincipal.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Visor.Focused then begin
+    //Pasa el control de teclado al visor
+    Visor.motEdi.KeyDown(Sender, Key, Shift);
+  end;
+end;
 procedure TfrmPrincipal.FormKeyPress(Sender: TObject; var Key: char);
 {El formulario, intercepta el teclado}
 begin
-  if Key in ['0'..'9'] then begin
-    if frmCalcul.Visible then begin
-      //Si ya es visible, solo actualizamos
-      frmCalcul.Edit1.Text:=Key;
-      frmCalcul.Edit1.SelStart:=1;
-      frmCalcul.Edit1.SelLength:=0;
-      frmCalcul.Show;   //por si estaba sin enfoque
-    end else begin
-      frmCalcul.txtIni:=Key;
-      frmCalcul.Show;
-    end;
+  if Visor.Focused then begin
+      if Key in ['0'..'9'] then begin
+        if frmCalcul.Visible then begin
+          //Si ya es visible, solo actualizamos
+          frmCalcul.Edit1.Text:=Key;
+          frmCalcul.Edit1.SelStart:=1;
+          frmCalcul.Edit1.SelLength:=0;
+          frmCalcul.Show;   //por si estaba sin enfoque
+        end else begin
+          frmCalcul.txtIni:=Key;
+          frmCalcul.Show;
+        end;
+      end else if Key in ['A'..'Z','a'..'z'] then begin
+        //Ingreso directo de una venta
+        //Seleciona al facturable por defecto
+        if not Visor.SeleccionarFac(Config.FactDef) then begin
+          exit;
+        end;
+        acFacAgrVenExecute(self);
+      end else if Key = #13 then begin
+        if Visor.FacSeleccionado<>nil then begin
+          acFacVerBolExecute(self);
+        end;
+      end;
   end;
 end;
 procedure TfrmPrincipal.LeerEstadoDeArchivo;
