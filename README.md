@@ -64,7 +64,6 @@ Esta es la aplicación principal donde se encuentran los contenedores de los dat
 
 CiberPlex-Server permite configurar a todos los elementos visuales, y no visuales. También incluye a una interfaz visual para trabajar de la misma forma a como lo hace CiberPlex-Visor.
 
-
 ## Diseño
 
 Ciberplex, es una versión mejorada de la serie de programas NILOTER-m.
