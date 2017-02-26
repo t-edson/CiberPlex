@@ -3,8 +3,8 @@ unit FormIngVentas;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  ButtonPanel, StdCtrls, Grids, ActnList, Menus, Buttons,
-  FrameUtilsGrilla, UtilsGrilla, MisUtils, CibFacturables, CibProductos, FormConfig;
+  ButtonPanel, StdCtrls, Grids, ActnList, Menus, Buttons, LCLType,
+  FrameFiltCampo, UtilsGrilla, MisUtils, CibFacturables, CibProductos, FormConfig;
 type
   //Evento para agregar una venta
   TevAgregarVenta = procedure(CibFac: TCibFac; itBol: string) of object;
@@ -16,11 +16,11 @@ type
     btnMas: TBitBtn;
     btnMenos: TBitBtn;
     ButtonPanel1: TButtonPanel;
+    fraFiltCampo: TfraFiltCampo;
     txtDescrip: TEdit;
     txtPrecUnit: TEdit;
     txtTotal: TEdit;
     txtCantidad: TEdit;
-    fraUtilsGrilla1: TfraUtilsGrilla;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
@@ -44,13 +44,16 @@ type
   private
     CibFac: TCibFac;        //Objeto de trabajo (cabina, lcoutorio, ...)
     function ActualizarTotal(mostrarError: boolean): boolean;
+    procedure fraUtilsGrilla1KeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure griKeyPress(Sender: TObject; var Key: char);
     procedure grillaEnter(Sender: TObject);
-    function ProdSeleccionado: TregProdu;
+    function ProdSeleccionado: TCibRegProduc;
   public
     gri : TUtilGrilla;
     OnAgregarVenta: TevAgregarVenta;
     TabPro: TCibTabProduc;  //Tabla de productos
-    procedure Exec(CibFac0: TCibFac);
+    procedure Exec(CibFac0: TCibFac; txtIni: string='');
     procedure LeerDatos;
   end;
 
@@ -68,31 +71,40 @@ procedure TfrmIngVentas.txtPrecUnitChange(Sender: TObject);
 begin
   ActualizarTotal(false);
 end;
-procedure TfrmIngVentas.Exec(CibFac0: TCibFac);
+procedure TfrmIngVentas.Exec(CibFac0: TCibFac; txtIni: string = '');
 {Abre, la ventana. Se supone que la propiedad "TabPro", ya debe haber sido fijada.}
 begin
+  if CibFac0 = nil then ButtonPanel1.OKButton.Enabled:=false
+  else ButtonPanel1.OKButton.Enabled:=true;
   CibFac := CibFac0;   //referencia al objeto origen
 //  TabPro := TabPro0;
-  fraUtilsGrilla1.Edit1.Clear;
+  fraFiltCampo.Edit1.Clear;
+  LeerDatos;  //Actualiza sus datos
   self.Show;
-  if fraUtilsGrilla1.Edit1.Visible then fraUtilsGrilla1.Edit1.SetFocus;
+  if fraFiltCampo.Edit1.Visible then begin
+    fraFiltCampo.Edit1.SetFocus;
+    if txtIni<>'' then begin
+      fraFiltCampo.Edit1.Text:=txtIni;
+      fraFiltCampo.Edit1.SelStart:=length(txtIni);
+    end;
+  end;
 end;
 procedure TfrmIngVentas.LeerDatos;
 var
   f: Integer;
-  reg: TregProdu;
+  reg: TCibRegProduc;
 begin
   grilla.BeginUpdate;
   grilla.RowCount:=1;  //limpia datos
   grilla.RowCount:= TabPro.Productos.Count+1;
   f := 1;
   for reg in TabPro.Productos do begin
-    grilla.Cells[1,f] := reg.cod;
-    grilla.Cells[2,f] := reg.cat;
-    grilla.Cells[3,f] := reg.subcat;
-    grilla.Cells[4,f] := Config.CadMon(reg.pUnit);
-    grilla.Cells[5,f] := reg.desc;
-    grilla.Cells[6,f] := FloatToStr(reg.stock);
+    grilla.Cells[1,f] := reg.Cod;
+    grilla.Cells[2,f] := reg.Categ;
+    grilla.Cells[3,f] := reg.Subcat;
+    grilla.Cells[4,f] := Config.CadMon(reg.PreVenta);
+    grilla.Cells[5,f] := reg.Desc;
+    grilla.Cells[6,f] := FloatToStr(reg.Stock);
     f := f + 1;
   end;
   grilla.EndUpdate();
@@ -116,12 +128,15 @@ begin
   gri.OpEncabezPulsable:=true;
   gri.OpResaltarEncabez:=true;
   gri.OpResaltFilaSelec:=true;
-  gri.UsarFrameUtils(fraUtilsGrilla1, nil);
-  gri.UsarTodosCamposFiltro(4);
+
+  fraFiltCampo.Inic(gri, 4);
+  fraFiltCampo.OnKeyDown:=@fraUtilsGrilla1KeyDown;
+  gri.OnKeyPress:=@griKeyPress;
+
   gri.MenuCampos:=true;
   grilla.OnEnter:=@grillaEnter;
   //gri.OnMouseUpCell:=@griDBMouseUpCell;
-  //fraUtilsGrilla1.OnFiltrado:=@fraUtilsGrilla1Filtrado;
+  //fraFiltCampo.OnFiltrado:=@fraUtilsGrilla1Filtrado;
   gri.PopUpCells := PopupMenu1;
 end;
 procedure TfrmIngVentas.FormDestroy(Sender: TObject);
@@ -139,7 +154,20 @@ begin
     Key := #0;
   end;
 end;
-function TfrmIngVentas.ProdSeleccionado: TregProdu;
+procedure TfrmIngVentas.fraUtilsGrilla1KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DOWN then begin
+    grilla.SetFocus;
+  end;
+end;
+procedure TfrmIngVentas.griKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key in ['a'..'z','A'..'Z'] then begin
+    fraFiltCampo.Activar(Key);
+  end;
+end;
+function TfrmIngVentas.ProdSeleccionado: TCibRegProduc;
 {Devuelve el producto seleccionado. Si no hay ninguno seleccioando, devuelve NIL.}
 begin
   if grilla.Row<1 then exit(nil);
@@ -215,7 +243,7 @@ end;
 procedure TfrmIngVentas.OKButtonClick(Sender: TObject);  //Aceptar
 var
   itBol: TCibItemBoleta;
-  pro: TregProdu;
+  pro: TCibRegProduc;
 begin
   if not ActualizarTotal(true) then exit;
   if LeeMoneda(txtTotal.Text) = 0 then begin
@@ -234,9 +262,9 @@ begin
   itBol.Cant := StrToFloat(txtCantidad.Text);
   itBol.pUnit := LeeMoneda(txtPrecUnit.Text);
   itBol.subtot := LeeMoneda(txtTotal.Text);
-  itBol.cat := pro.cat;
-  itBol.subcat := pro.subcat;
-  itBol.codPro := pro.cod;
+  itBol.cat := pro.Categ;
+  itBol.subcat := pro.Subcat;
+  itBol.codPro := pro.Cod;
   itBol.descr := txtDescrip.Text;
   itBol.vfec := Date + Time;  //toma fecha actual
   itBol.estado := IT_EST_NORMAL;
@@ -244,8 +272,8 @@ begin
   itBol.coment := '';
   //itBol.pven := PV;    //no se asigna aquì porque la boleta puede cambiar de punto de venta
   //información adicional
-  itBol.stkIni := pro.stock;
-  itBol.pUnitR := pro.pUnit;
+  itBol.stkIni := pro.Stock;
+  itBol.pUnitR := pro.PreVenta;
   itBol.conStk := True;    //Maneja stock
 
   //Limpia campos

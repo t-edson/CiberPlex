@@ -13,7 +13,7 @@ uses
   CibCabinaTarifas, CibGFacCabinas, FormAdminCabinas, FormAdminTarCab,
   FormExplorCab, FormFijTiempo, FormRepIngresos, RegistrosVentas,
   FormAdminProduc, FormIngVentas, FormAgrupVert, FormAcercaDe, FormCalcul,
-  FormContDinero;
+  FormContDinero, FormSelecObjetos, FormAdminProvee, FrameFiltArbol, CibBD;
 
 {$R *.res}
 
@@ -31,6 +31,8 @@ begin
   Application.CreateForm(TfrmAcercaDe, frmAcercaDe);
   Application.CreateForm(TfrmCalcul, frmCalcul);
   Application.CreateForm(TfrmContDinero, frmContDinero);
+  Application.CreateForm(TfrmSelecObjetos, frmSelecObjetos);
+  Application.CreateForm(TfrmAdminProvee, frmAdminProvee);
   Application.Run;
 end.
 

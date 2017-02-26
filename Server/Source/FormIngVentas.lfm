@@ -1,7 +1,7 @@
 object frmIngVentas: TfrmIngVentas
   Left = 297
   Height = 241
-  Top = 145
+  Top = 297
   Width = 496
   Caption = 'INGRESO DE VENTAS'
   ClientHeight = 241
@@ -40,12 +40,11 @@ object frmIngVentas: TfrmIngVentas
     ClientHeight = 24
     ClientWidth = 496
     TabOrder = 1
-    inline fraUtilsGrilla1: TfraUtilsGrilla
-      Left = 8
+    inline fraFiltCampo: TfraFiltCampo
       Height = 24
-      Width = 232
+      Width = 224
       ClientHeight = 24
-      ClientWidth = 232
+      ClientWidth = 224
     end
   end
   object Panel2: TPanel
@@ -57,7 +56,7 @@ object frmIngVentas: TfrmIngVentas
     BevelOuter = bvNone
     ClientHeight = 54
     ClientWidth = 496
-    TabOrder = 2
+    TabOrder = 3
     object Label1: TLabel
       Left = 16
       Height = 15
@@ -105,7 +104,7 @@ object frmIngVentas: TfrmIngVentas
       Width = 73
       Alignment = taRightJustify
       Enabled = False
-      TabOrder = 2
+      TabOrder = 5
     end
     object Label4: TLabel
       Left = 368
@@ -123,7 +122,7 @@ object frmIngVentas: TfrmIngVentas
       Width = 41
       Alignment = taRightJustify
       OnChange = txtCantidadChange
-      TabOrder = 3
+      TabOrder = 2
     end
     object btnMas: TBitBtn
       Left = 296
@@ -197,7 +196,7 @@ object frmIngVentas: TfrmIngVentas
       }
       Layout = blGlyphBottom
       OnClick = btnMasClick
-      TabOrder = 4
+      TabOrder = 3
     end
     object btnMenos: TBitBtn
       Left = 320
@@ -271,7 +270,7 @@ object frmIngVentas: TfrmIngVentas
       }
       Layout = blGlyphTop
       OnClick = btnMenosClick
-      TabOrder = 5
+      TabOrder = 4
     end
   end
   object grilla: TStringGrid
@@ -281,7 +280,7 @@ object frmIngVentas: TfrmIngVentas
     Width = 496
     Align = alClient
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goSmoothScroll, goRowHighlight]
-    TabOrder = 3
+    TabOrder = 2
     OnSelection = grillaSelection
   end
   object ActionList1: TActionList

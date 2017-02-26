@@ -3,11 +3,12 @@ unit FormPrincipal;
 interface
 uses
   Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
-  ComCtrls, Dialogs, StdCtrls, MisUtils, ogDefObjGraf, FormIngVentas,
+  ComCtrls, Dialogs, StdCtrls, LCLType, MisUtils, ogDefObjGraf, FormIngVentas,
   FormConfig, frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
   FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul,
-  FormContDinero, FormInicio, CibRegistros, CibTramas, CibFacturables,
-  CibProductos, CibGFacMesas, CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
+  FormContDinero, FormSelecObjetos, FormInicio, CibRegistros, CibTramas,
+  CibFacturables, CibProductos, FormAdminProvee, CibBD, CibGFacMesas,
+  CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -20,8 +21,9 @@ type
     acArcSalir: TAction;
     acFacVerBol: TAction;
     acEdiInsGrMes: TAction;
+    acAyuSelRapid: TAction;
+    acVerAdmProvee: TAction;
     acVerAdmProd: TAction;
-    acBusGastos: TAction;
     acEdiInsEnrut: TAction;
     acEdiInsGrCab: TAction;
     acEdiElimGru: TAction;
@@ -45,6 +47,7 @@ type
     ImageList32: TImageList;
     ImageList16: TImageList;
     MainMenu1: TMainMenu;
+    Memo1: TMemo;
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
@@ -63,22 +66,24 @@ type
     MenuItem23: TMenuItem;
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
-    MenuItem27: TMenuItem;
-    MenuItem28: TMenuItem;
+    MenuItem26: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
     MenuItem33: TMenuItem;
+    MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem61: TMenuItem;
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
+    Panel1: TPanel;
     panLLam: TPanel;
     panBolet: TPanel;
     PopupFac: TPopupMenu;
     PopupMenu1: TPopupMenu;
+    Splitter1: TSplitter;
     splPanLlam: TSplitter;
     splPanBolet: TSplitter;
     Timer1: TTimer;
@@ -96,7 +101,7 @@ type
     procedure acAyuBlocNotExecute(Sender: TObject);
     procedure acAyuCalculExecute(Sender: TObject);
     procedure acAyuContDinExecute(Sender: TObject);
-    procedure acBusGastosExecute(Sender: TObject);
+    procedure acAyuSelRapidExecute(Sender: TObject);
     procedure acEdiInsGrMesExecute(Sender: TObject);
     procedure acVerAdmProdExecute(Sender: TObject);
     procedure acEdiAlinHorExecute(Sender: TObject);
@@ -112,6 +117,7 @@ type
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
     procedure acSisConfigExecute(Sender: TObject);
+    procedure acVerAdmProveeExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
     procedure ConfigfcVistaUpdateChanges;
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -126,12 +132,20 @@ type
   private
     log : TCibArcReg;
     tabPro: TCibTabProduc;
+    tabPrv: TCibTabProvee;
     Visor : TfraVisCPlex;     //Visor de cabinas
     TramaTmp    : TCPTrama;    //Trama temporal
     fallasesion : boolean;  //indica si se cancela el inicio de sesión
     tic : integer;
+    procedure VerificarCargaProductos;
     procedure ConfigurarPopUpFac(ogFac: TogFac; PopUp: TPopupMenu);
     procedure ConfigurarPopUpGFac(ogGFac: TogGFac; PopUp: TPopupMenu);
+    procedure ActualizarMensajes;
+    procedure frmAdminProduc_Grabar;
+    procedure Modelo_ArchCambRemot(ruta, nombre: string);
+    procedure MenuContextual;
+    function Modelo_ModifTablaBD(NombTabla: string; tipModif: integer;
+      const datos: string): string;
     procedure Modelo_ReqConfigUsu(var Usuario: string);
     procedure LLenarToolBar(PopUp: TPopupMenu);
     procedure Modelo_RespComando(idVista: string; comando: TCPTipCom;
@@ -185,19 +199,23 @@ begin
 
   //Agrega los ítems del menú que son comunes a todos los facturables
   mn :=  TMenuItem.Create(nil);
-  mn.Action := acFacVerBol;
-  PopUp.Items.Add(mn);
-
-  mn :=  TMenuItem.Create(nil);
   mn.Action := acFacAgrVen;
+  mn.Caption:= '&1. ' + mn.Caption;
   PopUp.Items.Add(mn);
 
   mn :=  TMenuItem.Create(nil);
   mn.Action := acFacGraBol;
+  mn.Caption:= '&2. ' + mn.Caption;
+  PopUp.Items.Add(mn);
+
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acFacVerBol;
+  mn.Caption:= '&3. ' + mn.Caption;
   PopUp.Items.Add(mn);
 
   mn :=  TMenuItem.Create(nil);
   mn.Action := acFacMovBol;
+  mn.Caption:= '&4. ' + mn.Caption;
   PopUp.Items.Add(mn);
 
   mn :=  TMenuItem.Create(nil);
@@ -259,6 +277,42 @@ begin
     end;
   end;
 end;
+procedure TfrmPrincipal.ActualizarMensajes;
+//Actualiza le panel de mensajes
+begin
+  if not FileExists(arcMensaj) then begin
+    Memo1.Text:='<<Sin mensaje>>';
+    exit;
+  end;
+  //Hay mensajes
+  Memo1.Lines.LoadFromFile(arcMensaj);
+end;
+procedure TfrmPrincipal.VerificarCargaProductos;
+{Verifica si hubo errores, depsués de actualizar la tabal de productos.}
+begin
+  if tabPro.msjError <> '' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    log.PLogErr(usuario, tabPro.msjError);
+    MsgErr('Error cargando tabla de productos.');
+    MsgErr(tabPro.msjError);
+  end else begin
+    //Se cargó correctamente la tabla de productos
+    if frmAdminProduc.Visible then begin
+      //Estaba abierta
+      MsgExc('Ha habido cambios en la tabla de productos' + LineEnding +
+             'Se recomienda volver a abrir este formulario.'    );
+    end;
+  end;
+end;
+procedure TfrmPrincipal.frmAdminProduc_Grabar;
+{Se pide grabar el contenido de la grilla.}
+begin
+  //Graba en disco
+  { TODO : Realmente, debería grabarse en modo "Sin Stock", para prevenir cambios externos. }
+  frmAdminProduc.GrillaALista;      //Ya está actualizado "TabPro.Productos",
+  TabPro.GrabarADisco;  //Podría generar error en "TabPro.MsjError"
+  frmAdminProduc.Modificado := false;
+end;
 procedure TfrmPrincipal.Modelo_CambiaPropied;
 {Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
 begin
@@ -310,12 +364,13 @@ procedure TfrmPrincipal.Modelo_ActualizStock(const codPro: string;
 {Se está solicitando actualizar el stock. Esta petición usualmente viene desde una
 boleta.}
 begin
-  tabPro.ActualizarStock(arcProduc, codPro, Ctdad);
+  tabPro.ActualizarStock(codPro, Ctdad);
   if msjError <> '' Then begin
       //Se muestra aquí porque no se va a detener el flujo del programa por
       //un error, porque es prioritario registrar la venta.
       MsgBox(msjError);
   end;
+
 end;
 procedure TfrmPrincipal.Modelo_RespComando(idVista: string; comando: TCPTipCom;
   ParamX, ParamY: word; cad: string);
@@ -339,6 +394,54 @@ begin
     end;
     cab := TCibFacCabina(FAC);
     cab.TCP_envComando(comando, ParamX, ParamY, cad);
+  end;
+end;
+procedure TfrmPrincipal.Modelo_ArchCambRemot(ruta, nombre: string);
+var
+  nombArc: String;
+begin
+  //Reconstruye nombre de archivo
+  if pos(':', nombre)<>0 then begin
+    //Hay información de ruta en el nombre
+    nombArc := nombre;
+  end else begin
+    if ruta = '' then ruta := rutApp;  //puede pasar
+    nombArc := ruta + '\' + nombre;
+  end;
+  debugln('Archivo cambiado: ' + nombArc);
+  if nombArc = arcProduc then begin
+    debugln('Tabla de productos cambiada.');
+    tabPro.LeerDeDisco;
+    VerificarCargaProductos;
+  end;
+  if nombArc = arcMensaj then begin
+    debugln('Tabla de mensajes cambiada.');
+    ActualizarMensajes;
+  end;
+end;
+function TfrmPrincipal.Modelo_ModifTablaBD(NombTabla: string;
+  tipModif: integer; const datos: string): string;
+begin
+  if Upcase(trim(NombTabla)) = 'PRODUCTOS' then begin
+    //Se pide modificar la tabla de productos
+    case tipModif of
+    MODTAB_TOTAL: begin  //Modifiación total
+      StringToFile(datos, arcProduc);
+      tabPro.LeerDeDisco;
+      VerificarCargaProductos;
+      if tabPro.MsjError = '' then
+         Result := 'Tabla modificada íntegramente'
+      else
+         Result := tabPro.MsjError;
+    end;
+    MODTAB_NOSTCK: begin
+      //Modificación sin tocar el stock.
+      Result := tabPro.ActualizarNoStock(datos);
+      VerificarCargaProductos;
+    end;
+    else
+      Result := 'No se reconoce tipo de modificación.'
+    end;
   end;
 end;
 procedure TfrmPrincipal.Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
@@ -445,7 +548,8 @@ begin
   //Crea un grupo de cabinas
   TramaTmp := TCPTrama.Create;
   log := TCibArcReg.Create;
-  tabPro:= TCibTabProduc.Create;
+  tabPro := TCibTabProduc.Create;
+  tabPrv := TCibTabProvee.Create;
   {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
   Visor := TfraVisCPlex.Create(self);
   Visor.Parent := self;
@@ -458,8 +562,6 @@ begin
   CibGFacMesas.CargarIconos(ImageList16, ImageList32);
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
-var
-  Err: String;
 begin
   Config.Iniciar;  //lee configuración
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
@@ -476,6 +578,8 @@ begin
   Modelo.OnReqCadMoneda := @Config.CadMon;
   Modelo.OnActualizStock:= @Modelo_ActualizStock;
   Modelo.OnRespComando  := @Modelo_RespComando;
+  Modelo.OnArchCambRemot:= @Modelo_ArchCambRemot;
+  Modelo.OnModifTablaBD := @Modelo_ModifTablaBD;
 //  Modelo.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
 //                            puedan responderse desde el mismo modelo (ver Visor_ClickDerFac)}
   //Configura Visor para comunicar sus eventos
@@ -508,14 +612,23 @@ begin
   end;
 
   log.PLogInf(usuario, '----------------- Inicio de Programa ---------------');
-  Err := tabPro.CargarProductos(arcProduc);
-  if Err<>'' then begin
-    log.PLogErr(usuario, Err);
-    MsgErr(Err);
+  tabPro.FijarTabla(arcProduc);
+  tabPro.LeerDeDisco;
+  VerificarCargaProductos;
+
+  tabPrv.FijarTabla(arcProvee);
+  tabPrv.LeerDeDisco;
+  if tabPrv.msjError <> '' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    log.PLogErr(usuario, tabPro.msjError);
+    MsgErr('Error cargando tabla de proveedores.');
+    MsgErr(tabPro.msjError);
   end;
+  //Carga mensajes
+  ActualizarMensajes;
   //Configura formulario de ingreso de ventas
   frmIngVentas.TabPro := tabPro;
-  frmIngVentas.LeerDatos;
+//  frmIngVentas.LeerDatos;
   frmIngVentas.OnAgregarVenta:=@frmIngVentas_AgregarVenta;
   //Configrua formulario de boleta
   frmBoleta.OnAgregarItem  := @frmBoleta_AgregarItem;
@@ -527,7 +640,8 @@ begin
   frmBoleta.OnDividirItem  := @frmBoleta_DividirItem;
   frmBoleta.OnGrabarItem   := @frmBoletaGrabarItem;
   frmBoleta.OnReqCadMoneda := @Config.CadMon;
-  log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados');
+  log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados.');
+  log.PLogInf(usuario, IntToStr(tabPrv.Proveedores.Count) + ' proveedores cargados.');
   frmInicio.edUsu.Text := 'admin';
   frmInicio.ShowModal;
   if frmInicio.cancelo then begin
@@ -540,6 +654,8 @@ begin
   self.Activate;
   self.SetFocus;
   //self.Show;
+  //Para permitir grabar cambios
+  frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
 end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
@@ -551,24 +667,35 @@ procedure TfrmPrincipal.FormDestroy(Sender: TObject);
 begin
   log.PLogInf(usuario, '----------------- Fin de Programa ---------------');
   Debugln('Terminando ... ');
+  tabPrv.Destroy;
   tabPro.Destroy;
   log.Destroy;
   TramaTmp.Destroy;
   //Matar a los hilos de ejecución, puede tomar tiempo
 end;
-
 procedure TfrmPrincipal.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   if Visor.Focused then begin
+    if Key IN [VK_APPS, VK_ADD]  then begin   //Menú contextual o '+' del tecaldo numérico.
+      MenuContextual;
+      exit;
+    end else if Key = VK_F2 then begin
+      //Acceso rápido para agregar boleta al facturable por defecto.
+      if not Visor.SeleccionarFac(Config.FactDef) then exit;
+      acFacAgrVenExecute(self);
+    end;
     //Pasa el control de teclado al visor
     Visor.motEdi.KeyDown(Sender, Key, Shift);
   end;
 end;
 procedure TfrmPrincipal.FormKeyPress(Sender: TObject; var Key: char);
 {El formulario, intercepta el teclado}
+var
+  res: Integer;
+  ogFac: TogFac;
 begin
-  if Visor.Focused then begin
+  if Visor.Focused or Memo1.Focused then begin
       if Key in ['0'..'9'] then begin
         if frmCalcul.Visible then begin
           //Si ya es visible, solo actualizamos
@@ -580,18 +707,45 @@ begin
           frmCalcul.txtIni:=Key;
           frmCalcul.Show;
         end;
+      end else if Key = ' ' then begin
+        //Seleciona al facturable por defecto
+        Visor.SeleccionarFac(Config.FactDef);
+      end else if Key = '.' then begin
+        //Acceso rápido a la ventana de selección
+        res := frmSelecObjetos.Exec(Modelo, Visor, '.');
+        if res = mrYes then begin
+          //Interpretamos como que se quiere abrir el menú contextual
+          MenuContextual;
+        end;
       end else if Key in ['A'..'Z','a'..'z'] then begin
         //Ingreso directo de una venta
-        //Seleciona al facturable por defecto
-        if not Visor.SeleccionarFac(Config.FactDef) then begin
-          exit;
-        end;
-        acFacAgrVenExecute(self);
+//        acFacAgrVenExecute(self);
+        ogFac := Visor.FacSeleccionado;
+        if ogFac = nil then frmIngVentas.Exec(nil,Key)
+        else frmIngVentas.Exec(ogFac.fac, Key);
       end else if Key = #13 then begin
         if Visor.FacSeleccionado<>nil then begin
           acFacVerBolExecute(self);
         end;
       end;
+  end;
+end;
+procedure TfrmPrincipal.MenuContextual;
+{Activa el menú contextual, de acuerdo al elemento seleccionado.}
+var
+  ogFac: TogFac;
+  posRat: TPoint;
+begin
+  ogFac := Visor.FacSeleccionado;
+  if ogFac<>nil then begin
+    //Hay un factuable seleccionado.
+    //Abrimos el menú contextual, en la posoición adecuada
+    posRat := Visor.CoordPantallaDeFact2(ogFac);
+    posRat.x := posRat.x + Left + ToolBar1.Width;  //corrige posición
+    posRat.y := posRat.y + Top + MainMenu1.Height;  //corrige posición
+    Mouse.CursorPos := posRat;
+    ConfigurarPopUpFac(ogFac, PopupFac);
+    PopupFac.PopUp;  //muestra
   end;
 end;
 procedure TfrmPrincipal.LeerEstadoDeArchivo;
@@ -812,15 +966,6 @@ procedure TfrmPrincipal.acEdiEspVerExecute(Sender: TObject);
 begin
   Visor.EspacirSelecVer;
 end;
-//Acciones Buscar
-procedure TfrmPrincipal.acVerAdmProdExecute(Sender: TObject);
-begin
-  frmAdminProduc.Exec(tabPro);
-end;
-procedure TfrmPrincipal.acBusGastosExecute(Sender: TObject);
-begin
-
-end;
 //Acciones sobre Facturables
 procedure TfrmPrincipal.acFacGraBolExecute(Sender: TObject);
 var
@@ -866,6 +1011,14 @@ procedure TfrmPrincipal.acVerRepIngExecute(Sender: TObject);
 begin
   frmRepIngresos.Show;
 end;
+procedure TfrmPrincipal.acVerAdmProdExecute(Sender: TObject);
+begin
+  frmAdminProduc.Exec(tabPro);
+end;
+procedure TfrmPrincipal.acVerAdmProveeExecute(Sender: TObject);
+begin
+  frmAdminProvee.Exec(tabPrv);
+end;
 // Acciones del sistema
 procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
@@ -879,6 +1032,10 @@ end;
 procedure TfrmPrincipal.acAyuContDinExecute(Sender: TObject);
 begin
   frmContDinero.Show;
+end;
+procedure TfrmPrincipal.acAyuSelRapidExecute(Sender: TObject);
+begin
+  frmSelecObjetos.Exec(Modelo,Visor, '');
 end;
 procedure TfrmPrincipal.acAyuAcercaExecute(Sender: TObject);
 begin

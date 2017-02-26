@@ -21,12 +21,14 @@ var
    rutArchivos: string;     //ruta para descargar de archivos (sin "\" final)
    rutSonidos : string;     //ruta para los archivos de sonidos (sin "\" final)
    //archivos de configuración
-   arcProduc : string;     //archivo de productos
+   arcProduc : string;     //tabla de productos
+   arcProvee : string;     //tabla de proveedores
    arcGastos : string;     //archivo de gastos
+   arcMensaj : string;     //archivo de mensajes
    //archivo de estado
    arcEstado : string;
 
-   CVniloter: Double;      //valor del contador de Ventas del CiberPlex
+//   CVniloter: Double;      //valor del contador de Ventas del CiberPlex
    CVfec_act: TDateTime;   //Fecha de actualización del contador de ventas del CiberPlex
    CIfec_act: TDateTime;   //Fecha de actualización del contador de Ingresos del CiberPlex
 
@@ -63,8 +65,10 @@ initialization
   end;
   //inicia archivos de configuración
   arcProduc := rutApp + '\productos.txt';    //archivo de productos
+  arcProvee := rutApp + '\proveedores.txt';  //archivo de productos
   arcGastos := rutApp + '\gastos.txt';       //archivo de gastos
-  arcEstado := rutApp + '\estado.ini';         //archivo de estado
+  arcMensaj := rutApp + '\mensajes.txt';     //archivo de mensajes
+  arcEstado := rutApp + '\estado.ini';       //archivo de estado
 
 finalization
   //Por algún motivo, la unidad HeapTrc indica que hay gotera de memoria si no se liberan
@@ -76,7 +80,9 @@ finalization
   rutSonidos := '';
 
   arcProduc := '';
+  arcProvee := '';
   arcGastos := '';
+  arcMensaj := '';
   arcEstado := '';
 end.
 

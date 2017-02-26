@@ -70,7 +70,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="40">
+    <Units Count="44">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -128,7 +128,7 @@
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="FormAdminProduc.pas"/>
+        <Filename Value="..\..\Comunes\FormAdminProduc.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmAdminProduc"/>
         <HasResources Value="True"/>
@@ -149,7 +149,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit13>
       <Unit14>
-        <Filename Value="..\..\Comunes\CPGrupFacturables.pas"/>
+        <Filename Value="..\..\Comunes\CibModelo.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit14>
       <Unit15>
@@ -297,6 +297,31 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit39>
+      <Unit40>
+        <Filename Value="FormSelecObjetos.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmSelecObjetos"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="..\..\Comunes\FormAdminProvee.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminProvee"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\..\..\_Librerias\UtilsGrilla 0.7\FrameFiltArbol.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fraFiltArbol"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit42>
+      <Unit43>
+        <Filename Value="..\..\Comunes\CibBD.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit43>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -307,7 +332,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Synapse;Reportes;..;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.7;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Synapse;Reportes;..;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
