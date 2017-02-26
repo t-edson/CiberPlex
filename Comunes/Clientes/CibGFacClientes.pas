@@ -315,12 +315,12 @@ end;
 procedure TCibGFacClientes.mnAgregObjCliente(Sender: TObject);
 var
   nom: String;
+  facClien: TCibFacCliente;
 begin
   nom := BuscaNombreItem('Cliente');
-  Agregar(nom);
-//  Dec(idx);
-//  cab.x:= 10 + (idx mod 5) * 95;
-//  cab.y:= 20 + (idx div 5) * 160;
+  facClien := Agregar(nom);
+  facClien.x := x + items.Count*20;
+  facClien.y := y + 20 + items.Count*10;
 end;
 procedure TCibGFacClientes.mnEliminar(Sender: TObject);
 //Elimina al facturable. Notra que este método es asignado por el facturable, no por

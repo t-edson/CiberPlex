@@ -1263,7 +1263,7 @@ debugln('-Creando: '+ nombre0);
 end;
 destructor TCibGFacNiloM.Destroy;
 begin
-debugln('-destruyendo: '+ self.Nombre);
+//debugln('-destruyendo: '+ self.Nombre);
   frmBusTar.Destroy;
   mens_error.Destroy;
   rutas.Destroy;

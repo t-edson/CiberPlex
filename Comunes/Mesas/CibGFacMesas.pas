@@ -54,7 +54,7 @@ type
   TCibGFacMesas = class(TCibGFac)
   private
     proAccion : string;   {Nombre de objeto que ejecuta la acción. }
-    procedure mnAgregObjCliente(Sender: TObject);
+    procedure mnAgregObjMesa(Sender: TObject);
   protected //Getters and Setters
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
@@ -344,19 +344,19 @@ begin
   OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   InicLlenadoAcciones(MenuPopup);
   if ModDiseno then begin
-    AgregarAccion('&Agregar Mesa', @mnAgregObjCliente, icoMesa);
+    AgregarAccion('&Agregar Mesa', @mnAgregObjMesa, icoMesa);
   end;
   AgregarAccion('&Propiedades', @mnPropiedades, icoProp);
 end;
-procedure TCibGFacMesas.mnAgregObjCliente(Sender: TObject);
+procedure TCibGFacMesas.mnAgregObjMesa(Sender: TObject);
 var
   nom: String;
+  facMesa: TCibFacMesa;
 begin
   nom := BuscaNombreItem('Mesa');
-  Agregar(nom);
-//  Dec(idx);
-//  cab.x:= 10 + (idx mod 5) * 95;
-//  cab.y:= 20 + (idx div 5) * 160;
+  facMesa := Agregar(nom);
+  facMesa.x := x + items.Count*20;
+  facMesa.y := y + 20 + items.Count*10;
 end;
 procedure TCibGFacMesas.mnEliminar(Sender: TObject);
 //Elimina al facturable. Notra que este método es asignado por el facturable, no por

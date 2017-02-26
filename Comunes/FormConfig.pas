@@ -8,7 +8,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Buttons, StdCtrls, ComCtrls, ExtCtrls,
   Spin, MiConfigBasic, MiConfigXML, frameCfgUsuarios, Globales, MisUtils,
-  CPGrupFacturables;
+  CibModelo;
 
 type
   TStyleToolbar = (stb_SmallIcon, stb_BigIcon);
@@ -27,9 +27,11 @@ type
     edInform: TEdit;
     edLocal: TEdit;
     edPVenDef: TEdit;
+    edFactDefec: TEdit;
     edSimbMon: TEdit;
     FraUsuarios1: TFraUsuarios;
     Label1: TLabel;
+    Label10: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
@@ -44,6 +46,7 @@ type
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
     TabSheet3: TTabSheet;
+    TabSheet4: TTabSheet;
     procedure BitAceptarClick(Sender: TObject);
     procedure BitAplicarClick(Sender: TObject);
     procedure edSimbMonChange(Sender: TObject);
@@ -66,6 +69,8 @@ type
     Grupo : string;   //Nombre del grupo
     Inform: string;
     PVenDef: string;
+    FactDef: string;
+    ////// Propiedades de Moneda
     SimbMon: string;   //Sïmbolo de moneda
     NumDec : integer;  //Número de decimales
     ImpVen : double;   //Impuesto a las ventas
@@ -75,7 +80,7 @@ type
     modDiseno: Boolean;
     StyleToolbar: TStyleToolbar;
     ////// propiedad de grupos
-    grupos: TCibGruposFacturables;  //objeto principal
+    grupos: TCibModelo;  //objeto principal
     GrpsFact: string;   //cadena "espejo" para las propiedades
     ////// propiedades usuarios
     listaUsu: TStringList;
@@ -93,7 +98,8 @@ var
   //Funciones de acceso rápido
   function CadMoneda(valor: double): string; inline;
   function LeeMoneda(txt: string): double;
-  function Modelo: TCibGruposFacturables;
+  function Modelo: TCibModelo;
+  function FormatMon: string;   //formato de moneda
 
 implementation
 {$R *.lfm}
@@ -106,9 +112,15 @@ function LeeMoneda(txt: string): double;
 begin
   Result := Config.LeeMon(txt);
 end;
-function Modelo: TCibGruposFacturables;
+function Modelo: TCibModelo;
 begin
   Result := Config.grupos;
+end;
+function FormatMon: string;
+{Devuelve el formato que se debe aplicar a un valor para mostrarlo como moneda usando
+la función Format().}
+begin
+  Result := Config.SimbMon + ' %.' + IntToStr(Config.NumDec) + 'f';
 end;
 procedure TConfig.FormCreate(Sender: TObject);
 begin
@@ -153,7 +165,7 @@ var
   nom: string;
 begin
   if grupos<>nil then exit;   //protección
-  grupos := TCibGruposFacturables.Create('GrupServ', ModoCopia);
+  grupos := TCibModelo.Create('GrupServ', ModoCopia);
   //Define nombre de XML
   if nombXML='' then
     nom := ChangeFileExt(Application.ExeName,'.xml')
@@ -165,11 +177,13 @@ begin
   /////////////////////////////////
   version := NOM_PROG;
   xmlFile.Asoc_Str('version', @version, version);  //
-  //propiedades generales
+  //Propiedades generales
   xmlFile.Asoc_Str('local',  @Local,  edLocal, 'LOCAL1');
   xmlFile.Asoc_Str('grupo',  @Grupo,  edGrupo, 'GRUPO1');
   xmlFile.Asoc_Str('inform', @Inform, edInform,'');
   xmlFile.Asoc_Str('PVenDef',@PVenDef,edPVenDef,'COUNTER');
+  xmlFile.Asoc_Str('FactDef', @FactDef, edFactDefec, '');
+  //Propiedades de Moneda
   xmlFile.Asoc_Str('SimbMon',@SimbMon,edSimbMon,'S/.');
   xmlFile.Asoc_Int('NumDec', @NumDec, spnNumDec, 2);
   xmlFile.Asoc_Dbl('ImpVen', @ImpVen, edImpVen, 18, 0, 50);

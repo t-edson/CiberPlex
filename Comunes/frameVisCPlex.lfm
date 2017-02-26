@@ -6,6 +6,7 @@ object fraVisCPlex: TfraVisCPlex
   ClientHeight = 411
   ClientWidth = 481
   TabOrder = 0
+  TabStop = True
   DesignLeft = 253
   DesignTop = 260
   object PaintBox1: TPaintBox

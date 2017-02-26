@@ -108,8 +108,8 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     C_REI_COM = $D2,  //Comando para reiniciar el proceso compañero del cliente
 
     ////////////////////////////////////////////////////////////////////////////////
-    //Comandos de control para el Visor. Se ponen en los valores altos, para poder
-    //identificarlos fácilmente.
+    //Comandos de control para el Visor o terminal (local o remoto). Se ponen en los
+    //valores altos, para poder identificarlos fácilmente.
     ////////////////////////////////////////////////////////////////////////////////
     CVIS_SOLPROP = $E0,  //Solicita archivo de configuración principal (Aplicable a SERVIDOR Y CLIENTE).
     RVIS_SOLPROP = $E1,  //Envía archivo de configuración
@@ -118,7 +118,10 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     CVIS_CAPPANT = $E4,  //Solicita captura de pantalla del servidor
     RVIS_CAPPANT = $E5,  //Respuesta a captura de pantalla del servidor
     CVIS_MSJEPC  = $E6,  //Se solicita mostrar un mensaje en la vista.
-    CVIS_ACBOLET = $E7,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
+    CVIS_ACTPROD = $E7,  //Comando Actualizar tabla de productos
+    RVIS_ACTPROD = $E8,  //Respuesta Actualizar tabla de productos
+
+    CVIS_ACBOLET = $EF,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
     CFAC_CABIN = $F0,  //Acción sobre una cabina (Incluye sub-somandos en ParamX)
     RFAC_CABIN = $F1,  //Respuesta de una cabina (Incluye sub-somandos en ParamX)
     CFAC_NILOM = $F2,  //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)

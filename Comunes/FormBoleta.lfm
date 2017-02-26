@@ -32,6 +32,7 @@ object frmBoleta: TfrmBoleta
       Height = 30
       Top = 40
       Width = 99
+      Cancel = True
       Caption = '&CERRAR'
       Kind = bkClose
       ModalResult = 11

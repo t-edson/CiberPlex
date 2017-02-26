@@ -138,7 +138,6 @@ type
     property ConConexion: boolean read FConConexion write SetConConexion;
   public  //campos diversos
     OnTramaLista  : TEvTramaLista;   //indica que hay una trama lista esperando
-    OnRegMensaje  : TEvCabRegMensaje;   //indica que se ha generado un mensaje de la conexión
     //OnGrabBoleta  : TEvCabAccionCab;    //Indica que se ha grabado la boleta
     function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
     function RegVenta(usu: string): string; override; //línea para registro de venta
@@ -201,6 +200,8 @@ type
     destructor Destroy; override;
   end;
 
+  TEvArchCambRemot = procedure(ruta, nombre: string) of object;
+
   { TCibGFacCabinas }
   { Clase que define al conjunto de las PC clientes. Se juntan todas las
   cabinas en un objeto único, porque la arquitectura se define para centralizar el
@@ -211,14 +212,13 @@ type
   private
     timer1 : TTimer;
     frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
-    procedure cab_RegMensaje(NomCab: string; msj: string);
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
     procedure mnAdminEquipos(Sender: TObject);
     procedure mnAdminTarifas(Sender: TObject);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvTramaLista; //indica que hay una trama lista esperando
-    OnRegMensaje   : TEvCabRegMensaje; //indica que se ha generado un mensaje de la conexión
+    OnArchCambRemot: TEvArchCambRemot; //indica que se ha cambiado algún archivo de forma remota
   protected //Getters and Setters
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
@@ -342,6 +342,7 @@ begin
   frmVisMsj.PonerMsje('    <<Recibido: ' + tram.TipTraNom);  //Envía mensaje a su formulario
   case tram.tipTra of
   M_ESTAD_CLI : begin
+    if tram.traDat = '' then exit;   //protección
     //Este mensaje se procesa aquí sin propagarlo
     Decodificar_M_ESTAD_CLI(tram.traDat, NombPC, HorPC);
     NombrePC:= NombPC;
@@ -425,6 +426,7 @@ begin
   C_ARC_SOLIP: ;
   C_ARC_ENVIA: begin
     CambiaDir(RutaActual);
+    if length(tram.traDat) = 0 then exit;  //protección
     //Genera archivo físico en el escritorio.
     archivo := arcSal;  //archivo a generar
     If FileExists(archivo) Then DeleteFile(archivo);
@@ -434,6 +436,8 @@ begin
     tmp := ListarArchivosD;
     TCP_envComando(M_SOL_LD_AR, 0, 0, tmp);
     CambiaDir(ExtractFilePath(Application.ExeName));  //devuelve la ruta
+    //Avisa que se ha modificado un archivo
+    TCibGFacCabinas(grupo).OnArchCambRemot(RutaActual, arcSal);
   end;
   C_FIJ_ARSAL : begin  //Se está pidiendo fijar el nombre
     arcSal := tram.traDat;
@@ -516,7 +520,6 @@ procedure TCibFacCabina.cabConexRegMensaje(NomCab: string; msj: string);
 begin
   //pasa mensaje a Visor de mensaje, si está abierto
   frmVisMsj.PonerMsje(msj);  //Envía mensaje a su formaulario
-  if OnRegMensaje<>nil then OnRegMensaje(Nombre, msj);
   if (msj<>'') and (msj[1]='-') then begin
     //LLegaron mensajes de pedazos de tramas recibidas.
     DatosjRecib := true;  //Cctualiza bandera
@@ -1328,10 +1331,6 @@ procedure TCibGFacCabinas.cab_TramaLista(idFacOrig: string; tram: TCPTrama);
 begin
   if OnTramaLista<>nil then OnTramaLista(idFacOrig, tram);
 end;
-procedure TCibGFacCabinas.cab_RegMensaje(NomCab: string; msj: string);
-begin
-  if OnRegMensaje<>nil then OnRegMensaje(NomCab, msj);
-end;
 function TCibGFacCabinas.Agregar(nombre0: string; ip0: string): TCibFacCabina;
 var
   cab: TCibFacCabina;
@@ -1345,7 +1344,6 @@ begin
     cab := TCibFacCabina.Create(nombre0, ip0);
   end;
   cab.OnTramaLista :=@cab_TramaLista;
-  cab.OnRegMensaje :=@cab_RegMensaje;
   AgregarItem(cab);   //aquí se configuran algunos  eventos
   if OnCambiaPropied<>nil then OnCambiaPropied();
   Result := cab;
@@ -1561,7 +1559,6 @@ begin
   OnLogVenta     := nil;
   OnActualizStock:= nil;
   OnTramaLista   := nil;   { TODO : Tal vez estas rutinas de limpieza se deban hacer en directamente en TCibFacCabina }
-  OnRegMensaje   := nil;
   timer1.OnTimer:=nil;
   timer1.Destroy;
   tarif.Destroy;

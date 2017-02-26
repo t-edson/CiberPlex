@@ -170,10 +170,10 @@ public
   icoSilla2   : TGraphic;    //Silla
   icoSilla3   : TGraphic;    //Silla
   icoSilla4   : TGraphic;    //Silla
+  procedure ReConstGeom; override;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
   function Mesa: TCibFacMesa; inline;  //acceso a la cabina
 protected
-  procedure ReConstGeom; override;
   procedure ReubicElemen; override;
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;

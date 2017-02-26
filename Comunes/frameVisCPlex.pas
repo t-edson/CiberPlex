@@ -9,7 +9,7 @@ interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
-  CibFacturables, CibGFacCabinas, CibGFacNiloM, CPGrupFacturables, CibTramas,
+  CibFacturables, CibGFacCabinas, CibGFacNiloM, CibModelo, CibTramas,
   CibGFacMesas, ogMotEdicion, MisUtils;
 
 type
@@ -88,18 +88,20 @@ type
     OnDobleClick    : TNotifyEvent;     //Doble click en el visor
     OnDobleClickFac : TEvMouseFac;      //Doble click en un facturable del visor
     OnDobleClickGFac: TEvMouseGFac;      //Doble click en un grupo del visor
-    grupos: TCibGruposFacturables; {Esta lista de grupos facturables, será una copia
+    grupos: TCibModelo; {Esta lista de grupos facturables, será una copia
                                     de la lista que existe en el servidor.}
+    function CoordPantallaDeFact(ogFac: TogFac): TPoint;
+    function CoordPantallaDeFact2(ogFac: TogFac): TPoint;
     property ModDiseno: boolean read FModDiseno write SetModDiseno;
     function AgregOgFac(Fac: TCibFac): TogFac;
     function NumSelecionados: integer;
     function Seleccionado: TObjGraf;
+    function SeleccionarGru(NomGFac: string): boolean;
+    function SeleccionarFac(IdOgFac: string): boolean;
     function FacSeleccionado: TogFac;
     function GFacSeleccionado: TogGFac;
     function CabSeleccionada: TogCabina;
     function GCabinasSeleccionado: TogGCabinas;
-    function LocSeleccionado: TogNiloM;
-    function GNiloMSeleccionado: TogGNiloM;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
@@ -147,7 +149,7 @@ begin
             end;
           end;
       End;
-      Refrescar
+      Refrescar;
   end Else If EstPuntero = EP_MOV_OBJS Then begin  //mueve la selección
 //        If perfil = PER_OPER Then Exit;  //No permite mover
       if ObjBloqueados then begin
@@ -307,6 +309,41 @@ function TfraVisCPlex.Seleccionado: TObjGraf;  //atajo
 begin
   Result := motEdi.Seleccionado;
 end;
+function TfraVisCPlex.SeleccionarGru(NomGFac: string): boolean;
+var
+  og :TObjGraf;
+begin
+  for og in motEdi.objetos do begin
+    if og is TogGFac then begin
+      if TogGFac(og).GFac.Nombre = NomGFac then begin
+        //Ubico el objeto
+        motEdi.DeseleccionarTodos;
+        og.Selec;  //selecciona
+        motEdi.Refrescar;  //refresca
+        exit(true);
+      end;
+    end;
+  end;
+end;
+function TfraVisCPlex.SeleccionarFac(IdOgFac: string): boolean;
+{Selecciona un objeto gráfico, dado su ID. Si no lo logra ubicar, devuelve FALSE.}
+var
+  og :TObjGraf;
+begin
+  for og in motEdi.objetos do begin
+    if og is TogFac then begin
+      if TogFac(og).Fac.IdFac = IdOgFac then begin
+        //Ubico el objeto
+        motEdi.DeseleccionarTodos;
+        og.Selec;  //selecciona
+        motEdi.Refrescar;  //refresca
+        exit(true);
+      end;
+    end;
+  end;
+  //No lo encontró
+  exit(false);
+end;
 function TfraVisCPlex.FacSeleccionado: TogFac;
 {Devuelve el ogFac seleccionado. Si no hay ninguna, devuelve NIL.}
 var
@@ -367,38 +404,6 @@ begin
     exit(nil);
   end;
 end;
-function TfraVisCPlex.LocSeleccionado: TogNiloM;
-{Devuelve el locutorio seleccionado. Si no hay ninguno, devuelve NIL.}
-var
-  og: TObjGraf;
-begin
-  if NumSelecionados>1 then begin
-    //MsgExc('Se debe seleccionar solo un locutorio.');
-    exit(nil);
-  end;
-  og := Seleccionado;
-  if og = nil then exit(nil);
-  if not (og is TogNiloM) then exit(nil);
-  Result := TogNiloM(og);
-end;
-function TfraVisCPlex.GNiloMSeleccionado: TogGNiloM;
-var
-  og: TObjGraf;
-begin
-  if NumSelecionados>1 then begin
-    //MsgExc('Se debe seleccionar solo una cabina.');
-    exit(nil);
-  end;
-  og := Seleccionado;
-  if og = nil then exit(nil);
-  if og is TogGNiloM then begin
-    //Grupo seleccionado directamente
-    Result := TogGNiloM(og);
-  end else begin
-    //Otro obejto seleccionado
-    exit(nil);
-  end;
-end;
 procedure TfraVisCPlex.ActualizarOgFacturables(grupo: TCibGFac);
 {Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
 que objetos deben existir}
@@ -436,6 +441,19 @@ begin
     end;
   end;
 end;
+function TfraVisCPlex.CoordPantallaDeFact(ogFac: TogFac): TPoint;
+{Devuelve las coordenadas de se pantalla del facturable.}
+begin
+  Result.x:= motEdi.v2d.XPant(ogFac.x);
+  Result.y:= motEdi.v2d.YPant(ogFac.y);
+end;
+function TfraVisCPlex.CoordPantallaDeFact2(ogFac: TogFac): TPoint;
+{Devuelve las coordenadas de se pantalla de la parte inferior facturable.}
+begin
+  Result.x:= motEdi.v2d.XPant(ogFac.x);
+  Result.y:= motEdi.v2d.YPant(ogFac.y + ogFac.Height);
+end;
+
 procedure TfraVisCPlex.PaintBox1DragOver(Sender, Source: TObject; X,
   Y: Integer; State: TDragState; var Accept: Boolean);
 var
@@ -546,14 +564,14 @@ begin
   end;
 end;
 procedure TfraVisCPlex.ActualizarPropiedades(cadProp: string);
-{Recibe la cadena de propiedades del "TCibGruposFacturables" del servidor y actualiza
+{Recibe la cadena de propiedades del "TCibModelo" del servidor y actualiza
 su copia local.}
 var
   og : TObjGraf;
   gruFac: TCibGFac;
   i: Integer;
 begin
-  //Actualiza el contenido del TCibGruposFacturables local
+  //Actualiza el contenido del TCibModelo local
   grupos.items.Clear;  {Para empezar a crear los objetos en ModoCopia TRUE}
   grupos.CadPropiedades := cadProp;  //copia propiedades de todos los grupos
   {Crea o elimina objetos gráficos (que representan a objetos TCibGFac) de acuerdo al
@@ -782,10 +800,9 @@ begin
   motEdi.OnDblClick       := @motEdi_DblClick;
   motEdi.OnMouseUp        := @motEdi_MouseUp;
   decod := TCPDecodCadEstado.Create;
-  grupos:= TCibGruposFacturables.Create('GrupVis', true);  //Crea en modo copia
+  grupos:= TCibModelo.Create('GrupVis', true);  //Crea en modo copia
   grupos.OnReqCadMoneda  :=@gruposReqCadMoneda;
   grupos.OnSolicEjecCom  :=@gruposSolicEjecCom;
-   //Para el evento
 end;
 destructor TfraVisCPlex.Destroy;
 begin

@@ -296,7 +296,7 @@ type
     OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
     OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
     OnSolicEjecCom : TEvSolicEjecCom;   //Solicita ejecutar acciones
-    OnRespComando  : TEvRespComando;      //Cuando se solicta responder a un comando.
+    OnRespComando  : TEvRespComando;    //Cuando se solicta responder a un comando.
     OnBuscarGFac   : TEvBuscarGFac;
   public  //Constructor y destructor
     constructor Create(nombre0: string; tipo0: TCibTipFact);

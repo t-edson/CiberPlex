@@ -1,19 +1,20 @@
 object Config: TConfig
   Left = 315
-  Height = 296
+  Height = 317
   Top = 294
-  Width = 351
+  Width = 367
+  BorderStyle = bsSingle
   Caption = 'Configuración'
-  ClientHeight = 296
-  ClientWidth = 351
+  ClientHeight = 317
+  ClientWidth = 367
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
   LCLVersion = '1.6.2.0'
   object BitAplicar: TBitBtn
-    Left = 136
+    Left = 144
     Height = 30
-    Top = 256
+    Top = 272
     Width = 75
     Caption = '&Aplicar'
     Default = True
@@ -22,9 +23,9 @@ object Config: TConfig
     TabOrder = 0
   end
   object BitCancel: TBitBtn
-    Left = 256
+    Left = 264
     Height = 30
-    Top = 256
+    Top = 272
     Width = 75
     Cancel = True
     DefaultCaption = True
@@ -33,9 +34,9 @@ object Config: TConfig
     TabOrder = 1
   end
   object BitAceptar: TBitBtn
-    Left = 24
+    Left = 32
     Height = 30
-    Top = 256
+    Top = 272
     Width = 75
     DefaultCaption = True
     Kind = bkOK
@@ -44,16 +45,16 @@ object Config: TConfig
   end
   object PageControl1: TPageControl
     Left = 0
-    Height = 248
+    Height = 256
     Top = 0
-    Width = 344
+    Width = 367
     ActivePage = TabSheet3
-    TabIndex = 2
+    TabIndex = 3
     TabOrder = 3
     object TabSheet1: TTabSheet
       Caption = 'General'
-      ClientHeight = 220
-      ClientWidth = 336
+      ClientHeight = 228
+      ClientWidth = 359
       object edLocal: TEdit
         Left = 48
         Height = 23
@@ -118,60 +119,63 @@ object Config: TConfig
         TabOrder = 3
         Text = 'edPVenDef'
       end
-      object Label5: TLabel
+      object Label10: TLabel
         Left = 8
         Height = 15
         Top = 128
+        Width = 159
+        Caption = 'Objeto facturable por defecto:'
+        ParentColor = False
+      end
+      object edFactDefec: TEdit
+        Left = 216
+        Height = 23
+        Top = 120
+        Width = 80
+        TabOrder = 4
+        Text = 'edFactDefec'
+      end
+    end
+    object TabSheet4: TTabSheet
+      Caption = 'Moneda'
+      ClientHeight = 228
+      ClientWidth = 359
+      object Label5: TLabel
+        Left = 16
+        Height = 15
+        Top = 24
         Width = 110
         Caption = 'Símbolo de Moneda:'
         ParentColor = False
       end
-      object edSimbMon: TEdit
-        Left = 144
-        Height = 23
-        Top = 120
-        Width = 40
-        OnChange = edSimbMonChange
-        TabOrder = 4
-        Text = 'edSimbMon'
-      end
       object Label6: TLabel
-        Left = 9
+        Left = 17
         Height = 15
-        Top = 160
+        Top = 56
         Width = 119
         Caption = 'Número de decimales:'
         ParentColor = False
       end
       object Label7: TLabel
-        Left = 9
+        Left = 17
         Height = 15
-        Top = 192
+        Top = 88
         Width = 127
         Caption = 'Impuesto a la venta (%):'
         ParentColor = False
       end
-      object edImpVen: TEdit
-        Left = 144
-        Height = 23
-        Top = 184
-        Width = 40
-        Alignment = taRightJustify
-        TabOrder = 5
-        Text = 'edImpVen'
-      end
       object Label8: TLabel
-        Left = 232
+        Left = 240
         Height = 15
-        Top = 128
+        Top = 24
         Width = 46
         Caption = 'Muestra:'
         ParentColor = False
       end
       object Label9: TLabel
-        Left = 200
+        Left = 208
         Height = 40
-        Top = 152
+        Top = 48
         Width = 128
         Alignment = taCenter
         AutoSize = False
@@ -185,21 +189,39 @@ object Config: TConfig
         ParentColor = False
         ParentFont = False
       end
-      object spnNumDec: TSpinEdit
-        Left = 144
+      object edImpVen: TEdit
+        Left = 152
         Height = 23
-        Top = 152
+        Top = 80
+        Width = 40
+        Alignment = taRightJustify
+        TabOrder = 0
+        Text = 'edImpVen'
+      end
+      object spnNumDec: TSpinEdit
+        Left = 152
+        Height = 23
+        Top = 48
         Width = 42
         Alignment = taRightJustify
         MaxValue = 4
         OnChange = spnNumDecChange
-        TabOrder = 6
+        TabOrder = 1
+      end
+      object edSimbMon: TEdit
+        Left = 152
+        Height = 23
+        Top = 16
+        Width = 40
+        OnChange = edSimbMonChange
+        TabOrder = 2
+        Text = 'edSimbMon'
       end
     end
     object TabSheet2: TTabSheet
       Caption = 'Vista'
-      ClientHeight = 220
-      ClientWidth = 336
+      ClientHeight = 228
+      ClientWidth = 359
       object chkPanLLamadas: TCheckBox
         Left = 16
         Height = 19
@@ -251,8 +273,8 @@ object Config: TConfig
     end
     object TabSheet3: TTabSheet
       Caption = 'Usuarios'
-      ClientHeight = 220
-      ClientWidth = 336
+      ClientHeight = 228
+      ClientWidth = 359
       inline FraUsuarios1: TFraUsuarios
       end
     end
