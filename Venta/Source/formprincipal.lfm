@@ -1,0 +1,183 @@
+object Form1: TForm1
+  Left = 643
+  Height = 533
+  Top = 210
+  Width = 781
+  Caption = 'CiberPlex Admin'
+  ClientHeight = 513
+  ClientWidth = 781
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  LCLVersion = '1.6.2.0'
+  object Memo2: TMemo
+    Left = 0
+    Height = 513
+    Top = 0
+    Width = 288
+    Align = alLeft
+    Lines.Strings = (
+      'Memo2'
+    )
+    ScrollBars = ssHorizontal
+    TabOrder = 0
+    WordWrap = False
+  end
+  object ActionList1: TActionList
+    left = 96
+    top = 72
+    object acAccRefPan: TAction
+      Category = 'Acc'
+      Caption = 'Refresc.Pantalla'
+    end
+    object acAccVerPan: TAction
+      Category = 'Acc'
+      Caption = 'Ver &Pantalla'
+      OnExecute = acAccVerPanExecute
+    end
+    object acAccEnvCom: TAction
+      Category = 'Acc'
+      Caption = 'Enviar C&omando'
+      ShortCut = 113
+    end
+    object acAccEnvMjeTit: TAction
+      Category = 'Acc'
+      Caption = 'Envía Mensaje de &Título'
+      OnExecute = acAccEnvMjeTitExecute
+    end
+    object acCabIniCta: TAction
+      Category = 'Cab'
+      Caption = '&Iniciar Cuenta'
+    end
+    object acCabModTpo: TAction
+      Category = 'Cab'
+      Caption = '&Modif. Tiempo'
+    end
+    object acCabDetCta: TAction
+      Category = 'Cab'
+      Caption = '&Detener Cuenta'
+    end
+    object acAccRefObj: TAction
+      Category = 'Acc'
+      Caption = 'Refrescar &Objetos'
+      OnExecute = acAccRefObjExecute
+    end
+    object acCabPonMan: TAction
+      Category = 'Cab'
+      Caption = 'Poner en &Mantenimiento'
+    end
+    object acFacGraBol: TAction
+      Category = 'Fac'
+      Caption = 'Grabar &Boleta'
+      Hint = 'Graba la boleta'
+      OnExecute = acFacGraBolExecute
+    end
+    object acCabExplorArc: TAction
+      Category = 'Cab'
+      Caption = 'Ver E&xplorador de Archivos'
+      OnExecute = acCabExplorArcExecute
+    end
+    object acFacVerBol: TAction
+      Category = 'Fac'
+      Caption = '&Ver Boleta'
+      OnExecute = acFacVerBolExecute
+    end
+    object acVerExpServ: TAction
+      Category = 'Ver'
+      Caption = 'Explorador de Servidor'
+      OnExecute = acVerExpServExecute
+    end
+    object acVerAdmProd: TAction
+      Category = 'Ver'
+      Caption = '&Administrador de Productos'
+      OnExecute = acVerAdmProdExecute
+      ShortCut = 16464
+    end
+  end
+  object MainMenu1: TMainMenu
+    left = 24
+    top = 72
+    object MenuItem2: TMenuItem
+      Caption = 'A&cciones'
+      object MenuItem14: TMenuItem
+        Action = acAccRefObj
+      end
+      object MenuItem3: TMenuItem
+        Action = acAccEnvCom
+      end
+      object MenuItem4: TMenuItem
+        Action = acAccEnvMjeTit
+      end
+      object MenuItem9: TMenuItem
+        Action = acFacGraBol
+      end
+    end
+    object MenuItem18: TMenuItem
+      Caption = '&Ver'
+      object MenuItem20: TMenuItem
+        Action = acVerExpServ
+      end
+      object MenuItem19: TMenuItem
+        Caption = 'Pantalla Servidor'
+        OnClick = MenuItem19Click
+      end
+      object MenuItem21: TMenuItem
+        Action = acVerAdmProd
+      end
+    end
+    object MenuItem1: TMenuItem
+      Caption = '&Computadora'
+      object MenuItem12: TMenuItem
+        Action = acCabIniCta
+      end
+      object MenuItem5: TMenuItem
+        Action = acCabModTpo
+      end
+      object MenuItem7: TMenuItem
+        Action = acCabDetCta
+      end
+      object MenuItem13: TMenuItem
+        Action = acFacGraBol
+      end
+    end
+  end
+  object PopupMenu1: TPopupMenu
+    left = 168
+    top = 72
+    object MenuItem11: TMenuItem
+      Action = acCabIniCta
+    end
+    object MenuItem6: TMenuItem
+      Action = acCabModTpo
+    end
+    object MenuItem8: TMenuItem
+      Action = acCabDetCta
+    end
+    object MenuItem17: TMenuItem
+      Action = acCabPonMan
+    end
+    object MenuItem10: TMenuItem
+      Action = acFacGraBol
+    end
+    object MenuItem15: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem16: TMenuItem
+      Action = acCabExplorArc
+    end
+  end
+  object PopupFac: TPopupMenu
+    left = 336
+    top = 80
+    object MenuItem61: TMenuItem
+      Caption = '-'
+    end
+  end
+  object Timer1: TTimer
+    Interval = 500
+    OnTimer = Timer1Timer
+    left = 484
+    top = 76
+  end
+end
