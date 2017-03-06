@@ -1,26 +1,24 @@
-{Formualrio para la ediciónm de los productos}
-unit FormAdminProduc;
+unit FormAdminInsum;
 {$mode objfpc}{$H+}
 interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Grids, ExtCtrls,
   Buttons, Menus, ActnList, StdCtrls, LCLProc, LCLType, Clipbrd,
   UtilsGrilla, CibProductos, CibUtils, FrameFiltCampo,
-  FrameFiltArbol, FrameEditGrilla, MisUtils;
+  FrameFiltArbol, FrameEditGrilla, FormCalcul, MisUtils;
 type
-  { TfrmAdminProduc }
-  TfrmAdminProduc = class(TForm)
-  published
-    acArcSalir: TAction;
+  { TfrmAdminInsum }
+  TfrmAdminInsum = class(TForm)
     acArcGrabar: TAction;
+    acArcSalir: TAction;
     acArcValidar: TAction;
-    acHerMostRentab: TAction;
-    acVerArbCat: TAction;
+    acVerCalcul: TAction;
     ActionList1: TActionList;
-    btnValidar: TBitBtn;
-    btnMostCateg: TBitBtn;
-    btnCerrar: TBitBtn;
+    acVerArbCat: TAction;
     btnGrabar: TBitBtn;
+    btnCerrar: TBitBtn;
+    btnMostCateg: TBitBtn;
+    btnValidar: TBitBtn;
     chkMostInac: TCheckBox;
     fraFiltCampo: TfraFiltCampo;
     ImageList1: TImageList;
@@ -30,7 +28,6 @@ type
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem18: TMenuItem;
-    MenuItem19: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -41,60 +38,63 @@ type
     Panel2: TPanel;
     Splitter1: TSplitter;
     procedure acArcGrabarExecute(Sender: TObject);
+    procedure acArcSalirExecute(Sender: TObject);
     procedure acArcValidarExecute(Sender: TObject);
-    procedure acHerMostRentabExecute(Sender: TObject);
     procedure acVerArbCatExecute(Sender: TObject);
+    procedure acVerCalculExecute(Sender: TObject);
     procedure btnCerrarClick(Sender: TObject);
     procedure btnMostCategClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure SolicCerrarArbol;
     procedure FormShow(Sender: TObject);
   private  //Referencias a columnas
-    colRentab: TugGrillaCol;
     colCodigo: TugGrillaCol;
     colCateg: TugGrillaCol;
     colSubcat: TugGrillaCol;
-    colPreUni: TugGrillaCol;
     colDescri: TugGrillaCol;
+    colUso   : TugGrillaCol;
     colStock : TugGrillaCol;
     colMarca : TugGrillaCol;
     colUniCom: TugGrillaCol;
     colPreCos: TugGrillaCol;
-    colFecCre: TugGrillaCol;
-    colFecMod: TugGrillaCol;
-    procedure fraGri_Modificado(TipModif: TugTipModif);
-    procedure fraGri_ReqNuevoReg(fil: integer);
-  private
-    TabPro: TCibTabProduc;
-    regAux: TCibRegProduc;   //registro auxiliar
-    fraFiltArbol1: TfraFiltArbol;
-    fraGri     : TfraEditGrilla;
-    FormatMon: string;
+    colProvee: TugGrillaCol;
+    colUltCom: TugGrillaCol;
+    colComent: TugGrillaCol;
     procedure fraFiltCampoCambiaFiltro;
     procedure fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure fraGri_Modificado(TipModif: TugTipModif);
+    procedure fraGri_ReqNuevoReg(fil: integer);
     function griLeerColorFondo(col, fil: integer): TColor;
-    procedure RefrescarFiltros;
-    procedure RegAGrilla(reg: TCibRegProduc; f: integer);
-    procedure GrillaAReg(f: integer; reg: TCibRegProduc);
+    procedure SolicCerrarArbol;
+  private
+    TabIns: TCibTabInsumo;
+    fraFiltArbol1: TfraFiltArbol;
+    fraGri     : TfraEditGrilla;
+    FormatMon: string;
+    procedure GrillaAReg(f: integer; reg: TCibRegInsumo);
     procedure ListaAGrilla;
+    procedure RefrescarFiltros;
+    procedure RegAGrilla(reg: TCibRegInsumo; f: integer);
   public
-    Modificado:  boolean;
+    Modificado : boolean;
     OnGrabado : procedure of object;
     function GrillaATabString: string;
-    procedure Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
+    procedure Exec(TabPro0: TCibTabInsumo; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
   end;
 
 var
-  frmAdminProduc: TfrmAdminProduc;
+  frmAdminInsum: TfrmAdminInsum;
 
 implementation
+
 {$R *.lfm}
-{ TfrmAdminProduc }
-procedure TfrmAdminProduc.RefrescarFiltros;
+
+{ TfrmAdminInsum }
+
+procedure TfrmAdminInsum.RefrescarFiltros;
 {Configura los filtros que aplican, y muestra información sobre ellos.}
 var
   txtBusc: string;
@@ -125,89 +125,91 @@ begin
     MensajeVisibles(lblNumRegist, fraGri.RowCount-1, fraGri.RowCount-1);
   end;
 end;
-procedure TfrmAdminProduc.RegAGrilla(reg: TCibRegProduc; f: integer);
+procedure TfrmAdminInsum.RegAGrilla(reg: TCibRegInsumo; f: integer);
 {Mueve un registro de la tabla de productos, a una fila de la grilla}
 begin
   colCodigo.ValStr[f]   := reg.Cod;
   colCateg.ValStr[f]    := reg.Categ;
   colSubcat.ValStr[f]   := reg.Subcat;
-  colPreUni.ValNum[f]   := reg.preVenta;
   colDescri.ValStr[f]   := reg.Desc;
+  colUso.ValStr[f]      := reg.Uso;
   colStock.ValNum[f]    := reg.Stock;
   colMarca.ValStr[f]    := reg.Marca;
   colUniCom.ValStr[f]   := reg.UnidComp;
   colPreCos.ValNum[f]   := reg.PreCosto;
-  colFecCre.ValDatTim[f]:= reg.fecCre;
-  colFecMod.ValDatTim[f]:= reg.fecMod;
+  colProvee.ValStr[f]   := reg.provee;
+  colUltCom.ValDatTim[f]:= reg.ultCom;
+  colComent.ValStr[F]   := REG.Coment;
 end;
-procedure TfrmAdminProduc.GrillaAReg(f: integer; reg: TCibRegProduc);
+procedure TfrmAdminInsum.GrillaAReg(f: integer; reg: TCibRegInsumo);
 begin
   reg.Cod       := colCodigo.ValStr[f];
   reg.Categ     := colCateg.ValStr[f];
   reg.Subcat    := colSubcat.ValStr[f];
-  reg.preVenta  := colPreUni.ValNum[f];
   reg.Desc      := colDescri.ValStr[f];
+  reg.Uso       := colUso.ValStr[f];
   reg.Stock     := colStock.ValNum[f];
   reg.Marca     := colMarca.ValStr[f];
   reg.UnidComp  := colUniCom.ValStr[f];
   reg.PreCosto  := colPreCos.ValNum[f];
-  reg.fecCre    := colFecCre.ValDatTim[f];
-  reg.fecMod    := colFecMod.ValDatTim[f];
+  reg.provee    := colProvee.ValStr[f];
+  reg.ultCom    := colUltCom.ValDatTim[f];
+  REG.Coment    := colComent.ValStr[F];
 end;
-procedure TfrmAdminProduc.ListaAGrilla;
+procedure TfrmAdminInsum.ListaAGrilla;
 {Mueve datos de la lista a la grills}
 var
   f: Integer;
-  reg: TCibRegProduc;
+  reg: TCibRegInsumo;
   n: LongInt;
   grilla: TStringGrid;
 begin
   grilla := fraGri.grilla;
   grilla.BeginUpdate;
   grilla.RowCount:=1;  //limpia datos
-  n := TabPro.Productos.Count+1;
+  n := TabIns.Insumos.Count+1;
   grilla.RowCount:= n;
   f := 1;
-  for reg in TabPro.Productos do begin
+  for reg in TabIns.Insumos do begin
     grilla.Cells[0, f] := IntToStr(f);
     RegAGrilla(reg, f);
     f := f + 1;
   end;
   grilla.EndUpdate();
 end;
-function TfrmAdminProduc.GrillaATabString: string;
+function TfrmAdminInsum.GrillaATabString: string;
 {Devuelve la grilla en formato de tabla-archivo (datos listos para escribir) en disco.}
 var
-  TabTmp: TCibTabProduc;
+  TabTmp: TCibTabInsumo;
   f: Integer;
-  reg: TCibRegProduc;
+  reg: TCibRegInsumo;
 begin
   //Mueve datos a lista temporal. Si se ha hecho la validación, no debería fallar.
-  TabTmp:= TCibTabProduc.Create;   //lista temporal
+  TabTmp:= TCibTabInsumo.Create;   //lista temporal
   for f:=1 to fraGri.RowCount-1 do begin
-    reg := TCibRegProduc.Create;
+    reg := TCibRegInsumo.Create;
     GrillaAReg(f, reg);
-    TabTmp.Productos.Add(reg);
+    TabTmp.Insumos.Add(reg);
   end;
   //Convierte lista a cadena
   TabTmp.SaveToString(Result);
   TabTmp.Destroy;
 end;
-procedure TfrmAdminProduc.Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
+procedure TfrmAdminInsum.Exec(TabPro0: TCibTabInsumo; FormatMoneda: string);
 begin
-  TabPro := TabPro0;
+  TabIns := TabPro0;
   FormatMon := FormatMoneda;
   ListaAGrilla;  //Hace el llenado inicial de productos
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;   //Para actualizar mensajes y variables de estado.
   self.Show;
 end;
-procedure TfrmAdminProduc.Habilitar(estado: boolean);
+procedure TfrmAdminInsum.Habilitar(estado: boolean);
 {Configura el estado de los botones}
 begin
   btnGrabar.Enabled:=estado;
 end;
-procedure TfrmAdminProduc.FormCreate(Sender: TObject);
+procedure TfrmAdminInsum.FormCreate(Sender: TObject);
 begin
   fraFiltArbol1:= TfraFiltArbol.Create(self);
   fraFiltArbol1.Parent := self;
@@ -220,19 +222,19 @@ begin
   fraGri.Align  := alClient;
   //Configura grilla
   fraGri.IniEncab;
-               fraGri.AgrEncabNum   ('N°'            , 25);
-  colCodigo := fraGri.AgrEncabTxt   ('CÓDIGO'        , 60);
-  colCateg  := fraGri.AgrEncabTxt   ('CATEGORÍA'     , 70);
-  colSubcat := fraGri.AgrEncabTxt   ('SUBCATEGORÍA'  , 80);
-  colPreUni := fraGri.AgrEncabNum   ('PRC.UNITARIO'  , 55);
-  colDescri := fraGri.AgrEncabTxt   ('DESCRIPCIÓN'   ,180);
-  colStock  := fraGri.AgrEncabNum   ('STOCK'         , 40);
-  colStock.editable:=false;   //Los cambios de stock, son otro proceso
-  colMarca  := fraGri.AgrEncabTxt   ('MARCA'         , 50);
-  colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA',70);
-  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 55);
-  colFecCre := fraGri.AgrEncabDatTim('FECHA CREACION', 70);
-  colFecMod := fraGri.AgrEncabDatTim('FECHA MODIFIC.', 70);
+               fraGri.AgrEncabNum   ('N°'             , 25);
+  colCodigo := fraGri.AgrEncabTxt   ('CÓDIGO'         , 50);
+  colCateg  := fraGri.AgrEncabTxt   ('CATEGORÍA'      , 60);
+  colSubcat := fraGri.AgrEncabTxt   ('SUBCATEGORÍA'   , 60);
+  colDescri := fraGri.AgrEncabTxt   ('DESCRIPCIÓN'    ,180);
+  colUso    := fraGri.AgrEncabTxt   ('USO'            , 70);
+  colStock  := fraGri.AgrEncabNum   ('STOCK'          , 40);
+  colMarca  := fraGri.AgrEncabTxt   ('MARCA RECOMENDADA',70);
+  colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA', 80);
+  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'   , 55);
+  colProvee := fraGri.AgrEncabTxt   ('PROVEEDOR'      , 100);
+  colUltCom := fraGri.AgrEncabDatTim('FECHA ULT. COMPRA', 70);
+  colComent := fraGri.AgrEncabTxt   ('COMENTARIO'     , 100);
   fraGri.FinEncab;
   fraGri.OnGrillaModif:=@fraGri_Modificado;
   fraGri.OnReqNuevoReg:=@fraGri_ReqNuevoReg;
@@ -249,71 +251,63 @@ begin
   fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Productos');
   fraFiltArbol1.OnCambiaFiltro:= @fraFiltCampoCambiaFiltro;
   fraFiltArbol1.OnSoliCerrar:=@SolicCerrarArbol;
-
-  regAux:= TCibRegProduc.Create;  //registro auxiliar
 end;
-procedure TfrmAdminProduc.FormShow(Sender: TObject);
+procedure TfrmAdminInsum.FormShow(Sender: TObject);
 begin
   //Se configura aquí (En OnShow), proque se necesita que se haya cargado la
   //configuración.
-  colPreUni.formato := FormatMon;
   colPreCos.formato := FormatMon;
 end;
-procedure TfrmAdminProduc.fraGri_Modificado(TipModif: TugTipModif);
-begin
-  fraFiltArbol1.LeerCategorias;
-//  RefrescarFiltros;
-end;
-procedure TfrmAdminProduc.fraGri_ReqNuevoReg(fil: integer);
-begin
-  //Llena los campos por defecto.
-  colCodigo.ValStr[fil] := '#'+IntToStr(fraGri.RowCount);
-  colPreUni.ValNum[fil] := 0;
-  colStock.ValNum[fil] := 0;
-  colPreCos.ValNum[fil] := 0;
-  colFecCre.ValDatTim[fil] := now;
-  colFecMod.ValDatTim[fil] := now;
-end;
-function TfrmAdminProduc.griLeerColorFondo(col, fil: integer): TColor;
+function TfrmAdminInsum.griLeerColorFondo(col, fil: integer): TColor;
 begin
   Result := clWhite;
 end;
-procedure TfrmAdminProduc.fraFiltCampoCambiaFiltro;
+procedure TfrmAdminInsum.fraFiltCampoCambiaFiltro;
 begin
   RefrescarFiltros;
 end;
-procedure TfrmAdminProduc.fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
+procedure TfrmAdminInsum.fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   if Key = VK_DOWN then begin
     fraGri.SetFocus;
   end;
 end;
-procedure TfrmAdminProduc.FormDestroy(Sender: TObject);
+procedure TfrmAdminInsum.fraGri_Modificado(TipModif: TugTipModif);
 begin
-  regAux.Destroy;
+  fraFiltArbol1.LeerCategorias;
+//  RefrescarFiltros;
+end;
+procedure TfrmAdminInsum.fraGri_ReqNuevoReg(fil: integer);
+begin
+  //Llena los campos por defecto.
+  colCodigo.ValStr[fil] := '#'+IntToStr(fraGri.RowCount);
+  colStock.ValNum[fil] := 0;
+  colPreCos.ValNum[fil] := 0;
+  colUltCom.ValDatTim[fil] := now;
+end;
+procedure TfrmAdminInsum.FormDestroy(Sender: TObject);
+begin
   fraGri.Destroy;
 end;
-
-procedure TfrmAdminProduc.FormKeyDown(Sender: TObject; var Key: Word;
+procedure TfrmAdminInsum.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-    if Key = VK_F3 then fraFiltCampo.SetFocus;
-    if (Key = VK_ESCAPE) and (btnCerrar.Focused or
-                              btnGrabar.Focused or
-                              btnValidar.Focused or
-                              btnMostCateg.Focused) then fraGri.SetFocus;
+  if Key = VK_F3 then fraFiltCampo.SetFocus;
+  if (Key = VK_ESCAPE) and (btnCerrar.Focused or
+                            btnGrabar.Focused or
+                            btnValidar.Focused or
+                            btnMostCateg.Focused) then fraGri.SetFocus;
 end;
-
-procedure TfrmAdminProduc.SolicCerrarArbol;
+procedure TfrmAdminInsum.SolicCerrarArbol;
 begin
   acVerArbCatExecute(self);
 end;
-procedure TfrmAdminProduc.btnCerrarClick(Sender: TObject);
+procedure TfrmAdminInsum.btnCerrarClick(Sender: TObject);
 begin
   Self.Close;
 end;
-procedure TfrmAdminProduc.btnMostCategClick(Sender: TObject);
+procedure TfrmAdminInsum.btnMostCategClick(Sender: TObject);
 {Se hace esta llamada por código, porque no se puede asoicar fácilmente un TBitBtn
 a un acción, mostrando solo el ícono.}
 begin
@@ -321,50 +315,39 @@ begin
 end;
 
 ///////////////////////// Acciones ////////////////////////////////
-procedure TfrmAdminProduc.acArcGrabarExecute(Sender: TObject);
+procedure TfrmAdminInsum.acArcSalirExecute(Sender: TObject);
+begin
+  Close;
+end;
+procedure TfrmAdminInsum.acArcGrabarExecute(Sender: TObject);
 {Aplica los cambios a la tabla}
 begin
-  acArcValidarExecute(self);
+  fraGri.ValidarGrilla;  //Puede mostrar mensaje de error
   if fraGri.MsjError<>'' then exit;
   if OnGrabado<>nil then OnGrabado();  //El evento es quien grabará
   fraFiltArbol1.LeerCategorias;
   self.ActiveControl := nil;   //Para no quedarse copn el enfoque
 end;
-procedure TfrmAdminProduc.acArcValidarExecute(Sender: TObject);
+procedure TfrmAdminInsum.acArcValidarExecute(Sender: TObject);
 {Realiza la validación de los campos de la grilla. Esto implica ver si los valores de
-cadena, contenidos en todos los campos, se pueden traducir a los valores netivos del
+cadena, contenidos en todos los campos, se pueden traducir a los valores nativos del
 tipo TRegProdu, y si son valores legales.}
 begin
   fraGri.ValidarGrilla;  //Puede mostrar mensaje de error
+  if fraGri.MsjError='' then begin
+    MsgBox('Validación Exitosa.');
+  end;
 end;
 //Acciones Ver
-procedure TfrmAdminProduc.acVerArbCatExecute(Sender: TObject);
+procedure TfrmAdminInsum.acVerArbCatExecute(Sender: TObject);
 begin
   fraFiltArbol1.Visible := not fraFiltArbol1.Visible;
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;
 end;
-procedure TfrmAdminProduc.acHerMostRentabExecute(Sender: TObject);
-{Muestra una columna de rentabilidad}
-var
-  f: Integer;
+procedure TfrmAdminInsum.acVerCalculExecute(Sender: TObject);
 begin
-  colRentab := fraGri.BuscAgreEncabNum('RENTABILIDAD', 50);  //agrega si no existe
-  colRentab.formato:='%.2f';
-  fraFiltCampo.AgregarColumnaFiltro('Por RENTABILIDAD', colRentab.idx);
-  //Calcula la rentabilidad
-  for f := 1 to fraGri.RowCount-1 do begin
-    try
-      GrillaAReg(f, regAux);
-      if regAux.PreCosto = 0 then begin
-        colRentab.ValNum[f] := 0;
-      end else begin
-        //Se está usando una fórmula modificada. Realmente sería el Margen Sobre las Compras.
-        colRentab.ValNum[f] := (regAux.PreVenta-regAux.PreCosto)/regAux.PreCosto;
-      end;
-    except
-    end;
-  end;
+  frmCalcul.Show;
 end;
 
 end.

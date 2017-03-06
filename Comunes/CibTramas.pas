@@ -119,7 +119,8 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     RVIS_CAPPANT = $E5,  //Respuesta a captura de pantalla del servidor
     CVIS_MSJEPC  = $E6,  //Se solicita mostrar un mensaje en la vista.
     CVIS_ACTPROD = $E7,  //Comando Actualizar tabla de productos
-    RVIS_ACTPROD = $E8,  //Respuesta Actualizar tabla de productos
+    CVIS_ACTPROV = $E8,  //Comando Actualizar tabla de proveedores
+    CVIS_ACTINSU = $E9,  //Comando Actualizar tabla de insumos
 
     CVIS_ACBOLET = $EF,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
     CFAC_CABIN = $F0,  //Acción sobre una cabina (Incluye sub-somandos en ParamX)
@@ -393,8 +394,10 @@ begin
     //Otro paquete que contiene datos de una trama anterior o puede ser basura
     If BytesEsper = 0 Then begin  //No se esperaba este paquete
       //No se toma ninguna acción. Se ignora
-      if OnRegMensaje<>nil then
-        OnRegMensaje('', '-Paquete no esperado de ' + IntToStr(bytesTotal) + ' bytes.');
+      if OnRegMensaje<>nil then begin
+        OnRegMensaje('', '-Paquete no esperado de ' + IntToStr(bytesTotal) + ' bytes (' +
+                         IntToStr(estad_tra) + ':' + IntToStr(Ord(s[1])) +').');
+      end;
       //Debería verificarse si corresponde al inicio de otra trama
       //Si es que ha habido error al transmitir los paquetes anteriores
       //    If datos(0) = ID_ENCABEZ Then

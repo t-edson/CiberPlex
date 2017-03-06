@@ -194,6 +194,16 @@ object FraUsuarios: TFraUsuarios
     TabOrder = 3
     Visible = False
   end
+  object Edit1: TEdit
+    Left = 104
+    Height = 23
+    Top = 88
+    Width = 80
+    EchoMode = emPassword
+    PasswordChar = '*'
+    TabOrder = 4
+    Visible = False
+  end
   object ImageList1: TImageList
     left = 48
     top = 88

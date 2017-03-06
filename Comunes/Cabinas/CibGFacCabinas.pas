@@ -261,7 +261,7 @@ var
   icoPausarCuent: integer;
   icoReinicCuent: integer;
   icoVerExplorad: integer;
-  icoFijTiempoIni: integer;
+//  icoFijTiempoIni: integer;
   icoVerMsjesRed: integer;
   icoAdminTarifas: integer;
   icoAdminEquipos: integer;
@@ -281,7 +281,7 @@ begin
   icoPausarCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
   icoReinicCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
   icoVerExplorad := CargaPNG(imagList16, imagList32, rutImag, 'folderSearch');
-  icoFijTiempoIni:= CargaPNG(imagList16, imagList32, rutImag, '');
+//  icoFijTiempoIni:= CargaPNG(imagList16, imagList32, rutImag, '');
   icoVerMsjesRed := CargaPNG(imagList16, imagList32, rutImag, 'terminal');
   //Íconos del grupo
   icoAdminTarifas := CargaPNG(imagList16, imagList32, rutImag, 'PcDollar');
@@ -942,7 +942,7 @@ procedure TCibFacCabina.DetenConteo;
 var
   nser: integer;
   r: TCibItemBoleta;
-  Usuario: string;
+  Usuario, tSolicCad: string;
 begin
   if not Contando then
     exit;   //No se puede detener cuenta en este Estado
@@ -955,6 +955,7 @@ begin
   end else begin
     nser := OnLogVenta(IDE_INT_NOR, RegVenta(Usuario), Costo);
   end;
+  tSolicCad := IntToStr(tSolicMin) + 'm';
   //Si hubo error, ya se mostró en OnLogVenta()
   //Limpia cuenta. Se hace después de registrar la venta para no alterar el estado
   cabCuenta.tSolic:=0;
@@ -971,8 +972,7 @@ begin
   r.Cant := 1;
   r.pUnit := Costo;
   r.subtot := Costo;
-  r.descr := 'Alquiler PC: ' + IntToStr(tSolicMin) + 'm(' +
-             TimeToStr(TranscDat) + ')';
+  r.descr := 'Alquiler PC: ' + tSolicCad + '(' + TimeToStr(TranscDat) + ')';
   r.cat := Grupo.CategVenta;
   r.subcat := 'INTERNET';
   r.vfec := date + Time;

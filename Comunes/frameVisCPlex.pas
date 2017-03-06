@@ -11,7 +11,6 @@ uses
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
   CibFacturables, CibGFacCabinas, CibGFacNiloM, CibModelo, CibTramas,
   CibGFacMesas, ogMotEdicion, MisUtils;
-
 type
   TEvMouseFac = procedure(ogFac: TogFac; X, Y: Integer) of object;
   TEvMouseGFac = procedure(ogGFac: TogGFac; X, Y: Integer) of object;
@@ -109,6 +108,7 @@ type
     procedure AlinearSelecVer;   //Alinea la selección
     procedure EspacirSelecHor;   //Espaciar la selección
     procedure EspacirSelecVer;   //Espaciar la selección
+    procedure KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   public  //Constructor y destructor.
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
@@ -789,6 +789,18 @@ procedure TfraVisCPlex.motEdi_MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   if OnMouseUp<>nil then OnMouseUp(Sender, Button, Shift, X, Y);
+end;
+procedure TfraVisCPlex.KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+{Rutina para procesar el evento KeyDown. No está automáticamente asociada a ningún,
+evento de teclado en el frame, así que debe hacerse desde afuera.}
+begin
+  if Key = VK_DELETE then begin
+    //Se pide eliminar algo
+    //motEdi.ElimSeleccion;   No es conveniente eliminar el objeto desde aquí.
+    Key := 0;
+  end;
+  motEdi.KeyDown(Sender, Key, Shift);
 end;
 constructor TfraVisCPlex.Create(AOwner: TComponent);
 begin

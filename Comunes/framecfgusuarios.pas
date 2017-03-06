@@ -14,6 +14,7 @@ type
     btnAgregar: TBitBtn;
     btnEliminar: TBitBtn;
     ComboBox1: TComboBox;
+    Edit1: TEdit;
     ImageList1: TImageList;
     StringGrid1: TStringGrid;
     procedure btnAgregarClick(Sender: TObject);
@@ -23,6 +24,8 @@ type
       aRect: TRect; aState: TGridDrawState);
     procedure StringGrid1SelectEditor(Sender: TObject; aCol, aRow: Integer;
       var Editor: TWinControl);
+  private
+    procedure Edit1EditingDone(Sender: TObject);
   public
     msjError : string;
     //variables de propiedades
@@ -40,6 +43,8 @@ type
 
 //function CreaUsuario(usuar, clave: String; perfil: TUsuPerfil = PER_OPER): TregUsuario;
 function CreaUsuario(usuar, clave: String; perfil: TUsuPerfil = PER_OPER): TregUsuario;
+procedure ModificaUsuario(ant_usua: String; usuar, clave: String; perfil: TUsuPerfil);
+
 var
   msjError: string;   { TODO : Se debería evitar el uso de variables globales }
 implementation
@@ -202,6 +207,15 @@ begin
     ComboBox1.Text:=StringGrid1.Cells[StringGrid1.Col,StringGrid1.Row];
     Editor:=ComboBox1;
   end;
+  if (aCol=2) and (aRow>0) then begin
+    Edit1.BoundsRect:=StringGrid1.CellRect(aCol,aRow);
+    Edit1.Text:=StringGrid1.Cells[StringGrid1.Col,StringGrid1.Row];
+    Editor:=Edit1;
+  end;
+end;
+procedure TFraUsuarios.Edit1EditingDone(Sender: TObject);
+begin
+  StringGrid1.Cells[StringGrid1.Col,StringGrid1.Row]:=Edit1.Text;
 end;
 procedure TFraUsuarios.ComboBox1EditingDone(Sender: TObject);
 begin
@@ -298,6 +312,7 @@ begin
   StringGrid1.Cells[2,0] := 'Clave';
   StringGrid1.Cells[3,0] := 'Perfil';
   ComboBox1.OnEditingDone:=@ComboBox1EditingDone;
+  Edit1.OnEditingDone:=@Edit1EditingDone;
   //configura combo
   u := TregUsuario.Create;  //utiliza un TregUsuario, como ayuda para obtener el texto del perfil
   for per in TUsuPerfil do begin

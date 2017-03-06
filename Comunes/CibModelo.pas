@@ -219,7 +219,21 @@ begin
     end;
   CVIS_ACTPROD: begin   //Se pide modificar la tabla de productos
     if OnModifTablaBD<>nil then begin
-      Res := OnModifTablaBD('Productos', tram.posY, tram.traDat);
+      Res := OnModifTablaBD('productos', tram.posY, tram.traDat);
+      //La salida puede ser un mensaje de confirmación o error
+      if OnRespComando<>nil then OnRespComando(idVista, C_MENS_PC, 0, 0, Res);
+    end;
+  end;
+  CVIS_ACTPROV: begin   //Se pide modificar la tabla de proveedores
+    if OnModifTablaBD<>nil then begin
+      Res := OnModifTablaBD('proveedores', tram.posY, tram.traDat);
+      //La salida puede ser un mensaje de confirmación o error
+      if OnRespComando<>nil then OnRespComando(idVista, C_MENS_PC, 0, 0, Res);
+    end;
+  end;
+  CVIS_ACTINSU: begin   //Se pide modificar la tabla de productos
+    if OnModifTablaBD<>nil then begin
+      Res := OnModifTablaBD('insumos', tram.posY, tram.traDat);
       //La salida puede ser un mensaje de confirmación o error
       if OnRespComando<>nil then OnRespComando(idVista, C_MENS_PC, 0, 0, Res);
     end;

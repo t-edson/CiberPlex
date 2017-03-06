@@ -1,0 +1,261 @@
+object frmRepProducto: TfrmRepProducto
+  Left = 290
+  Height = 448
+  Top = 256
+  Width = 741
+  Caption = 'REPORTES DE PRODUCTOS'
+  ClientHeight = 448
+  ClientWidth = 741
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '1.6.2.0'
+  object Panel1: TPanel
+    Left = 0
+    Height = 425
+    Top = 0
+    Width = 201
+    Align = alLeft
+    ClientHeight = 425
+    ClientWidth = 201
+    TabOrder = 0
+    object Button1: TButton
+      Left = 8
+      Height = 25
+      Top = 336
+      Width = 88
+      Caption = '&Reporte'
+      Default = True
+      OnClick = Button1Click
+      TabOrder = 7
+    end
+    object Label1: TLabel
+      Left = 8
+      Height = 15
+      Top = 25
+      Width = 68
+      Caption = 'Fecha Inicial:'
+      ParentColor = False
+    end
+    object dat1: TDateEdit
+      Left = 80
+      Height = 23
+      Top = 24
+      Width = 103
+      CalendarDisplaySettings = [dsShowHeadings, dsShowDayNames]
+      DateOrder = doNone
+      ButtonWidth = 23
+      NumGlyphs = 1
+      MaxLength = 0
+      TabOrder = 0
+    end
+    object dat2: TDateEdit
+      Left = 80
+      Height = 23
+      Top = 56
+      Width = 103
+      CalendarDisplaySettings = [dsShowHeadings, dsShowDayNames]
+      DateOrder = doNone
+      ButtonWidth = 23
+      NumGlyphs = 1
+      MaxLength = 0
+      TabOrder = 1
+    end
+    object Label2: TLabel
+      Left = 8
+      Height = 15
+      Top = 57
+      Width = 62
+      Caption = 'Fecha Final:'
+      ParentColor = False
+    end
+    object GroupBox1: TGroupBox
+      Left = 11
+      Height = 120
+      Top = 200
+      Width = 93
+      Caption = 'Agrup.Vertical:'
+      ClientHeight = 100
+      ClientWidth = 89
+      TabOrder = 5
+      object optDia: TRadioButton
+        Left = 0
+        Height = 19
+        Top = 0
+        Width = 37
+        Caption = 'Día'
+        OnChange = optDiaChange
+        TabOrder = 0
+      end
+      object optSem: TRadioButton
+        Left = 0
+        Height = 19
+        Top = 24
+        Width = 46
+        Caption = 'Sem.'
+        OnChange = optSemChange
+        TabOrder = 1
+      end
+      object optMes: TRadioButton
+        Left = 0
+        Height = 19
+        Top = 48
+        Width = 42
+        Caption = 'Mes'
+        OnChange = optMesChange
+        TabOrder = 2
+      end
+      object btnConfig: TButton
+        Left = 0
+        Height = 25
+        Top = 72
+        Width = 75
+        Caption = 'Configurar...'
+        OnClick = btnConfigClick
+        TabOrder = 3
+      end
+    end
+    object optsDatos: TRadioGroup
+      Left = 112
+      Height = 80
+      Top = 200
+      Width = 81
+      AutoFill = True
+      Caption = 'Datos:'
+      ChildSizing.LeftRightSpacing = 6
+      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+      ChildSizing.EnlargeVertical = crsHomogenousChildResize
+      ChildSizing.ShrinkHorizontal = crsScaleChilds
+      ChildSizing.ShrinkVertical = crsScaleChilds
+      ChildSizing.Layout = cclLeftToRightThenTopToBottom
+      ChildSizing.ControlsPerLine = 1
+      ClientHeight = 60
+      ClientWidth = 77
+      Items.Strings = (
+        'Ingresos'
+        'Cantidad'
+      )
+      TabOrder = 6
+    end
+    object cmbCateg: TComboBox
+      Left = 8
+      Height = 23
+      Top = 104
+      Width = 172
+      ItemHeight = 15
+      OnChange = cmbCategChange
+      TabOrder = 2
+      Text = '<<Todos>>'
+    end
+    object Label3: TLabel
+      Left = 11
+      Height = 15
+      Top = 85
+      Width = 103
+      Caption = 'Filtro de productos:'
+      ParentColor = False
+    end
+    object cmbSubcat: TComboBox
+      Left = 8
+      Height = 23
+      Top = 128
+      Width = 172
+      ItemHeight = 15
+      OnChange = cmbSubcatChange
+      TabOrder = 3
+      Text = '<<Todos>>'
+    end
+    object cmbProduc: TComboBox
+      Left = 8
+      Height = 23
+      Top = 152
+      Width = 172
+      ItemHeight = 15
+      TabOrder = 4
+      Text = '<<Todos>>'
+    end
+    object chkIncTotal: TCheckBox
+      Left = 112
+      Height = 19
+      Top = 288
+      Width = 83
+      Caption = 'Incluir Total'
+      TabOrder = 8
+    end
+  end
+  object Splitter1: TSplitter
+    Left = 201
+    Height = 425
+    Top = 0
+    Width = 5
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 425
+    Width = 741
+    Panels = <    
+      item
+        Width = 100
+      end    
+      item
+        Width = 270
+      end    
+      item
+        Width = 100
+      end>
+    SimplePanel = False
+  end
+  object PageControl1: TPageControl
+    Left = 206
+    Height = 425
+    Top = 0
+    Width = 535
+    ActivePage = TabSheet2
+    Align = alClient
+    TabIndex = 1
+    TabOrder = 3
+    object TabSheet1: TTabSheet
+      Caption = 'Datos'
+      ClientHeight = 397
+      ClientWidth = 527
+      object grilla: TStringGrid
+        Left = 0
+        Height = 397
+        Top = 0
+        Width = 527
+        Align = alClient
+        TabOrder = 0
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Gráfica'
+      ClientHeight = 397
+      ClientWidth = 527
+      object Chart1: TChart
+        Left = 0
+        Height = 397
+        Top = 0
+        Width = 527
+        AxisList = <        
+          item
+            Minors = <>
+            Title.LabelFont.Orientation = 900
+          end        
+          item
+            Alignment = calBottom
+            Minors = <>
+          end>
+        Foot.Brush.Color = clBtnFace
+        Foot.Font.Color = clBlue
+        Title.Brush.Color = clBtnFace
+        Title.Font.Color = clBlue
+        Title.Text.Strings = (
+          'TAChart'
+        )
+        Align = alClient
+        object Chart1LineSeries1: TLineSeries
+        end
+      end
+    end
+  end
+end

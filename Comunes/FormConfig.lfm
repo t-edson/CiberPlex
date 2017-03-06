@@ -48,8 +48,8 @@ object Config: TConfig
     Height = 256
     Top = 0
     Width = 367
-    ActivePage = TabSheet3
-    TabIndex = 3
+    ActivePage = TabSheet1
+    TabIndex = 0
     TabOrder = 3
     object TabSheet1: TTabSheet
       Caption = 'General'
@@ -134,6 +134,22 @@ object Config: TConfig
         Width = 80
         TabOrder = 4
         Text = 'edFactDefec'
+      end
+      object Label11: TLabel
+        Left = 8
+        Height = 15
+        Top = 168
+        Width = 107
+        Caption = 'Usuario por defecto:'
+        ParentColor = False
+      end
+      object edUsuDefecto: TEdit
+        Left = 216
+        Height = 23
+        Top = 160
+        Width = 80
+        TabOrder = 5
+        Text = 'edUsuDefecto'
       end
     end
     object TabSheet4: TTabSheet

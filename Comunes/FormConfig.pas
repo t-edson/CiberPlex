@@ -22,6 +22,7 @@ type
     chkModDiseno: TCheckBox;
     chkPanBoletas: TCheckBox;
     chkPanLLamadas: TCheckBox;
+    edUsuDefecto: TEdit;
     edGrupo: TEdit;
     edImpVen: TEdit;
     edInform: TEdit;
@@ -32,6 +33,7 @@ type
     FraUsuarios1: TFraUsuarios;
     Label1: TLabel;
     Label10: TLabel;
+    Label11: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
@@ -70,6 +72,7 @@ type
     Inform: string;
     PVenDef: string;
     FactDef: string;
+    UsuaDef: string;
     ////// Propiedades de Moneda
     SimbMon: string;   //Sïmbolo de moneda
     NumDec : integer;  //Número de decimales
@@ -183,6 +186,7 @@ begin
   xmlFile.Asoc_Str('inform', @Inform, edInform,'');
   xmlFile.Asoc_Str('PVenDef',@PVenDef,edPVenDef,'COUNTER');
   xmlFile.Asoc_Str('FactDef', @FactDef, edFactDefec, '');
+  xmlFile.Asoc_Str('UsuaDef', @UsuaDef, edUsuDefecto, '');
   //Propiedades de Moneda
   xmlFile.Asoc_Str('SimbMon',@SimbMon,edSimbMon,'S/.');
   xmlFile.Asoc_Int('NumDec', @NumDec, spnNumDec, 2);

@@ -1,0 +1,81 @@
+object frmCambClave: TfrmCambClave
+  Left = 330
+  Height = 213
+  Top = 202
+  Width = 265
+  BorderStyle = bsDialog
+  Caption = 'CAMBIAR CONTRASEÑA'
+  ClientHeight = 213
+  ClientWidth = 265
+  OnClose = FormClose
+  LCLVersion = '1.6.2.0'
+  object Label1: TLabel
+    Left = 32
+    Height = 15
+    Top = 40
+    Width = 100
+    Caption = 'Contraseña Actual:'
+    ParentColor = False
+  end
+  object txtClaveAct: TEdit
+    Left = 144
+    Height = 23
+    Top = 32
+    Width = 80
+    EchoMode = emPassword
+    PasswordChar = '*'
+    TabOrder = 0
+  end
+  object Label2: TLabel
+    Left = 32
+    Height = 15
+    Top = 80
+    Width = 100
+    Caption = 'Contraseña Nueva:'
+    ParentColor = False
+  end
+  object txtClaveNue: TEdit
+    Left = 144
+    Height = 23
+    Top = 72
+    Width = 80
+    EchoMode = emPassword
+    PasswordChar = '*'
+    TabOrder = 1
+  end
+  object Label3: TLabel
+    Left = 32
+    Height = 15
+    Top = 120
+    Width = 100
+    Caption = 'Contraseña Nueva:'
+    ParentColor = False
+  end
+  object txtClaveNue2: TEdit
+    Left = 144
+    Height = 23
+    Top = 112
+    Width = 80
+    EchoMode = emPassword
+    PasswordChar = '*'
+    TabOrder = 2
+  end
+  object ButtonPanel1: TButtonPanel
+    Left = 6
+    Height = 34
+    Top = 173
+    Width = 253
+    OKButton.Name = 'OKButton'
+    OKButton.DefaultCaption = True
+    OKButton.OnClick = OKButtonClick
+    HelpButton.Name = 'HelpButton'
+    HelpButton.DefaultCaption = True
+    CloseButton.Name = 'CloseButton'
+    CloseButton.DefaultCaption = True
+    CancelButton.Name = 'CancelButton'
+    CancelButton.DefaultCaption = True
+    CancelButton.OnClick = CancelButtonClick
+    TabOrder = 3
+    ShowButtons = [pbOK, pbCancel]
+  end
+end

@@ -3,7 +3,7 @@ unit CibRegistros;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dos, MisUtils, CibFacturables;
+  Classes, SysUtils, dos, MisUtils, CibFacturables, LConvEncoding;
 type
 
   { TCibArcReg }
@@ -103,6 +103,9 @@ en esta función }
 var
   arc: TextFile;
 begin
+  {$IFDEF Windows}
+    lin := UTF8ToCP1252(lin);
+  {$ENDIF}
   try
     AssignFile(arc, archivo);
     Append(arc);
