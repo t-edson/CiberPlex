@@ -7,13 +7,15 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lazcontrols, FormPrincipal, FormConfig, FormBoleta, FormInicio,
-  CibGFacClientes, FormPropGFac, CibGFacNiloM, CibNiloMConex, CibNiloMTarifRut,
-  FormBuscTarif, FormNiloMConex, FormNiloMEnrutam, FormNiloMProp, CibCabinaBase,
-  CibCabinaTarifas, CibGFacCabinas, FormAdminCabinas, FormAdminTarCab,
-  FormExplorCab, FormFijTiempo, FormRepIngresos, RegistrosVentas,
-  FormAdminProduc, FormIngVentas, FormAgrupVert, FormAcercaDe, FormCalcul,
-  FormContDinero, FormSelecObjetos, FormAdminProvee, FrameFiltArbol, CibBD;
+  Forms, lazcontrols, tachartlazaruspkg, FormPrincipal, FormConfig, FormBoleta,
+  FormInicio, CibGFacClientes, FormPropGFac, CibGFacNiloM, CibNiloMConex,
+  CibNiloMTarifRut, FormBuscTarif, FormNiloMConex, FormNiloMEnrutam,
+  FormNiloMProp, CibCabinaBase, CibCabinaTarifas, CibGFacCabinas,
+  FormAdminCabinas, FormAdminTarCab, FormExplorCab, FormFijTiempo,
+  FormRepIngresos, RegistrosVentas, FormAdminProduc, FormIngVentas,
+  FormAgrupVert, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
+  FormAdminProvee, FrameFiltArbol, CibBD, FrameEditGrilla, FormAdminInsum,
+  CibGrillas, FormCambClave, FormRepProducto;
 
 {$R *.res}
 
@@ -33,6 +35,9 @@ begin
   Application.CreateForm(TfrmContDinero, frmContDinero);
   Application.CreateForm(TfrmSelecObjetos, frmSelecObjetos);
   Application.CreateForm(TfrmAdminProvee, frmAdminProvee);
+  Application.CreateForm(TfrmAdminInsum, frmAdminInsum);
+  Application.CreateForm(TfrmCambClave, frmCambClave);
+  Application.CreateForm(TfrmRepProducto, frmRepProducto);
   Application.Run;
 end.
 

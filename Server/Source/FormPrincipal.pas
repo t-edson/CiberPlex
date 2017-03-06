@@ -7,8 +7,9 @@ uses
   FormConfig, frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
   FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul,
   FormContDinero, FormSelecObjetos, FormInicio, CibRegistros, CibTramas,
-  CibFacturables, CibProductos, FormAdminProvee, CibBD, CibGFacMesas,
-  CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
+  CibFacturables, CibProductos, FormAdminProvee, CibBD, FormAdminInsum,
+  FormCambClave, FormRepProducto, CibGFacMesas, CibGFacClientes, CibGFacCabinas,
+  CibGFacNiloM;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -22,6 +23,10 @@ type
     acFacVerBol: TAction;
     acEdiInsGrMes: TAction;
     acAyuSelRapid: TAction;
+    acVerRepPro: TAction;
+    acUsuCamCla: TAction;
+    acUsuCerSes: TAction;
+    acVerAdmInsum: TAction;
     acVerAdmProvee: TAction;
     acVerAdmProd: TAction;
     acEdiInsEnrut: TAction;
@@ -67,10 +72,16 @@ type
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
     MenuItem26: TMenuItem;
+    MenuItem27: TMenuItem;
+    MenuItem28: TMenuItem;
+    MenuItem29: TMenuItem;
     MenuItem3: TMenuItem;
+    MenuItem30: TMenuItem;
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
     MenuItem33: TMenuItem;
+    MenuItem34: TMenuItem;
+    MenuItem35: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
@@ -103,6 +114,9 @@ type
     procedure acAyuContDinExecute(Sender: TObject);
     procedure acAyuSelRapidExecute(Sender: TObject);
     procedure acEdiInsGrMesExecute(Sender: TObject);
+    procedure acUsuCamClaExecute(Sender: TObject);
+    procedure acUsuCerSesExecute(Sender: TObject);
+    procedure acVerAdmInsumExecute(Sender: TObject);
     procedure acVerAdmProdExecute(Sender: TObject);
     procedure acEdiAlinHorExecute(Sender: TObject);
     procedure acEdiAlinVerExecute(Sender: TObject);
@@ -119,6 +133,7 @@ type
     procedure acSisConfigExecute(Sender: TObject);
     procedure acVerAdmProveeExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
+    procedure acVerRepProExecute(Sender: TObject);
     procedure ConfigfcVistaUpdateChanges;
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -133,11 +148,18 @@ type
     log : TCibArcReg;
     tabPro: TCibTabProduc;
     tabPrv: TCibTabProvee;
+    tabIns: TCibTabInsumo;
     Visor : TfraVisCPlex;     //Visor de cabinas
     TramaTmp    : TCPTrama;    //Trama temporal
     fallasesion : boolean;  //indica si se cancela el inicio de sesión
     tic : integer;
-    procedure VerificarCargaProductos;
+    procedure CerrarSesion;
+    procedure frmAdminInsum_Grabar;
+    procedure frmAdminProvee_Grabar;
+    procedure IniciarSesion(usuIni: string='');
+    procedure RefrescarEncabezado;
+    procedure VerificarCargaInsumos(ActulizRemota: boolean);
+    procedure VerificarCargaProductos(ActulizRemota: boolean);
     procedure ConfigurarPopUpFac(ogFac: TogFac; PopUp: TPopupMenu);
     procedure ConfigurarPopUpGFac(ogGFac: TogGFac; PopUp: TPopupMenu);
     procedure ActualizarMensajes;
@@ -151,6 +173,7 @@ type
     procedure Modelo_RespComando(idVista: string; comando: TCPTipCom;
       ParamX, ParamY: word; cad: string);
     procedure frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
+    procedure VerificarCargaProveedores(ActulizRemota: boolean);
     procedure Visor_MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure Visor_ClickDerGFac(ogGFac: TogGFac; X, Y: Integer);
@@ -287,31 +310,116 @@ begin
   //Hay mensajes
   Memo1.Lines.LoadFromFile(arcMensaj);
 end;
-procedure TfrmPrincipal.VerificarCargaProductos;
-{Verifica si hubo errores, depsués de actualizar la tabal de productos.}
+procedure TfrmPrincipal.VerificarCargaProductos(ActulizRemota: boolean);
+{Verifica si hubo errores, depsués de actualizar la tabla de productos.}
 begin
-  if tabPro.msjError <> '' then begin
-    //Esto no debería pasar si se maneja bien la tabla
-    log.PLogErr(usuario, tabPro.msjError);
-    MsgErr('Error cargando tabla de productos.');
-    MsgErr(tabPro.msjError);
+  if ActulizRemota then begin
+    //Se ha actualizado remotamente
+    if tabPro.msjError <> '' then begin
+      //Esto no debería pasar si se maneja bien la tabla
+      log.PLogErr(usuario, tabPro.msjError);
+      MsgErr('Error cargando tabla de productos.');
+      MsgErr(tabPro.msjError);
+    end else begin
+      //Se cargó correctamente la tabla de productos
+      if frmAdminProduc.Visible then begin
+        //Estaba abierta
+        MsgExc('Ha habido cambios en la tabla de productos' + LineEnding +
+               'Se recomienda volver a abrir este formulario.'    );
+      end;
+    end;
   end else begin
-    //Se cargó correctamente la tabla de productos
-    if frmAdminProduc.Visible then begin
-      //Estaba abierta
-      MsgExc('Ha habido cambios en la tabla de productos' + LineEnding +
-             'Se recomienda volver a abrir este formulario.'    );
+    //La actualización es local
+    if tabPro.msjError <> '' then begin
+      //Esto no debería pasar si se maneja bien la tabla
+      log.PLogErr(usuario, tabPro.msjError);
+      MsgErr('Error cargando tabla de productos.');
+      MsgErr(tabPro.msjError);
+    end;
+  end;
+end;
+procedure TfrmPrincipal.VerificarCargaProveedores(ActulizRemota: boolean);
+{Verifica si hubo errores, depsués de actualizar la tabla de proveedores.}
+begin
+  if ActulizRemota then begin
+    //Se ha actualizado remotamente
+    if tabPrv.msjError <> '' then begin
+      //Esto no debería pasar si se maneja bien la tabla
+      log.PLogErr(usuario, tabPrv.msjError);
+      MsgErr('Error cargando tabla de proveedores.');
+      MsgErr(tabPrv.msjError);
+    end else begin
+      //Se cargó correctamente la tabla de proveedores
+      if frmAdminProvee.Visible then begin
+        //Estaba abierta
+        MsgExc('Ha habido cambios en la tabla de proveedores' + LineEnding +
+               'Se recomienda volver a abrir este formulario.'    );
+      end;
+    end;
+  end else begin
+    //La actualización es local
+    if tabPrv.msjError <> '' then begin
+      //Esto no debería pasar si se maneja bien la tabla
+      log.PLogErr(usuario, tabPrv.msjError);
+      MsgErr('Error cargando tabla de proveedores.');
+      MsgErr(tabPrv.msjError);
+    end;
+  end;
+end;
+procedure TfrmPrincipal.VerificarCargaInsumos(ActulizRemota: boolean);
+{Verifica si hubo errores, depsués de actualizar la tabla de insumos.}
+begin
+  if ActulizRemota then begin
+    //Se ha actualizado remotamente
+    if tabIns.msjError <> '' then begin
+      //Esto no debería pasar si se maneja bien la tabla
+      log.PLogErr(usuario, tabIns.msjError);
+      MsgErr('Error cargando tabla de insumos.');
+      MsgErr(tabIns.msjError);
+    end else begin
+      //Se cargó correctamente la tabla de insumos
+      if frmAdminInsum.Visible then begin
+        //Estaba abierta
+        MsgExc('Ha habido cambios en la tabla de insumos' + LineEnding +
+               'Se recomienda volver a abrir este formulario.'    );
+      end;
+    end;
+  end else begin
+    //La actualización es local
+    if tabIns.msjError <> '' then begin
+      //Esto no debería pasar si se maneja bien la tabla
+      log.PLogErr(usuario, tabIns.msjError);
+      MsgErr('Error cargando tabla de insumos.');
+      MsgErr(tabIns.msjError);
     end;
   end;
 end;
 procedure TfrmPrincipal.frmAdminProduc_Grabar;
 {Se pide grabar el contenido de la grilla.}
+var
+  res: String;
 begin
-  //Graba en disco
-  { TODO : Realmente, debería grabarse en modo "Sin Stock", para prevenir cambios externos. }
-  frmAdminProduc.GrillaALista;      //Ya está actualizado "TabPro.Productos",
-  TabPro.GrabarADisco;  //Podría generar error en "TabPro.MsjError"
+  //Graba en disco en modo MODTAB_NOSTCK
+  res := tabPro.ActualizarTabNoStock(frmAdminProduc.GrillaATabString);
+  VerificarCargaProductos(false);
+  MsgBox(res);
   frmAdminProduc.Modificado := false;
+end;
+procedure TfrmPrincipal.frmAdminProvee_Grabar;
+begin
+  //Graba en disco en modo MODTAB_TOTAL
+  tabPrv.UpdateAll(frmAdminProvee.GrillaATabString);
+  VerificarCargaProveedores(false);
+  MsgBox(tabPrv.msgUpdate);
+  frmAdminProvee.Modificado := false;
+end;
+procedure TfrmPrincipal.frmAdminInsum_Grabar;
+begin
+  //Graba en disco en modo MODTAB_TOTAL
+  tabIns.UpdateAll(frmAdminInsum.GrillaATabString);
+  VerificarCargaInsumos(false);
+  MsgBox(tabIns.msgUpdate);
+  frmAdminProvee.Modificado := false;
 end;
 procedure TfrmPrincipal.Modelo_CambiaPropied;
 {Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
@@ -411,8 +519,18 @@ begin
   debugln('Archivo cambiado: ' + nombArc);
   if nombArc = arcProduc then begin
     debugln('Tabla de productos cambiada.');
-    tabPro.LeerDeDisco;
-    VerificarCargaProductos;
+    tabPro.UpdateFromDisk;
+    VerificarCargaProductos(true);
+  end;
+  if nombArc = arcProvee then begin
+    debugln('Tabla de proveedores cambiada.');
+    tabPrv.UpdateFromDisk;
+    VerificarCargaProveedores(true);
+  end;
+  if nombArc = arcInsumo then begin
+    debugln('Tabla de insumos cambiada.');
+    tabIns.UpdateFromDisk;
+    VerificarCargaInsumos(true);
   end;
   if nombArc = arcMensaj then begin
     debugln('Tabla de mensajes cambiada.');
@@ -426,18 +544,37 @@ begin
     //Se pide modificar la tabla de productos
     case tipModif of
     MODTAB_TOTAL: begin  //Modifiación total
-      StringToFile(datos, arcProduc);
-      tabPro.LeerDeDisco;
-      VerificarCargaProductos;
-      if tabPro.MsjError = '' then
-         Result := 'Tabla modificada íntegramente'
-      else
-         Result := tabPro.MsjError;
+      tabPro.UpdateAll(datos);
+      Result := tabPro.msgUpdate;
+      VerificarCargaProductos(true);
     end;
     MODTAB_NOSTCK: begin
       //Modificación sin tocar el stock.
-      Result := tabPro.ActualizarNoStock(datos);
-      VerificarCargaProductos;
+      Result := tabPro.ActualizarTabNoStock(datos);
+      VerificarCargaProductos(true);
+    end;
+    else
+      Result := 'No se reconoce tipo de modificación.'
+    end;
+  end;
+  if Upcase(trim(NombTabla)) = 'PROVEEDORES' then begin
+    //Se pide modificar la tabla de proveedores
+    case tipModif of
+    MODTAB_TOTAL: begin  //Modifiación total
+      tabPrv.UpdateAll(datos);
+      Result := tabPrv.msgUpdate;
+      VerificarCargaProveedores(true);
+    end;
+    else
+      Result := 'No se reconoce tipo de modificación.'
+    end;
+  end;
+  if Upcase(trim(NombTabla)) = 'INSUMOS' then begin
+    case tipModif of
+    MODTAB_TOTAL: begin  //Modifiación total
+      tabIns.UpdateAll(datos);
+      Result := tabIns.msgUpdate;
+      VerificarCargaInsumos(true);
     end;
     else
       Result := 'No se reconoce tipo de modificación.'
@@ -542,14 +679,43 @@ procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
   log.PLogErr(usuario, msj);
 end;
+procedure TfrmPrincipal.RefrescarEncabezado;
+begin
+  if Usuario = '' then begin
+    Caption := NOM_PROG + ' ' + VER_PROG;
+  end else begin
+    Caption := NOM_PROG + ' ' + VER_PROG + ' - Usuario: ' + Usuario;
+  end;
+end;
+procedure TfrmPrincipal.IniciarSesion(usuIni: string = '');
+begin
+  frmInicio.edUsu.Text := usuIni;
+  frmInicio.ShowModal;
+  if frmInicio.cancelo then begin
+    fallasesion := True;
+    Close;
+  end else begin
+    log.PLogInf(usuario, 'Sesión iniciada: ' + usuario);
+  end;
+  RefrescarEncabezado;
+end;
+procedure TfrmPrincipal.CerrarSesion;
+begin
+  log.PLogInf(usuario, 'Sesión terminada: ' + usuario);
+  Config.escribirArchivoIni;  //guarda la configuración actual
+  Modelo_EstadoArchivo;       //guarda estado
+  Usuario := '';
+  RefrescarEncabezado;
+end;
 procedure TfrmPrincipal.FormCreate(Sender: TObject);
 begin
-  Caption := NOM_PROG + ' ' + VER_PROG;
+  RefrescarEncabezado;
   //Crea un grupo de cabinas
   TramaTmp := TCPTrama.Create;
   log := TCibArcReg.Create;
   tabPro := TCibTabProduc.Create;
   tabPrv := TCibTabProvee.Create;
+  tabIns := TCibTabInsumo.Create;
   {Crea un visor aquí, para que el Servidor pueda servir tambien como Punto de Venta}
   Visor := TfraVisCPlex.Create(self);
   Visor.Parent := self;
@@ -612,17 +778,25 @@ begin
   end;
 
   log.PLogInf(usuario, '----------------- Inicio de Programa ---------------');
-  tabPro.FijarTabla(arcProduc);
-  tabPro.LeerDeDisco;
-  VerificarCargaProductos;
+  tabPro.SetTable(arcProduc);
+  tabPro.UpdateFromDisk;
+  VerificarCargaProductos(false);
 
-  tabPrv.FijarTabla(arcProvee);
-  tabPrv.LeerDeDisco;
+  tabPrv.SetTable(arcProvee);
+  tabPrv.UpdateFromDisk;
   if tabPrv.msjError <> '' then begin
     //Esto no debería pasar si se maneja bien la tabla
-    log.PLogErr(usuario, tabPro.msjError);
+    log.PLogErr(usuario, tabPrv.msjError);
     MsgErr('Error cargando tabla de proveedores.');
     MsgErr(tabPro.msjError);
+  end;
+  tabIns.SetTable(arcInsumo);
+  tabIns.UpdateFromDisk;
+  if tabIns.msjError <> '' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    log.PLogErr(usuario, tabIns.msjError);
+    MsgErr('Error cargando tabla de Insumos.');
+    MsgErr(tabIns.msjError);
   end;
   //Carga mensajes
   ActualizarMensajes;
@@ -642,31 +816,25 @@ begin
   frmBoleta.OnReqCadMoneda := @Config.CadMon;
   log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados.');
   log.PLogInf(usuario, IntToStr(tabPrv.Proveedores.Count) + ' proveedores cargados.');
-  frmInicio.edUsu.Text := 'admin';
-  frmInicio.ShowModal;
-  if frmInicio.cancelo then begin
-    fallasesion := True;
-    Close;
-  end;
-  log.PLogInf(usuario, 'Sesión iniciada: ' + usuario);
-//usuario := 'admin';
-//perfil  := PER_ADMIN;
+  log.PLogInf(usuario, IntToStr(tabIns.Insumos.Count) + ' insumos cargados.');
+  IniciarSesion(Config.UsuaDef);
   self.Activate;
   self.SetFocus;
   //self.Show;
   //Para permitir grabar cambios
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
+  frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
+  frmAdminInsum.OnGrabado:=@frmAdminInsum_Grabar;
 end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
-  log.PLogInf(usuario, 'Sesión terminada: ' + usuario);
-  Config.escribirArchivoIni;  //guarda la configuración actual
-  Modelo_EstadoArchivo;       //guarda estado
+  CerrarSesion;
 end;
 procedure TfrmPrincipal.FormDestroy(Sender: TObject);
 begin
   log.PLogInf(usuario, '----------------- Fin de Programa ---------------');
   Debugln('Terminando ... ');
+  tabIns.Destroy;
   tabPrv.Destroy;
   tabPro.Destroy;
   log.Destroy;
@@ -686,7 +854,7 @@ begin
       acFacAgrVenExecute(self);
     end;
     //Pasa el control de teclado al visor
-    Visor.motEdi.KeyDown(Sender, Key, Shift);
+    Visor.KeyDown(Sender, Key, Shift);
   end;
 end;
 procedure TfrmPrincipal.FormKeyPress(Sender: TObject; var Key: char);
@@ -1009,20 +1177,39 @@ end;
 // Acciones Ver
 procedure TfrmPrincipal.acVerRepIngExecute(Sender: TObject);
 begin
-  frmRepIngresos.Show;
+  frmRepIngresos.Exec(Config.Local);
+end;
+procedure TfrmPrincipal.acVerRepProExecute(Sender: TObject);
+begin
+  frmRepProducto.Exec(Config.Local, tabPro);
 end;
 procedure TfrmPrincipal.acVerAdmProdExecute(Sender: TObject);
 begin
-  frmAdminProduc.Exec(tabPro);
+  frmAdminProduc.Exec(tabPro, FormatMon);
 end;
 procedure TfrmPrincipal.acVerAdmProveeExecute(Sender: TObject);
 begin
-  frmAdminProvee.Exec(tabPrv);
+  frmAdminProvee.Exec(tabPrv, FormatMon);
+end;
+procedure TfrmPrincipal.acVerAdmInsumExecute(Sender: TObject);
+begin
+  frmAdminInsum.Exec(tabIns, FormatMon);
 end;
 // Acciones del sistema
 procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
   Config.Mostrar;
+end;
+// Acciones del Usuario
+procedure TfrmPrincipal.acUsuCerSesExecute(Sender: TObject);
+begin
+  if MsgYesNo('¿Cerrar Sesión actual?')<>1 then exit;
+  CerrarSesion;
+  IniciarSesion;
+end;
+procedure TfrmPrincipal.acUsuCamClaExecute(Sender: TObject);
+begin
+  frmCambClave.ShowModal;
 end;
 //Acciones de Ayuda
 procedure TfrmPrincipal.acAyuCalculExecute(Sender: TObject);

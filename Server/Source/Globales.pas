@@ -23,6 +23,7 @@ var
    //archivos de configuración
    arcProduc : string;     //tabla de productos
    arcProvee : string;     //tabla de proveedores
+   arcInsumo : string;
    arcGastos : string;     //archivo de gastos
    arcMensaj : string;     //archivo de mensajes
    //archivo de estado
@@ -64,11 +65,12 @@ initialization
     msgErr('Error. No se puede leer o crear directorios.');
   end;
   //inicia archivos de configuración
-  arcProduc := rutApp + '\productos.txt';    //archivo de productos
-  arcProvee := rutApp + '\proveedores.txt';  //archivo de productos
-  arcGastos := rutApp + '\gastos.txt';       //archivo de gastos
-  arcMensaj := rutApp + '\mensajes.txt';     //archivo de mensajes
-  arcEstado := rutApp + '\estado.ini';       //archivo de estado
+  arcProduc := rutApp + '\productos.txt';    //tabla de productos
+  arcProvee := rutApp + '\proveedores.txt';  //tabla de productos
+  arcInsumo := rutApp + '\insumos.txt';      //tabla de insumos
+  arcGastos := rutApp + '\gastos.txt';       //tabla de gastos
+  arcMensaj := rutApp + '\mensajes.txt';     //tabla de mensajes
+  arcEstado := rutApp + '\estado.ini';       //tabla de estado
 
 finalization
   //Por algún motivo, la unidad HeapTrc indica que hay gotera de memoria si no se liberan
@@ -81,6 +83,7 @@ finalization
 
   arcProduc := '';
   arcProvee := '';
+  arcInsumo := '';
   arcGastos := '';
   arcMensaj := '';
   arcEstado := '';
