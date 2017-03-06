@@ -10,10 +10,12 @@ unit FormPrincipal;
 interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ActnList,
-  Menus, lclProc, LCLType, LCLIntf, ExtCtrls, MisUtils, FormPant,
+  Menus, lclProc, LCLType, LCLIntf, ExtCtrls, ComCtrls, MisUtils, FormPant,
   FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos, CibTramas, FormBoleta,
   CibFacturables, CibServidorPC, FormInicio,
-  Globales, FormSincronBD, FormExplorServ, FormAdminProduc, CibProductos;
+  Globales, FormSincronBD, FormExplorServ, CibProductos,
+  FormAdminProduc, FormAdminProvee, FormAdminInsum, CibBD, FormCalcul,
+  FormRepIngresos, FormConfig;
 type
   { TForm1 }
   TForm1 = class(TForm)
@@ -29,9 +31,16 @@ type
     acCabExplorArc: TAction;
     acCabPonMan: TAction;
     acFacVerBol: TAction;
+    acAyuCalc: TAction;
+    acVerRepIng: TAction;
+    acVerRegConex: TAction;
+    acVerAdmProve: TAction;
+    acVerAdmInsum: TAction;
     acVerAdmProd: TAction;
     acVerExpServ: TAction;
     ActionList1: TActionList;
+    ImageList16: TImageList;
+    ImageList32: TImageList;
     MainMenu1: TMainMenu;
     Memo2: TMemo;
     MenuItem1: TMenuItem;
@@ -48,6 +57,12 @@ type
     MenuItem2: TMenuItem;
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
+    MenuItem22: TMenuItem;
+    MenuItem23: TMenuItem;
+    MenuItem24: TMenuItem;
+    MenuItem25: TMenuItem;
+    MenuItem26: TMenuItem;
+    MenuItem27: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -59,14 +74,27 @@ type
     PopupFac: TPopupMenu;
     PopupMenu1: TPopupMenu;
     Timer1: TTimer;
+    ToolBar1: TToolBar;
+    ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
+    ToolButton3: TToolButton;
+    ToolButton4: TToolButton;
+    ToolButton5: TToolButton;
+    ToolButton6: TToolButton;
+    ToolButton7: TToolButton;
     procedure acAccRefObjExecute(Sender: TObject);
+    procedure acAyuCalcExecute(Sender: TObject);
     procedure acCabExplorArcExecute(Sender: TObject);
     procedure acFacGraBolExecute(Sender: TObject);
     procedure acAccEnvMjeTitExecute(Sender: TObject);
     procedure acAccVerPanExecute(Sender: TObject);
     procedure acFacVerBolExecute(Sender: TObject);
+    procedure acVerAdmInsumExecute(Sender: TObject);
     procedure acVerAdmProdExecute(Sender: TObject);
+    procedure acVerAdmProveExecute(Sender: TObject);
     procedure acVerExpServExecute(Sender: TObject);
+    procedure acVerRegConexExecute(Sender: TObject);
+    procedure acVerRepIngExecute(Sender: TObject);
     procedure fraVisCPlex1ClickDer(xp, yp: integer);
     procedure MenuItem19Click(Sender: TObject);
     procedure PaintBox1Click(Sender: TObject);
@@ -80,8 +108,12 @@ type
     ServCab : TCibServidorPC;  //Hilo que hace la conexión
     trama   : TCPTrama;        //Referencia a la trama recibida.
     tabPro  : TCibTabProduc;     //Tabla de productos
+    tabPrv  : TCibTabProvee;
+    tabIns  : TCibTabInsumo;
     procedure EnviaPantalla;
+    procedure frmAdminInsumGrabado;
     procedure frmAdminProduc_Grabar;
+    procedure frmAdminProvee_Grabar;
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
@@ -196,8 +228,7 @@ var
   tipModif: Integer;
 begin
   //Graba localmente
-  frmAdminProduc.GrillaALista;   //Ya está actualizado "TabPro.Productos",
-  TabPro.GrabarADisco;  //Podría generar error en "TabPro.MsjError"
+  tabPro.ActualizarTabNoStock(frmAdminProduc.GrillaATabString);
   frmAdminProduc.Modificado := false;
   //Graba en servidor
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
@@ -205,6 +236,34 @@ begin
   //Se debe grabar en el servidor
   tipModif := MODTAB_NOSTCK;   //tipo de modificación
   ServCab.PonerComando(CVIS_ACTPROD, 0, tipModif, StringFromFile(arcProduc));
+end;
+procedure TForm1.frmAdminProvee_Grabar;
+var
+  tipModif: Integer;
+begin
+  //Graba localmente
+  tabPrv.UpdateAll(frmAdminProvee.GrillaATabString);
+  frmAdminProvee.Modificado := false;
+  //Graba en servidor
+  if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
+  frmAdminProvee.Habilitar(false);
+  //Se debe grabar en el servidor
+  tipModif := MODTAB_TOTAL;   //tipo de modificación
+  ServCab.PonerComando(CVIS_ACTPROV, 0, tipModif, StringFromFile(arcProvee));
+end;
+procedure TForm1.frmAdminInsumGrabado;
+var
+  tipModif: Integer;
+begin
+  //Graba localmente
+  tabIns.UpdateAll(frmAdminInsum.GrillaATabString);
+  frmAdminInsum.Modificado := false;
+  //Graba en servidor
+  if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
+  frmAdminInsum.Habilitar(false);
+  //Se debe grabar en el servidor
+  tipModif := MODTAB_TOTAL;   //tipo de modificación
+  ServCab.PonerComando(CVIS_ACTINSU, 0, tipModif, StringFromFile(arcInsumo));
 end;
 procedure TForm1.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
 begin
@@ -237,10 +296,14 @@ begin
   //evento de llegada de trama
   ServCab.OnTramaLista:=@procesoTramaLista;
   ServCab.OnRegMensaje:=@ServCabRegMensaje;
-  tabPro:= TCibTabProduc.Create;
+  tabPro := TCibTabProduc.Create;
+  tabPrv := TCibTabProvee.Create;
+  tabIns := TCibTabInsumo.Create;
 end;
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
+  tabIns.Destroy;
+  tabPrv.Destroy;
   tabPro.Destroy;
   ServCab.OnTramaLista:=nil;  //para evitar eventos al morir
   ServCab.OnRegMensaje:=nil;  //para evitar eventos al morir
@@ -253,8 +316,8 @@ procedure TForm1.FormShow(Sender: TObject);
 var
   arcCfgServ: String;
 begin
-  frmLog.show;
-  frmLog.SetFocus;
+//  frmLog.show;
+//  frmLog.SetFocus;
   frmPant.OnRefrescar := @PedirPantalla;
 
 //  acAccRefObjExecute(self);   //Pide propiedades
@@ -277,6 +340,9 @@ begin
   end;
   //Para permitir grabar remotamente
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
+  frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
+  frmAdminInsum.OnGrabado:=@frmAdminInsumGrabado;
+  Config.Local:='CANADA';
 end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
@@ -317,6 +383,8 @@ begin
   C_MENS_PC: begin
     msgexc(trama.traDat);
     frmAdminProduc.Habilitar(true);  //por si estaba deshabilitado
+    frmAdminProvee.Habilitar(true);  //por si estaba deshabilitado
+    frmAdminInsum.Habilitar(true);  //por si estaba deshabilitado
   end;
   C_PAN_COMPL: begin   //se pide una pantalla completa
     EnviaPantalla;
@@ -352,25 +420,55 @@ begin
 //  Application.MessageBox('Click en PaintBox','Caption',0);
 end;
 //////////////////// Acciones ///////////////////
-procedure TForm1.acVerExpServExecute(Sender: TObject);  //Ver explorador del Servidor
-begin
-  frmExplorServ.Exec(ServCab);
-end;
 procedure TForm1.acAccVerPanExecute(Sender: TObject);
 begin
    frmPant.show;
    PedirPantalla;
 end;
+procedure TForm1.acVerExpServExecute(Sender: TObject);  //Ver explorador del Servidor
+begin
+  frmExplorServ.Exec(ServCab);
+end;
+procedure TForm1.acVerRegConexExecute(Sender: TObject);
+begin
+  frmLog.Show;
+end;
 procedure TForm1.acVerAdmProdExecute(Sender: TObject);
 begin
-  tabPro.FijarTabla('productos.txt');
-  tabPro.LeerDeDisco;
+  tabPro.SetTable('productos.txt');
+  tabPro.UpdateFromDisk;
   if tabPro.msjError<>'' then begin
     //Esto no debería pasar si se maneja bien la tabla
     MsgErr('Error cargando tabla de productos.');
     MsgErr(tabPro.msjError);
   end;
-  frmAdminProduc.Exec(tabPro);
+  frmAdminProduc.Exec(tabPro, '%.2f');
+end;
+procedure TForm1.acVerAdmProveExecute(Sender: TObject);
+begin
+  tabPrv.SetTable('proveedores.txt');
+  tabPrv.UpdateFromDisk;
+  if tabPrv.msjError<>'' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error cargando tabla de proveedores.');
+    MsgErr(tabPrv.msjError);
+  end;
+  frmAdminProvee.Exec(tabPrv, '%.2f');
+end;
+procedure TForm1.acVerAdmInsumExecute(Sender: TObject);
+begin
+  tabIns.SetTable('insumos.txt');
+  tabIns.UpdateFromDisk;
+  if tabIns.msjError<>'' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error cargando tabla de insumos.');
+    MsgErr(tabIns.msjError);
+  end;
+  frmAdminInsum.Exec(tabIns, '%.2f');
+end;
+procedure TForm1.acVerRepIngExecute(Sender: TObject);
+begin
+  frmRepIngresos.Show;
 end;
 procedure TForm1.acAccEnvMjeTitExecute(Sender: TObject);
 var
@@ -384,6 +482,12 @@ procedure TForm1.acAccRefObjExecute(Sender: TObject);
 begin
   ServCab.PonerComando(CVIS_SOLPROP, 0, 0);
 end;
+
+procedure TForm1.acAyuCalcExecute(Sender: TObject);
+begin
+  frmCalcul.Show;
+end;
+
 procedure TForm1.acCabExplorArcExecute(Sender: TObject);
 var
   ogCab: TogCabina;
@@ -409,5 +513,6 @@ begin
   if ogFac = nil then exit;
   frmBoleta.Exec(ogFac.Fac);
 end;
+
 end.
 

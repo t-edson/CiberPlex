@@ -96,9 +96,12 @@ begin
     conectado := true;
     lblEstConexion.Caption:='Conectado. Leyendo configuración.';
     ServCab.PonerComando(C_FIJ_RUT_A, 0, 0, '-');   //Fija ruta actual
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, ARC_CFG_SERV);
+    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, ARC_CFG_SERV);  //El parámetro en "1", hará que llegue primero el nombre del archivo
     ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'productos.txt');
     ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'tarifario.txt');
+    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'proveedores.txt');
+    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'insumos.txt');
+    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'mensajes.txt');
     ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'rutas.txt');
   end;
 end;

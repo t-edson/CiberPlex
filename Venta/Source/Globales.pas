@@ -22,6 +22,8 @@ var
    rutSonidos : string;     //ruta para los archivos de sonidos (sin "\" final)
    //archivos de configuración
    arcProduc : string;     //archivo de productos
+   arcProvee : string;     //tabla de proveedores
+   arcInsumo : string;
    arcGastos : string;     //archivo de gastos
    //archivo de estado
    arcEstado : string;
@@ -64,6 +66,8 @@ initialization
   end;
   //inicia archivos de configuración
   arcProduc := rutApp + '\productos.txt';    //archivo de productos
+  arcProvee := rutApp + '\proveedores.txt';    //archivo de
+  arcInsumo := rutApp + '\insumos.txt';    //archivo de productos
   arcGastos := rutApp + '\gastos.txt';       //archivo de gastos
   arcEstado := rutApp + '\estado.ini';         //archivo de estado
 
@@ -77,6 +81,8 @@ finalization
   rutSonidos := '';
 
   arcProduc := '';
+  arcProvee := '';
+  arcInsumo := '';
   arcGastos := '';
   arcEstado := '';
 end.

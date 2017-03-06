@@ -10,7 +10,7 @@ uses
   Forms, FormPrincipal, FormPant, FormLog, FormPantCli, ogMotGraf2d,
   ogDefObjGraf, CibServidorPC, CibTramas, CibFacturables, FormFijTiempo,
   FormBoleta, FormSincronBD, FormInicio, FormConfig, FormAdminProduc,
-  FormExplorServ;
+  FormAdminInsum, FormAdminProvee, FormExplorServ, FormCalcul, FormRepIngresos;
 
 {$R *.res}
 
@@ -28,6 +28,10 @@ begin
   Application.CreateForm(TConfig, Config);
   Application.CreateForm(TfrmExplorServ, frmExplorServ);
   Application.CreateForm(TfrmAdminProduc, frmAdminProduc);
+  Application.CreateForm(TfrmAdminInsum, frmAdminInsum);
+  Application.CreateForm(TfrmAdminProvee, frmAdminProvee);
+  Application.CreateForm(TfrmCalcul, frmCalcul);
+  Application.CreateForm(TfrmRepIngresos, frmRepIngresos);
   Application.Run;
 end.
 

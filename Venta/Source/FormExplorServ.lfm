@@ -667,6 +667,7 @@ object frmExplorServ: TfrmExplorServ
     Top = 131
     Width = 436
     Align = alClient
+    DragMode = dmAutomatic
     PopupMenu = PopupMenu1
     TabOrder = 5
     OnDblClick = StringGrid1DblClick
@@ -749,6 +750,12 @@ object frmExplorServ: TfrmExplorServ
       Caption = '&Cancelar Transfer.'
       ImageIndex = 15
       OnExecute = acHerCancelTranExecute
+    end
+    object acVerCarpDesc: TAction
+      Category = 'Ver'
+      Caption = 'Carpeta de descargas ...'
+      ImageIndex = 4
+      OnExecute = acVerCarpDescExecute
     end
   end
   object Timer1: TTimer
@@ -960,6 +967,9 @@ object frmExplorServ: TfrmExplorServ
     end
     object MenuItem3: TMenuItem
       Caption = '&Ver'
+      object MenuItem26: TMenuItem
+        Action = acVerCarpDesc
+      end
       object MenuItem15: TMenuItem
         Action = acVerRefresc
         Bitmap.Data = {

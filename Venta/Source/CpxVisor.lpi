@@ -70,7 +70,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="19">
+    <Units Count="24">
       <Unit0>
         <Filename Value="CpxVisor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -188,6 +188,39 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit18>
+      <Unit19>
+        <Filename Value="..\..\Comunes\FormAdminInsum.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminInsum"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="..\..\Comunes\FormAdminProvee.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminProvee"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\..\Comunes\FormCalcul.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmCalcul"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\..\Comunes\FormRepIngresos.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmRepIngresos"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\..\Comunes\FormAgrupVert.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit23>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -198,7 +231,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.0;..\..\..\_Librerias\UtilsGrilla 0.7;..\..\..\_Librerias\MiConfig 0.3b;..\..\Comunes;..\..\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.0;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\..\_Librerias\MiConfig 0.3b;..\..\Comunes;..\..\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
@@ -223,7 +256,7 @@
     </Linking>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="3">
+    <Exceptions Count="4">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -233,6 +266,9 @@
       <Item3>
         <Name Value="EFOpenError"/>
       </Item3>
+      <Item4>
+        <Name Value="EConvertError"/>
+      </Item4>
     </Exceptions>
   </Debugging>
 </CONFIG>

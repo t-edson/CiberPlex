@@ -23,6 +23,7 @@ type
     acArcAbrirRem: TAction;
     acArcFijRut: TAction;
     acHerCancelTran: TAction;
+    acVerCarpDesc: TAction;
     acVerRefresc: TAction;
     ActionList1: TActionList;
     btnChat: TBitBtn;
@@ -52,6 +53,7 @@ type
     MenuItem23: TMenuItem;
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
+    MenuItem26: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -82,6 +84,7 @@ type
     procedure acPCApagExecute(Sender: TObject);
     procedure acPCReinicExecute(Sender: TObject);
     procedure acPCVerPantExecute(Sender: TObject);
+    procedure acVerCarpDescExecute(Sender: TObject);
     procedure acVerRefrescExecute(Sender: TObject);
     procedure btnApagarClick(Sender: TObject);
     procedure btnReinicClick(Sender: TObject);
@@ -690,12 +693,19 @@ begin
   cab.PonerComando(C_PAN_COMPL, 0, 0);
   StatusBar1.Panels[0].Text:='Leyendo pantalla...';
 end;
+procedure TfrmExplorServ.acVerCarpDescExecute(Sender: TObject);
+var
+  rutArc : string;
+begin
+  rutArc := ExtractFilePath(Application.ExeName)+'archivos';  {Mejor sería que genere un evento para pedir esta ruta}
+  MisUtils.Exec('CMD', '/C start "TITULO" "' + rutArc + '"');
+end;
 procedure TfrmExplorServ.acPCReinicExecute(Sender: TObject);
 var
   cab: TCibServidorPC;
 begin
-//  cab := TCibServidorPC(fac);
-//  if MsgYesNo('¿Desea reiniciar PC: ' + cab.Nombre + '?')<>1 then exit;
+  cab := TCibServidorPC(fac);
+  if MsgYesNo('¿Desea reiniciar PC: ' + cab.Nombre + '?')<>1 then exit;
 //  cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_REIN_PC, 0, cab.IdFac);
 //  StatusBar1.Panels[0].Text:='Reiniciando PC ...';
 end;
@@ -703,8 +713,8 @@ procedure TfrmExplorServ.acPCApagExecute(Sender: TObject);
 var
   cab: TCibServidorPC;
 begin
-//  cab := TCibServidorPC(fac);
-//  if MsgYesNo('¿Desea apagar PC: ' + cab.Nombre + '?')<>1 then exit;
+  cab := TCibServidorPC(fac);
+  if MsgYesNo('¿Desea apagar PC: ' + cab.Nombre + '?')<>1 then exit;
 //  cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_APAG_PC, 0, cab.IdFac);
 //  StatusBar1.Panels[0].Text:='Apagando PC ...';
 end;
