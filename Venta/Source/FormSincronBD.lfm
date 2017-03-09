@@ -1,5 +1,5 @@
 object frmSincronBD: TfrmSincronBD
-  Left = 357
+  Left = 397
   Height = 147
   Top = 409
   Width = 318
@@ -66,9 +66,9 @@ object frmSincronBD: TfrmSincronBD
     TabOrder = 0
   end
   object lblEstConexion: TLabel
-    Left = 40
+    Left = 8
     Height = 15
-    Top = 40
+    Top = 64
     Width = 354
     AutoSize = False
     Caption = 'Conectando'

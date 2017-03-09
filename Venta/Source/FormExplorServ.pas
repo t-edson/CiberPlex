@@ -309,7 +309,7 @@ begin
       campos := Explode(#9, lin);
       if EsWindows then nom := CP1252ToUTF8(campos[0]) else nom := campos[0];
       StringGrid1.Cells[1,fil] := nom;   //pone nombre
-      ext := ExtractFileExt(campos[0]);  //extrae extensiófec
+      ext := ExtractFileExt(campos[0]);  //extrae extensión
       if ext = '' then begin
         StringGrid1.Cells[2,fil] := 'sin tipo';
       end else begin
@@ -705,7 +705,7 @@ var
   cab: TCibServidorPC;
 begin
   cab := TCibServidorPC(fac);
-  if MsgYesNo('¿Desea reiniciar PC: ' + cab.Nombre + '?')<>1 then exit;
+  if MsgYesNo('¿Desea reiniciar el Servidor?')<>1 then exit;
 //  cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_REIN_PC, 0, cab.IdFac);
 //  StatusBar1.Panels[0].Text:='Reiniciando PC ...';
 end;
@@ -714,7 +714,7 @@ var
   cab: TCibServidorPC;
 begin
   cab := TCibServidorPC(fac);
-  if MsgYesNo('¿Desea apagar PC: ' + cab.Nombre + '?')<>1 then exit;
+  if MsgYesNo('¿Desea apagar el Servidor?')<>1 then exit;
 //  cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_APAG_PC, 0, cab.IdFac);
 //  StatusBar1.Panels[0].Text:='Apagando PC ...';
 end;

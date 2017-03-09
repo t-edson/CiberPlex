@@ -10,17 +10,15 @@ unit FormPrincipal;
 interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ActnList,
-  Menus, lclProc, LCLType, LCLIntf, ExtCtrls, ComCtrls, MisUtils, FormPant,
-  FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos, CibTramas, FormBoleta,
-  CibFacturables, CibServidorPC, FormInicio,
-  Globales, FormSincronBD, FormExplorServ, CibProductos,
-  FormAdminProduc, FormAdminProvee, FormAdminInsum, CibBD, FormCalcul,
-  FormRepIngresos, FormConfig;
+  Menus, lclProc, LCLType, LCLIntf, ExtCtrls, ComCtrls, Buttons, MisUtils,
+  FormPant, FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos, CibTramas,
+  FormBoleta, CibFacturables, CibServidorPC, FormInicio, Globales,
+  FormSincronBD, FormExplorServ, FormReempProd, CibProductos, FormAdminProduc,
+  FormAdminProvee, FormAdminInsum, CibBD, FormCalcul, FormRepIngresos,
+  FormConfig, FormRepProducto, FrameSincroBD;
 type
   { TForm1 }
   TForm1 = class(TForm)
-    acAccRefPan: TAction;
-    acAccEnvCom: TAction;
     acAccEnvMjeTit: TAction;
     acCabModTpo: TAction;
     acCabIniCta: TAction;
@@ -32,17 +30,19 @@ type
     acCabPonMan: TAction;
     acFacVerBol: TAction;
     acAyuCalc: TAction;
+    acHerCamNomPro: TAction;
+    acHerSincronizar: TAction;
+    acVerRepPro: TAction;
     acVerRepIng: TAction;
-    acVerRegConex: TAction;
+    acHerRegConex: TAction;
     acVerAdmProve: TAction;
     acVerAdmInsum: TAction;
     acVerAdmProd: TAction;
-    acVerExpServ: TAction;
+    acHerExpServ: TAction;
     ActionList1: TActionList;
     ImageList16: TImageList;
     ImageList32: TImageList;
     MainMenu1: TMainMenu;
-    Memo2: TMemo;
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
@@ -63,7 +63,12 @@ type
     MenuItem25: TMenuItem;
     MenuItem26: TMenuItem;
     MenuItem27: TMenuItem;
+    MenuItem28: TMenuItem;
+    MenuItem29: TMenuItem;
     MenuItem3: TMenuItem;
+    MenuItem30: TMenuItem;
+    MenuItem31: TMenuItem;
+    MenuItem32: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
@@ -73,6 +78,8 @@ type
     MenuItem9: TMenuItem;
     PopupFac: TPopupMenu;
     PopupMenu1: TPopupMenu;
+    Splitter1: TSplitter;
+    StatusBar1: TStatusBar;
     Timer1: TTimer;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
@@ -82,6 +89,7 @@ type
     ToolButton5: TToolButton;
     ToolButton6: TToolButton;
     ToolButton7: TToolButton;
+    ToolButton8: TToolButton;
     procedure acAccRefObjExecute(Sender: TObject);
     procedure acAyuCalcExecute(Sender: TObject);
     procedure acCabExplorArcExecute(Sender: TObject);
@@ -89,12 +97,15 @@ type
     procedure acAccEnvMjeTitExecute(Sender: TObject);
     procedure acAccVerPanExecute(Sender: TObject);
     procedure acFacVerBolExecute(Sender: TObject);
+    procedure acHerCamNomProExecute(Sender: TObject);
+    procedure acHerSincronizarExecute(Sender: TObject);
     procedure acVerAdmInsumExecute(Sender: TObject);
     procedure acVerAdmProdExecute(Sender: TObject);
     procedure acVerAdmProveExecute(Sender: TObject);
-    procedure acVerExpServExecute(Sender: TObject);
-    procedure acVerRegConexExecute(Sender: TObject);
+    procedure acHerExpServExecute(Sender: TObject);
+    procedure acHerRegConexExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
+    procedure acVerRepProExecute(Sender: TObject);
     procedure fraVisCPlex1ClickDer(xp, yp: integer);
     procedure MenuItem19Click(Sender: TObject);
     procedure PaintBox1Click(Sender: TObject);
@@ -104,12 +115,13 @@ type
     procedure FormShow(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
-    { private declarations }
     ServCab : TCibServidorPC;  //Hilo que hace la conexión
     trama   : TCPTrama;        //Referencia a la trama recibida.
     tabPro  : TCibTabProduc;     //Tabla de productos
     tabPrv  : TCibTabProvee;
     tabIns  : TCibTabInsumo;
+    tic     : integer;
+    fraSincBD: TfraSincroBD;
     procedure EnviaPantalla;
     procedure frmAdminInsumGrabado;
     procedure frmAdminProduc_Grabar;
@@ -118,7 +130,10 @@ type
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
     procedure Plog(s: string);
-    procedure ServCabRegMensaje(msj: string);
+    procedure ServCab_CambEstadoCnx(nuevoEstado: TServEstadoConex);
+    procedure ServCab_RegMensajeCnx(msj: string);
+    procedure StatusBar1DrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel;
+      const Rect: TRect);
     procedure Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
     procedure Visor_ClickDer(x, y: integer);
@@ -142,7 +157,12 @@ begin
   DateTimeToString(tmp,'hh:mm:ss:zzz', now);
   frmLog.Memo1.Lines.Add(tmp + ' ' + s);
 end;
-procedure TForm1.ServCabRegMensaje(msj: string);
+procedure TForm1.ServCab_CambEstadoCnx(nuevoEstado: TServEstadoConex);
+begin
+  StatusBar1.Panels[0].Text := ServCab.EstadoConexStr;
+end;
+procedure TForm1.ServCab_RegMensajeCnx(msj: string);
+//Se ha geenrado un mensaje de conexión.
 begin
   frmSincronBD.RegMensaje(msj);
   Plog(msj);
@@ -277,8 +297,40 @@ begin
 end;
 procedure TForm1.PedirEstadoPCs ;
 begin
-  memo2.Clear;
   ServCab.PonerComando(CVIS_SOLESTA, 0, 0);
+end;
+procedure TForm1.StatusBar1DrawPanel(StatusBar: TStatusBar;
+  Panel: TStatusPanel; const Rect: TRect);
+begin
+  if panel.Index = 0 then begin
+    if ServCab.EstadoConex = secConectando then begin
+      if tic mod 2 = 0 then begin
+//        StatusBar.Canvas.Font.Bold := true;
+        StatusBar.Canvas.Font.Color:=clGreen;
+        StatusBar.Canvas.Pen.Color := clWhite;
+        StatusBar.Canvas.Brush.Color := clWhite;
+        StatusBar.Canvas.Rectangle(Rect);
+        StatusBar.Canvas.TextRect(Rect, 2 + Rect.Left, 2 + Rect.Top, dic('Conectando...'));
+      end else begin
+//        StatusBar.Canvas.Font.Bold := true;
+        StatusBar.Canvas.Font.Color:=clWhite;
+        StatusBar.Canvas.Pen.Color := clGreen;
+        StatusBar.Canvas.Brush.Color := clGreen;
+        StatusBar.Canvas.Rectangle(Rect);
+        StatusBar.Canvas.TextRect(Rect, 2 + Rect.Left, 2 + Rect.Top, dic('Conectando...'));
+      end;
+    end else if ServCab.EstadoConex = secConectado then begin
+      StatusBar.Canvas.Font.Color:=clWhite;
+      StatusBar.Canvas.Pen.Color := clGreen;
+      StatusBar.Canvas.Brush.Color := clGreen;
+      StatusBar.Canvas.Rectangle(Rect);
+      StatusBar.Canvas.TextRect(Rect, 2 + Rect.Left, 2 + Rect.Top, dic('Conectado'));
+    end else begin
+      StatusBar.Canvas.Font.Color:=clBlack;
+//      StatusBar.Canvas.Font.Bold := true;
+      StatusBar.Canvas.TextRect(Rect, 2 + Rect.Left, 2 + Rect.Top, StatusBar1.Panels[0].Text);
+    end;
+  end;
 end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
@@ -295,10 +347,20 @@ begin
   ServCab := TCibServidorPC.create;
   //evento de llegada de trama
   ServCab.OnTramaLista:=@procesoTramaLista;
-  ServCab.OnRegMensaje:=@ServCabRegMensaje;
+  ServCab.OnRegMensajeCnx:=@ServCab_RegMensajeCnx;
+  ServCab.OnCambEstadoCnx:=@ServCab_CambEstadoCnx;
   tabPro := TCibTabProduc.Create;
   tabPrv := TCibTabProvee.Create;
   tabIns := TCibTabInsumo.Create;
+  tabPro.SetTable('productos.txt');
+  //Configura barra de estado
+  StatusBar1.OnDrawPanel:=@StatusBar1DrawPanel;
+  StatusBar1.Panels[0].Style := psOwnerDraw;
+  //Configrua frame de sincronízación de BD
+  fraSincBD := TfraSincroBD.Create(self);
+  fraSincBD.Parent := self;
+  fraSincBD.Align := alLeft;
+  Splitter1.Align:= alLeft;
 end;
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
@@ -306,7 +368,7 @@ begin
   tabPrv.Destroy;
   tabPro.Destroy;
   ServCab.OnTramaLista:=nil;  //para evitar eventos al morir
-  ServCab.OnRegMensaje:=nil;  //para evitar eventos al morir
+  ServCab.OnRegMensajeCnx:=nil;  //para evitar eventos al morir
   ServCab.Terminate;
   ServCab.WaitFor;
   ServCab.Free;
@@ -326,26 +388,30 @@ begin
   frmBoleta.OnGrabarBoleta:=@frmBoleta_GrabarBoleta;
   //  frmBoleta.OnReqCadMoneda := @Config.CadMon;
   frmBoleta.OnReqCadMoneda := @CadMon;  { TODO : Esto es solo temporal }
-  if frmSincronBD.Exec(ServCab, @arcCfgServ) <> mrOK then begin
-    close;  //Se canceló la sincronización
-    exit;
-  end;
-  //Se logró sincronizar tablas (archivos) con el servidor;
-  //Ahora usamos FormConfig como contenedor, para cargar los parámetros de la aplicación
+//  if frmSincronBD.Exec(ServCab, @arcCfgServ) <> mrOK then begin
+//    close;  //Se canceló la sincronización
+//    exit;
+//  end;
+//  //Se logró sincronizar config.xml, con el servidor;
+//  //Ahora usamos FormConfig como contenedor, para cargar los parámetros de la aplicación
 //  Config.Iniciar(arcCfgServ);
   //Ahora que tenemos los datos de usuarios cargados, podemos iniciar sesión.
-  frmInicio.ShowModal;
-  if frmInicio.cancelo then begin
+//  frmInicio.ShowModal;
+//  if frmInicio.cancelo then begin
 //    Close;
-  end;
+//  end;
+  Config.Local:='CANADA';
+  fraSincBD.Ini(ServCab, Config.Local);
   //Para permitir grabar remotamente
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsumGrabado;
-  Config.Local:='CANADA';
 end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
+  tic := tic + 1;  //incrementa contador
+  if ServCab.EstadoConex = secConectando then
+    StatusBar1.InvalidatePanel(0,[ppText]);
   //Aprovecha para refrescar la ventana de boleta
   if (frmBoleta<>nil) and frmBoleta.Visible then
     frmBoleta.ActualizarDatos;
@@ -368,6 +434,7 @@ end;
 procedure TForm1.procesoTramaLista(tram: TCPTrama);
 begin
   frmSincronBD.TramaLista(tram);
+  fraSincBD.TramaLista(tram);
   //podemos procesar la trama
   trama := tram; //actualiza referencia
   Plog('>>Recibido: ' + trama.TipTraNom + ' - ' + IntToSTr(trama.tamDat) + ' bytes.');
@@ -399,7 +466,6 @@ begin
     end;
   end;
   M_ARC_SOLIC: begin   //se recibe un archivo solictado
-    memo2.Lines.Text:=trama.traDat;  //muestra el archivo
     //LeeEstado(trama.traDat)
   end;
   M_SOL_RUT_A: begin   //se recibe la ruta actual
@@ -407,7 +473,7 @@ begin
   end;
   else  //Pasa el comando al Visor
     if tram.tipTra = RVIS_SOLESTA then begin
-      memo2.Lines.Text:=trama.traDat;   //para mostrar en pantalla
+//      memo2.Lines.Text:=trama.traDat;   //para mostrar en pantalla
     end;
     Visor.EjecRespuesta(tram.tipTra, tram.posX, tram.posY, tram.traDat);
   end;
@@ -425,17 +491,17 @@ begin
    frmPant.show;
    PedirPantalla;
 end;
-procedure TForm1.acVerExpServExecute(Sender: TObject);  //Ver explorador del Servidor
+//Ver
+procedure TForm1.acHerExpServExecute(Sender: TObject);  //Ver explorador del Servidor
 begin
   frmExplorServ.Exec(ServCab);
 end;
-procedure TForm1.acVerRegConexExecute(Sender: TObject);
+procedure TForm1.acHerRegConexExecute(Sender: TObject);
 begin
   frmLog.Show;
 end;
 procedure TForm1.acVerAdmProdExecute(Sender: TObject);
 begin
-  tabPro.SetTable('productos.txt');
   tabPro.UpdateFromDisk;
   if tabPro.msjError<>'' then begin
     //Esto no debería pasar si se maneja bien la tabla
@@ -468,7 +534,17 @@ begin
 end;
 procedure TForm1.acVerRepIngExecute(Sender: TObject);
 begin
-  frmRepIngresos.Show;
+  frmRepIngresos.Exec('CANADA');
+end;
+procedure TForm1.acVerRepProExecute(Sender: TObject);
+begin
+  tabPro.UpdateFromDisk;
+  if tabPro.msjError<>'' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error cargando tabla de productos.');
+    MsgErr(tabPro.msjError);
+  end;
+  frmRepProducto.Exec('CANADA', tabPro);
 end;
 procedure TForm1.acAccEnvMjeTitExecute(Sender: TObject);
 var
@@ -481,11 +557,6 @@ end;
 procedure TForm1.acAccRefObjExecute(Sender: TObject);
 begin
   ServCab.PonerComando(CVIS_SOLPROP, 0, 0);
-end;
-
-procedure TForm1.acAyuCalcExecute(Sender: TObject);
-begin
-  frmCalcul.Show;
 end;
 
 procedure TForm1.acCabExplorArcExecute(Sender: TObject);
@@ -512,6 +583,22 @@ begin
   ogFac := Visor.FacSeleccionado;
   if ogFac = nil then exit;
   frmBoleta.Exec(ogFac.Fac);
+end;
+//Herramientas
+procedure TForm1.acHerCamNomProExecute(Sender: TObject);
+begin
+  frmReempProd.Exec(Config.Local);
+end;
+procedure TForm1.acHerSincronizarExecute(Sender: TObject);
+var
+  arcCfgServ: string;
+begin
+  fraSincBD.btnSincronCfgClick(self);
+end;
+//Ayuda
+procedure TForm1.acAyuCalcExecute(Sender: TObject);
+begin
+  frmCalcul.Show;
 end;
 
 end.

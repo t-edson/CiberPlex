@@ -1,8 +1,7 @@
-{Formulario para sincronizar la Base de datos del Servidor de CIBERPLEX, localmente.
-Lo que hace este formulario es establecer la conexión con el servidor, y traer los
-archivos de configuración, para almacenarlos localmente.
-Se debe usar para los puntos ed venta o cualquier otro aplicativo que desea conectarse al
-servidor de CIBERPLEX.}
+{Formulario para traer el archivo "config.xml" del Servidor de CIBERPLEX.
+Se debe usar para los puntos de venta o cualquier otro aplicativo que desea conectarse
+inicialmente al servidor de CIBERPLEX.
+}
 unit FormSincronBD;
 {$mode objfpc}{$H+}
 interface
@@ -11,7 +10,7 @@ uses
   Dialogs, StdCtrls, ExtCtrls, Buttons, LCLProc, MisUtils, CibTramas,
   CibServidorPC;
 const
-  ARC_CFG_SERV = 'CpxServer_i386.xml';   //Archivo de configuración en el servidor
+  ARC_CFG_SERV = 'config.xml';   //Archivo de configuración en el servidor
 
 type
   { TfrmSincronBD }
@@ -25,15 +24,11 @@ type
   private
     ServCab: TCibServidorPC;
     arcSal: String;
-    PtrArcCfg: PString;   {Referencia a archivo de configuración. Usa una referencia,
-                           porque esta es la forma recomendada, para que un formulario
-                           Modal, devuelva valores.}
   public
-//    cancelado: boolean;
     conectado: boolean;
     procedure RegMensaje(txt: string);
     procedure TramaLista(tram: TCPTrama);
-    function Exec(ServCab0: TCibServidorPC; PtrArcCfg0: PString): integer;
+    function Exec(ServCab0: TCibServidorPC): integer;
   end;
 
 var
@@ -83,35 +78,26 @@ begin
       M_ARC_SOLIC: begin  //Llego el archivo
           lblEstConexion.Caption:='Archivo recibido: ' + arcSal;
           StringToFile(tram.traDat, arcSal);
-          if arcSal = 'rutas.txt' then begin
-            //LLegó el último archivo.
+          if arcSal = ARC_CFG_SERV then begin
+            //LLegó el archivo esperado.
             self.ModalResult:=mrOK;
-            PtrArcCfg^ := ARC_CFG_SERV;  //actualiza nombre de archivo
             exit;
           end;
         end;
       end;
-  end else begin            //Desconceatdo
+  end else begin            //Desconecatdo
     //Si llega una trama, se asume que ya hay conexión
     conectado := true;
     lblEstConexion.Caption:='Conectado. Leyendo configuración.';
     ServCab.PonerComando(C_FIJ_RUT_A, 0, 0, '-');   //Fija ruta actual
     ServCab.PonerComando(C_ARC_SOLIC, 0, 1, ARC_CFG_SERV);  //El parámetro en "1", hará que llegue primero el nombre del archivo
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'productos.txt');
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'tarifario.txt');
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'proveedores.txt');
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'insumos.txt');
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'mensajes.txt');
-    ServCab.PonerComando(C_ARC_SOLIC, 0, 1, 'rutas.txt');
   end;
 end;
 
-function TfrmSincronBD.Exec(ServCab0: TCibServidorPC; PtrArcCfg0: PString): integer;
-{Inicia mostrando el formulario para iniciar sesión.}
+function TfrmSincronBD.Exec(ServCab0: TCibServidorPC): integer;
+{Inicia mostrando el formulario.}
 begin
   ServCab := ServCab0;
-  PtrArcCfg := PtrArcCfg0;   {Guarda dirección, para poder acceder a la variables,
-                              mientras el formulario, se está mostrando}
   Result := self.ShowModal;
 end;
 

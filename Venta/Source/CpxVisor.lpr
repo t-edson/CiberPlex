@@ -7,10 +7,11 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, FormPrincipal, FormPant, FormLog, FormPantCli, ogMotGraf2d,
-  ogDefObjGraf, CibServidorPC, CibTramas, CibFacturables, FormFijTiempo,
-  FormBoleta, FormSincronBD, FormInicio, FormConfig, FormAdminProduc,
-  FormAdminInsum, FormAdminProvee, FormExplorServ, FormCalcul, FormRepIngresos;
+  Forms, tachartlazaruspkg, FormPrincipal, FormPant, FormLog, FormPantCli,
+  ogMotGraf2d, ogDefObjGraf, CibServidorPC, CibTramas, CibFacturables,
+  FormFijTiempo, FormBoleta, FormSincronBD, FormInicio, FormConfig,
+  FormAdminProduc, FormAdminInsum, FormAdminProvee, FormExplorServ, FormCalcul,
+  FormRepIngresos, FormRepProducto, FormReempProd, FrameSincroBD, FormAgrupVert;
 
 {$R *.res}
 
@@ -32,6 +33,9 @@ begin
   Application.CreateForm(TfrmAdminProvee, frmAdminProvee);
   Application.CreateForm(TfrmCalcul, frmCalcul);
   Application.CreateForm(TfrmRepIngresos, frmRepIngresos);
+  Application.CreateForm(TfrmRepProducto, frmRepProducto);
+  Application.CreateForm(TfrmReempProd, frmReempProd);
+  Application.CreateForm(TfrmAgrupVert, frmAgrupVert);
   Application.Run;
 end.
 
