@@ -1,3 +1,85 @@
+1.6
+===
+SERVER
+Se crea el tipo de tabla para Insumos.
+Se introducen mejoras en la rutina TUtilGrillaBase.PegarACampo(), para poder pegar campos
+consecutivos. 
+Se introducen mejoras en el control con teclado, en los formularios de administración de 
+tablas.
+Se agregan campos adicionales a TCibTabla, para prepararla a ser más compatible con los 
+objetos de base de datos de Lazarus.
+Se simplifican varios métodos de TCibTabla, para que ya no requieran recibir la lista de 
+registros.
+Se crea la unidad CibGrillas, y se mueven las definiciones de CibUtils, referidas a grillas.
+Se incluye en las grillas editables, la posibilidad de ingresar un valor numérico, como 
+una fórmula que es evaluada antes de escribirla en la celda.
+Se incluye en las grillas editables, la posibilidad de iniciar la edición, pulsando la 
+tecla '+'.
+Se incluye la opión de cerrar sesión, y de cambio de contraseña.
+Se incluye el nombre del usuario actual, en la barra de título.
+Se crea la opción de configuración "Usuario por defecto".
+Se quita la funcionalidad de eliminar un objeto con la tecla "Delete".
+Se corrige un error en la generación de registros del alquiler de cabinas (el tiempo 
+solicitado aparecía siempre como 0m).
+Se incluye un formualrio de reportes por producto.
+Se modifica TConfig.Iniciar(), para que no cree una instancia del modelo, cuando se pone
+en modo copia. Esto es úitl para cuando se usa config en el módulo de administración.
+Se cambia el nombre del archivo de configruación al nombre fijo "config.xml".
+Se incluyen en RegistroVentas, funciones para manejar el registro de eventos.
+Se crea el formulario para reporte de eventos.
+
+VENTA
+Se crea el evento OnCambEstadoCnx en TCibServidorPC.
+Se crea la propiedad EstadoConex en TCibServidorPC.
+Se agrega un pael de estado a la ventana principal, y se implementa el primer panel como 
+estado de conexión, con manejo de colores.
+Se elimina el panel de texto que mostraba el archivo de estado, y se crea el panel de
+sincronización.
+
+1.5.5
+=====
+Se crea la unidad CibBD, y se mueven las rutinas de manejo de las tablas.
+Se crean los comando CVIS_ACTPROD y RVIS_ACTPROD.
+Se crea el evento TCibModelo.OnModifTablaBD, y se implementa su procesamiento.
+Se cambia los nombres de tipo de registro: TRegProdu y TRegProvee a TCibRegProduc y 
+TCibRegProvee.
+Se implementa la actualización remota de la tabla de productos.
+Se pasa a usar el frame FrameEditGrilla, de UtilsGrilla 0.8.
+Se agrega una rutina de protección al método TCibTabla.LoadFromDisk(), de la unidad CinBD, 
+porque se descubrió que no cerraba el archivo, al encontrar un error.
+Se crea la tabla de insumos.
+Se argega el método TCibTabla.SaveToString() en CibBD.
+Se agregan rutinas de protección en la actualziación de las tablas.
+
+1.5.4
+=====
+Se crea la clase "TGrillaEdicFor" en CibUtils, para agregar opciones de coloreado en una 
+grilla.
+Se cambia el modo de trabajo de la grilla en FormAdminProduc. Los campos numéricos muestras ahora 
+un formato para visualización y un formato para edición.
+Se cambian las propiedades de TregProdu, cambiando algunos nombres, y agregando campos.
+Se agregan campos a la grilla de FormAdminProduc.
+Se cambia el modo de validación de campos, en FormAdminProduc.
+Se crea la tabla de proveedores y el formulario de administración.
+Se mueven las rutinas de filtrado de categorías-subcategorías de FormAdminProductos y crea el 
+frame FrameFiltArbol.
+
+1.5.3
+=====
+Se crea la clase TGrillaEdic en CibUtils, para agregar a TUtilGrilla, funcionalidades de 
+edición de texto en las celdas de una grilla.
+Se eliminan los eventos OnRegMensaje de TCibFacCabina y TCibGFacCabinas, porque se vio que
+no se estaban usando.
+Se crean los eventos TCibGFacCabinas.OnArchCambRemot y TCibModelo.OnArchCambRemot, para 
+detectar cuando se realiza cambios en archivos.
+Se incluye un panel de mensajes en la pantalla principal para mostrar mensajes al operador.
+Se define el uso de un archivo de mensajes.
+Se incluye la rutina TfrmPrincipal.Modelo_ArchCambRemot(), para poder actualizar la tabla 
+de productos y de mensajes.
+Se agrega el campo "Precio de compra" a la tabla de productos.
+Se incluye la opción para agregar la columna "RENTABILIDAD" a la ventana de administración de 
+productos.
+
 1.5.2
 =====
 Se agregó el grupo "Mesas" y se implementan las unidades y cambios necesarios.
@@ -8,6 +90,11 @@ identificar el tipo de objeto arrastrado (ya que actualmentese permite arrastrar
 a una mesa.)
 Se cambia de nombre a la carpeta "íconos" a "Iconos" y se mueven los íconos 
 correspondientes a cada grupo.
+Se activa el control de teclado para seleccionar a los objetos gráficos.
+Se cambia de nombre a la unidad CPGrupFacturables por CibModelo.
+Se cambia de mombre a la clase TCibGruposFacturables por TCibModelo.
+Se ádapta la ventana de productos y de ingreso de ventas, a la nueva versión de 
+UtilsGrilla, la 0.6b.
 
 
 1.5.1
