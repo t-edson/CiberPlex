@@ -406,7 +406,7 @@ begin
   C_ARC_SOLIC : begin  //Se está pidiendo un archivo
     {Se pide un archivo. }
     if RutaActual = '' then       //No se tiene definida la ruta de trabajo.
-      CambiaDir(ExtractFilePath(Application.ExeName))
+      CambiaDir(ExtractFilePath(Application.ExeName))  //se asume
     else  //Normalmente, se debe haber definido primero una ruta de trabajo
       CambiaDir(RutaActual);
     if not FileExists(tram.traDat) then begin
@@ -455,7 +455,8 @@ begin
   C_FIJ_RUT_A : begin  //Se está pidiendo fijar la ruta actual
     tmp := tram.traDat;
     if tmp = '' Then tmp := RutaEscritorio; //sin ruta se asume el escritorio
-    if tmp = '-' Then tmp := ExtractFilePath(Application.ExeName);
+    if (tmp<>'') and (tmp[1] = '-') Then  //'-' representa a la ruta de la aplicación
+      tmp := ExtractFilePath(Application.ExeName) + copy(tmp, 2, length(tmp));
     if not StringLike(tmp, '?:*') then begin  //la ruta es relativa
         //la vuelve ansoluta
         if StringLike(RutaActual, '*\') then begin
@@ -467,7 +468,7 @@ begin
     if CambiaDir(tmp) Then begin
       RutaActual := GetCurrentDir;    //actualiza ruta
       TCP_envComando(M_SOL_RUT_A, 0, 0, RutaActual);
-      //Envìa lista de archivos
+      //Envìa lista de archivos (no es bueno enviar siempre la lsita de archivos)
       if tram.posY = 1 then begin
         //Esto es nuevo en Ciberplex
         tmp := ListarArchivosD();

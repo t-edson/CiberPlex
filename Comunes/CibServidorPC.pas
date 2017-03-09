@@ -19,29 +19,46 @@ type
   TEvRegMensaje = procedure(msj: string) of object;
   TEvTramaLista = procedure(tram: TCPTrama) of object;
 
+  // Estados de la conexión de la cabina.
+  TServEstadoConex = (
+    secConectando,    //conectando
+    secConectado,     //conectado con socket
+    secDetenido,      //el proceso se detuvo (no hay control)
+    secMuerto         //proceso detenido
+  );
+  TEvCambiaEstado = procedure(nuevoEstado: TServEstadoConex) of object;
+
   { TCibServidorPC }
   TCibServidorPC = class(TThread)
   private
-    Sock   : TTCPBlockSocket;
-    pilaCmds : TPilaCom;  //pila de comandos
-    regMsje: string;   //Usada como para pasar parámetro a EventoMensaje()
-    ProcTrama: TCPProcTrama; //Para procesar tramas
+    FEstadoConex: TServEstadoConex;
+    Sock    : TTCPBlockSocket;
+    pilaCmds: TPilaCom;  //pila de comandos
+    tmpRegMsje: string;           //Para pasar parámetro a EventoRegMensaje()
+    tmpEstCnx : TServEstadoConex; //Para pasar parámetro a EventoCambiaEstado()
+    ProcTrama : TCPProcTrama; //Para procesar tramas
+    procedure EventoRegMensajeCnx;
+    procedure EventoCambiaEstado;
     procedure EventoTramaLista;
-    procedure EventoRegMensaje;
     procedure ProcConex(Hsock: TSocket);
     procedure ProcesarTrama;
+    procedure SetEstadoConex(AValue: TServEstadoConex);
   protected
-    procedure RegMensaje(msje: string);
+    procedure RegMensajeCnx(msje: string);
   public
     estad_tra: integer;
     OnTramaLista : TEvTramaLista;  //Indica que hay una trama lista esperando
-    OnRegMensaje : TEvRegMensaje;  //Indica quue desea registrar un mensaje
+    OnRegMensajeCnx : TEvRegMensaje;   //Indica quue desea registrar un mensaje
+    OnCambEstadoCnx: TEvCambiaEstado;  //Cambio en estado de la conexión
+    property EstadoConex: TServEstadoConex read FEstadoConex write SetEstadoConex;
+    function Conectado: boolean;
     procedure EnviaArchivo(tipCom: TCPTipCom; archivo: String);
     procedure Execute; override;
     //Manejo de Comandos
     procedure PonerComando(tipCom: TCPTipCom; ParamX, ParamY: word;
       const datos: string='');
     function HayComando: boolean;
+    function EstadoConexStr: string;
   public //Constructor y destructor
     Constructor Create;
     Destructor Destroy; override;
@@ -73,16 +90,17 @@ begin
     sock.listen;
     nIntentos := 0;
     while not terminated do begin
+      EstadoConex := secConectando;
       if sock.canread(100) then begin
-          RegMensaje(MSJ_CONEX_DETECTADA);  //Conexión detectada
+          RegMensajeCnx(MSJ_CONEX_DETECTADA);  //Conexión detectada
           ClientSock := sock.accept;
           if sock.lastError=0 then ProcConex(ClientSock);
       end else begin
-//         RegMensaje('Conexión fallida.');
+//         RegMensajeCnx('Conexión fallida.');
          inc(nIntentos);
          if nIntentos > 50 then begin
            nIntentos := 0;
-           RegMensaje(MSJ_REINIC_CONEX);  //Reiniciando coenxión
+           RegMensajeCnx(MSJ_REINIC_CONEX);  //Reiniciando coenxión
            //Intenta reabrir la conexión
            sock.CloseSocket;
            sock.CreateSocket;
@@ -98,12 +116,13 @@ begin
 end;
 procedure TCibServidorPC.ProcConex(Hsock:TSocket);
 {Rutina de lazo del servidor, para procesar los paquetes recibidos.
- Se .}
+ Se supone que si entra aquí, es porque ya se tiene conexión.}
 var
   s: string;
   sock2: TTCPBlockSocket;
 begin
-  RegMensaje('Procesando conexión...');
+  EstadoConex := secConectado;
+  RegMensajeCnx('Procesando conexión...');
   sock2:=TTCPBlockSocket.create;
   try
     sock2.socket:=Hsock;
@@ -115,13 +134,13 @@ begin
       ProcTrama.DatosRecibidos(s, @ProcesarTrama);
       //verifica si hay trama de respuesta
       if Not pilaCmds.HayComando then begin //no hay respuesta
-        RegMensaje('   Enviado: M_PRESENCIA...');  {En realidad no es necesario, que se
+        RegMensajeCnx('   Enviado: M_PRESENCIA...');  {En realidad no es necesario, que se
                        envíe, un mensaje cada vez que se reciben datos, ya que en tramas
                        largas, que vienen en varios bloques, se está respondiendo con
                        múltiples mensajes.}
         sock2.SendString(GenEncabez(0, M_PRESENCIA));  //envía solo presencia
       end else begin  //Envía el comando más antiguo
-        RegMensaje('   Enviado: ' + pilaCmds.PrimerComando.TipTraNom);
+        RegMensajeCnx('   Enviado: ' + pilaCmds.PrimerComando.TipTraNom);
         sock2.SendString(pilaCmds.PrimerComando.Encab);
         sock2.SendString(pilaCmds.PrimerComando.traDat);
         pilaCmds.QuitarComando;  //quita de la pila
@@ -137,11 +156,13 @@ procedure TCibServidorPC.EventoTramaLista;
 begin
   if OnTramaLista <> nil then OnTramaLista(ProcTrama.trama);
 end;
-procedure TCibServidorPC.EventoRegMensaje;
+procedure TCibServidorPC.EventoCambiaEstado;
 begin
-  if OnRegMensaje<>nil then begin
-    OnRegMensaje(regMsje);
-  end;
+  if OnCambEstadoCnx<>nil then OnCambEstadoCnx(tmpEstCnx);
+end;
+procedure TCibServidorPC.EventoRegMensajeCnx;
+begin
+  if OnRegMensajeCnx<>nil then OnRegMensajeCnx(tmpRegMsje);
 end;
 procedure TCibServidorPC.ProcesarTrama;
 //Llegó una trama y hay que hacer algo. La trama está en "Encab" y "traDat"
@@ -150,11 +171,22 @@ begin
   //esperar hasta que haya terminado algún procesamiento.
   Synchronize(@EventoTramaLista);
 End;
-procedure TCibServidorPC.RegMensaje(msje: string);
+procedure TCibServidorPC.SetEstadoConex(AValue: TServEstadoConex);
+begin
+  if FEstadoConex=AValue then Exit;
+  FEstadoConex:=AValue;
+  tmpEstCnx := FEstadoConex;
+  Synchronize(@EventoCambiaEstado); //dispara evento sicnronizando
+end;
+procedure TCibServidorPC.RegMensajeCnx(msje: string);
 {Procedimiento para generar un mensaje dentro del hilo.}
 begin
-  regMsje := msje;
-  Synchronize(@EventoRegMensaje);
+  tmpRegMsje := msje;
+  Synchronize(@EventoRegMensajeCnx);
+end;
+function TCibServidorPC.Conectado: boolean;
+begin
+  Result := EstadoConex = secConectado;
 end;
 //Manejo de Comandos
 procedure TCibServidorPC.PonerComando(tipCom: TCPTipCom; ParamX, ParamY: word; const datos: string = '');
@@ -166,6 +198,16 @@ function TCibServidorPC.HayComando: boolean;
 begin
   Result := pilaCmds.HayComando;
 end;
+function TCibServidorPC.EstadoConexStr: string;
+{Convierte TCabEstadoConex a cadena}
+begin
+ case FEstadoConex of
+ secConectando : exit('Conectando');
+ secConectado  : exit('Conectado');
+ secDetenido   : exit('Detenido');
+ secMuerto     : exit('Muerto');
+ end;
+end;
 //Constructor y destructor
 constructor TCibServidorPC.Create;
 begin
@@ -173,6 +215,10 @@ begin
   ProcTrama:= TCPProcTrama.Create;
   pilaCmds := TPilaCom.Create;
   FreeOnTerminate:=false;
+  FEstadoConex := secDetenido; {Estado inicial. Este estado es solo temporal, se fija
+               así para que se genere el evento OnCambEstadoCnx, al pasar al estado de
+               "conectando", en el Execute(). Notar que esta asignación de estado, no
+               generará el evento de cambio de estado.}
   inherited Create(false);
 end;
 destructor TCibServidorPC.Destroy;

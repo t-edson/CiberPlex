@@ -328,7 +328,8 @@ constructor TSocketCabina.Create(ip0: string);
 begin
   ip := ip0;
   Festado := cecConectando; {Estado inicial. Aún no está conectando, pero se asume que
-                             está en proceso de conexión. Además, no existe estado cecDetenido.
+                             está en proceso de conexión. Además, no existe estado
+                             "cecDetenido" para TSocketCabina.
                              Notar que esta asignación de estado, no generará el evento de
                              cambio de estado, porque estamos en el constructor}
   sock := TTCPBlockSocket.Create;

@@ -131,7 +131,7 @@ begin
 end;
 procedure TConfig.FormDestroy(Sender: TObject);
 begin
-  FreeAndNil(grupos);
+  if grupos<>nil then grupos.Destroy;
   FreeAndNil(xmlFile);
   listaUsu.Destroy;
 end;
@@ -161,14 +161,21 @@ begin
 end;
 procedure TConfig.Iniciar(nombXML: string = ''; ModoCopia: boolean = false);
 {Inicia el formulario de configuración. Debe llamarse antes de usar el formulario y
-después de haber cargado todos los frames.}
+después de haber cargado todos los frames.
+"ModoCopia", permite trabajar con este formulario, cin crear una instancia del modelo.
+Esto es útil, si se quiere usar este formualrio como un simple contenedor de las
+propiedades del archivo de configuración.}
 var
   asocGF: TParElem;
   asocUs: TParElem;
   nom: string;
 begin
   if grupos<>nil then exit;   //protección
-  grupos := TCibModelo.Create('GrupServ', ModoCopia);
+  if ModoCopia then begin
+    //En modo copia, no se crea al Modelo
+  end else begin
+    grupos := TCibModelo.Create('GrupServ');
+  end;
   //Define nombre de XML
   if nombXML='' then
     nom := ChangeFileExt(Application.ExeName,'.xml')
@@ -199,8 +206,12 @@ begin
                     RadioGroup1, 1);
   //propiedades de grupos
   asocGF := xmlFile.Asoc_Str('GrpsFact', @GrpsFact, '');  //crea asociación sin variable
-  asocGF.OnPropertyToFile:=@asocGFPropertyToFile;  //usamos sus eventos
-  asocGF.OnFileToProperty:=@asocGFFileToProperty;
+  if ModoCopia then begin
+    //En modo copia no se manejan grupos
+  end else begin
+    asocGF.OnPropertyToFile:=@asocGFPropertyToFile;  //usamos sus eventos
+    asocGF.OnFileToProperty:=@asocGFFileToProperty;
+  end;
   //propiedades de usuario
   asocUs := xmlFile.Asoc_StrList('usuarios', @FraUsuarios1.listaUsu);
   asocUs.OnFileToProperty := @FraUsuarios1.FiletoProperty;

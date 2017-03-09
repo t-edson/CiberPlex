@@ -6,7 +6,7 @@ unit FormPropGFac;
 interface
 
 uses
-  Classes, SysUtils, typinfo, FileUtil, SynEdit, Forms, Controls, Graphics,
+  Classes, SysUtils, typinfo, FileUtil, Forms, Controls, Graphics,
   Dialogs, StdCtrls, Spin, Buttons, EditBtn;
 
 type

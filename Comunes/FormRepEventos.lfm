@@ -1,9 +1,9 @@
-object frmRepIngresos: TfrmRepIngresos
+object frmRepEventos: TfrmRepEventos
   Left = 397
   Height = 487
   Top = 212
   Width = 905
-  Caption = 'REPORTES DE INGRESOS'
+  Caption = 'REPORTES DE EVENTOS'
   ClientHeight = 487
   ClientWidth = 905
   Icon.Data = {
@@ -163,7 +163,7 @@ object frmRepIngresos: TfrmRepIngresos
       Caption = '&Reporte'
       Default = True
       OnClick = Button1Click
-      TabOrder = 6
+      TabOrder = 5
     end
     object Label1: TLabel
       Left = 8
@@ -295,28 +295,6 @@ object frmRepIngresos: TfrmRepIngresos
         OnClick = btnConfigClick
         TabOrder = 3
       end
-    end
-    object optsDatos: TRadioGroup
-      Left = 112
-      Height = 121
-      Top = 240
-      Width = 81
-      AutoFill = True
-      Caption = 'Datos:'
-      ChildSizing.LeftRightSpacing = 6
-      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
-      ChildSizing.EnlargeVertical = crsHomogenousChildResize
-      ChildSizing.ShrinkHorizontal = crsScaleChilds
-      ChildSizing.ShrinkVertical = crsScaleChilds
-      ChildSizing.Layout = cclLeftToRightThenTopToBottom
-      ChildSizing.ControlsPerLine = 1
-      ClientHeight = 101
-      ClientWidth = 77
-      Items.Strings = (
-        'Ingresos'
-        'Cantidad'
-      )
-      TabOrder = 5
     end
   end
   object Splitter1: TSplitter

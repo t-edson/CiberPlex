@@ -3,25 +3,21 @@ unit FormRepProducto;
 interface
 uses
   Classes, SysUtils, FileUtil, TAGraph, TASeries, Forms, Controls, Graphics,
-  Dialogs, ExtCtrls, StdCtrls, EditBtn, LCLProc, Grids, ComCtrls,
-  RegistrosVentas, FormAgrupVert, CibProductos, Globales, MisUtils, UtilsGrilla,
-  dateutils;
+  Dialogs, ExtCtrls, StdCtrls, EditBtn, LCLProc, Grids, ComCtrls, Menus,
+  ActnList, RegistrosVentas, FormAgrupVert, CibProductos, Globales, MisUtils,
+  UtilsGrilla, dateutils;
 const
   MSJ_TODASCATEG  = '<<Todas las Categorías>>';
   MSJ_TODASSUBCAT = '<<Todas las Subcateg.>>';
   MSJ_TODOSPRODUC = '<<Todos las Productos>>';
+  MSJ_NOEXIPRODUC = '<<Productos no existentes>>';
 type
-    //Tipo de agrupamiento vertical
-  TAgrVer = (
-    tavDia,  //por día
-    tavSem,  //por semana
-    tavMes   //por mes
-  );
-
-  TevReqCadMoneda = function(valor: double): string of object;
 
   { TfrmRepProducto }
   TfrmRepProducto = class(TForm)
+    acGraBarras: TAction;
+    acGraCurvas: TAction;
+    ActionList1: TActionList;
     btnConfig: TButton;
     Button1: TButton;
     Chart1: TChart;
@@ -34,19 +30,26 @@ type
     dat2: TDateEdit;
     grilla: TStringGrid;
     GroupBox1: TGroupBox;
+    ImageList1: TImageList;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
     optDia: TRadioButton;
     optMes: TRadioButton;
+    optTot: TRadioButton;
     optsDatos: TRadioGroup;
     optSem: TRadioButton;
     PageControl1: TPageControl;
     Panel1: TPanel;
+    PopupMenu1: TPopupMenu;
     Splitter1: TSplitter;
     StatusBar1: TStatusBar;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
+    procedure acGraBarrasExecute(Sender: TObject);
+    procedure acGraCurvasExecute(Sender: TObject);
     procedure cmbCategChange(Sender: TObject);
     procedure cmbSubcatChange(Sender: TObject);
     procedure optDiaChange(Sender: TObject);
@@ -56,17 +59,20 @@ type
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure optTotChange(Sender: TObject);
+    procedure TabSheet2Show(Sender: TObject);
   private
     regs: regIng_list;
     agrVert: TAgrVer;  //agrupamiento vertical
     griAgrupados : TUtilGrilla;
     catsHor: TStringList;   //valores de dispersión horizontal
     catsVer: TStringList;   //valores de dispersión vertical
+    tipGraf: integer;       //tipo de gráfica
     procedure CreaCategoriasHoriz(campo: integer);
     procedure DibujarCurva;
     procedure LimpiarCategoriasVert;
-    procedure LLenarGrilla(conColSem: boolean);
-    function frmRepProductoReqCadMoneda(valor: double): string;
+    procedure LLenarGrilla;
+    function DoReqCadMoneda(valor: double): string;
     procedure ReporteAgrupado(agrupVert: TAgrVer);
   public
     local: string;
@@ -81,7 +87,7 @@ var
 implementation
 {$R *.lfm}
 { TfrmRepProducto }
-function TfrmRepProducto.frmRepProductoReqCadMoneda(valor: double): string;
+function TfrmRepProducto.DoReqCadMoneda(valor: double): string;
 begin
   Result := FloatToStr(valor);
 end;
@@ -132,7 +138,46 @@ begin
      end;
   end;
 end;
-procedure TfrmRepProducto.LLenarGrilla(conColSem: boolean);
+procedure TfrmRepProducto.ReporteAgrupado(agrupVert: TAgrVer);
+{Genera el reporte agrupado, usando la lista de archivos "regs". El reporte no se genera
+ en la grilla sino en el objeto "catsVer", a quien le va añadiendo una fila (por cada
+ categoría vertical que se encuentre) y una isntancia de "TCPCellValues" que representa
+ a las columnas de contadores..
+ Debe haberse llenado previamente "catsHor"}
+var
+  i  : Integer;
+  reg: regIng;
+  tmp: String;
+  valores: TCPCellValues;
+  tot: Extended;
+begin
+  catsVer.Clear;
+  //////// Crea dispersión vertical y acumula contador
+  tot := 0.0;
+  for reg in regs do begin
+    tmp := FechaACad(reg.vfec, agrupVert, frmAgrupVert.ComboBox2.ItemIndex);
+    if catsVer.Find(tmp, i) then begin
+      //Ya existe en "i"
+      valores := TCPCellValues(catsVer.Objects[i]);
+    end else begin
+      //Es nuevo, se debe crear
+      catsVer.Add(tmp);
+      valores := TCPCellValues.Create(catsHor.Count);  //crea objeto
+      catsVer.Objects[catsVer.Count-1] := valores;  //guarda la referencia
+    end;
+    //Acumula totales
+    if optsDatos.ItemIndex = 0 then
+      valores.items[reg.posHor] += reg.total  //acumula en la celda que corresponde
+    else
+      valores.items[reg.posHor] += reg.Cant; //acumula en la celda que corresponde
+    tot := tot + reg.total;
+  end;
+  StatusBar1.Panels[1].Text:='Nº Ventas= ' + IntToSTr(regs.Count) +
+                             ',  Tot. Ingresos= ' + OnReqCadMoneda(tot) +
+                             ',  Nº Categor.=' +
+                             IntToStr(catsHor.Count);
+end;
+procedure TfrmRepProducto.LLenarGrilla;
 {Llena la grilla con datos de las listas catsHor y catsVer.}
 var
   c, fil, colIniCont: Integer;
@@ -177,7 +222,6 @@ begin
     end;
     //campos de datos
     for c := 0 to catsHor.Count-1 do begin
-debugln('Col=' + IntToSTr(colIniCont+c));
       if optsDatos.ItemIndex = 0 then  //por Ingresos totales
         grilla.Cells[colIniCont+c, fil+1] := OnReqCadMoneda(valores.items[c])
       else                             //por cantidad
@@ -207,52 +251,6 @@ begin
   end;
   catsVer.Clear;
 end;
-procedure TfrmRepProducto.ReporteAgrupado(agrupVert: TAgrVer);
-{Genera el reporte argupado, usando la lista de archivos "regs".}
-var
-  i  : Integer;
-  reg: regIng;
-  tmp, fmtFecha: String;
-  valores: TCPCellValues;
-  numAno, numSem: Word;
-  fec2: TDate;
-  tot: Extended;
-begin
-  case agrupVert of
-  tavDia: fmtFecha := 'yyyy/mm/dd';
-  tavSem: fmtFecha := 'yyyy/mm/dd';
-  tavMes: fmtFecha := 'yyyy-mm';
-  end;
-  catsVer.Clear;
-  //////// Crea dispersión vertical y acumula contador
-  tot := 0.0;
-  for reg in regs do begin
-    if agrupVert = tavSem then begin
-      //Se debe generar el número de año y semana: yyyy-ww
-      fec2 := reg.vfec - frmAgrupVert.ComboBox2.ItemIndex + 6;  //corrección de inicio de semana
-      numSem := WeekOfTheYear(fec2, numAno);
-      tmp := Format('%d-%.2d', [numAno, numSem]);
-    end else begin  //se calcula usando fmtFecha
-      DateTimeToString(tmp, fmtFecha, reg.vfec);  //agrupa por fecha
-    end;
-    if catsVer.Find(tmp, i) then begin
-      //Ya existe en "i"
-      valores := TCPCellValues(catsVer.Objects[i]);
-    end else begin
-      //Es nuevo, se debe crear
-      catsVer.Add(tmp);
-      valores := TCPCellValues.Create(catsHor.Count);  //crea objeto
-      catsVer.Objects[catsVer.Count-1] := valores;  //guarda la referencia
-    end;
-    if optsDatos.ItemIndex = 0 then
-      valores.items[reg.posHor] += reg.total  //acumula en la celda que corresponde
-    else
-      valores.items[reg.posHor] += reg.Cant; //acumula en la celda que corresponde
-    tot := tot + reg.total;
-  end;
-  StatusBar1.Panels[1].Text:='Num. Ventas = ' + IntToSTr(regs.Count) +
-                             ', Total Ingresos = ' + OnReqCadMoneda(tot);
-end;
 procedure TfrmRepProducto.Button1Click(Sender: TObject);
 begin
   //Genera lista de archivos
@@ -261,40 +259,35 @@ begin
   //Genera el reporte
   if cmbCateg.Text = MSJ_TODASCATEG then begin
     //Pasan todos
-    LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, '', '', '');  //llena "regs"
-    CreaCategoriasHoriz(1);
-    ReporteAgrupado(agrVert);
-    LLenarGrilla(true);  //Escribe datos en grilla
-    LimpiarCategoriasVert;
+    LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, '', '', '',
+                       rutApp + '\datos');  //llena "regs"
   end else begin
     //Hay categoría seleccionada
     if cmbSubcat.Text = MSJ_TODASSUBCAT then begin
       //Pasan todas las subcategorías
-      LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, cmbCateg.Text, '', '');  //llena "regs"
-      CreaCategoriasHoriz(1);
-      ReporteAgrupado(agrVert);
-      LLenarGrilla(true);  //Escribe datos en grilla
-      LimpiarCategoriasVert;
+      LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, cmbCateg.Text, '',
+                         '', rutApp + '\datos');  //llena "regs"
     end else begin
       //Hay subcategoría
       if cmbProduc.Text = MSJ_TODOSPRODUC then begin
         //Pasan todos los productos
-        LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, cmbCateg.Text, cmbSubcat.Text, '');  //llena "regs"
-        CreaCategoriasHoriz(1);
-        ReporteAgrupado(agrVert);
-        LLenarGrilla(true);  //Escribe datos en grilla
-        LimpiarCategoriasVert;
+        LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, cmbCateg.Text, cmbSubcat.Text,
+                           '', rutApp + '\datos');  //llena "regs"
+      end else if cmbProduc.Text = MSJ_NOEXIPRODUC then begin
+        //Productos no existentes en la tabla de productos (Se busca por descripción)
+        LeerIngresosCatSubExc(regs, dat1.Date, dat2.Date, local, cmbCateg.Text, cmbSubcat.Text,
+                           cmbProduc.Items, rutApp + '\datos');  //llena "regs"
       end else begin
         //Hay producto seleccionado
-        LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, cmbCateg.Text,
-                                 cmbSubcat.Text, cmbProduc.Text);  //llena "regs"
-        CreaCategoriasHoriz(1);
-        ReporteAgrupado(agrVert);
-        LLenarGrilla(true);  //Escribe datos en grilla
-        LimpiarCategoriasVert;
+        LeerIngresosCatSub(regs, dat1.Date, dat2.Date, local, cmbCateg.Text, cmbSubcat.Text,
+                           cmbProduc.Text, rutApp + '\datos');  //llena "regs"
       end;
     end;
   end;
+  CreaCategoriasHoriz(1);
+  ReporteAgrupado(agrVert);
+  LLenarGrilla;  //Escribe datos en grilla
+  LimpiarCategoriasVert;
   consoleTickCount('');
   debugln('');
   if TabSheet2.Visible then DibujarCurva;
@@ -305,10 +298,6 @@ begin
   if optSem.Checked then frmAgrupVert.PageControl1.PageIndex:=1;
   if optMes.Checked then frmAgrupVert.PageControl1.PageIndex:=2;
   frmAgrupVert.Show;
-end;
-procedure TfrmRepProducto.optDiaChange(Sender: TObject);
-begin
-  agrVert := tavDia;
 end;
 procedure TfrmRepProducto.cmbCategChange(Sender: TObject);
   function ExisteSubCateg(subcat: string): boolean;
@@ -367,6 +356,7 @@ begin
     //Hay que llenar los productos
     cmbProduc.Clear;
     cmbProduc.AddItem(MSJ_TODOSPRODUC, nil);  //siempre existe
+    cmbProduc.AddItem(MSJ_NOEXIPRODUC, nil);   //siempre existe
     for reg in tabPro.Productos do begin
       if (reg.Categ = categ) and (reg.Subcat = subcateg) and
          not ExisteProduc(reg.Desc) then begin
@@ -377,6 +367,10 @@ begin
     cmbProduc.Visible:=true;
   end;
 end;
+procedure TfrmRepProducto.optDiaChange(Sender: TObject);
+begin
+  agrVert := tavDia;
+end;
 procedure TfrmRepProducto.optSemChange(Sender: TObject);
 begin
   agrVert := tavSem;
@@ -384,6 +378,10 @@ end;
 procedure TfrmRepProducto.optMesChange(Sender: TObject);
 begin
   agrVert := tavMes;
+end;
+procedure TfrmRepProducto.optTotChange(Sender: TObject);
+begin
+  agrVert := tavTot;
 end;
 procedure TfrmRepProducto.FormCreate(Sender: TObject);
 begin
@@ -397,10 +395,6 @@ begin
   dat2.Date:=now;
   //Configura grilla de reporte agrupado
   griAgrupados := TUtilGrilla.Create(nil);
-  griAgrupados.IniEncab;
-  griAgrupados.AgrEncabNum('N°'       , 35);
-  griAgrupados.AgrEncabTxt('FECHA'     , 20);
-  griAgrupados.FinEncab;
   griAgrupados.OpAutoNumeracion:=true;
   griAgrupados.OpDimensColumnas:=true;
   griAgrupados.OpEncabezPulsable:=true;
@@ -410,7 +404,7 @@ begin
   optDia.Checked:=true;  //inicializa opción
   optsDatos.ItemIndex:=0; //inicializa tipo de dato
   //Define un formato, por defecto, de moneda.
-  OnReqCadMoneda:=@frmRepProductoReqCadMoneda;
+  OnReqCadMoneda:=@DoReqCadMoneda;
 end;
 procedure TfrmRepProducto.FormDestroy(Sender: TObject);
 begin
@@ -450,14 +444,32 @@ begin
       cmbCateg.AddItem(reg.Categ, nil);
     end;
   end;
-  cmbCateg.ItemIndex:=0;  //selecciona el primero
+  if cmbCateg.Items.Count>1 then
+    cmbCateg.ItemIndex:=1  //primera categoría
+  else
+    cmbCateg.ItemIndex:=0;  //selecciona el primero
   cmbCategChange(self);   //actualiza
   Show;
 end;
+procedure TfrmRepProducto.TabSheet2Show(Sender: TObject);
+//Se activa la pesatña de la gráfica.
+begin
+  DibujarCurva;
+end;
 procedure TfrmRepProducto.DibujarCurva;
+  function TextoLimitado(txt: string): string;
+  {Recorta un texto pro el número de caracteres.}
+  const max = 24;
+  begin
+    if length(txt) > max then
+      Result := copy(txt,1,max) + '..'
+    else
+      Result := txt;
+  end;
 var
   fil, cIni, c, nSeries, porcIni, dPorcen: Integer;
   FBar : TBarSeries;
+  FLine: TLineSeries;
   y: Single;
 begin
 //  FLine := TLineSeries.Create(Chart1);
@@ -469,6 +481,7 @@ begin
 //  FLine.SeriesColor := clRed;
 //
 //  FArea := TAreaSeries.Create(Chart1);
+  if griAgrupados.cols.Count = 0 then exit;
   //Busca inicio de columnas de tipo "contadores"
   for cIni:=1 to grilla.ColCount-1 do begin
     if griAgrupados.cols[cIni].tipo = ugTipNum then
@@ -477,26 +490,62 @@ begin
   //Crea series
   Chart1.ClearSeries;
   nSeries := grilla.ColCount - cIni;
+  if nSeries > 70 then begin
+    {No se puede dibujar muchas series, porque las posiciones de las barras se ajustan
+     en procentajes enteros.}
+    exit;
+  end;
   dPorcen := 98 div nSeries;
   porcIni := 1;
-  for c:=cIni to cIni + nSeries -1 do begin
-    FBar := TBarSeries.Create(Chart1);
-    FBar.BarWidthStyle := bwPercent;
-    FBar.BarOffsetPercent:= porcIni;
-    FBar.BarWidthPercent := dPorcen;
-    porcIni := porcIni + dPorcen;
-//    FBar.SeriesColor := clFuchsia;
-    FBar.SeriesColor := RGBToColor(Random(256),Random(256),Random(256));
-    FBar.Title := grilla.Cells[c, 0];
-    Chart1.AddSeries(FBar);
-    FBar.Clear;
-    for fil:=1 to grilla.RowCount-1 do begin
-      y := StrToFloat(grilla.Cells[c, fil]);
-      FBar.AddXY(fil, y);
+  if tipGraf = 0 then begin   //Barras
+    for c:=cIni to cIni + nSeries -1 do begin
+      FBar := TBarSeries.Create(Chart1);
+      FBar.BarWidthStyle := bwPercent;
+      FBar.BarOffsetPercent:= porcIni;
+      FBar.BarWidthPercent := dPorcen;
+      porcIni := porcIni + dPorcen;
+  //    FBar.SeriesColor := clFuchsia;
+      FBar.SeriesColor := RGBToColor(Random(256),Random(256),Random(256));
+      FBar.Title := TextoLimitado(grilla.Cells[c, 0]);
+      Chart1.AddSeries(FBar);
+//      FBar.Clear;
+      for fil:=1 to grilla.RowCount-1 do begin
+        y := StrToFloat(grilla.Cells[c, fil]);
+        FBar.AddXY(fil, y);
+      end;
+    end;
+  end else begin
+    for c:=cIni to cIni + nSeries -1 do begin
+      FLine := TLineSeries.Create(Chart1);
+      FLine.ShowLines := true;
+//      FLine.ShowPoints := true;
+//      FLine.Pointer.Style := psRectangle;
+//      FLine.Pointer.Brush.Color := clRed;
+      FLine.LinePen.Width := 2;
+      FLine.SeriesColor := RGBToColor(Random(256),Random(256),Random(256));
+      FLine.Title := TextoLimitado(grilla.Cells[c, 0]);;
+      Chart1.AddSeries(FLine);
+//      FLine.Clear;
+      for fil:=1 to grilla.RowCount-1 do begin
+        y := StrToFloat(grilla.Cells[c, fil]);
+        FLine.AddXY(fil, y);
+      end;
     end;
   end;
-//  Chart1.
   Chart1.Legend.Visible:=true;
 end;
+procedure TfrmRepProducto.acGraBarrasExecute(Sender: TObject);
+begin
+  if tipGraf = 0 then exit;  //ya tiene elñ tipo
+  tipGraf := 0;
+  DibujarCurva;
+end;
+procedure TfrmRepProducto.acGraCurvasExecute(Sender: TObject);
+begin
+  if tipGraf = 1 then exit;  //ya tiene elñ tipo
+  tipGraf := 1;
+  DibujarCurva;
+end;
+
 end.
 

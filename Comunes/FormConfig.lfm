@@ -1,5 +1,5 @@
 object Config: TConfig
-  Left = 315
+  Left = 350
   Height = 317
   Top = 294
   Width = 367
