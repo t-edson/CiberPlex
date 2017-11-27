@@ -1,0 +1,11 @@
+11/03/2017: Se cambia el precio de "Doritos" de 1.00 a 1.20.
+06/03/2017: Se cambia el precio de "Piqueo Snack" de 1.00 a 1.20.
+06/03/2017: Se cambia el precio de "Galletas Animalitos" Fauna de 0.5 a 0.70.
+04/03/2017: Se cambia el precio de Bon o Bon Oblea, de 0.5 a 0.7 soles.
+03/03/2017: Se eliminan del sistema varios productos de SNACK, que no han tenido rotación.
+
+NOTA: Se cambia el precio de Sporade a S/ 2.50
+NOTA: Se ingresa el producto CHUPETE (MARCIANO) a S/1.00 (con o sin leche)
+
+Mensaje de prueba
+Se está probando la conexión remota a CIBERPLEX.

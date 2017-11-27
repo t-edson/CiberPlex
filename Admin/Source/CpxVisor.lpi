@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="9"/>
+    <PathDelim Value="\"/>
+    <General>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <Title Value="CpxVisor"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
+    </General>
+    <i18n>
+      <EnableI18N LFM="False"/>
+    </i18n>
+    <VersionInfo>
+      <StringTable ProductVersion=""/>
+    </VersionInfo>
+    <BuildModes Count="2">
+      <Item1 Name="Debug" Default="True"/>
+      <Item2 Name="Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="cplex_admin"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\..\Comunes\Cabinas;..\..\Comunes\NiloM"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item2>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+      <DestinationDirectory Value="C:\Users\Administrador\Desktop\limpio"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="4">
+      <Item1>
+        <PackageName Value="DateTimeCtrls"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="TAChartLazarusPkg"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="SynEdit"/>
+      </Item3>
+      <Item4>
+        <PackageName Value="LCL"/>
+      </Item4>
+    </RequiredPackages>
+    <Units Count="43">
+      <Unit0>
+        <Filename Value="CpxVisor.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="formprincipal.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormPrincipal"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="formpant.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmPant"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormPant"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="formlog.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmLog"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormLog"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="formpantcli.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmPantCli"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormPantCli"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="Globales.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\Comunes\Cabinas\FormFijTiempo.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmFijTiempo"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="..\..\Comunes\Cabinas\FormExplorCab.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmExplorCab"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\..\Comunes\CibFacturables.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\Comunes\CibUtils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\..\Comunes\FormBoleta.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmBoleta"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\..\Comunes\CibTramas.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\..\Comunes\CibServidorPC.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="FormSincronBD.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmSincronBD"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\..\Comunes\forminicio.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmInicio"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormInicio"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\..\Comunes\FormConfig.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Config"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="FormExplorServ.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmExplorServ"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\..\Comunes\FormAdminProduc.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminProduc"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="..\..\Comunes\FormAdminInsum.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminInsum"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="..\..\Comunes\FormAdminProvee.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAdminProvee"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\..\Comunes\FormCalcul.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmCalcul"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\..\Comunes\FormRepIngresos.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmRepIngresos"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\..\Comunes\FormAgrupRep.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmAgrupRep"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="..\..\Comunes\FormRepProducto.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmRepProducto"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="FormReempProd.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmReempProd"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="..\..\Comunes\FrameSincroBD.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fraSincroBD"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="..\..\Comunes\FormRepEventos.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmRepEventos"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="..\..\Comunes\ObjGraficos.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\..\Comunes\frameVisCPlex.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fraVisCPlex"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="..\..\Comunes\CibProductos.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="..\..\Comunes\CibBD.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="..\..\Comunes\CibGrillas.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="..\..\Comunes\RegistrosVentas.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="..\..\Comunes\FormPropGFac.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit34>
+      <Unit35>
+        <Filename Value="..\..\Comunes\FormIngCompras.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmIngCompras"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="..\..\Comunes\CibModelo.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="..\..\Comunes\CibRegistros.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="..\..\Comunes\FormCambClave.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="..\..\Comunes\FormVisorMsjRed.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit39>
+      <Unit40>
+        <Filename Value="..\..\Comunes\framecfgusuarios.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FraUsuarios"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="..\..\Comunes\FrameEditGrilla.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\..\Comunes\FormIngVentas.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmIngVentas"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit42>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="..\CPlexVenta"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\..\_Librerias\MiConfig 0.3;..\..\Comunes;..\..\Synapse;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
+    <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
+        <OverflowChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <DebugInfoType Value="dsDwarf2Set"/>
+        <UseHeaptrc Value="True"/>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+    </Linking>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="4">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+      <Item4>
+        <Name Value="EConvertError"/>
+      </Item4>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

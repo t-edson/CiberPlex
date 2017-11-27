@@ -1,0 +1,26 @@
+I001	COUNTER	LIBRERÕçA		Papel Bond 75gr A4 	XEROX	Paquete de 500 hojas	9.1	ImpresiÛn	0	Tay Loy San Luis	2000:01:01:00:00:00	Puede ser de otra marca, ya que no hay problema con la impresora actual. Usamos Xerox-Colombia  como primera opci√≥n por precio	
+I035	COUNTER	SERVICIOS		Tinta impresora Epson - Color	EPSON	1 UNIDAD	40		0	Wilson - Galr.Compuplaza - 320	2000:01:01:00:00:00	Compramos Original	
+I036	COUNTER	SERVICIOS		Tinta impresora Epson - Color	EPSON	1 UNIDAD	28		0	SistemaContinuo	2017:04:25:00:00:00	Original	
+I037	COUNTER	SERVICIOS		Toner Compatible 78A	ALEXSYSTEM	1 UNIDAD	48		0	AlexSystem	2017:04:25:00:00:00		
+I038	COUNTER	SERVICIOS		Tapas pl·sticas p/espiralado		( 25 unid.)	0.18	Espiralado	0	Cecygraph	2017:07:22:00:00:00	Se compran las gruesas, en color transparente, negro,rojo,morado,verde	
+I039	COUNTER	SERVICIOS		Espirales(7,9,,14, 17 mm)		(25 unid.)	2		0	Cecygraph	2000:01:01:00:00:00	El precio va de 1 a 2 soles, dependiendo del calibre	
+#25	COUNTER	SERVICIOS		Espiral 12mm		Paq de 25	0.052		0	Cecygraph	2017:05:05:10:10:46		
+I053	COUNTER	SERVICIOS		Espiral 20mm		Paq. de 15	0		0	Cecygraph	2017:04:06:15:44:06		
+I040	COUNTER	SERVICIOS		Micas (Tarjeta, Brevete)			0		0	Cecygraph	2000:01:01:00:00:00	No se tiene el precio	
+I055	COUNTER	SERVICIOS		Mica A4		Paq. de 10	0.85		0	Cecygraph	2017:04:06:15:47:42	Hay gruesa y delgada. Se compra gruesa.	
+I041	COUNTER	SERVICIOS		Papel fotogr·fico			0		0	?	2000:01:01:00:00:00	No se tiene el precio	
+I042	COUNTER	SERVICIOS		Papel engomado			0		0	?	2000:01:01:00:00:00	No se tiene el precio	
+I043	COUNTER	DESCARTABLE		Bolsa transparente de 9*14 - Celof·n		Un ciento	3		0	Centro Lima	2000:01:01:00:00:00		
+I044	COUNTER	DESCARTABLE		Bolsa negra de basura (20*30)		Un ciento	5		0	Mercado Central	2000:01:01:00:00:00		
+I045	COUNTER	DESCARTABLE		Franela		Un ciento	5		0	Galer√≠a Felicita - Z√≥tano/ Frente al Mercado Central	2000:01:01:00:00:00		
+I046	COUNTER	EQUIPOS		AudÌfonos Halion T3	HALION	1 UNIDAD	15		0	Gamer Vision	2000:01:01:00:00:00		
+I047	COCINA	DESCARTABLE		Bolsa negra "piÒata" (26*40)		Un ciento	10		0	Mercado Central	2000:01:01:00:00:00		
+I048	COCINA	DESCARTABLE		Bolsa transparente 8*12		paquete	0.7	Usado para porcionar insumos de cocina	0	Centro Lima	2000:01:01:00:00:00		
+I049	COCINA	DESCARTABLE		Bolsa blanca T-shirt 12*16		paq. de 80	2	Cocina - Para llevar	0	Centro Lima	2000:01:01:00:00:00		
+#27	COUNTER	SERVICIOS		Tapas de cartÛn p/espiralado		( 25 unid.)	0.16	Espiralado	0	Cecygraph	2017:07:22:18:08:56	Se en color negro,rojo,morado,verde	
+I051	COCINA	DESCARTABLE		Stickers verde y rojo			0	Para poner fechas de vencimiento	0	Centro Lima	2000:01:01:00:00:00		
+I052	COCINA	DESCARTABLE		Servilleta simple			0	Para cocina	0	Se compra en le mercado de Villa Jard√≠n	2000:01:01:00:00:00		
+#21	COUNTER	LIBRERÕçA		Sobres para CD		Paquete de 100	0.04	Estuche de CD	0	Memory House	2017:02:22:00:00:00		
+I054	COUNTER	SERVICIOS		Espiral 23mm		Paq. de 10	0.32		0	Cecygraph	2017:05:04:00:00:00		
+#26	COUNTER	SERVICIOS		Mica Postal		Paq. de 50	0.264		0	Cecygraph	2017:05:05:10:13:57		
+I050	COCINA	DESCARTABLE		Vaso N∫ 9 sin tapa		Medio ciento	2.5	Para gelatinas	0	Mercado de Salamanca	2000:01:01:00:00:00	Pl·stico transparente	

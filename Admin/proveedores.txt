@@ -1,0 +1,43 @@
+#1	BIENES	GASEOSA	DIVALDI S.R.L.	Gaseosas	Sr. José Peña	3267265 - 998457347	Si	Av. Mariscal Nieto Nº 288- Urb El Pino	Simplemente se le llama para hacer pedido. Él lo trae.	2016:09:22:00:00:00	ACTIVO	
+#2	BIENES	GASEOSA	AJE (Comercializadora CANAN SAC)	Gaseosas		2510337, 2510357	Sí	Av. Los faisanes Mz l Lt 27- Chorrillos	Se le compra Agua Cielo, Cifrut, Sporade, FreeTea y Volt, en donde tiene mejores precios (algo de 5% menos)	2016:09:22:00:00:00	ACTIVO	
+#3	BIENES	SNACK-PIQUEO	PEPSICO (Snack América Latina SRL)	Piqueos		3519010 - 3519011	Sí	Av. Bolognesi 550 - Santa Anita	Pasan periódicamente a vender. Se les compra piqueos	2016:09:19:00:00:00	ACTIVO	
+#4	BIENES	SNACK-PIQUEO	KARINTO (MCA Partners EIRL)	Piqueos		966501283	Sí	José Julio Morales 210 - Urb Apolo		2017:02:27:00:00:00		
+#5	BIENES	SNACK-DULCE	NESTLE (Distribuid. Suizo Peruana SAC)	Chocolates, galletas Nestlé		2521471	Sí	Calle Ícacro Mz J Lt 19 - Urb Campiña - Chorrillos	Pasan periódicamente a vender. Se les compra Sublime, princesa, morocha, …	2016:09:07:00:00:00	ACTIVO	
+#6	BIENES	SNACK-DULCE	ARCOR (Dist. Horizontal Suma SAC)	Galletas, dulces		4312356  988565758	Sí	Jr Huaraz 2060 - Pueblo Libre	Pasan periódicamente a vender. Se les compra Fauna, Bon o Bon Grosso	2016:09:06:00:00:00	ACTIVO	
+#7	BIENES	SNACK-GALLETA	INVERSIONES GLOBAL ARAUJO EIRL	Golosinas, gaseosas cervezas		223-7514 Nextel 834-2048	No	Av. Aviación 2094 - Urb Santa Catalina - La Victoria	Se le compra galletas, pero también vende yogurt.	2016:08:31:00:00:00	ACTIVO	
+#8	BIENES	SNACK-GALLETA	INVERSIONES PAUL SAC	Galletas, abarrotes en general		4356699	No	Jr Inca Garcilazo de la Vega 215 - Int 1 - Urb Salamanca de Monterrico - Ate	Se le ha comprado galletas Charada. Orue, Integrales, Soda Pícaras, Margarita, Chomp, …	2000:01:01:00:00:00		
+#9	BIENES	PASTELERÍA		Empanadas	Sr José Quevedo	985909195 - 4712597	Si		Se lleva las que no se vendieron.	2000:01:01:00:00:00		
+#10	BIENES	GAS	JAIME GAS	Balones de Gas		766-8924  99025-1172	Si		Atienden de lunes a domingo	2000:01:01:00:00:00		
+#11	BIENES	GAS	PLUS GAS	Balones de Gas		324-7174  303-9156	Si		Atienden de lunes a domingo	2000:01:01:00:00:00		
+#12	BIENES	DESCARTABLES	Comercial Torre Fuerte	Descartables al por mayor	ninguno	995616070 4320223	No	Jr Ayacuhco 761 - Int 1-2 / Lima	Tienen buenos precios en sorbetes y bolsas de 8*12	2000:01:01:00:00:00		
+#13	BIENES	TONER/TINTAS	AlexSystem	Toners, tintas	ninguno	981399377 - 981399176 - 3323625 - 3737268	No	Av Bolivia 148 Psje. "D" Tda 496 Galería Centro Lima - (Sótano)	Siempre se le compra el toner 78A. Es confiable y casi siempre el toner dura lo esperado (2000 hojas)	2017:03:28:00:00:00		
+#14	BIENES	TONER/TINTAS	Sistema Continuo	Tintas	Martha Ferro	955324130	No	Av. Bolivia 180 Stand 118 1er Piso Wilson Plaza	Proveedor nuevo. Tiene buen precio en tintas y vende tinta original para Epson.	2016:12:30:00:00:00		
+#15	BIENES	ENMICADOS,ESPIRALADOS	CECYGRAF	Espirales, Tapas, Micas, ect		4332616	No	Av. Garcilazo de la Vega 1282 - Tda 220 - Galería WILSON	Tiene buenos precios. El lugar es un poco peligroso. Ir de día.	2000:01:01:00:00:00		
+#16	BIENES	EQUIPOS	COMUNICEL	Bases Celulares, Linksys	Sr Daniel	"6522082989200033"	No	Av Angamos Este 2408 Of 303 Surquillo	www.comunicel.com.pe	2000:01:01:00:00:00		
+#17	BIENES	EQUIPOS	GAMER VISION EIRL	Equipos de cómputo		4271149, 986249416, 986250752	No	Jr Leticia Nro 948 Int 1 - Lima	Le compramos audífonos, porque tienen buen precio.	2000:01:01:00:00:00		
+#18	BIENES	LIBRERÍA	LIBRERÍA ELIZABETH	Útiles escolares, de oficina, rompecabezas, cuentos		986472767	No	Jr Andahuaylas 830-Int N-18		2016:08:09:00:00:00		
+#19	BIENES	LIBRERÍA	ZELOFEJAD SAC	Productos escolares, escritorio y otros productos por campaña.		982063798	No	Jr Andahuaylas 877A - Lima		2017:01:17:00:00:00		
+#20	BIENES	LIBRERÍA	DIST. NAVARRETE	Todo librería		2030290	No	Av. Nicolás de Piérola 1463 - Lima	No se suele comprar en este proveedor.	2016:12:30:00:00:00		
+#21	BIENES	LIBRERÍA	COMERCIAL MILSOT EIRL	Todo librería		4264189 996205397 995562780 981041148 RPM #630385	No	Jr Cuzco Nº 735 Int 108 - Lima	Tiene buenos precios, pero Vende al por mayor. Tiene bastante papelería.	2017:03:28:00:00:00		
+#22	SERVICIOS	IMPRESORAS/MONITORES	Electrónica Pajur	Reparación de Monitores	Eduardo Contreras	987607984	No	Jr Leticia 927 Int 4 - Lima (Por Paruro)	Parece un técnico confiable y honesto. Ya nos ha hecho dos reparaciones de monitores.	2000:01:01:00:00:00		
+#23	SERVICIOS	IMPRESORAS/MONITORES	Professional Solutions	Reparación de Impresoras	Leandro Alberto Taipe	996439166 7841027	No	Camaná 1180 - Of 202	Nos ha reparado las impresoras a tinta y laser B/N	2000:01:01:00:00:00		
+#24	SERVICIOS	REFRIGERADORAS		Reparación de Refrigeradoras	Sr. Carlos Huamán	998506782			Reparó al refrigeradora de cocina el 15/7/2012	2000:01:01:00:00:00		
+#25	SERVICIOS	REFRIGERADORAS	Taller Salamanca	Reparación de Refrigeradoras domésticas		4355889 996571127				2000:01:01:00:00:00		
+#26	SERVICIOS	REFRIGERADORAS	Servicio Técnico Montañez	Reparación de Refrigeradoras		971733696 2263927			Queda en San Borja. Se le llamó una vez y no llegó	2000:01:01:00:00:00		
+#27	SERVICIOS	MUEBLES	Muebles Wisart	Muebles de melamine	Sra Isabel	7945632 4257034	Si	Av. Tingo María 1445	"soportenlinea@hotmail.comwilderjose@gmail.com"	2000:01:01:00:00:00		
+#28	SERVICIOS	PINTURA/ELECTRICIDAD/GASFITERÍA		Servicio de pintura, electricidad, gasfitería, mayólica	Miguel Donayre Chacaltana	958452672, 989576538			Fue el pintor que pintó Rosa Toro. Cobra barato. Hace buen trabajo.	2000:01:01:00:00:00		
+#29	SERVICIOS	PINTURA/ELECTRICIDAD/GASFITERÍA		Servicios de construcción, pintado, gasfitería, electricidad, etc	Sr Marcelino	946549791	No		Es de confianza, nos ha hecho varios trabajos, pero suele cobrar un poco más. Actualmente es contratista.	2000:01:01:00:00:00		
+#30	SERVICIOS	PINTURA/ELECTRICIDAD/GASFITERÍA		Pintura, Gasfitería, Carpintería, Puertas Metálicas	Felipe Farfan Pinto	968023150 - 3410004			Dejó tarjeta en CENTRONET	2000:01:01:00:00:00		
+#31	SERVICIOS	PINTURA/ELECTRICIDAD/GASFITERÍA		Gasfitería y Electricidad	Tco. Augurio Sulca	"777-8594993095579"		San Luis	Trabaja bien, Parece responsable. Un poco caro. Reparo el baño de comedor de CENTRONET	2000:01:01:00:00:00		
+#32	SERVICIOS	PINTURA/ELECTRICIDAD/GASFITERÍA		Pintura	José Luis	990063070			Dejó un papelito en CENTRONET	2000:01:01:00:00:00		
+#33	SERVICIOS	RECARGAS VIRTUALES	MOVILWAY	Saldo MOVISTAR	Sr Jorge Fernandez	980149088			Es nuestro vendedor. Visita miércoles y sábado.	2000:01:01:00:00:00		
+#34	SERVICIOS	RECARGAS VIRTUALES	MOVILWAY	Saldo MOVISTAR	Srta Geraldine	951633694			Nos dieron su número cuando falló el *249	2000:01:01:00:00:00		
+#35	SERVICIOS	RECARGAS VIRTUALES	MOVILWAY	Saldo MOVISTAR	Srta Lilia Correa	951634311			Es nuestra encargada de CallCenter	2000:01:01:00:00:00		
+#36	SERVICIOS	RECARGAS VIRTUALES	MOVILWAY	Saldo MOVISTAR	Número Directo	6316060			Proporcionado por Katia Taboada	2000:01:01:00:00:00		
+#37	SERVICIOS	RECARGAS VIRTUALES	FULLCARGA	Saldo CLARO					"Cuenta Banco Continental: 0011-03820100009658Cuenta Scotiabank:2463741"	2000:01:01:00:00:00		
+#38	SERVICIOS	IMPRESIÓN DE BOLETAS	IMPRESIONES BRANDON	Impresión de Boletas y Facturas.		Ofic: 4277513 - Taller: 3301366 - 946890398 - 970419266	No	Jr Puno 552 - Of 04 (semisótano) - Centro Comercial Puno - Lima	Siempre nos han hecho los trabajos para Centronet y SIlicio. Tienen buenos precios.	2000:01:01:00:00:00		
+#39	SERVICIOS	IMPRESIÓN EN VINIL AUTOADHESIVO	PUBLICIDAD INTERIOR Y EXTERIOR	Impresión en gigantografía.		947124221 991840749	No	Av Bolivia Nº 148 Int 3291 - CC Centro Lima - 3er Nivel	Nos imprime imágenes en Vinil adhesivo, para las maquetas mastergraf_peru@hotmail.com master_graf_peru@hotmail.com	2000:01:01:00:00:00		
+#43	BIENES	LIBRERÍA	COMERCIAL BETTY	Todo librería				Jr Cuzco ????	No se tiene dirección, pero tiene buenos precios	2017:03:22:00:00:00		
+#40	BIENES	LIBRERÍA	MEMORY HOUSE SAC	CD's, Sobres CD, USB		4276861, 4260834, 946496094	No	Jr Andahuaylas 955 - Int 80 C.C. "La Cochera" - Lima	Proveedor Nuevo	2017:02:22:00:00:00		
+#41	BIENES	LIBRERÍA	J&V MULTIUTILES PUNTO COM SAC	Librería en general		4234318 - 7134212	No	Av Uruguay 199 - Lima - Por las galerías de Wilson	Tiene buenos precios en algunos productos. En otros no tanto.	2017:03:02:00:00:00		
+#42	BIENES	LIBRERÍA	CAMILA INN PRODUCCIONES	CD, DVD, Copias CD/DVD, Blue Ray		4232788	No	Jr. Camaná 1161 - CC Centro Lima - Tda 451 1er Nivel	Se le compra CD/DVD	2017:03:28:00:00:00		

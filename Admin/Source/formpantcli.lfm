@@ -1,0 +1,36 @@
+object frmPantCli: TfrmPantCli
+  Left = 294
+  Height = 506
+  Top = 106
+  Width = 748
+  Caption = 'frmPantCli'
+  ClientHeight = 506
+  ClientWidth = 748
+  KeyPreview = True
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  LCLVersion = '1.2.0.3'
+  object ScrollBox1: TScrollBox
+    Left = 0
+    Height = 506
+    Top = 0
+    Width = 748
+    HorzScrollBar.Page = 744
+    VertScrollBar.Page = 502
+    Align = alClient
+    ClientHeight = 502
+    ClientWidth = 744
+    TabOrder = 0
+    OnStartDock = ScrollBox1StartDock
+    object Image1: TImage
+      Left = -2
+      Height = 312
+      Top = -2
+      Width = 362
+      AutoSize = True
+      OnMouseDown = Image1MouseDown
+      OnMouseMove = Image1MouseMove
+      OnMouseUp = Image1MouseUp
+    end
+  end
+end
