@@ -13,9 +13,9 @@ uses
   FormNiloMProp, CibCabinaBase, CibCabinaTarifas, CibGFacCabinas,
   FormAdminCabinas, FormAdminTarCab, FormExplorCab, FormFijTiempo,
   FormRepIngresos, RegistrosVentas, FormAdminProduc, FormIngVentas,
-  FormAgrupVert, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
+  FormAgrupRep, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
   FormAdminProvee, FrameFiltArbol, CibBD, FrameEditGrilla, FormAdminInsum,
-  CibGrillas, FormCambClave, FormRepProducto;
+  CibGrillas, FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras;
 
 {$R *.res}
 
@@ -28,7 +28,7 @@ begin
   Application.CreateForm(TfrmRepIngresos, frmRepIngresos);
   Application.CreateForm(TfrmAdminProduc, frmAdminProduc);
   Application.CreateForm(TfrmIngVentas, frmIngVentas);
-  Application.CreateForm(TfrmAgrupVert, frmAgrupVert);
+  Application.CreateForm(TfrmAgrupRep, frmAgrupRep);
   Application.CreateForm(TfrmInicio, frmInicio);
   Application.CreateForm(TfrmAcercaDe, frmAcercaDe);
   Application.CreateForm(TfrmCalcul, frmCalcul);
@@ -38,6 +38,8 @@ begin
   Application.CreateForm(TfrmAdminInsum, frmAdminInsum);
   Application.CreateForm(TfrmCambClave, frmCambClave);
   Application.CreateForm(TfrmRepProducto, frmRepProducto);
+  Application.CreateForm(TfrmRepEventos, frmRepEventos);
+  Application.CreateForm(TfrmRegCompras, frmRegCompras);
   Application.Run;
 end.
 

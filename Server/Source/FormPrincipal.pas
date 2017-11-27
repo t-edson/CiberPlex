@@ -6,10 +6,10 @@ uses
   ComCtrls, Dialogs, StdCtrls, LCLType, MisUtils, ogDefObjGraf, FormIngVentas,
   FormConfig, frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
   FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul,
-  FormContDinero, FormSelecObjetos, FormInicio, CibRegistros, CibTramas,
+  FormContDinero, FormSelecObjetos, FormRegCompras, FormInicio, CibTramas,
   CibFacturables, CibProductos, FormAdminProvee, CibBD, FormAdminInsum,
-  FormCambClave, FormRepProducto, CibGFacMesas, CibGFacClientes, CibGFacCabinas,
-  CibGFacNiloM;
+  FormCambClave, FormRepProducto, FormRepEventos, UniqueInstance, CibGFacMesas,
+  CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -23,12 +23,14 @@ type
     acFacVerBol: TAction;
     acEdiInsGrMes: TAction;
     acAyuSelRapid: TAction;
+    acSisRegCompras: TAction;
+    acVerRepEve: TAction;
     acVerRepPro: TAction;
     acUsuCamCla: TAction;
     acUsuCerSes: TAction;
-    acVerAdmInsum: TAction;
-    acVerAdmProvee: TAction;
-    acVerAdmProd: TAction;
+    acSisAdmInsum: TAction;
+    acSisAdmProvee: TAction;
+    acSisAdmProd: TAction;
     acEdiInsEnrut: TAction;
     acEdiInsGrCab: TAction;
     acEdiElimGru: TAction;
@@ -82,6 +84,10 @@ type
     MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
     MenuItem35: TMenuItem;
+    MenuItem36: TMenuItem;
+    MenuItem37: TMenuItem;
+    MenuItem38: TMenuItem;
+    MenuItem39: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
@@ -106,6 +112,7 @@ type
     ToolButton5: TToolButton;
     ToolButton6: TToolButton;
     ToolButton7: TToolButton;
+    UniqueInstance1: TUniqueInstance;
     procedure acArcRutTrabExecute(Sender: TObject);
     procedure acArcSalirExecute(Sender: TObject);
     procedure acAyuAcercaExecute(Sender: TObject);
@@ -114,10 +121,11 @@ type
     procedure acAyuContDinExecute(Sender: TObject);
     procedure acAyuSelRapidExecute(Sender: TObject);
     procedure acEdiInsGrMesExecute(Sender: TObject);
+    procedure acSisRegComprasExecute(Sender: TObject);
     procedure acUsuCamClaExecute(Sender: TObject);
     procedure acUsuCerSesExecute(Sender: TObject);
-    procedure acVerAdmInsumExecute(Sender: TObject);
-    procedure acVerAdmProdExecute(Sender: TObject);
+    procedure acSisAdmInsumExecute(Sender: TObject);
+    procedure acSisAdmProdExecute(Sender: TObject);
     procedure acEdiAlinHorExecute(Sender: TObject);
     procedure acEdiAlinVerExecute(Sender: TObject);
     procedure acEdiEspHorExecute(Sender: TObject);
@@ -131,7 +139,8 @@ type
     procedure acEdiInsEnrutExecute(Sender: TObject);
     procedure acEdiInsGrCabExecute(Sender: TObject);
     procedure acSisConfigExecute(Sender: TObject);
-    procedure acVerAdmProveeExecute(Sender: TObject);
+    procedure acSisAdmProveeExecute(Sender: TObject);
+    procedure acVerRepEveExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
     procedure acVerRepProExecute(Sender: TObject);
     procedure ConfigfcVistaUpdateChanges;
@@ -145,7 +154,7 @@ type
     procedure Modelo_CambiaPropied;
     procedure Timer1Timer(Sender: TObject);
   private
-    log : TCibArcReg;
+    log : TCibTablaHist;
     tabPro: TCibTabProduc;
     tabPrv: TCibTabProvee;
     tabIns: TCibTabInsumo;
@@ -246,7 +255,7 @@ begin
   PopUp.Items.Add(mn);
 
   //Agrega acciones generales
-  ogFac.fac.MenuAccionesVista(PopUp);
+  ogFac.fac.MenuAccionesVista(PopUp, 5);
   //Agrega acciones que solo correrán en el Servidor, en Modelo
   fac := Modelo.BuscarPorID(ogFac.fac.IdFac);  //ubica facturable en el modelo
   if fac = nil then exit;   //no debería pasar
@@ -419,7 +428,7 @@ begin
   tabIns.UpdateAll(frmAdminInsum.GrillaATabString);
   VerificarCargaInsumos(false);
   MsgBox(tabIns.msgUpdate);
-  frmAdminProvee.Modificado := false;
+  frmAdminInsum.Modificado := false;
 end;
 procedure TfrmPrincipal.Modelo_CambiaPropied;
 {Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
@@ -712,7 +721,7 @@ begin
   RefrescarEncabezado;
   //Crea un grupo de cabinas
   TramaTmp := TCPTrama.Create;
-  log := TCibArcReg.Create;
+  log := TCibTablaHist.Create;
   tabPro := TCibTabProduc.Create;
   tabPrv := TCibTabProvee.Create;
   tabIns := TCibTabInsumo.Create;
@@ -729,7 +738,7 @@ begin
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
 begin
-  Config.Iniciar;  //lee configuración
+  Config.Iniciar('config.xml');  //lee configuración
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
   LeerEstadoDeArchivo;   //Lee después de leer la configuración
   //Inicializa Grupos
@@ -763,7 +772,7 @@ begin
    de "ModoDiseño" se debe cambiar el modo de bloqueo de lso objetos existentes}
   ConfigfcVistaUpdateChanges;
   //Verifica si se puede abrir el archivo de registro principal
-  log.AbrirPLog(rutDatos, Config.Local);
+  log.AbrirPLog(rutDatos, Config.Local, 'GENERAL');
   If msjError <> '' then begin
      MsgErr(msjError);
      //No tiene sentido seguir, si no se puede abrir registro
@@ -825,6 +834,9 @@ begin
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsum_Grabar;
+
+  frmRepIngresos.OnReqCadMoneda:=@Config.CadMon;
+//  frmRepProducto.OnReqCadMoneda:=@Config.CadMon;
 end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
@@ -844,6 +856,10 @@ end;
 procedure TfrmPrincipal.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
+  if (Key = VK_ADD) and (Visor.Seleccionado<>nil) then begin
+    //Se asume que la tecla +, debe funcionar siempre que haya selección
+    Visor.SetFocus;
+  end;
   if Visor.Focused then begin
     if Key IN [VK_APPS, VK_ADD]  then begin   //Menú contextual o '+' del tecaldo numérico.
       MenuContextual;
@@ -899,7 +915,8 @@ begin
   end;
 end;
 procedure TfrmPrincipal.MenuContextual;
-{Activa el menú contextual, de acuerdo al elemento seleccionado.}
+{Activa el menú contextual, de acuerdo al elemento seleccionado. Usado para responder
+al teclado.}
 var
   ogFac: TogFac;
   posRat: TPoint;
@@ -1183,19 +1200,30 @@ procedure TfrmPrincipal.acVerRepProExecute(Sender: TObject);
 begin
   frmRepProducto.Exec(Config.Local, tabPro);
 end;
-procedure TfrmPrincipal.acVerAdmProdExecute(Sender: TObject);
+procedure TfrmPrincipal.acVerRepEveExecute(Sender: TObject);
+begin
+  frmRepEventos.Exec(Config.Local);
+end;
+// Acciones del sistema
+procedure TfrmPrincipal.acSisAdmProdExecute(Sender: TObject);
 begin
   frmAdminProduc.Exec(tabPro, FormatMon);
 end;
-procedure TfrmPrincipal.acVerAdmProveeExecute(Sender: TObject);
+procedure TfrmPrincipal.acSisAdmProveeExecute(Sender: TObject);
 begin
   frmAdminProvee.Exec(tabPrv, FormatMon);
 end;
-procedure TfrmPrincipal.acVerAdmInsumExecute(Sender: TObject);
+procedure TfrmPrincipal.acSisAdmInsumExecute(Sender: TObject);
 begin
   frmAdminInsum.Exec(tabIns, FormatMon);
 end;
-// Acciones del sistema
+procedure TfrmPrincipal.acSisRegComprasExecute(Sender: TObject);
+begin
+  //Carga primero tabla de proveedores, para que se puedan usar sus datos en las compras
+  frmAdminProvee.Exec(tabPrv, FormatMon);
+  frmAdminProvee.Hide;
+  frmRegCompras.Exec(tabPro, FormatMon);
+end;
 procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
   Config.Mostrar;

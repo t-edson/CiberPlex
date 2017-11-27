@@ -28,7 +28,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\UtilsGrilla 0.4b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\Comunes;..\..\Synapse;Reportes;..;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas"/>
+            <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;Reportes;.."/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -59,21 +59,24 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="4">
+    <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="TAChartLazarusPkg"/>
+        <PackageName Value="uniqueinstance_package"/>
       </Item1>
       <Item2>
-        <PackageName Value="LazControls"/>
+        <PackageName Value="TAChartLazarusPkg"/>
       </Item2>
       <Item3>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="LazControls"/>
       </Item3>
       <Item4>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SynEdit"/>
       </Item4>
+      <Item5>
+        <PackageName Value="LCL"/>
+      </Item5>
     </RequiredPackages>
-    <Units Count="49">
+    <Units Count="51">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -192,6 +195,7 @@
         <Filename Value="FormContDinero.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmContDinero"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit20>
       <Unit21>
@@ -237,7 +241,9 @@
       <Unit28>
         <Filename Value="..\..\Comunes\Cabinas\FrameCPTarifDia.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="fraCPTarifDia"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
       </Unit28>
       <Unit29>
         <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
@@ -357,6 +363,20 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit48>
+      <Unit49>
+        <Filename Value="..\..\Comunes\FormRepEventos.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmRepEventos"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="FormRegCompras.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmRegCompras"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit50>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -367,7 +387,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3b;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;Reportes;.."/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;Reportes;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
