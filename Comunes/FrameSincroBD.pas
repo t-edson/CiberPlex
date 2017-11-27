@@ -185,14 +185,16 @@ const
 var
   fec, dif: TDateTime;
   fil: Integer;
+  fechaStr: String;
 begin
   for fil := 1 to grilla.RowCount-1 do begin
     //Obtiene fecha
-    if grilla.Cells[COL_FECHA, fil] = '' then begin
+    fechaStr := grilla.Cells[COL_FECHA, fil];
+    if (fechaStr = 'No existe.') or (fechaStr = '') then begin
       grilla.Cells[COL_ANTIG, fil] := '<<Desconocido>>';
       continue;
     end;
-    fec := CadenaAFechaHora(grilla.Cells[COL_FECHA, fil]);
+    fec := CadenaAFechaHora(fechaStr);
     //Verifica estado de antigüedad del archivo
     dif := now - fec;
     if dif <= UNMIN then
@@ -241,8 +243,9 @@ procedure TfraSincroBD.ComboBox1Change(Sender: TObject);
 begin
   //Actualiza la lista de registros, de acuerdo al mes seleccionado:
   grillaRegis.RowCount := 1;
-  AgregarTablaReg(local + '.0_' + ComboBox1.Text + '.log');
-  AgregarTablaReg(local + '.1_' + ComboBox1.Text + '.dat');
+  AgregarTablaReg(local + '.' + ComboBox1.Text + '.GENERAL.log');
+  AgregarTablaReg(local + '.' + ComboBox1.Text + '.Cabinas.log');
+  AgregarTablaReg(local + '.' + ComboBox1.Text + '.NILO-m.log');
 end;
 //Inicialización
 procedure TfraSincroBD.AgregarTablaCfg(nom: string);

@@ -32,9 +32,6 @@ const  //Caracteres identificadores para el archivo registros
   IDE_CIB_IBO = 'b';     //registro de ítem de boleta
   IDE_CIB_IBOD= 'x';     //registro de ítem de boleta descartado
   IDE_CIB_BOL = 'B';     //registro de boleta
-  //Identificadores para cabinas
-  IDE_INT_GRA = 'q';     //registro de alquiler de cabina - hora gratis
-  IDE_INT_NOR = 'p';     //registro de alquiler de cabina normal
   //Identificadores para llamadas
   IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m
 
@@ -193,7 +190,7 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama;
                          traDat: string); virtual;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); virtual;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu; nShortCut: integer); virtual;
     procedure MenuAccionesModelo(MenuPopup: TPopupMenu); virtual;
   public //Constructor y destructor
     constructor Create;
@@ -726,9 +723,14 @@ Este método, debe ser ejecutado en el Modelo.}
 begin
 
 end;
-procedure TCibFac.MenuAccionesVista(MenuPopup: TPopupMenu);
+procedure TCibFac.MenuAccionesVista(MenuPopup: TPopupMenu; nShortCut: integer
+  );
 {Configura las acciones que deben realizarse para este objeto facturable, en la
-instancia Vista.}
+instancia Vista.
+"MenuPopup" es el manú al que se le agregarán las acciones que corresponden al
+facturable actual.
+"nShortCut" es un número que indica que se debe crear un acceso por teclas numéricas
+a partir de ese valor, en el menú contextual. Si vale -1, se obvia.}
 begin
 
 end;

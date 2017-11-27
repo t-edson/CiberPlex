@@ -1,10 +1,14 @@
-{Implementa un frame con una grilla para la edición de tablas}
+{Implementa un frame con una grilla para la edición de tablas.
+Internamente usa un objeto TGrillaEdicFor, de la unidad CibGrillas, y crea
+la grilla dinámicamente.
+Además permite el autocompletado por columnas, que implementa CibGrillas.}
 unit FrameEditGrilla;
 {$mode objfpc}{$H+}
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, ActnList, Menus, Grids, LCLType,
-  Graphics, LCLProc, MisUtils, BasicGrilla, UtilsGrilla, CibGrillas, CibUtils;
+  Graphics, LCLProc, StdCtrls, MisUtils, BasicGrilla, UtilsGrilla, CibGrillas,
+  CibUtils;
 type
   //Tipos de modificaciones
   TugTipModif = (
@@ -18,6 +22,7 @@ type
 
   { TfraEditGrilla }
   TfraEditGrilla = class(TFrame)
+  published
     acEdiCopCel: TAction;
     acEdiCopFil: TAction;
     acEdiElimin: TAction;
@@ -46,6 +51,9 @@ type
     procedure acEdiSubirExecute(Sender: TObject);
   private
     procedure EstadoAcciones(estado: boolean);
+    procedure griModificado;
+    procedure gri_LlenarLista(lstGrilla: TListBox; fil, col: integer;
+      editTxt: string);
     function gri_LeerColorFondo(col, fil: integer): TColor;
     procedure griMouseUpFixedCol(Button: TMouseButton; row, col: integer);
     procedure griMouseUpNoCell(Button: TMouseButton; row, col: integer);
@@ -54,11 +62,13 @@ type
     procedure gri_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure gri_MouseUpCell(Button: TMouseButton; row, col: integer);
   public
-    gri: TGrillaEdicFor;
-    Modificado  : boolean;
+    gri             : TGrillaEdicFor;
+    AutoAdd         : boolean;       //Se agregan filas con el cursor
+    Modificado      : boolean;
     OnLeerColorFondo: TEvLeerColorFondo;
     OnReqNuevoReg   : TEvReqNuevoReg;
     OnGrillaModif   : TEvGrillaModif;
+    OnLlenarLista   : TEvLlenarLista; //Se pide llenar la lista de completado
     MsjError: string;
     procedure ValidarGrilla;
     function BuscAgreEncabNum(titulo: string; ancho: integer): TugGrillaCol;
@@ -81,6 +91,7 @@ type
     function AgregarFiltro(proc: TUtilProcFiltro): integer;
     procedure Filtrar;
     function FilVisibles: integer;
+    function FilaVacia(f: integer): boolean;
   public  //Constructor y destructor.
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
@@ -123,6 +134,12 @@ end;
 procedure TfraEditGrilla.FinEncab(actualizarGrilla: boolean);
 begin
   gri.FinEncab(actualizarGrilla);
+  if AutoAdd then begin
+    if grilla.RowCount <= 1 then begin
+      //Solo hay fila de encambezado
+      grilla.RowCount := 2;
+    end;
+  end;
 end;
 function TfraEditGrilla.RowCount: integer;
 begin
@@ -144,6 +161,16 @@ function TfraEditGrilla.FilVisibles: integer;
 begin
   Result := gri.filVisibles;
 end;
+function TfraEditGrilla.FilaVacia(f: integer): boolean;
+{Indica si la fila indicada está vacía. Solo considera las columnas no fijas}
+var
+  c: Integer;
+begin
+  Result := true;   //Se asume que sí
+  for c := grilla.FixedCols to grilla.ColCount-1 do begin
+    if trim(grilla.Cells[c, f])<>'' then exit(false);
+  end;
+end;
 procedure TfraEditGrilla.EstadoAcciones(estado: boolean);
 begin
 //  for i:=0 to ActionList1.ActionCount-1 do begin
@@ -156,6 +183,10 @@ begin
   acEdiElimin.Enabled:=estado;
   acEdiSubir.Enabled:=estado;
   acEdiBajar.Enabled:=estado;
+end;
+procedure TfraEditGrilla.griModificado;
+begin
+  if OnGrillaModif<>nil then OnGrillaModif(umdFilModif);
 end;
 //Manejo de eventos
 procedure TfraEditGrilla.gri_MouseUpCell(Button: TMouseButton; row, col: integer);
@@ -183,6 +214,11 @@ begin
     acEdiNuevo.Enabled:=true;
     PopupMenu1.PopUp;
   end;
+end;
+procedure TfraEditGrilla.gri_LlenarLista(lstGrilla: TListBox; fil, col: integer;
+                                editTxt: string);
+begin
+  if OnLlenarLista<>nil then OnLlenarLista(lstGrilla, fil, col, editTxt);
 end;
 procedure TfraEditGrilla.ValidarGrilla;
 {Valida el contenido de las celdas de las grilla. Si encuentra error, muestra el mensaje
@@ -228,14 +264,16 @@ begin
 end;
 procedure TfraEditGrilla.gri_KeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
-{COnfigura los accesos de teclado de la grilla. Se configuran aquí, y no con atajos de las
-acciones, porque se quiere qie estos accesos solo funciones cuando la grilal tiene
+{Configura los accesos de teclado de la grilla. Se configuran aquí, y no con atajos de las
+acciones, porque se quiere qie estos accesos solo funciones cuando la grilla tiene
 el enfoque.}
 var
   filAct, uFil, f: Integer;
 begin
   if Key = VK_APPS then begin  //Menú contextual
     PopupMenu1.PopUp;
+  end else if Key = VK_DOWN then begin
+
   end;
   if (Shift = [ssCtrl]) and (Key = VK_C) then begin
     acEdiCopCelExecute(self);
@@ -337,6 +375,8 @@ begin
   gri.OnKeyDown       := @gri_KeyDown;
   gri.OnFinEditarCelda:= @gri_FinEditarCelda;
   gri.OnLeerColorFondo:= @gri_LeerColorFondo;
+  gri.OnLlenarLista   := @gri_LlenarLista;
+  gri.OnModificado := @griModificado;
 end;
 destructor TfraEditGrilla.Destroy;
 begin

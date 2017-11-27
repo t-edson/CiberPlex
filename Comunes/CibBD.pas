@@ -5,10 +5,10 @@ los requerimientos de la aplicación:
 * Embebida, sin dependencias externas.
 * Portable, sin necesidad de instalación.
 * Multiplataforma.
-* Ligera, con tablas de peqeuño tamaño.
+* Ligera, con tablas de pequeño tamaño.
 * Capaz de particionar sus archivos históricos en periodos de meses.
 * Segura, en el sentido de evitar pérdidas de datos.
-* Capaz de separar sus tablas en archivos independientes pra mandarlos pro la red.
+* Capaz de separar sus tablas en archivos independientes para mandarlos por la red.
 * Posibilidad de cambiar el orden de las filas alamcenadas en las tablas (sin necesidad
 de usar índices), debido a que se requiere que las consultas arrojen resultados en un
 orden específico.
@@ -19,15 +19,20 @@ Sin embargo, sería posible usar alguna otra base de datos, sacrificando alguna 
 funcionalidades.
 De las que se evaluó, la que más se adaptaba era probablemente FoxPro (el formato de
 tablas), solo que no es fácil cambiar el orden en que aparecen los resultados de las
-consultas, y he visto problemas de pérdida de información,  además FoxPoo o Visual
+consultas, y he visto problemas de pérdida de información, además FoxPro o Visual
 FoxPro, ya es anticuada.
+
+La idea de este manejador es que se puedan manejar dos tipos de tablas: Tablas Maestras
+y tablas Históricas.
+
+Para más informacción revisar la documentación técnica.
 }
 unit CibBD;
 {$mode objfpc}{$H+}
 interface
-
 uses
-  Classes, SysUtils, fgl, Types, LCLProc, LConvEncoding, MisUtils;
+  Classes, SysUtils, fgl, Types, LCLProc, LConvEncoding, Dos, MisUtils,
+  CibFacturables;
 const
   //Tipo de modificación a realizar en una tabla
   MODTAB_TOTAL = 0;   //Reemplazar completamente la tabla
@@ -82,22 +87,27 @@ type
   end;
 
   { TCibRegistro }
+  {Clase que sirve como base para derivar las clases que representarán a las filas de una
+  tabla maestra. Se define como una clase genérica para poder crear la lista
+  "TCibTablaMaest.items"}
   TCibRegistro = class
   public
     OnLogError     : TEvProLogError;   //Requiere escribir un Msje de error en el registro
   end;
   TCibRegistro_list = specialize TFPGObjectList<TCibRegistro>;   //lista de ítems
 
-  { TCibTabla }
-  //Prototipo de tablas
-  TCibTabla = class
+  { TCibTablaMaest }
+  {Define a una tabla maestra. Esta clase es un contenedor, en memoria, de los datos
+  que se encuentran en disco. Por eso debe grabarse a disco, cuando se hagan
+  modificaciones.}
+  TCibTablaMaest = class
   private
     FmsjError: string;
     procedure SetmsjError(AValue: string);
   protected
-    archivo : string;
-    idx : integer;   //posición actual
-    items: TCibRegistro_list;  //referecnia a lista de registros
+    archivo: string;
+    idx    : integer;   //posición actual
+    items  : TCibRegistro_list;  //referencia a lista de registros
     function AddNewRecord: TCibRegistro; virtual; abstract;
     //Rutinas de modificación de bajo nivel. Protegidas
     procedure LoadFromDisk;
@@ -129,7 +139,7 @@ type
     OnLoading  : procedure of object;
   public //Rutinas de modificación de la tabla
     {Estas rutinas deberían ser las únicas que, pueden realmente modificar el contenido
-     de las tablas. Actualizan la bandera "MsgUpdate", con infromación de la
+     de las tablas. Actualizan la bandera "MsgUpdate", con información de la
     actualización.}
     procedure UpdateFromDisk(showError: boolean=false);
     procedure UpdateAll(newData: string; showError: boolean=false);
@@ -137,6 +147,28 @@ type
     procedure SetTable(archivo0: string);
     constructor Create; virtual;
     destructor Destroy; override;
+  end;
+
+  { TCibTablaHist }
+  //Define a una tabla histórica. Más parecida a un archivo de registro.
+  TCibTablaHist = class
+  private
+    function PLogEscr(identif: String; lin: String): integer;
+    function NombDifArc(nomBase: String): String;
+  public
+    ArcLog   : string;      //Archivo de registro arctual (*.log)
+    nSerV    : integer;     //número de serie de rergitro en "log"
+    msjError : string;      //Mensaje de error. { TODO : Debería evitarse usar variables globales }
+    //contadores internos
+    CVniloter: double;      //valor del contador de Ventas de Ciberplex
+    CIniloter: Double;      //valor del contador de Ingresos de CiberPlex
+    function EscribReg(archivo: String; lin: String): string;
+    function EscribReg(lin: String): string;
+    procedure AbrirPLog(rutDatos, local, tabla: string);
+    function PLogVenta(identif: char; mensaje : String; dCosto : Double): integer;
+    function PLogIngre(identif: char; mensaje: String; dCosto: Double): integer;
+    function PLogInf(usu, mensaje: String): integer;
+    function PLogErr(usu, mensaje: string): integer;
   end;
 
 implementation
@@ -167,8 +199,8 @@ begin
   OnSetDatTim(AValue);
 end;
 
-{ TCibTabla }
-procedure TCibTabla.SaveToDisk;
+{ TCibTablaMaest }
+procedure TCibTablaMaest.SaveToDisk;
 {Escribe los datos en disco. Usa un archivo temporal para proteger los datos del archivo
 original. Actualiza la bandera "msjError".}
 var
@@ -199,7 +231,7 @@ begin
   end;
   if OnDiskSaved<>nil then OnDiskSaved();
 end;
-procedure TCibTabla.SaveToString(out str: string);
+procedure TCibTablaMaest.SaveToString(out str: string);
 {Guarda a disco}
 var
   lineas: TStringList;
@@ -224,16 +256,14 @@ begin
     end;
   end;
 end;
-
-procedure TCibTabla.SetmsjError(AValue: string);
+procedure TCibTablaMaest.SetmsjError(AValue: string);
 begin
   if FmsjError = AValue then exit;
   FmsjError:=AValue;
   if AValue = '' then exit;
   if OnLogError <> nil then OnLogError(FmsjError);
 end;
-
-procedure TCibTabla.LoadFromDisk;
+procedure TCibTablaMaest.LoadFromDisk;
 {Carga el archivo de productos indicado.
 Si encuentra error, devuelve una cadena con mensaje de error en "MsjError".}
 var
@@ -274,7 +304,7 @@ consoleTickStart;
   if OnDiskRead<>nil then OnDiskRead();
 consoleTickCount('--');
 end;
-procedure TCibTabla.LoadFromString(const str: string);
+procedure TCibTablaMaest.LoadFromString(const str: string);
 {Carga el archivo de productos indicado.
 Si encuentra error, devuelve una cadena con mensaje de error en "MsjError".}
 var
@@ -307,7 +337,7 @@ begin
     end;
   end;
 end;
-function TCibTabla.FindReg(str: string; idxCol: word): integer;
+function TCibTablaMaest.FindReg(str: string; idxCol: word): integer;
 {Busca dentro de un campo, un valor de cadena. Devuelve el índice.}
 begin
   idx := 0;
@@ -317,7 +347,7 @@ begin
   end;
   exit(-1);
 end;
-function TCibTabla.FieldDefsAdd(AName: string; ADataType: TCibColType): integer;
+function TCibTablaMaest.FieldDefsAdd(AName: string; ADataType: TCibColType): integer;
 {Agrega una columna a la tabla. Devuelve el número de índice de la columna.}
 var
   n: Integer;
@@ -329,7 +359,7 @@ begin
   Fields[n].idxCol:=n;  //para que sepa a qué número de campo representa
   Result := n;
 end;
-function TCibTabla.FieldAddStr(AName: string; procGet: TCibEvGetStr;
+function TCibTablaMaest.FieldAddStr(AName: string; procGet: TCibEvGetStr;
   procSet: TCibEvSetStr): integer;
 {Agrega un campo, de tipo STring}
 begin
@@ -337,7 +367,7 @@ begin
   Fields[Result].OnGetStr:=procGet;
   Fields[Result].OnSetStr:=procSet;
 end;
-function TCibTabla.FieldAddFlt(AName: string; procGet: TCibEvGetFloat;
+function TCibTablaMaest.FieldAddFlt(AName: string; procGet: TCibEvGetFloat;
   procSet: TCibEvSetFloat): integer;
 {Agrega un campo, de tipo Float}
 begin
@@ -345,26 +375,26 @@ begin
   Fields[Result].OnGetFloat:=procGet;
   Fields[Result].OnSetFloat:=procSet;
 end;
-function TCibTabla.FieldAddDatTim(AName: string; procGet: TCibEvGetDatTim;
+function TCibTablaMaest.FieldAddDatTim(AName: string; procGet: TCibEvGetDatTim;
   procSet: TCibEvSetDatTim): integer;
 begin
   Result := FieldDefsAdd(AName, ctDatTim);
   Fields[Result].OnGetDatTim:=procGet;
   Fields[Result].OnSetDatTim:=procSet;
 end;
-procedure TCibTabla.First;
+procedure TCibTablaMaest.First;
 begin
   idx := 0;
 end;
-procedure TCibTabla.Next;
+procedure TCibTablaMaest.Next;
 begin
   inc(idx);
 end;
-function TCibTabla.EOF: boolean;
+function TCibTablaMaest.EOF: boolean;
 begin
   Result := idx >= items.Count;
 end;
-function TCibTabla.RecToString: string;
+function TCibTablaMaest.RecToString: string;
 {Convierte el registro actual a una representación de cadena.
 Incluye siempre un delimitador al final. Esto es por tres motivos:
 1. Porque es más fácil hacerlo así.
@@ -389,7 +419,7 @@ begin
     Result := Result + colStr + #9;
   end;
 end;
-procedure TCibTabla.StringToRec(AValue: string);
+procedure TCibTablaMaest.StringToRec(AValue: string);
 {Actualiza el registro actual, con el valor de una cadena. Es complementario a
 RecToString().}
 var
@@ -412,7 +442,7 @@ begin
   end;
 end;
 //Rutinas de modificación de la tabla
-procedure TCibTabla.UpdateFromDisk(showError: boolean = false);
+procedure TCibTablaMaest.UpdateFromDisk(showError: boolean = false);
 {Esta actualización, lee todo el contenido desde archivo.
 Actualiza "MsjError".}
 begin
@@ -425,7 +455,7 @@ begin
                  IntToStr(items.Count) + ' registros.';
   end;
 end;
-procedure TCibTabla.UpdateAll(newData: string; showError: boolean = false);
+procedure TCibTablaMaest.UpdateAll(newData: string; showError: boolean = false);
 {Se pide actualizar completamente la tabla, a partir de "newData".
 Actualiza "MsjError".}
 begin
@@ -439,19 +469,157 @@ begin
   UpdateFromDisk;
 end;
 //Inicialización
-procedure TCibTabla.SetTable(archivo0: string);
+procedure TCibTablaMaest.SetTable(archivo0: string);
 {Asocia al TCibTabProduc, con un archivo  físico en disco}
 begin
   archivo := archivo0;  //guarda archivo de dónde se carga
 end;
-constructor TCibTabla.Create;
+constructor TCibTablaMaest.Create;
 begin
   setlength(Fields, 0);
 end;
-destructor TCibTabla.Destroy;
+destructor TCibTablaMaest.Destroy;
 begin
   if items<>nil then items.Destroy;
 end;
+{ TCibTablaHist }
+function TCibTablaHist.NombDifArc(nomBase: String): String;
+{Genera un nombre diferente de archivo, tomando el nombre dado como raiz.}
+const MAX_ARCH = 10;
+var i : Integer;    //Número de intentos con el nombre de archivo de salida
+    cadBase : String;   //Cadena base del nombre base
+    extArc: string;    //extensión
+
+  function NombArchivo(i: integer): string;
+  begin
+    Result := cadBase + '-' + IntToStr(i) + extArc;
+  end;
+
+begin
+   Result := nomBase;  //nombre por defecto
+   extArc := ExtractFileExt(nomBase);
+   if ExtractFilePath(nomBase) = '' then exit;  //protección
+   //quita ruta y cambia extensión
+   cadBase := ChangeFileExt(nomBase,'');
+   //busca archivo libre
+   for i := 0 to MAX_ARCH-1 do begin
+      If not FileExists(NombArchivo(i)) then begin
+        //Se encontró nombre libre
+        Exit(NombArchivo(i));  //Sale con nombre
+      end;
+   end;
+   //todos los nombres estaban ocupados. Sale con el mismo nombre
+End;
+function TCibTablaHist.EscribReg(archivo: String; lin: String): string;
+{Escribe una línea en un archivo de registro. Si encuentra error, devuelve una cadena
+con el mensaje.} { TODO : No se ha implementado, toda la protección que implementa NILOTER-m
+en esta función }
+var
+  arc: TextFile;
+begin
+  {$IFDEF Windows}
+    lin := UTF8ToCP1252(lin);
+  {$ENDIF}
+  try
+    AssignFile(arc, archivo);
+    Append(arc);
+    writeLn(arc, lin);
+    CloseFile(arc);
+    Result := '';
+  except
+    Result := 'Error abriendo: ' + archivo;
+    CloseFile(arc);
+  end;
+end;
+function TCibTablaHist.EscribReg(lin: String): string;
+{Versión corta que escribe directamente en "ArcLog"}
+begin
+  EscribReg(ArcLog, lin);
+end;
+
+procedure TCibTablaHist.AbrirPLog(rutDatos, local, tabla: string);
+{Actualiza "ArcLog", con el nombre actual del archivo al que se debe escribir.
+Notar que si se cambia el local o la ruta de datos, se debe llamar nuevamente a este
+procedimiento.}
+var
+  arc : TextFile;
+  Attr: word;
+  mes: String;
+begin
+  msjError := '';
+  mes := FormatDateTime('yyyy_mm', now);  //año-mes
+  ArcLog := rutDatos + '\' + local + '.' + mes + '.' + tabla + '.log';
+  //Verifica disponibilidad de archivo
+  try
+    if FileExists(ArcLog) then begin   //ve si existe
+      //Abre y cierra para probar si hay problemas
+      AssignFile(arc, ArcLog);
+      GetFAttr(arc, Attr);  //verifica atributos
+      if (Attr and readonly)<>0 then begin
+        msjError := 'El archivo de registro: ' + ArcLog + ' es de sólo lectura';
+        exit;
+      end;
+      Append(arc);    //intenta abrir para agregar
+      CloseFile(arc);
+    end else begin
+      //No existe aún, lo crea
+      StringToFile('',ArcLog);
+    end;
+  except
+    on E : Exception do
+    begin
+      msjError := 'Error accediendo a: ' + ArcLog + ' (' + E.Message + ')';
+    end;
+  end;
+end;
+function TCibTablaHist.PLogEscr(identif: String; lin: String): integer;
+{Rutina básica de escritura en el registro del programa. Devuelve el número de serie
+ escrito. Debe haberse llamado primero a AbrirPLog}
+begin
+  msjError := '';
+  if ArcLog = '' then exit;
+  EscribReg(ArcLog, identif + ':' + IntToStr(nSerV) + #9 +
+                    FormatDateTime('yyyy/mm/dd hh:nn:ss', now) + #9 +
+                    lin);
+  Result := nSerV;    //devuelve el número de serie escrito
+  inc(nSerV);   //incrementa número de serie
+  if msjError <> '' Then begin
+    //Error escribiendo archivo de ventas
+    MsgErr('Error escribiendo en archivo de registro:' + msjError);
+  end
+end;
+function TCibTablaHist.PLogVenta(identif: char; mensaje: String; dCosto: Double): integer;
+{Escribe una línea de venta en el registro del programa. Se considera un registro de
+venta, a aquel que puede incrementar "CVniloter".
+"dCosto" es el incremento de costo para actualizar ingreso}
+begin
+    Result := PLogEscr(identif, mensaje);
+    CVniloter := CVniloter + dCosto;  //actualiza venta
+end;
+function TCibTablaHist.PLogIngre(identif: char; mensaje: String; dCosto: Double): integer;
+{Escribe una línea de ingreso en el registro del programa. Se considera un registro de
+ingreso, a aquel que puede incrementar "CIniloter".
+"dCosto" es el incremento de costo para actualizar ingreso}
+begin
+    Result := PLogEscr(identif, mensaje);
+    CIniloter := CIniloter + dCosto;      //actualiza ingresos
+end;
+function TCibTablaHist.PLogInf(usu, mensaje: String): integer;
+//Escribe una línea de información en el registro del programa.
+begin
+  PLogInf := PLogEscr(IDE_REG_INF, usu + #9+ mensaje);
+end;
+function TCibTablaHist.PLogErr(usu, mensaje: string): integer;
+//Escribe una línea de error en el registro del programa. No modifica "MsjError"
+var
+  tmp: string;
+begin
+  tmp := msjError;  //salva mensaje de error
+  //Escribe mensaje. Si hubo error, ya se ha mostrado com MsgBox()
+  PLogErr := PLogEscr(IDE_REG_ERR, usu + #9+ mensaje);
+  msjError := tmp;  //restaura
+end;
+
 
 end.
 

@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, dateutils, FileUtil, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, StdCtrls, EditBtn, Grids, Menus, ActnList, LCLProc, ComCtrls,
-  Clipbrd, Globales, RegistrosVentas, FormAgrupVert,
+  Clipbrd, Globales, RegistrosVentas, FormAgrupRep,
   UtilsGrilla, MisUtils;
 type
 
@@ -43,18 +43,15 @@ type
     procedure optSemChange(Sender: TObject);
   private
     regs: regEven_list;
-    agrVert: TAgrVer;  //agrupamiento vertical
     griRegistros : TUtilGrilla;
     griAgrupados : TUtilGrilla;
-    catsHor: TStringList;   //valores de dispersión horizontal
-    catsVer: TStringList;   //valores de dispersión vertical
+    frmAgrup: TfrmAgrupRep; //formualrio de agrupación
     procedure CreaCategoriasHoriz(campo: integer);
     function DoReqCadMoneda(valor: double): string;
     function FilaComoTexto(f: integer): string;
-    procedure LimpiarCategoriasVert;
     procedure LLenarGrilla(conColSem: boolean);
     procedure LlenarRegistro(f: integer; reg: regEven);
-    procedure ReporteAgrupado(agrupVert: TAgrVer);
+    procedure ReporteAgrupado;
     procedure ReporteRegistros;
   public
     local: string;
@@ -100,35 +97,15 @@ begin
   StatusBar1.Panels[1].Text:='Num. Registros= ' + IntToSTr(regs.Count);
 end;
 procedure TfrmRepEventos.CreaCategoriasHoriz(campo: integer);
-  function CreaCategoriaHoriz(const categ: string): integer;
-  {Busca un valor en catsHor. Si no existe, lo agrega. Devuelve el índice de su
-  posición.
-  Se usa esta rutina en lugar de Find(), porque se probó que es más rápida (al menos para
-  pocos grupos) y a la vez facilita reusar el código. Sin embargo, a diferencia de Fins(),
-  no se ordenan los encabezados.}
-  var
-    i: Integer;
-  begin
-    //Busca campo
-    for i:=0 to catsHor.Count-1 do begin
-      if catsHor[i] = categ then begin
-        //Ya existe campo, solo devuelve el índice.
-        exit(i);
-      end;
-    end;
-    //No existe
-    catsHor.Add(categ);
-    Result := catsHor.Count-1;
-  end;
 var
   reg: regEven;
 begin
-  catsHor.Sorted := false;  //CreaCategoriaHoriz() trabaja así.
-  catsHor.Clear;
+  frmAgrup.catsHor.Sorted := false;  //CreaCategoriaHoriz() trabaja así.
+  frmAgrup.catsHor.Clear;
   case campo of
   1: begin
        for reg in regs do begin
-         reg.posHor := CreaCategoriaHoriz(reg.USUARIO);
+         reg.posHor := frmAgrup.CreaCategoriaHoriz(reg.USUARIO);
        end;
      end;
   end;
@@ -137,27 +114,17 @@ function TfrmRepEventos.DoReqCadMoneda(valor: double): string;
 begin
   Result := FloatToStr(valor);
 end;
-procedure TfrmRepEventos.ReporteAgrupado(agrupVert: TAgrVer);
+procedure TfrmRepEventos.ReporteAgrupado;
 {Genera el reporte argupado, usando la lista de archivos "regs".}
 var
-  i  : Integer;
   reg: regEven;
-  tmp: String;
   valores: TCPCellValues;
 begin
-  catsVer.Clear;
+  frmAgrup.catsVer.Clear;
   //////// Crea dispersión vertical y acumula contador
   for reg in regs do begin
-    tmp := FechaACad(reg.FECHA_LOG, agrupVert, frmAgrupVert.ComboBox2.ItemIndex);
-    if catsVer.Find(tmp, i) then begin
-      //Ya existe en "i"
-      valores := TCPCellValues(catsVer.Objects[i]);
-    end else begin
-      //Es nuevo, se debe crear
-      catsVer.Add(tmp);
-      valores := TCPCellValues.Create(catsHor.Count);  //crea objeto
-      catsVer.Objects[catsVer.Count-1] := valores;  //guarda la referencia
-    end;
+    valores := frmAgrup.UbicarFechaVertic(reg.FECHA_LOG);
+    //Acumula totales
     valores.items[reg.posHor] += 1; //acumula en la celda que corresponde
   end;
   StatusBar1.Panels[1].Text:='Num. Registros = ' + IntToSTr(regs.Count);
@@ -165,62 +132,30 @@ end;
 procedure TfrmRepEventos.LLenarGrilla(conColSem: boolean);
 {Llena la grilla con datos de las listas catsHor y catsVer.}
 var
-  c, i, desplazCol: Integer;
+  c, fil, colIniCont: Integer;
   valores: TCPCellValues;
   tot : Double;
-  fecStr: String;
 begin
-  //DbgOut('Llenando grilla...');
   grilla.BeginUpdate;
   //////// Crea las columnas
-  griAgrupados.IniEncab;
-  griAgrupados.AgrEncabNum('N°'       , 30);
-  griAgrupados.AgrEncabTxt('FECHA'    , 70); //Campo Fecha
-  if agrVert = tavDia then  //Campos adicionales de reporte por día
-    desplazCol := frmAgrupVert.VerifCamposAdic_Dia(griAgrupados, 2);
-  if agrVert = tavMes then  //Campos adicionales de reporte por día
-    desplazCol := frmAgrupVert.VerifCamposAdic_Mes(griAgrupados, 2);
-  for c:=0 to catsHor.Count-1 do begin
-    griAgrupados.AgrEncabNum(catsHor[c], 55);
-  end;
-  griAgrupados.AgrEncabNum('TOTAL'    , 70); //campo final
-  griAgrupados.FinEncab(false);  //sin actualizar aún
-  griAgrupados.AsignarGrilla(grilla);  //actualiza
+  colIniCont := frmAgrup.EncabezadosHoriz(griAgrupados, grilla);
   /////// Llema las filas
-  grilla.RowCount:=1+catsVer.Count;  //hace espacio
-  for i:=0 to catsVer.Count-1 do begin
-    //columna de categoría
-    valores := TCPCellValues(catsVer.Objects[i]);
+  grilla.RowCount:=1+frmAgrup.catsVer.Count;  //hace espacio
+  for fil:=1 to frmAgrup.catsVer.Count do begin
+    valores := frmAgrup.CamposHoriz(grilla, fil);
     tot := 0;  //para acumular
-    // cáculo de campos agrupados /////////
-    fecStr := catsVer[i];
-    grilla.Cells[1, i+1] := fecStr;  //Campo Fecha
-    if agrVert = tavDia then begin  //Campos adicionales de reporte por día
-      frmAgrupVert.EscribirCamposAdic_Dia(fecStr, grilla, i+1);
-    end else if agrVert = tavMes then begin
-      frmAgrupVert.EscribirCamposAdic_Mes(fecStr, grilla, i+1);
-    end;
     //campos de datos
-    for c := 0 to catsHor.Count-1 do begin
-      grilla.Cells[c+2+desplazCol, i+1] := FloatToStr(valores.items[c]);
+    for c := 0 to frmAgrup.catsHor.Count-1 do begin
+      grilla.Cells[colIniCont+c, fil] := FloatToStr(valores.items[c]);
       tot += valores.items[c];
     end;
     //llena columna total
-    grilla.Cells[grilla.ColCount-1, i+1] := FloatToStr(tot);
+    if frmAgrup.chkIncTotHoriz.Checked then begin
+      grilla.Cells[grilla.ColCount-1, fil] := FloatToStr(tot);
+    end;
   end;
   grilla.EndUpdate();
-  //consoleTickCount('');
-end;
-procedure TfrmRepEventos.LimpiarCategoriasVert;
-{Limpia la lista de categorías verticales}
-var
-  i: Integer;
-begin
-  //Libera objetos de celdas
-  for i:=0 to catsVer.Count-1 do begin
-    catsVer.Objects[i].Destroy;
-  end;
-  catsVer.Clear;
+  frmAgrup.LimpiarCategoriasVert;
 end;
 procedure TfrmRepEventos.Button1Click(Sender: TObject);
 begin
@@ -238,9 +173,8 @@ begin
     end;
   'Por Usuario': begin
       CreaCategoriasHoriz(1);
-      ReporteAgrupado(agrVert);
+      ReporteAgrupado;
       LLenarGrilla(true);  //Escribe datos en grilla
-      LimpiarCategoriasVert;
     end;
   end;
   consoleTickCount('');
@@ -252,10 +186,7 @@ begin
 end;
 procedure TfrmRepEventos.FormCreate(Sender: TObject);
 begin
-  catsHor:= TStringList.Create;
-  catsHor.Sorted:=true;
-  catsVer:= TStringList.Create;
-  catsVer.Sorted:=true;
+  frmAgrup := TfrmAgrupRep.Create(self);
   regs:= regEven_list.Create(true);
   //reportes:= TCenReporte_list.Create(true);
   dat1.Date:=now;
@@ -303,30 +234,23 @@ begin
   griRegistros.Destroy;
   //reportes.Destroy;
   regs.Destroy;
-  catsVer.Destroy;
-  catsHor.Destroy;
 end;
 procedure TfrmRepEventos.Exec(Alocal: string);
 begin
   local := Alocal;
-  frmAgrupVert.chkIncSemana.Checked := false;
-  frmAgrupVert.chkIncMes.Checked := false;
-  frmAgrupVert.chkIncDia.Checked := true;
-  frmAgrupVert.chkMesIncMes.Checked := true;
-  frmAgrupVert.chkMesIncAno.Checked := false;
   Show;
 end;
 procedure TfrmRepEventos.optDiaChange(Sender: TObject);
 begin
-  agrVert := tavDia;
+  frmAgrup.agrVert := tavDia;
 end;
 procedure TfrmRepEventos.optSemChange(Sender: TObject);
 begin
-  agrVert := tavSem;
+  frmAgrup.agrVert := tavSem;
 end;
 procedure TfrmRepEventos.optMesChange(Sender: TObject);
 begin
-  agrVert := tavMes;
+  frmAgrup.agrVert := tavMes;
 end;
 function TfrmRepEventos.FilaComoTexto(f: integer): string;
 {Devuelve los campos de una fila como texto separado por tabulaciones}
@@ -354,10 +278,10 @@ begin
 end;
 procedure TfrmRepEventos.btnConfigClick(Sender: TObject);
 begin
-  if optDia.Checked then frmAgrupVert.PageControl1.PageIndex:=0;
-  if optSem.Checked then frmAgrupVert.PageControl1.PageIndex:=1;
-  if optMes.Checked then frmAgrupVert.PageControl1.PageIndex:=2;
-  frmAgrupVert.Show;
+  if optDia.Checked then frmAgrup.PageControl1.PageIndex:=0;
+  if optSem.Checked then frmAgrup.PageControl1.PageIndex:=1;
+  if optMes.Checked then frmAgrup.PageControl1.PageIndex:=2;
+  frmAgrup.Show;
 end;
 
 end.

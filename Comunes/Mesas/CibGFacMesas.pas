@@ -42,7 +42,7 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
     procedure EjecAccion(idVista: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu; ordShortCut: integer); override;
     procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create(nombre0: string);
@@ -181,7 +181,8 @@ begin
 //    end;
 //  end;
 end;
-procedure TCibFacMesa.MenuAccionesVista(MenuPopup: TPopupMenu);
+procedure TCibFacMesa.MenuAccionesVista(MenuPopup: TPopupMenu;
+  ordShortCut: integer);
 {Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejcuten
 desde aquí.}
 begin
@@ -191,17 +192,19 @@ procedure TCibFacMesa.MenuAccionesModelo(MenuPopup: TPopupMenu);
 var
   NombProg, NombLocal: string;
   ModDiseno: boolean;
+  nShortCut: Integer;
 begin
   grupo.OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   InicLlenadoAcciones(MenuPopup);
   if ModDiseno then begin
-    AgregarAccion('&Configurar', @mnConfigurar, icoConfig);
+    nShortCut := -1;
+    AgregarAccion(nShortCut, '&Configurar', @mnConfigurar, icoConfig);
     {Notar que la acción de "Eliminar" se define en el grupo, para que sea el grupo quien
     elimine al facturable, ya que no es factible que el facturable se elimine a sí mismo.
     Otra opción es usar una bandera de tipo "por eliminar" y un Timer, que verifique esta
     bandera, y elimine a las que esteán marcadas.}
     TCibGFacMesas(grupo).proAccion := Nombre;   //nombre de objeto que solicita la acción
-    AgregarAccion('&Eliminar', @TCibGFacMesas(grupo).mnEliminar, icoElim);
+    AgregarAccion(nShortCut, '&Eliminar', @TCibGFacMesas(grupo).mnEliminar, icoElim);
   end;
 end;
 procedure TCibFacMesa.mnConfigurar(Sender: TObject);
@@ -340,13 +343,15 @@ procedure TCibGFacMesas.MenuAccionesModelo(MenuPopup: TPopupMenu);
 var
   NombProg, NombLocal: string;
   ModDiseno: boolean;
+  nShortCut: Integer;
 begin
+  nShortCut := -1;
   OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   InicLlenadoAcciones(MenuPopup);
   if ModDiseno then begin
-    AgregarAccion('&Agregar Mesa', @mnAgregObjMesa, icoMesa);
+    AgregarAccion(nShortCut, '&Agregar Mesa', @mnAgregObjMesa, icoMesa);
   end;
-  AgregarAccion('&Propiedades', @mnPropiedades, icoProp);
+  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoProp);
 end;
 procedure TCibGFacMesas.mnAgregObjMesa(Sender: TObject);
 var

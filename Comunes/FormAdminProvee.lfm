@@ -1,7 +1,7 @@
 object frmAdminProvee: TfrmAdminProvee
-  Left = 124
+  Left = 269
   Height = 358
-  Top = 90
+  Top = 129
   Width = 627
   Caption = 'PROVEEDORES'
   ClientHeight = 338

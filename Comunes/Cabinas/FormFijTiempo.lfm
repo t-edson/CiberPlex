@@ -7,7 +7,10 @@ object frmFijTiempo: TfrmFijTiempo
   Caption = 'frmFijTiempo'
   ClientHeight = 208
   ClientWidth = 308
-  LCLVersion = '1.6.0.4'
+  KeyPreview = True
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  LCLVersion = '1.6.2.0'
   object Image1: TImage
     Left = 10
     Height = 70
@@ -67,6 +70,7 @@ object frmFijTiempo: TfrmFijTiempo
     Font.Name = 'Courier New'
     Font.Pitch = fpFixed
     Font.Quality = fqDraft
+    OnKeyDown = txtHHKeyDown
     ParentFont = False
     TabOrder = 0
     Text = '00'
@@ -97,6 +101,7 @@ object frmFijTiempo: TfrmFijTiempo
     Font.Name = 'Courier New'
     Font.Pitch = fpFixed
     Font.Quality = fqDraft
+    OnKeyDown = txtMMKeyDown
     ParentFont = False
     TabOrder = 1
     Text = '00'
@@ -127,6 +132,7 @@ object frmFijTiempo: TfrmFijTiempo
     Font.Name = 'Courier New'
     Font.Pitch = fpFixed
     Font.Quality = fqDraft
+    OnKeyDown = txtSSKeyDown
     ParentFont = False
     TabOrder = 2
     Text = '00'
@@ -204,28 +210,37 @@ object frmFijTiempo: TfrmFijTiempo
   object cmd30: TBitBtn
     Left = 96
     Height = 30
+    Hint = '1'
     Top = 56
     Width = 64
     Caption = '+30min'
     OnClick = cmd30Click
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 7
   end
   object cmd15: TBitBtn
     Left = 168
     Height = 30
+    Hint = '2'
     Top = 56
     Width = 64
     Caption = '+15min'
     OnClick = cmd15Click
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 8
   end
   object cmdLim: TBitBtn
     Left = 240
     Height = 30
+    Hint = '3'
     Top = 56
     Width = 64
     Caption = 'Limpiar'
     OnClick = cmdLimClick
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 9
   end
   object chkManten: TCheckBox

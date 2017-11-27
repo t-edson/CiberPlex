@@ -2,31 +2,46 @@ unit FormRepIngresos;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, dateutils, FileUtil, Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, StdCtrls, EditBtn, Grids, Menus, ActnList, LCLProc, ComCtrls,
-  Clipbrd, Globales, RegistrosVentas, FormAgrupVert,
-  UtilsGrilla, MisUtils;
+  Classes, SysUtils, TAGraph, TASeries, Forms, Controls, Graphics, ExtCtrls,
+  StdCtrls, EditBtn, Grids, Menus, ActnList, LCLProc, ComCtrls, Clipbrd,
+  Buttons, Globales, RegistrosVentas, FormAgrupRep,
+  UtilsGrilla, FrameFiltCampo, BasicGrilla, MisUtils;
 type
 
   { TfrmRepIngresos }
   TfrmRepIngresos = class(TForm)
   published
     acGenCopTod: TAction;
+    acGraBarras: TAction;
+    acGraCurvas: TAction;
     ActionList1: TActionList;
-    Button1: TButton;
+    btnReporte: TBitBtn;
     btnConfig: TButton;
+    Chart1: TChart;
+    Chart1LineSeries1: TLineSeries;
     ComboBox1: TComboBox;
+    fraFiltCampo1: TfraFiltCampo;
+    fraFiltCampo2: TfraFiltCampo;
+    grilla: TStringGrid;
     GroupBox1: TGroupBox;
+    ImageList1: TImageList;
     Label4: TLabel;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
     optDia: TRadioButton;
+    optTot: TRadioButton;
     optSem: TRadioButton;
     optMes: TRadioButton;
     optsDatos: TRadioGroup;
+    PageControl1: TPageControl;
+    PopupGrilla: TPopupMenu;
     StatusBar1: TStatusBar;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
     TipoReg: TCheckGroup;
     dat1: TDateEdit;
     dat2: TDateEdit;
-    grilla: TStringGrid;
     Label1: TLabel;
     Label2: TLabel;
     MenuItem1: TMenuItem;
@@ -34,35 +49,44 @@ type
     PopupMenu1: TPopupMenu;
     Splitter1: TSplitter;
     procedure acGenCopTodExecute(Sender: TObject);
+    procedure acGraBarrasExecute(Sender: TObject);
+    procedure acGraCurvasExecute(Sender: TObject);
     procedure btnConfigClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure btnReporteClick(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure optDiaChange(Sender: TObject);
     procedure optMesChange(Sender: TObject);
     procedure optSemChange(Sender: TObject);
+    procedure optTotChange(Sender: TObject);
+    procedure TabSheet2Show(Sender: TObject);
   private
     regs: regIng_list;
-    agrVert: TAgrVer;  //agrupamiento vertical
     griRegistros : TUtilGrilla;
     griAgrupados : TUtilGrilla;
-    catsHor: TStringList;   //valores de dispersión horizontal
-    catsVer: TStringList;   //valores de dispersión vertical
+    tipGraf: integer;       //tipo de gráfica
+    frmAgrup: TfrmAgrupRep; //formualrio de agrupación
     procedure CreaCategoriasHoriz(campo: integer);
+    procedure DibujarCurva;
     function DoReqCadMoneda(valor: double): string;
     function FilaComoTexto(f: integer): string;
-    procedure LimpiarCategoriasVert;
+    procedure griAgrupadosMouseUpCell(Button: TMouseButton; row, col: integer);
+    procedure grillaSelection(Sender: TObject; aCol, aRow: Integer);
     procedure LLenarGrilla;
     procedure LlenarRegistro(f: integer; reg: regIng);
-    procedure ReporteAgrupado(agrupVert: TAgrVer);
+    procedure ReporteAgrupado;
     procedure ReporteRegistros;
   public
     local: string;
     OnReqCadMoneda: TevReqCadMoneda;
     procedure Exec(Alocal: string);
   end;
-
+const
+  TXT_REGISTROS = 'Registros';
+  TXT_POR_CATEG = 'Por categoría';
+  TXT_POR_SUBCA = 'Por Subcategoría';
+  TXT_POR_USUAR = 'Por Usuario';
 var
   frmRepIngresos: TfrmRepIngresos;
 
@@ -102,6 +126,11 @@ begin
   //LLena grilla
   //DbgOut('Llenando grilla...');
   griRegistros.AsignarGrilla(grilla);
+  fraFiltCampo1.Inic(griRegistros, 13);  //inicia filtro
+  fraFiltCampo2.Inic(griRegistros, 8);  //inicia filtro
+  fraFiltCampo1.Visible := true;
+  fraFiltCampo2.Visible := true;
+
   grilla.BeginUpdate;
   grilla.RowCount:=1+regs.Count;  //hace espacio
   f := 1;
@@ -117,45 +146,24 @@ begin
                              ', Total Ingresos = ' + OnReqCadMoneda(tot);
 end;
 procedure TfrmRepIngresos.CreaCategoriasHoriz(campo: integer);
-  function CreaCategoriaHoriz(const categ: string): integer;
-  {Busca un valor en catsHor. Si no existe, lo agrega. Devuelve el índice de su
-  posición.
-  Se usa esta rutina en lugar de Find(), porque se probó que es más rápida (al menos para
-  pocos grupos) y a la vez facilita reusar el código. Sin embargo, a diferencia de Fins(),
-  no se ordenan los encabezados.}
-  var
-    i: Integer;
-  begin
-    //Busca campo
-    for i:=0 to catsHor.Count-1 do begin
-      if catsHor[i] = categ then begin
-        //Ya existe campo, solo devuelve el índice.
-        exit(i);
-      end;
-    end;
-    //No existe
-    catsHor.Add(categ);
-    Result := catsHor.Count-1;
-  end;
 var
   reg: regIng;
 begin
-  catsHor.Sorted := false;  //CreaCategoriaHoriz() trabaja así.
-  catsHor.Clear;
+  frmAgrup.catsHor.Clear;
   case campo of
   1: begin
        for reg in regs do begin
-         reg.posHor := CreaCategoriaHoriz(reg.cat);
+         reg.posHor := frmAgrup.CreaCategoriaHoriz(reg.cat);
        end;
      end;
   2: begin
        for reg in regs do begin
-         reg.posHor := CreaCategoriaHoriz(reg.subcat);
+         reg.posHor := frmAgrup.CreaCategoriaHoriz(reg.subcat);
        end;
      end;
   3: begin
        for reg in regs do begin
-         reg.posHor := CreaCategoriaHoriz(reg.USUARIO);
+         reg.posHor := frmAgrup.CreaCategoriaHoriz(reg.USUARIO);
        end;
      end;
   end;
@@ -164,29 +172,19 @@ function TfrmRepIngresos.DoReqCadMoneda(valor: double): string;
 begin
   Result := FloatToStr(valor);
 end;
-procedure TfrmRepIngresos.ReporteAgrupado(agrupVert: TAgrVer);
+procedure TfrmRepIngresos.ReporteAgrupado;
 {Genera el reporte argupado, usando la lista de archivos "regs".}
 var
-  i  : Integer;
   reg: regIng;
-  tmp: String;
   valores: TCPCellValues;
-  tot: Extended;
+  tot: double;
 begin
-  catsVer.Clear;
-  //////// Crea dispersión vertical y acumula contador
+  frmAgrup.catsVer.Clear;
+  // Crea dispersión vertical y acumula contador
   tot := 0.0;
   for reg in regs do begin
-    tmp := FechaACad(reg.vfec, agrupVert, frmAgrupVert.ComboBox2.ItemIndex);
-    if catsVer.Find(tmp, i) then begin
-      //Ya existe en "i"
-      valores := TCPCellValues(catsVer.Objects[i]);
-    end else begin
-      //Es nuevo, se debe crear
-      catsVer.Add(tmp);
-      valores := TCPCellValues.Create(catsHor.Count);  //crea objeto
-      catsVer.Objects[catsVer.Count-1] := valores;  //guarda la referencia
-    end;
+    valores := frmAgrup.UbicarFechaVertic(reg.vfec);
+    //Acumula totales
     if optsDatos.ItemIndex = 0 then
       valores.items[reg.posHor] += reg.total  //acumula en la celda que corresponde
     else
@@ -199,70 +197,34 @@ end;
 procedure TfrmRepIngresos.LLenarGrilla;
 {Llena la grilla con datos de las listas catsHor y catsVer.}
 var
-  c, i, desplazCol: Integer;
+  c, fil, colIniCont: Integer;
   valores: TCPCellValues;
   tot : Double;
-  fecStr: String;
 begin
-  //DbgOut('Llenando grilla...');
   grilla.BeginUpdate;
   //////// Crea las columnas
-  griAgrupados.IniEncab;
-  griAgrupados.AgrEncabNum('N°'       , 30);
-  griAgrupados.AgrEncabTxt('FECHA'    , 70); //Campo Fecha
-  if agrVert = tavDia then  //Campos adicionales de reporte por día
-    desplazCol := frmAgrupVert.VerifCamposAdic_Dia(griAgrupados, 2);
-  if agrVert = tavMes then  //Campos adicionales de reporte por día
-    desplazCol := frmAgrupVert.VerifCamposAdic_Mes(griAgrupados, 2);
-  for c:=0 to catsHor.Count-1 do begin
-    griAgrupados.AgrEncabNum(catsHor[c], 55);
-  end;
-  griAgrupados.AgrEncabNum('TOTAL'    , 70); //campo final
-  griAgrupados.FinEncab(false);  //sin actualizar aún
-  griAgrupados.AsignarGrilla(grilla);  //actualiza
+  colIniCont := frmAgrup.EncabezadosHoriz(griAgrupados, grilla);
+  fraFiltCampo1.Visible := false;
+  fraFiltCampo2.Visible := false;
   /////// Llema las filas
-  grilla.RowCount:=1+catsVer.Count;  //hace espacio
-  for i:=0 to catsVer.Count-1 do begin
-    //columna de categoría
-    valores := TCPCellValues(catsVer.Objects[i]);
+  grilla.RowCount := 1 + frmAgrup.catsVer.Count;  //hace espacio
+  for fil:=1 to frmAgrup.catsVer.Count do begin
+    valores := frmAgrup.CamposHoriz(grilla, fil);
     tot := 0;  //para acumular
-    // cáculo de campos agrupados /////////
-    fecStr := catsVer[i];
-    grilla.Cells[1, i+1] := fecStr;  //Campo Fecha
-    if agrVert = tavDia then begin  //Campos adicionales de reporte por día
-      frmAgrupVert.EscribirCamposAdic_Dia(fecStr, grilla, i+1);
-    end else if agrVert = tavMes then begin
-      frmAgrupVert.EscribirCamposAdic_Mes(fecStr, grilla, i+1);
-    end;
     //campos de datos
-    for c := 0 to catsHor.Count-1 do begin
-      if optsDatos.ItemIndex = 0 then  //por Ingresos totales
-        grilla.Cells[c+2+desplazCol, i+1] := OnReqCadMoneda(valores.items[c])
-      else                             //por cantidad
-        grilla.Cells[c+2+desplazCol, i+1] := FloatToStr(valores.items[c]);
+    for c := 0 to frmAgrup.catsHor.Count-1 do begin
+      grilla.Cells[colIniCont+c, fil] := FloatToStr(valores.items[c]);
       tot += valores.items[c];
     end;
     //llena columna total
-    if optsDatos.ItemIndex = 0 then  //por Ingresos totales
-      grilla.Cells[grilla.ColCount-1, i+1] := OnReqCadMoneda(tot)
-    else
-      grilla.Cells[grilla.ColCount-1, i+1] := FloatToStr(tot);
+    if frmAgrup.chkIncTotHoriz.Checked then begin
+      grilla.Cells[grilla.ColCount-1, fil] := FloatToStr(tot);
+    end;
   end;
   grilla.EndUpdate();
-  //consoleTickCount('');
+  frmAgrup.LimpiarCategoriasVert;
 end;
-procedure TfrmRepIngresos.LimpiarCategoriasVert;
-{Limpia la lista de categorías verticales}
-var
-  i: Integer;
-begin
-  //Libera objetos de celdas
-  for i:=0 to catsVer.Count-1 do begin
-    catsVer.Objects[i].Destroy;
-  end;
-  catsVer.Clear;
-end;
-procedure TfrmRepIngresos.Button1Click(Sender: TObject);
+procedure TfrmRepIngresos.btnReporteClick(Sender: TObject);
 begin
   //Genera lista de archivos
   consoleTickStart;
@@ -273,26 +235,26 @@ begin
   DbgOut('Creando reporte...');
   //Genera el rpeorte
   case ComboBox1.Text of
-  'Registros': begin
+  TXT_REGISTROS: begin
       ReporteRegistros;
     end;
-  'Por categoría': begin
+  TXT_POR_CATEG: begin
       CreaCategoriasHoriz(1);
-      ReporteAgrupado(agrVert);
+      ReporteAgrupado;
       LLenarGrilla;   //Escribe datos en grilla
-      LimpiarCategoriasVert;
+      if TabSheet2.Visible then DibujarCurva;
     end;
-  'Por Subcategoría': begin
+  TXT_POR_SUBCA: begin
       CreaCategoriasHoriz(2);
-      ReporteAgrupado(agrVert);
+      ReporteAgrupado;
       LLenarGrilla;   //Escribe datos en grilla
-      LimpiarCategoriasVert;
+      if TabSheet2.Visible then DibujarCurva;
     end;
-  'Por Usuario': begin
+  TXT_POR_USUAR: begin
       CreaCategoriasHoriz(3);
-      ReporteAgrupado(agrVert);
+      ReporteAgrupado;
       LLenarGrilla;  //Escribe datos en grilla
-      LimpiarCategoriasVert;
+      if TabSheet2.Visible then DibujarCurva;
     end;
   end;
   consoleTickCount('');
@@ -305,10 +267,8 @@ begin
 end;
 procedure TfrmRepIngresos.FormCreate(Sender: TObject);
 begin
-  catsHor:= TStringList.Create;
-  catsHor.Sorted:=true;
-  catsVer:= TStringList.Create;
-  catsVer.Sorted:=true;
+  frmAgrup := TfrmAgrupRep.Create(self);
+  frmAgrup.OnExecReporte := @btnReporteClick;
   regs:= regIng_list.Create(true);
   //reportes:= TCenReporte_list.Create(true);
   dat1.Date:=now;
@@ -342,24 +302,24 @@ begin
   griRegistros.OpResaltarEncabez:=true;
   griRegistros.OpResaltFilaSelec:=true;
   griRegistros.MenuCampos:=true;
+  griRegistros.OnMouseUpCell := @griAgrupadosMouseUpCell;
   //Configura grilla de reporte agrupado
   griAgrupados := TUtilGrilla.Create(nil);
-  griAgrupados.IniEncab;
-  griAgrupados.AgrEncabNum('N°'       , 35);
-  griAgrupados.AgrEncabTxt('FECHA'     , 20);
-  griAgrupados.FinEncab;
   griAgrupados.OpAutoNumeracion:=true;
   griAgrupados.OpDimensColumnas:=true;
   griAgrupados.OpEncabezPulsable:=true;
   griAgrupados.OpResaltarEncabez:=true;
   griAgrupados.OpResaltFilaSelec:=true;
+  griAgrupados.MenuCampos := true;
+  griAgrupados.OnMouseUpCell := @griAgrupadosMouseUpCell;
 
+  grilla.OnSelection := @grillaSelection;
   //Llena lista de reportes
   ComboBox1.Clear;
-  ComboBox1.AddItem('Registros', nil);
-  ComboBox1.AddItem('Por categoría', nil);
-  ComboBox1.AddItem('Por Subcategoría', nil);
-  ComboBox1.AddItem('Por Usuario', nil);
+  ComboBox1.AddItem(TXT_REGISTROS, nil);
+  ComboBox1.AddItem(TXT_POR_CATEG, nil);
+  ComboBox1.AddItem(TXT_POR_SUBCA, nil);
+  ComboBox1.AddItem(TXT_POR_USUAR, nil);
   ComboBox1.ItemIndex:=0;  //selecciona el primero
 
   //Actuliza interfaz
@@ -369,36 +329,44 @@ begin
   //Define un formato, por defecto, de moneda.
   OnReqCadMoneda:=@DoReqCadMoneda;
 end;
+procedure TfrmRepIngresos.griAgrupadosMouseUpCell(Button: TMouseButton; row,
+  col: integer);
+begin
+  if Button = mbRight then PopupGrilla.PopUp;
+end;
+procedure TfrmRepIngresos.grillaSelection(Sender: TObject; aCol, aRow: Integer);
+begin
+  StatusBar1.Panels[2].Text := InformSeleccionGrilla(grilla);
+end;
+
 procedure TfrmRepIngresos.FormDestroy(Sender: TObject);
 begin
   griAgrupados.Destroy;
   griRegistros.Destroy;
   //reportes.Destroy;
   regs.Destroy;
-  catsVer.Destroy;
-  catsHor.Destroy;
 end;
 procedure TfrmRepIngresos.Exec(Alocal: string);
 begin
   local := Alocal;
-  frmAgrupVert.chkIncSemana.Checked := true;
-  frmAgrupVert.chkIncMes.Checked := true;
-  frmAgrupVert.chkIncDia.Checked := true;
-  frmAgrupVert.chkMesIncMes.Checked := true;
-  frmAgrupVert.chkMesIncAno.Checked := true;
   Show;
 end;
 procedure TfrmRepIngresos.optDiaChange(Sender: TObject);
 begin
-  agrVert := tavDia;
+  frmAgrup.agrVert := tavDia;
 end;
 procedure TfrmRepIngresos.optSemChange(Sender: TObject);
 begin
-  agrVert := tavSem;
+  frmAgrup.agrVert := tavSem;
 end;
+procedure TfrmRepIngresos.optTotChange(Sender: TObject);
+begin
+  frmAgrup.agrVert := tavTot;
+end;
+
 procedure TfrmRepIngresos.optMesChange(Sender: TObject);
 begin
-  agrVert := tavMes;
+  frmAgrup.agrVert := tavMes;
 end;
 function TfrmRepIngresos.FilaComoTexto(f: integer): string;
 {Devuelve los campos de una fila como texto separado por tabulaciones}
@@ -413,6 +381,91 @@ begin
     else Result := Result + #9 + grilla.Cells[c,f];
   end;
 end;
+procedure TfrmRepIngresos.btnConfigClick(Sender: TObject);
+begin
+  if optDia.Checked then frmAgrup.PageControl1.PageIndex:=0;
+  if optSem.Checked then frmAgrup.PageControl1.PageIndex:=1;
+  if optMes.Checked then frmAgrup.PageControl1.PageIndex:=2;
+  frmAgrup.Show;
+end;
+procedure TfrmRepIngresos.TabSheet2Show(Sender: TObject);
+//Se activa la pestaña de la gráfica.
+begin
+  if ComboBox1.Text <> TXT_REGISTROS then DibujarCurva;
+end;
+procedure TfrmRepIngresos.DibujarCurva;
+  function TextoLimitado(txt: string): string;
+  {Recorta un texto pro el número de caracteres.}
+  const max = 24;
+  begin
+    if length(txt) > max then
+      Result := copy(txt,1,max) + '..'
+    else
+      Result := txt;
+  end;
+var
+  fil, cIni, c, nSeries, porcIni, dPorcen: Integer;
+  FBar : TBarSeries;
+  FLine: TLineSeries;
+  y: Single;
+begin
+//  FArea := TAreaSeries.Create(Chart1);
+  if griAgrupados.cols.Count = 0 then exit;
+  //Busca inicio de columnas de tipo "contadores"
+  for cIni:=1 to grilla.ColCount-1 do begin
+    if griAgrupados.cols[cIni].tipo = ugTipNum then
+      break;  //Se asume que es la primera columna numérica, que no sea la 0
+  end;
+  //Crea series
+  Chart1.ClearSeries;
+  nSeries := grilla.ColCount - cIni;
+  if nSeries > 70 then begin
+    {No se puede dibujar muchas series, porque las posiciones de las barras se ajustan
+     en procentajes enteros.}
+    exit;
+  end;
+  dPorcen := 98 div nSeries;
+  porcIni := 1;
+  if tipGraf = 0 then begin   //Barras
+    for c:=cIni to cIni + nSeries -1 do begin
+      if grilla.ColWidths[c] = 0 then continue;   //columna oculta
+      FBar := TBarSeries.Create(Chart1);
+      FBar.BarWidthStyle := bwPercent;
+      FBar.BarOffsetPercent:= porcIni;
+      FBar.BarWidthPercent := dPorcen;
+      porcIni := porcIni + dPorcen;
+  //    FBar.SeriesColor := clFuchsia;
+      FBar.SeriesColor := RGBToColor(Random(256),Random(256),Random(256));
+      FBar.Title := TextoLimitado(grilla.Cells[c, 0]);
+      Chart1.AddSeries(FBar);
+//      FBar.Clear;
+      for fil:=1 to grilla.RowCount-1 do begin
+        y := StrToFloat(grilla.Cells[c, fil]);
+        FBar.AddXY(fil, y);
+      end;
+    end;
+  end else begin  //Curvas
+    for c:=cIni to cIni + nSeries -1 do begin
+      if grilla.ColWidths[c] = 0 then continue;   //columna oculta
+      FLine := TLineSeries.Create(Chart1);
+      FLine.ShowLines := true;
+//      FLine.ShowPoints := true;
+//      FLine.Pointer.Style := psRectangle;
+//      FLine.Pointer.Brush.Color := clRed;
+      FLine.LinePen.Width := 2;
+      FLine.SeriesColor := RGBToColor(Random(256),Random(256),Random(256));
+      FLine.Title := TextoLimitado(grilla.Cells[c, 0]);;
+      Chart1.AddSeries(FLine);
+//      FLine.Clear;
+      for fil:=1 to grilla.RowCount-1 do begin
+        y := StrToFloat(grilla.Cells[c, fil]);
+        FLine.AddXY(fil, y);
+      end;
+    end;
+  end;
+  Chart1.Legend.Visible:=true;
+end;
+//////////////////// Acciones /////////////////////
 procedure TfrmRepIngresos.acGenCopTodExecute(Sender: TObject);  //Copia toda la grilla
 var
   f: Integer;
@@ -424,13 +477,18 @@ begin
   end;
   Clipboard.AsText:=tmp;
 end;
-procedure TfrmRepIngresos.btnConfigClick(Sender: TObject);
+procedure TfrmRepIngresos.acGraBarrasExecute(Sender: TObject);
 begin
-  if optDia.Checked then frmAgrupVert.PageControl1.PageIndex:=0;
-  if optSem.Checked then frmAgrupVert.PageControl1.PageIndex:=1;
-  if optMes.Checked then frmAgrupVert.PageControl1.PageIndex:=2;
-  frmAgrupVert.Show;
+  if tipGraf = 0 then exit;  //ya tiene el tipo
+  tipGraf := 0;
+  DibujarCurva;
+end;
+procedure TfrmRepIngresos.acGraCurvasExecute(Sender: TObject);
+begin
+  if tipGraf = 1 then exit;  //ya tiene el tipo
+  tipGraf := 1;
+  DibujarCurva;
 end;
 
 end.
-//485
+

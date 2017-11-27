@@ -4,8 +4,8 @@ interface
 uses
   Classes, SysUtils, FileUtil, TAGraph, TASeries, Forms, Controls, Graphics,
   Dialogs, ExtCtrls, StdCtrls, EditBtn, LCLProc, Grids, ComCtrls, Menus,
-  ActnList, RegistrosVentas, FormAgrupVert, CibProductos, Globales, MisUtils,
-  UtilsGrilla, dateutils;
+  ActnList, Buttons, RegistrosVentas, FormAgrupRep, CibProductos, Globales,
+  MisUtils, UtilsGrilla, dateutils;
 const
   MSJ_TODASCATEG  = '<<Todas las Categorías>>';
   MSJ_TODASSUBCAT = '<<Todas las Subcateg.>>';
@@ -19,10 +19,9 @@ type
     acGraCurvas: TAction;
     ActionList1: TActionList;
     btnConfig: TButton;
-    Button1: TButton;
+    btnReporte: TBitBtn;
     Chart1: TChart;
     Chart1LineSeries1: TLineSeries;
-    chkIncTotal: TCheckBox;
     cmbCateg: TComboBox;
     cmbSubcat: TComboBox;
     cmbProduc: TComboBox;
@@ -50,30 +49,28 @@ type
     TabSheet2: TTabSheet;
     procedure acGraBarrasExecute(Sender: TObject);
     procedure acGraCurvasExecute(Sender: TObject);
+    procedure btnReporteClick(Sender: TObject);
     procedure cmbCategChange(Sender: TObject);
     procedure cmbSubcatChange(Sender: TObject);
     procedure optDiaChange(Sender: TObject);
     procedure optMesChange(Sender: TObject);
     procedure optSemChange(Sender: TObject);
     procedure btnConfigClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure optTotChange(Sender: TObject);
     procedure TabSheet2Show(Sender: TObject);
   private
     regs: regIng_list;
-    agrVert: TAgrVer;  //agrupamiento vertical
     griAgrupados : TUtilGrilla;
-    catsHor: TStringList;   //valores de dispersión horizontal
-    catsVer: TStringList;   //valores de dispersión vertical
     tipGraf: integer;       //tipo de gráfica
+    frmAgrup: TfrmAgrupRep; //formualrio de agrupación
     procedure CreaCategoriasHoriz(campo: integer);
     procedure DibujarCurva;
-    procedure LimpiarCategoriasVert;
+    procedure griAgrupadosMouseUpCell(Button: TMouseButton; row, col: integer);
     procedure LLenarGrilla;
     function DoReqCadMoneda(valor: double): string;
-    procedure ReporteAgrupado(agrupVert: TAgrVer);
+    procedure ReporteAgrupado;
   public
     local: string;
     tabPro: TCibTabProduc;
@@ -92,79 +89,48 @@ begin
   Result := FloatToStr(valor);
 end;
 procedure TfrmRepProducto.CreaCategoriasHoriz(campo: integer);
-  function CreaCategoriaHoriz(const categ: string): integer;
-  {Busca un valor en catsHor. Si no existe, lo agrega. Devuelve el índice de su
-  posición.
-  Se usa esta rutina en lugar de Find(), porque se probó que es más rápida (al menos para
-  pocos grupos) y a la vez facilita reusar el código. Sin embargo, a diferencia de Fins(),
-  no se ordenan los encabezados.}
-  var
-    i: Integer;
-  begin
-    //Busca campo
-    for i:=0 to catsHor.Count-1 do begin
-      if catsHor[i] = categ then begin
-        //Ya existe campo, solo devuelve el índice.
-        exit(i);
-      end;
-    end;
-    //No existe
-    catsHor.Add(categ);
-    Result := catsHor.Count-1;
-  end;
 var
   reg: regIng;
   p: SizeInt;
 begin
-  catsHor.Sorted := false;  //CreaCategoriaHoriz() trabaja así.
-  catsHor.Clear;
+  frmAgrup.catsHor.Sorted := false;  //CreaCategoriaHoriz() trabaja así.
+  frmAgrup.catsHor.Clear;
   case campo of
   1: begin
        for reg in regs do begin
          if reg.subcat = 'INTERNET' then begin   //Simplifica descripción
            p := pos('(', reg.descrip);
-           reg.posHor := CreaCategoriaHoriz(copy(reg.descrip, 1, p-1));
+           reg.posHor := frmAgrup.CreaCategoriaHoriz(copy(reg.descrip, 1, p-1));
          end else if reg.subcat = 'LLAMADA' then begin //Simplifica descripción
-           reg.posHor := CreaCategoriaHoriz('Llamada');
+           reg.posHor := frmAgrup.CreaCategoriaHoriz('Llamada');
          end else begin
-           reg.posHor := CreaCategoriaHoriz(reg.descrip);
+           reg.posHor := frmAgrup.CreaCategoriaHoriz(reg.descrip);
          end;
        end;
      end;
   2: begin
        for reg in regs do begin
-         reg.posHor := CreaCategoriaHoriz(reg.subcat);
+         reg.posHor := frmAgrup.CreaCategoriaHoriz(reg.subcat);
        end;
      end;
   end;
 end;
-procedure TfrmRepProducto.ReporteAgrupado(agrupVert: TAgrVer);
+procedure TfrmRepProducto.ReporteAgrupado;
 {Genera el reporte agrupado, usando la lista de archivos "regs". El reporte no se genera
  en la grilla sino en el objeto "catsVer", a quien le va añadiendo una fila (por cada
  categoría vertical que se encuentre) y una isntancia de "TCPCellValues" que representa
  a las columnas de contadores..
  Debe haberse llenado previamente "catsHor"}
 var
-  i  : Integer;
   reg: regIng;
-  tmp: String;
   valores: TCPCellValues;
-  tot: Extended;
+  tot: double;
 begin
-  catsVer.Clear;
+  frmAgrup.catsVer.Clear;
   //////// Crea dispersión vertical y acumula contador
   tot := 0.0;
   for reg in regs do begin
-    tmp := FechaACad(reg.vfec, agrupVert, frmAgrupVert.ComboBox2.ItemIndex);
-    if catsVer.Find(tmp, i) then begin
-      //Ya existe en "i"
-      valores := TCPCellValues(catsVer.Objects[i]);
-    end else begin
-      //Es nuevo, se debe crear
-      catsVer.Add(tmp);
-      valores := TCPCellValues.Create(catsHor.Count);  //crea objeto
-      catsVer.Objects[catsVer.Count-1] := valores;  //guarda la referencia
-    end;
+    valores := frmAgrup.UbicarFechaVertic(reg.vfec);
     //Acumula totales
     if optsDatos.ItemIndex = 0 then
       valores.items[reg.posHor] += reg.total  //acumula en la celda que corresponde
@@ -175,7 +141,7 @@ begin
   StatusBar1.Panels[1].Text:='Nº Ventas= ' + IntToSTr(regs.Count) +
                              ',  Tot. Ingresos= ' + OnReqCadMoneda(tot) +
                              ',  Nº Categor.=' +
-                             IntToStr(catsHor.Count);
+                             IntToStr(frmAgrup.catsHor.Count);
 end;
 procedure TfrmRepProducto.LLenarGrilla;
 {Llena la grilla con datos de las listas catsHor y catsVer.}
@@ -183,75 +149,35 @@ var
   c, fil, colIniCont: Integer;
   valores: TCPCellValues;
   tot : Double;
-  fecStr: String;
 begin
-  //DbgOut('Llenando grilla...');
   grilla.BeginUpdate;
   //////// Crea las columnas
-  griAgrupados.IniEncab;
-  griAgrupados.AgrEncabNum('N°'       , 30);
-  griAgrupados.AgrEncabTxt('FECHA'    , 70); //Campo Fecha
-  colIniCont := 2;
-  if agrVert = tavDia then begin //Campos adicionales de reporte por día
-    colIniCont += frmAgrupVert.VerifCamposAdic_Dia(griAgrupados, 2);
-  end;
-  if agrVert = tavMes then begin  //Campos adicionales de reporte por día
-    colIniCont += frmAgrupVert.VerifCamposAdic_Mes(griAgrupados, 2);
-  end;
-  for c:=0 to catsHor.Count-1 do begin
-    griAgrupados.AgrEncabNum(catsHor[c], 55);
-  end;
-  if chkIncTotal.Checked then begin
-    griAgrupados.AgrEncabNum('TOTAL'    , 70); //campo final
-  end;
-  griAgrupados.FinEncab(false);  //sin actualizar aún
-  griAgrupados.AsignarGrilla(grilla);  //actualiza
+  colIniCont := frmAgrup.EncabezadosHoriz(griAgrupados, grilla);
   /////// Llema las filas
-  grilla.RowCount:=1+catsVer.Count;  //hace espacio
-  for fil:=0 to catsVer.Count-1 do begin
-    //columna de categoría
-    valores := TCPCellValues(catsVer.Objects[fil]);
+  grilla.RowCount := 1 + frmAgrup.catsVer.Count;  //hace espacio
+  for fil:=1 to frmAgrup.catsVer.Count do begin
+    valores := frmAgrup.CamposHoriz(grilla, fil);
     tot := 0;  //para acumular
-    // cáculo de campos agrupados /////////
-    fecStr := catsVer[fil];
-    grilla.Cells[1, fil+1] := fecStr;  //Campo Fecha
-    if agrVert = tavDia then begin  //Campos adicionales de reporte por día
-      frmAgrupVert.EscribirCamposAdic_Dia(fecStr, grilla, fil+1);
-    end else if agrVert = tavMes then begin
-      frmAgrupVert.EscribirCamposAdic_Mes(fecStr, grilla, fil+1);
-    end;
     //campos de datos
-    for c := 0 to catsHor.Count-1 do begin
+    for c := 0 to frmAgrup.catsHor.Count-1 do begin
       if optsDatos.ItemIndex = 0 then  //por Ingresos totales
-        grilla.Cells[colIniCont+c, fil+1] := OnReqCadMoneda(valores.items[c])
+        grilla.Cells[colIniCont+c, fil] := OnReqCadMoneda(valores.items[c])
       else                             //por cantidad
-        grilla.Cells[colIniCont+c, fil+1] := FloatToStr(valores.items[c]);
+        grilla.Cells[colIniCont+c, fil] := FloatToStr(valores.items[c]);
       tot += valores.items[c];
     end;
     //llena columna total
-    if chkIncTotal.Checked then begin
+    if frmAgrup.chkIncTotHoriz.Checked then begin
       if optsDatos.ItemIndex = 0 then  //por Ingresos totales
-        grilla.Cells[grilla.ColCount-1, fil+1] := OnReqCadMoneda(tot)
+        grilla.Cells[grilla.ColCount-1, fil] := OnReqCadMoneda(tot)
       else
-        grilla.Cells[grilla.ColCount-1, fil+1] := FloatToStr(tot);
+        grilla.Cells[grilla.ColCount-1, fil] := FloatToStr(tot);
     end;
   end;
   grilla.EndUpdate();
-  //consoleTickCount('');
+  frmAgrup.LimpiarCategoriasVert;
 end;
-procedure TfrmRepProducto.LimpiarCategoriasVert;
-{Limpia la lista de categorías verticales. Se hace como una tarea de limpieza, para
-reducir el uso de la memoria.}
-var
-  i: Integer;
-begin
-  //Libera objetos de celdas
-  for i:=0 to catsVer.Count-1 do begin
-    catsVer.Objects[i].Destroy;
-  end;
-  catsVer.Clear;
-end;
-procedure TfrmRepProducto.Button1Click(Sender: TObject);
+procedure TfrmRepProducto.btnReporteClick(Sender: TObject);
 begin
   //Genera lista de archivos
   consoleTickStart;
@@ -285,19 +211,18 @@ begin
     end;
   end;
   CreaCategoriasHoriz(1);
-  ReporteAgrupado(agrVert);
+  ReporteAgrupado;
   LLenarGrilla;  //Escribe datos en grilla
-  LimpiarCategoriasVert;
   consoleTickCount('');
   debugln('');
   if TabSheet2.Visible then DibujarCurva;
 end;
 procedure TfrmRepProducto.btnConfigClick(Sender: TObject);
 begin
-  if optDia.Checked then frmAgrupVert.PageControl1.PageIndex:=0;
-  if optSem.Checked then frmAgrupVert.PageControl1.PageIndex:=1;
-  if optMes.Checked then frmAgrupVert.PageControl1.PageIndex:=2;
-  frmAgrupVert.Show;
+  if optDia.Checked then frmAgrup.PageControl1.PageIndex:=0;
+  if optSem.Checked then frmAgrup.PageControl1.PageIndex:=1;
+  if optMes.Checked then frmAgrup.PageControl1.PageIndex:=2;
+  frmAgrup.Show;
 end;
 procedure TfrmRepProducto.cmbCategChange(Sender: TObject);
   function ExisteSubCateg(subcat: string): boolean;
@@ -369,26 +294,23 @@ begin
 end;
 procedure TfrmRepProducto.optDiaChange(Sender: TObject);
 begin
-  agrVert := tavDia;
+  frmAgrup.agrVert := tavDia;
 end;
 procedure TfrmRepProducto.optSemChange(Sender: TObject);
 begin
-  agrVert := tavSem;
+  frmAgrup.agrVert := tavSem;
 end;
 procedure TfrmRepProducto.optMesChange(Sender: TObject);
 begin
-  agrVert := tavMes;
+  frmAgrup.agrVert := tavMes;
 end;
 procedure TfrmRepProducto.optTotChange(Sender: TObject);
 begin
-  agrVert := tavTot;
+  frmAgrup.agrVert := tavTot;
 end;
 procedure TfrmRepProducto.FormCreate(Sender: TObject);
 begin
-  catsHor:= TStringList.Create;
-  catsHor.Sorted:=true;
-  catsVer:= TStringList.Create;
-  catsVer.Sorted:=true;
+  frmAgrup := TfrmAgrupRep.Create(self);
   regs:= regIng_list.Create(true);
   //reportes:= TCenReporte_list.Create(true);
   dat1.Date:=now;
@@ -400,19 +322,24 @@ begin
   griAgrupados.OpEncabezPulsable:=true;
   griAgrupados.OpResaltarEncabez:=true;
   griAgrupados.OpResaltFilaSelec:=true;
+  griAgrupados.MenuCampos := true;
+  griAgrupados.OnMouseUpCell := @griAgrupadosMouseUpCell;
 
   optDia.Checked:=true;  //inicializa opción
   optsDatos.ItemIndex:=0; //inicializa tipo de dato
   //Define un formato, por defecto, de moneda.
   OnReqCadMoneda:=@DoReqCadMoneda;
 end;
+procedure TfrmRepProducto.griAgrupadosMouseUpCell(Button: TMouseButton; row,
+  col: integer);
+begin
+
+end;
 procedure TfrmRepProducto.FormDestroy(Sender: TObject);
 begin
   griAgrupados.Destroy;
   //reportes.Destroy;
   regs.Destroy;
-  catsVer.Destroy;
-  catsHor.Destroy;
 end;
 procedure TfrmRepProducto.Exec(Alocal: string; AtabPro: TCibTabProduc);
   function ExisteCateg(cat: string): boolean;
@@ -429,11 +356,6 @@ var
   reg : TCibRegProduc;
 begin
   local := Alocal;
-  frmAgrupVert.chkIncSemana.Checked := false;
-  frmAgrupVert.chkIncMes.Checked := false;
-  frmAgrupVert.chkIncDia.Checked := false;
-  frmAgrupVert.chkMesIncMes.Checked := false;
-  frmAgrupVert.chkMesIncAno.Checked := false;
   //Llena Categorías
   //Llena lista de reportes
   cmbCateg.Clear;
@@ -452,7 +374,7 @@ begin
   Show;
 end;
 procedure TfrmRepProducto.TabSheet2Show(Sender: TObject);
-//Se activa la pesatña de la gráfica.
+//Se activa la pestaña de la gráfica.
 begin
   DibujarCurva;
 end;
@@ -472,14 +394,6 @@ var
   FLine: TLineSeries;
   y: Single;
 begin
-//  FLine := TLineSeries.Create(Chart1);
-//  FLine.ShowLines := true;
-//  FLine.ShowPoints := true;
-//  FLine.Pointer.Style := psRectangle;
-//  FLine.Pointer.Brush.Color := clRed;
-//  FLine.Title := 'line';
-//  FLine.SeriesColor := clRed;
-//
 //  FArea := TAreaSeries.Create(Chart1);
   if griAgrupados.cols.Count = 0 then exit;
   //Busca inicio de columnas de tipo "contadores"
@@ -499,6 +413,7 @@ begin
   porcIni := 1;
   if tipGraf = 0 then begin   //Barras
     for c:=cIni to cIni + nSeries -1 do begin
+      if grilla.ColWidths[c] = 0 then continue;   //columna oculta
       FBar := TBarSeries.Create(Chart1);
       FBar.BarWidthStyle := bwPercent;
       FBar.BarOffsetPercent:= porcIni;
@@ -516,6 +431,7 @@ begin
     end;
   end else begin
     for c:=cIni to cIni + nSeries -1 do begin
+      if grilla.ColWidths[c] = 0 then continue;   //columna oculta
       FLine := TLineSeries.Create(Chart1);
       FLine.ShowLines := true;
 //      FLine.ShowPoints := true;
@@ -534,15 +450,16 @@ begin
   end;
   Chart1.Legend.Visible:=true;
 end;
+//////////////////// Acciones /////////////////////
 procedure TfrmRepProducto.acGraBarrasExecute(Sender: TObject);
 begin
-  if tipGraf = 0 then exit;  //ya tiene elñ tipo
+  if tipGraf = 0 then exit;  //ya tiene el tipo
   tipGraf := 0;
   DibujarCurva;
 end;
 procedure TfrmRepProducto.acGraCurvasExecute(Sender: TObject);
 begin
-  if tipGraf = 1 then exit;  //ya tiene elñ tipo
+  if tipGraf = 1 then exit;  //ya tiene el tipo
   tipGraf := 1;
   DibujarCurva;
 end;

@@ -14,7 +14,7 @@ interface
 uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
   Menus, Dialogs, Controls, MisUtils, CibTramas, CibFacturables, CibCabinaBase,
-  CibCabinaTarifas, FormVisorMsjRed, CibUtils, FormAdminTarCab,
+  CibCabinaTarifas, FormVisorMsjRed, CibUtils, CibBD, Globales, FormAdminTarCab,
   FormAdminCabinas, FormFijTiempo, FormExplorCab;
 const //Acciones sobre las PC
   /////// Comandos que se ejecutan en el modelo y no requieren conexión. ////////
@@ -78,6 +78,11 @@ const //Acciones sobre las PC
 
   //Mensaje que no existen en NILOTER
   R_CABIN_DAT_RECIB = 80;  //Se usa para indicar al visor que están llegando datos remotos
+
+const
+  //Identificadores para los registros de este grupo
+  IDE_INT_GRA = 'q';     //Registro de alquiler de cabina - hora gratis
+  IDE_INT_NOR = 'p';     //Registro de alquiler de cabina normal
 
 type
   TCibFacCabina = class;
@@ -192,9 +197,9 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
     procedure EjecAccion(idVista: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu; nShortCut: integer); override;
     procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
-  public  //constructor y destructor
+  public  //Inicialización
     constructor Create(nombre0: string; ip0: string);
     constructor CreateSinRed;  //Crea objeto sin red
     destructor Destroy; override;
@@ -210,6 +215,7 @@ type
   TCibGFacCabinas = class(TCibGFac)
     procedure timer1Timer(Sender: TObject);
   private
+    arcLog : TCibTablaHist;  //Tabla de registros para cabinas
     timer1 : TTimer;
     frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
@@ -234,6 +240,7 @@ type
     function Toleran: TDateTime;   //acceso a la tolerancia
     procedure MuestraConexionCabina;
   public  //Operaciones con cabinas
+    function EscribeLog(identif: char; mensaje: String): integer;
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
       cad: string='');
   public  //Campos para manejo de acciones
@@ -241,7 +248,7 @@ type
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
     procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
     procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
-  public  //Constructor y destructor
+  public  //Inicialización
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
   end;
@@ -952,9 +959,10 @@ begin
       Grupo.OnReqConfigUsu(Usuario);
   //Registra la venta en el archivo de registro
   if horGra then begin
-    nser := OnLogVenta(IDE_INT_GRA, RegVenta(Usuario), Costo);
+//    nser := OnLogVenta(IDE_INT_GRA, RegVenta(Usuario), Costo);
+    nser := TCibGFacCabinas(Grupo).EscribeLog(IDE_INT_GRA, RegVenta(Usuario));
   end else begin
-    nser := OnLogVenta(IDE_INT_NOR, RegVenta(Usuario), Costo);
+    nser := TCibGFacCabinas(Grupo).EscribeLog(IDE_INT_NOR, RegVenta(Usuario));
   end;
   tSolicCad := IntToStr(tSolicMin) + 'm';
   //Si hubo error, ya se mostró en OnLogVenta()
@@ -1154,33 +1162,37 @@ begin
     end;
   end;
 end;
-procedure TCibFacCabina.MenuAccionesVista(MenuPopup: TPopupMenu);
+procedure TCibFacCabina.MenuAccionesVista(MenuPopup: TPopupMenu;
+  nShortCut: integer);
 {Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejcuten
 desde aquí.}
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('&Iniciar Cuenta'       , @mnInicCuenta , icoInicCuenta );
-  AgregarAccion('&Modificar Tiempo'     , @mnModifCuenta, icoModifCuenta);
-  AgregarAccion('&Detener Cuenta'       , @mnDetenCuenta, icoDetenCuenta);
-  AgregarAccion('Poner en &Mantenimiento',@mnPonerManten, icoPonerManten);
+  AgregarAccion(nShortCut, '&Iniciar Cuenta'       , @mnInicCuenta , icoInicCuenta );
+  AgregarAccion(nShortCut, '&Modificar Tiempo'     , @mnModifCuenta, icoModifCuenta);
+  AgregarAccion(nShortCut, '&Detener Cuenta'       , @mnDetenCuenta, icoDetenCuenta);
+  AgregarAccion(nShortCut, 'Poner en &Mantenimiento',@mnPonerManten, icoPonerManten);
   if cabCuenta.estado = EST_CONTAN then begin
-    AgregarAccion('Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent);
+    AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent);
   end else if cabCuenta.estado = EST_PAUSAD then begin
-    AgregarAccion('Reiniciar Cuenta'      , @mnReinicCuent, icoReinicCuent);
+    AgregarAccion(nShortCut, 'Reiniciar Cuenta'      , @mnReinicCuent, icoReinicCuent);
   end else begin
     //Agrega siempre un ítem, aunque sea desactivado, para no perder la secuencia de
     //acciones (Que siempre haya la misma cantidad).
-    AgregarAccion('Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent).Enabled:=false;
+    AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent).Enabled:=false;
   end;
-  AgregarAccion('&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
-  AgregarAccion('&Fijar Tiempo Inic.'   , @mnFijTiempoIni, -1);
-//  AgregarAccion('Propiedades' , @mnVerMsjesRed, -1););
+  AgregarAccion(nShortCut, '&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
+  AgregarAccion(nShortCut, '&Fijar Tiempo Inic.'   , @mnFijTiempoIni, -1);
+//  AgregarAccion(nShortCut, 'Propiedades' , @mnVerMsjesRed, -1););
 end;
 procedure TCibFacCabina.MenuAccionesModelo(MenuPopup: TPopupMenu);
 {Configura acciones que solo correran en el Modelo}
+var
+  nShortCut: integer;
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('Ver Mensajes de &Red' , @mnVerMsjesRed, icoVerMsjesRed);
+  nShortCut := -1;
+  AgregarAccion(nShortCut, 'Ver Mensajes de &Red' , @mnVerMsjesRed, icoVerMsjesRed);
 end;
 procedure TCibFacCabina.mnInicCuenta(Sender: TObject);
 var
@@ -1315,7 +1327,7 @@ begin
 end;
 { TCibGFacCabinas }
 procedure TCibGFacCabinas.timer1Timer(Sender: TObject);
-{Temporiza a las cabinas para que actualicen sus porpiedades internas.
+{Temporiza a las cabinas para que actualicen sus prOpiedades internas.
 Se ejecuta cada segundo.}
 var
   cab : TCibFac;
@@ -1454,6 +1466,25 @@ begin
   end;
 end;
 //operaciones con cabinas
+function TCibGFacCabinas.EscribeLog(identif: char; mensaje : String): integer;
+{Escribe en la tabla histórica de este grupo.}
+var
+  NombProg, NombLocal: string;
+  ModDiseno: boolean;
+begin
+  if ModoCopia then exit;  //En modo copia, no genera registro
+  if arclog.arclog = '' then begin
+    //No se ha abierto aún, el registro
+    if OnReqConfigGen<>nil then  //Pide información global
+        OnReqConfigGen(NombProg, NombLocal, ModDiseno);
+    //Abre archivo de rgeistro para este enrutador
+    arcLog.AbrirPLog(rutDatos, NombLocal, Nombre);
+    //Puede generar error
+    If arcLog.msjError <> '' Then MsgErr(arcLog.msjError);
+  end;
+  //Escribe en registro
+  Result := arcLog.PLogVenta(identif, mensaje, 0);
+end;
 procedure TCibGFacCabinas.TCP_envComando(nom: string; comando: TCPTipCom; ParamX,
   ParamY: word; cad: string = '');
 var
@@ -1501,11 +1532,14 @@ begin
   //No hay acciones, aún, para el Grupo Cabinas
 end;
 procedure TCibGFacCabinas.MenuAccionesModelo(MenuPopup: TPopupMenu);
+var
+  nShortCut: Integer;
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('Administrador de &Tarifas', @mnAdminTarifas, icoAdminTarifas);
-  AgregarAccion('Administrador de &Equipos', @mnAdminEquipos, icoAdminEquipos);
-  AgregarAccion('&Propiedades', @mnPropiedades, icoProp);
+  nShortCut := -1;
+  AgregarAccion(nShortCut, 'Administrador de &Tarifas', @mnAdminTarifas, icoAdminTarifas);
+  AgregarAccion(nShortCut, 'Administrador de &Equipos', @mnAdminEquipos, icoAdminEquipos);
+  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoProp);
 end;
 procedure TCibGFacCabinas.mnAdminTarifas(Sender: TObject);
 begin
@@ -1542,11 +1576,14 @@ begin
   //Crea ventana de administración de cabinas
   frmAdminCabs:= TfrmAdminCabinas.Create(nil);
   frmAdminCabs.grpCab := self;  //inicia admin. de cabinas
+  //Crea archivo de registro
+  arcLog := TCibTablaHist.Create;
 end;
 destructor TCibGFacCabinas.Destroy;
 var
   c : TCibFac;
 begin
+  arcLog.Destroy;
 //debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipo))+','+
 //                          CategVenta+','+IntTostr(items.Count));
   frmAdminCabs.Destroy;

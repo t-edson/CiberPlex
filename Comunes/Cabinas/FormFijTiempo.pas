@@ -35,8 +35,13 @@ type
     procedure cmd15Click(Sender: TObject);
     procedure cmd30Click(Sender: TObject);
     procedure cmdLimClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormShow(Sender: TObject);
     procedure Mostrar(fac0: TCibFac);
     procedure MostrarIni(fac0: TCibFac);
+    procedure txtHHKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure txtMMKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure txtSSKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     fac: TCibFac;      //referencia a objeto
     //tpoInic: integer;    //variable de tiempo limitado inicial
@@ -105,7 +110,71 @@ begin
 //    Show;  //se muestra
     ShowModal;
 end;
+procedure TfrmFijTiempo.txtHHKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DECIMAL then begin
+  end;
+end;
+procedure TfrmFijTiempo.txtMMKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DECIMAL then begin
+  end;
+end;
+procedure TfrmFijTiempo.txtSSKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DECIMAL then begin
+  end;
+end;
+procedure TfrmFijTiempo.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+//Manejo de los atajos por teclado para el formulario
+  function TextSeleccionado: boolean;
+  begin
+    Result := txtHH.Focused or txtMM.Focused or txtSS.Focused;
+  end;
+begin
+  if Key = VK_DECIMAL then begin
+    //Punto decimal
+    if txtHH.Focused then begin
+      txtMM.SetFocus;
+      Key := 0;
+    end else if txtMM.Focused then begin
+      txtSS.SetFocus;
+      Key := 0;
+    end else if txtSS.Focused then begin
+      cmd30.SetFocus;
+      Key := 0;
+    end else if cmd30.Focused then begin
+      cmd15.SetFocus;
+      Key := 0;
+    end else if cmd15.Focused then begin
+      cmdLim.SetFocus;
+      Key := 0;
+    end;
+  end else if Key = VK_0 then begin
+    //Tecla cero
+    txtHH.SetFocus;
+  end else if (Key = VK_NUMPAD1) and not TextSeleccionado then begin
+    cmd30Click(self);
+  end else if (Key = VK_NUMPAD2) and not TextSeleccionado then begin
+    cmd15Click(self);
+  end else if (Key = VK_NUMPAD3) and not TextSeleccionado then begin
+    cmdLimClick(self);
+  end else if (Key = VK_NUMPAD4) and not TextSeleccionado then begin
+    chkLibre.Checked := not chkLibre.Checked;
+  end else if (Key = VK_NUMPAD5) and not TextSeleccionado then begin
+    chkHorGra.Checked := not chkHorGra.Checked;
+  end;
+end;
 
+procedure TfrmFijTiempo.FormShow(Sender: TObject);
+begin
+  //Inicia siempre con este control seleccionado
+  BitBtn1.SetFocus;
+end;
 
 procedure TfrmFijTiempo.BitBtn1Click(Sender: TObject);
 //Aceptar
@@ -214,7 +283,6 @@ begin
   tpoLimi := 0;
   RefrescarTextos;
 end;
-
 procedure TfrmFijTiempo.RefrescarTextos;
 begin
   txtHH.Text := Format('%.*d', [2,tpoLimi div 3600]);

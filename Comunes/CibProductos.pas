@@ -73,11 +73,11 @@ type
 
   { TCibTabProduc }
   {Define a una tabla de productos.}
-  TCibTabProduc = class(TCibTabla)
+  TCibTabProduc = class(TCibTablaMaest)
   private
     function GetStr00: string;
     function GetStr09: Double;
-    function GetStr11: Double;
+    function GetStr10: Double;
     function GetStr01: string;
     function GetStr02: string;
     function GetStr03: string;
@@ -86,21 +86,21 @@ type
     function GetStr06: string;
     function GetStr07: Double;
     function GetStr08: Double;
+    function GetStr11: TDateTime;
     function GetStr12: TDateTime;
-    function GetStr13: TDateTime;
-    procedure SetStr01(AValue: string);
+    procedure SetStr00(AValue: string);
+    procedure SetStr09(AValue: Double);
     procedure SetStr10(AValue: Double);
-    procedure SetStr11(AValue: Double);
+    procedure SetStr01(AValue: string);
     procedure SetStr02(AValue: string);
     procedure SetStr03(AValue: string);
     procedure SetStr04(AValue: string);
     procedure SetStr05(AValue: string);
     procedure SetStr06(AValue: string);
-    procedure SetStr07(AValue: string);
+    procedure SetStr07(AValue: Double);
     procedure SetStr08(AValue: Double);
-    procedure SetStr09(AValue: Double);
+    procedure SetStr11(AValue: TDateTime);
     procedure SetStr12(AValue: TDateTime);
-    procedure SetStr13(AValue: TDateTime);
   protected
     function BuscarProd(codigo: String): TCibRegProduc;
     function AddNewRecord: TCibRegistro; override;
@@ -114,7 +114,7 @@ type
   end;
 
   { TCibTabProvee }
-  TCibTabProvee = class(TCibTabla)
+  TCibTabProvee = class(TCibTablaMaest)
   private
     function GetStr00: string;
     function GetStr01: string;
@@ -151,7 +151,7 @@ type
 
   { TCibTabInsumo }
   {Define a una tabla de insumos.}
-  TCibTabInsumo = class(TCibTabla)
+  TCibTabInsumo = class(TCibTablaMaest)
   private
     function GetStr00: string;
     function GetStr01: string;
@@ -202,23 +202,23 @@ function TCibTabProduc.GetStr06: string; begin Result := Productos[idx].UnidComp
 function TCibTabProduc.GetStr07: Double; begin Result := Productos[idx].PreCosto; end;
 function TCibTabProduc.GetStr08: Double; begin Result := Productos[idx].preVenta; end;
 function TCibTabProduc.GetStr09: Double; begin Result := Productos[idx].Stock; end;
-function TCibTabProduc.GetStr11: Double; begin Result := Productos[idx].tPre; end;
-function TCibTabProduc.GetStr12: TDateTime; begin Result := Productos[idx].fecCre; end;
-function TCibTabProduc.GetStr13: TDateTime; begin Result := Productos[idx].fecMod; end;
+function TCibTabProduc.GetStr10: Double; begin Result := Productos[idx].tPre; end;
+function TCibTabProduc.GetStr11: TDateTime; begin Result := Productos[idx].fecCre; end;
+function TCibTabProduc.GetStr12: TDateTime; begin Result := Productos[idx].fecMod; end;
 
-procedure TCibTabProduc.SetStr01(AValue: string); begin Productos[idx].Cod:=AValue; end;
-procedure TCibTabProduc.SetStr02(AValue: string); begin Productos[idx].Categ:=AValue; end;
-procedure TCibTabProduc.SetStr03(AValue: string); begin Productos[idx].Subcat:=AValue; end;
-procedure TCibTabProduc.SetStr04(AValue: string); begin Productos[idx].Nombre:=AValue; end;
-procedure TCibTabProduc.SetStr05(AValue: string); begin Productos[idx].Desc:=AValue; end;
-procedure TCibTabProduc.SetStr06(AValue: string); begin Productos[idx].Marca:=AValue; end;
-procedure TCibTabProduc.SetStr07(AValue: string); begin Productos[idx].UnidComp:=AValue; end;
-procedure TCibTabProduc.SetStr08(AValue: Double); begin Productos[idx].PreCosto:=AValue; end;
-procedure TCibTabProduc.SetStr09(AValue: Double); begin Productos[idx].preVenta:=AValue; end;
-procedure TCibTabProduc.SetStr10(AValue: Double); begin Productos[idx].Stock:=AValue; end;
-procedure TCibTabProduc.SetStr11(AValue: Double); begin Productos[idx].tPre:=AValue; end;
-procedure TCibTabProduc.SetStr12(AValue: TDateTime); begin Productos[idx].fecCre:=AValue; end;
-procedure TCibTabProduc.SetStr13(AValue: TDateTime); begin Productos[idx].fecMod:=AValue; end;
+procedure TCibTabProduc.SetStr00(AValue: string); begin Productos[idx].Cod:=AValue; end;
+procedure TCibTabProduc.SetStr01(AValue: string); begin Productos[idx].Categ:=AValue; end;
+procedure TCibTabProduc.SetStr02(AValue: string); begin Productos[idx].Subcat:=AValue; end;
+procedure TCibTabProduc.SetStr03(AValue: string); begin Productos[idx].Nombre:=AValue; end;
+procedure TCibTabProduc.SetStr04(AValue: string); begin Productos[idx].Desc:=AValue; end;
+procedure TCibTabProduc.SetStr05(AValue: string); begin Productos[idx].Marca:=AValue; end;
+procedure TCibTabProduc.SetStr06(AValue: string); begin Productos[idx].UnidComp:=AValue; end;
+procedure TCibTabProduc.SetStr07(AValue: Double); begin Productos[idx].PreCosto:=AValue; end;
+procedure TCibTabProduc.SetStr08(AValue: Double); begin Productos[idx].preVenta:=AValue; end;
+procedure TCibTabProduc.SetStr09(AValue: Double); begin Productos[idx].Stock:=AValue; end;
+procedure TCibTabProduc.SetStr10(AValue: Double); begin Productos[idx].tPre:=AValue; end;
+procedure TCibTabProduc.SetStr11(AValue: TDateTime); begin Productos[idx].fecCre:=AValue; end;
+procedure TCibTabProduc.SetStr12(AValue: TDateTime); begin Productos[idx].fecMod:=AValue; end;
 
 { TCibTabProduc }
 function TCibTabProduc.BuscarProd(codigo: String): TCibRegProduc;
@@ -322,19 +322,19 @@ begin
   inherited;
   Productos:= TCibRegProduc_list.Create(true);
   items := {%H-}TCibRegistro_list(Productos);
-  FieldAddStr('COD'     , @GetStr00, @SetStr01);
-  FieldAddStr('CATEG'   , @GetStr01, @SetStr02);
-  FieldAddStr('SUBCAT'  , @GetStr02, @SetStr03);
-  FieldAddStr('NOMBRE'  , @GetStr03, @SetStr04);
-  FieldAddStr('DESC'    , @GetStr04, @SetStr05);
-  FieldAddStr('MARCA'   , @GetStr05, @SetStr06);
-  FieldAddStr('UNIDCOMP', @GetStr06, @SetStr07);
-  FieldAddFlt('PRECOSTO', @GetStr07, @SetStr08);
-  FieldAddFlt('PREVENTA', @GetStr08, @SetStr09);
-  FieldAddFlt('STOCK'   , @GetStr09, @SetStr10);
-  FieldAddFlt('TPRE'    , @GetStr11, @SetStr11);
-  FieldAddDatTim('FECCRE',@GetStr12, @SetStr12);
-  FieldAddDatTim('FECMOD',@GetStr13, @SetStr13);
+  FieldAddStr('COD'     , @GetStr00, @SetStr00);
+  FieldAddStr('CATEG'   , @GetStr01, @SetStr01);
+  FieldAddStr('SUBCAT'  , @GetStr02, @SetStr02);
+  FieldAddStr('NOMBRE'  , @GetStr03, @SetStr03);
+  FieldAddStr('DESC'    , @GetStr04, @SetStr04);
+  FieldAddStr('MARCA'   , @GetStr05, @SetStr05);
+  FieldAddStr('UNIDCOMP', @GetStr06, @SetStr06);
+  FieldAddFlt('PRECOSTO', @GetStr07, @SetStr07);
+  FieldAddFlt('PREVENTA', @GetStr08, @SetStr08);
+  FieldAddFlt('STOCK'   , @GetStr09, @SetStr09);
+  FieldAddFlt('TPRE'    , @GetStr10, @SetStr10);
+  FieldAddDatTim('FECCRE',@GetStr11, @SetStr11);
+  FieldAddDatTim('FECMOD',@GetStr12, @SetStr12);
 end;
 { TCibTabProvee }
 function TCibTabProvee.GetStr00: string; begin Result := Proveedores[idx].Cod; end;

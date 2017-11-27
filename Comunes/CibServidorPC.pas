@@ -42,6 +42,7 @@ type
     procedure EventoTramaLista;
     procedure ProcConex(Hsock: TSocket);
     procedure ProcesarTrama;
+    procedure ProcTramaRegMensaje(NomPC: string; msj: string);
     procedure SetEstadoConex(AValue: TServEstadoConex);
   protected
     procedure RegMensajeCnx(msje: string);
@@ -208,11 +209,18 @@ begin
  secMuerto     : exit('Muerto');
  end;
 end;
+procedure TCibServidorPC.ProcTramaRegMensaje(NomPC: string; msj: string);
+begin
+ //Genera mensajes detallados de la conexión
+ tmpRegMsje := msj;
+ Synchronize(@EventoRegMensajeCnx);
+end;
 //Constructor y destructor
 constructor TCibServidorPC.Create;
 begin
   sock := TTCPBlockSocket.create;
   ProcTrama:= TCPProcTrama.Create;
+  ProcTrama.OnRegMensaje := @ProcTramaRegMensaje;
   pilaCmds := TPilaCom.Create;
   FreeOnTerminate:=false;
   FEstadoConex := secDetenido; {Estado inicial. Este estado es solo temporal, se fija

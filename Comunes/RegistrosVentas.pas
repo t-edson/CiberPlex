@@ -311,8 +311,8 @@ begin
   //calcula los meses necesarios a consultar
   fec := fec1;
   while fec <= fec2 do begin
-     DateTimeToString(tmp, '_yyyy_mm', fec);
-     AgregarMes(camino + '\' + nom_loc + '.0' + tmp + '.log');
+     DateTimeToString(tmp, 'yyyy_mm', fec);
+     AgregarMes(camino + DirectorySeparator + nom_loc + '.' + tmp + '.GENERAL.log');
      fec := fec +1;
   end
 end;
@@ -573,7 +573,6 @@ begin
 end;
 
 { regEven }
-
 function regEven.FECHA_LOG_str: string;
 begin
   DateTimeToString(Result, 'yyyy/mm/dd hh:nn:ss', FECHA_LOG);

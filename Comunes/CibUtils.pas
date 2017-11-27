@@ -15,7 +15,8 @@ uses
   //Funciones para control de menú
   procedure InicLlenadoAcciones(MenuPopup0: TPopupMenu );
   function MenuAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
-  function AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
+  function AgregarAccion(var ordShortCut: integer; etiq: string;
+                         accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
   function CreaYCargaImagen(arcPNG: string): TImage;
   function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
   function ListarArchivos(): String;
@@ -156,13 +157,24 @@ begin
   para agregarla a un menú, de modo que será el propieo menú el encargado de destruirla.}
   Result := nuevMen;
 end;
-function AgregarAccion(etiq: string; accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
+function AgregarAccion(var ordShortCut: integer; etiq: string;
+                       accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
 {Agrega una acción sobre el menú PopUp indicado. Debe llamarse desoués de llamar a
-InicLlenadoAcciones. El ítem del menú se agrega, justo después del último ítem agregado.}
+InicLlenadoAcciones. El ítem del menú se agrega, justo después del último ítem agregado.
+Si "ordShortCut"<>-1 , se usa su valor para crear un atajo del teclado al menú, y se va
+incrementando su valor. }
 var
   mn: TMenuItem;
+  atajo: String;
 begin
-  mn := MenuAccion(etiq, accion, id_icon);
+  if (ordShortCut<>-1) and (ordShortCut<10) then begin
+    atajo := '&' + IntToStr(ordShortCut) + '. ';  //crea atajo
+    etiq := StringReplace(etiq,'&','', [rfReplaceAll]);  //quita los otros atajos
+    inc(ordShortCut);   //incrmeenta
+  end else begin
+    atajo := '';
+  end;
+  mn := MenuAccion(atajo + etiq, accion, id_icon);
   MenuPopup.Items.Insert(idxMenu, mn);  //Agrega al inicio
   inc(idxMenu);
   Result := mn;

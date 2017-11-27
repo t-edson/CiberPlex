@@ -1,4 +1,7 @@
-{Unidad con clases para mejorar las que presenta "UtilsGrilla".}
+{Unidad con clases para mejorar las que presenta "UtilsGrilla", agregando opciones de
+edición más seguras y completas, a las grillas.
+Tal vez debean incluirse estas clases en la unidad Utilsgrilla, ya que son bastante
+genéricas y personalizables.}
 unit CibGrillas;
 {$mode objfpc}{$H+}
 interface
@@ -20,37 +23,46 @@ type
   TEvFinEditarCelda = procedure(var eveSal:TEvSalida; col, fil: integer;
                                 var ValorAnter, ValorNuev: string) of object;
   TEvLeerColorFondo = function(col, fil: integer): TColor of object;
+  TEvLlenarLista    = procedure(lstGrilla: TListBox; fil, col: integer;
+                                editTxt: string) of object;
+
 
   { TGrillaEdic }
-  {Define a una grilla de tipo "TUtilGrillaFil" que facilita la edición de los campos
-  de la grilla asociada. Esta clase maneja un TEdit, como control para la edición del
-  contenido de una celda, permitiendo cancelar la edición (sin modificar la celda),
-  pulsando simplemente <Escape>. También se incluye un control de lista, para que pueda
-  servir a modo de menú contextual, al momento de realizar la edición de la celda.
-  Para interactuar con al edición, se incluyen los eventos:
+  {Define a una grilla de tipo "UtilsGrilla.TUtilGrilla" pero agrega facilidades de
+  edición de los campos de la grilla asociada. Esta clase maneja un TEdit, como control
+  para la edición del contenido de una celda, permitiendo cancelar la edición (sin
+  modificar la celda), pulsando simplemente <Escape>. También se incluye un control de
+  lista, para que pueda servir a modo de menú contextual, al momento de realizar la
+  edición de la celda. Para interactuar con la edición, se incluyen los eventos:
    * OnIniEditarCelda;
    * OnFinEditarCelda;
-  TGrillaEdic, no usa las opciones de edición, de TStringGRid (con los eventos
+  TGrillaEdic, no usa las opciones de edición que vienen con TStringGrid (con los eventos
   OnGetEditText y OnEditingDone), sino que implementa sus propias rutinas de edición.
-  Se diseño así porque se ha detectado muchos porblemas en las rutinas
-  OnGetEditText() y OnEditingDone() de TStringGrid, como que sus parámetros no son
-  apropiados y sobre todo, que se generan llamadas múltiples a estos eventos, cuando se
-  usaba EditingDone().
+  Se diseñó así porque se ha detectado muchos problemas en las rutinas OnGetEditText() y
+  OnEditingDone() de TStringGrid, como que sus parámetros no son apropiados y sobre todo,
+  que se generan llamadas múltiples a estos eventos, cuando se usaba EditingDone().
   }
   TGrillaEdic = class(TUtilGrilla)
   private
     ColClick, RowClick: Longint;
     colIniCelda, filIniCelda: Integer;
-    procedure edGrillaExit(Sender: TObject);
+    procedure edGrilla_Change(Sender: TObject);
+    procedure edGrilla_Exit(Sender: TObject);
     procedure grillaSelection(Sender: TObject; aCol, aRow: Integer);
+    procedure lstGrilla_KeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure lstGrilla_KeyPress(Sender: TObject; var Key: char);
+    procedure lstGrilla_Exit(Sender: TObject);
+    procedure lstGrilla_SelectionChange(Sender: TObject; User: boolean);
     procedure UbicarControles(r: TRect);
+    procedure RefreshEdGrillaText;
   protected
     edGrilla : TEdit;  //Editor para los campos de tipo texto
     lstGrilla: TListBox;  //Lista para la selección de valores
     valIniCelda: string;
-    procedure edGrillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState
-      );
-    procedure edGrillaKeyPress(Sender: TObject; var Key: char);
+    procedure TestForCompletionList(fil, col: integer; txt: string);
+    procedure edGrilla_KeyPress(Sender: TObject; var Key: char);
+    procedure edGrilla_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure grillaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState); override;
     procedure grillaKeyPress(Sender: TObject; var Key: char); override;
     procedure grillaMouseDown(Sender: TObject; Button: TMouseButton;
@@ -60,6 +72,8 @@ type
   public
     OnIniEditarCelda : TEvIniEditarCelda;  //Inicia la edición de una celda
     OnFinEditarCelda : TEvFinEditarCelda;  //Finaliza la edición de una celda
+    OnLlenarLista    : TEvLlenarLista;     //Se pide llenar la lista de completado
+    OnModificado     : procedure of object;
     procedure IniciarEdicion(txtInic: string); virtual;
     procedure TerminarEdicion(eventSalida: TEvSalida; ValorAnter, ValorNuev: string
       ); virtual;
@@ -108,31 +122,108 @@ begin
   lstGrilla.Width := r.Right - r.Left + 50;
   lstGrilla.Height := 120; //r.Bottom - r.Top;
 end;
-procedure TGrillaEdic.edGrillaKeyPress(Sender: TObject; var Key: char);
+procedure TGrillaEdic.RefreshEdGrillaText;
+{Fija el texto del control "edGrilla", a partir del elemento seleccionado en "lstGrilla"
+El texto se fija en "edGrilla", sin disparar el evento OnChange, para evitar que se
+active el filtro en "lstGrilla".}
+var
+  tmp: TNotifyEvent;
+begin
+  if lstGrilla.ItemIndex<>-1 then begin      //toma el elemento selecionado
+    tmp := edGrilla.OnChange;
+    edGrilla.OnChange := nil;  //Desactiva temporalmente, para no modificar la lista
+    edGrilla.Text := lstGrilla.Items[lstGrilla.ItemIndex];
+    edGrilla.OnChange := tmp; //restaura
+  end;
+end;
+procedure TGrillaEdic.TestForCompletionList(fil, col: integer; txt: string);
+begin
+  //Muestra la lista de completado
+  if OnLlenarLista<>nil then begin
+    OnLlenarLista(lstGrilla, fil, col, txt);
+    if lstGrilla.Count>0 then begin
+      lstGrilla.Visible:=true;
+    end;
+  end else begin
+    //No se definió el manejador de evento
+
+  end;
+end;
+procedure TGrillaEdic.edGrilla_KeyPress(Sender: TObject; var Key: char);
 begin
   if Key = #27 then begin
     TerminarEdicion(evsTecEscape, valIniCelda, edGrilla.Text);   //termina edición
   end else if Key = #13 then begin
 //    Key := #0;
     TerminarEdicion(evsTecEnter, valIniCelda, edGrilla.Text);   //termina edición
+  end else begin
+    //Debe ser una tecla común
   end;
 end;
-procedure TGrillaEdic.edGrillaKeyDown(Sender: TObject; var Key: Word;
+procedure TGrillaEdic.edGrilla_KeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   if Key = VK_TAB then begin
     TerminarEdicion(evsTecTab, valIniCelda, edGrilla.Text);   //termina edición
-  end;
-  if Key = VK_RIGHT then begin
+  end else if Key = VK_RIGHT then begin
     if edGrilla.SelStart = length(edGrilla.Text) then begin
       TerminarEdicion(evsTecDer, valIniCelda, edGrilla.Text);   //termina edición
     end;
+  end else if Key = VK_DOWN then begin
+    if lstGrilla.Visible then lstGrilla.SetFocus;  //pasa enfoque
+    if lstGrilla.ItemIndex < lstGrilla.Count-1 then begin
+      lstGrilla.ItemIndex := lstGrilla.ItemIndex + 1;   //baja la selección
+    end;
+    RefreshEdGrillaText;
   end;
 end;
-procedure TGrillaEdic.edGrillaExit(Sender: TObject);
+procedure TGrillaEdic.edGrilla_Change(Sender: TObject);
+begin
+  TestForCompletionList(filIniCelda, colIniCelda, edGrilla.Text);
+end;
+procedure TGrillaEdic.edGrilla_Exit(Sender: TObject);
 begin
   {En general, el enfoque se puede perder por diversos motivos, pero lo más común
    es que se haya hecho "click" en alguna otra parte de la grilla. }
+  if lstGrilla.Focused then begin
+    //El enfoque pasó a la lista de completado
+  end else begin
+    TerminarEdicion(evsEnfoque, valIniCelda, edGrilla.Text);   //termina edición
+  end;
+end;
+procedure TGrillaEdic.lstGrilla_SelectionChange(Sender: TObject; User: boolean);
+begin
+  RefreshEdGrillaText;
+end;
+procedure TGrillaEdic.lstGrilla_KeyPress(Sender: TObject; var Key: char);
+begin
+  if Key in ['a'..'z','A'..'A','0'..'9',' ','_'] then begin
+    //Se asume que estas teclas indican que se quiere escribir un nuevo texto en el editor
+    edGrilla.SetFocus;   //le devolvemos el enfoque
+    edGrilla.Text := Key;
+  end;
+end;
+procedure TGrillaEdic.lstGrilla_KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_TAB then begin
+    //Toma el control de esta tecla, porque se usa para indicar que se acpeta la selección
+    TerminarEdicion(evsTecTab, valIniCelda, edGrilla.Text);   //termina edición
+    Key := 0;  //Para que no ejecute acciones por defecto, (como pasar el enfoque
+  end else if Key = VK_RETURN then begin
+    //Toma el control de esta tecla, porque se usa para indicar que se acpeta la selección
+    TerminarEdicion(evsTecEnter, valIniCelda, edGrilla.Text);   //termina edición
+    Key := 0;  //Para que no ejecute acciones por defecto, (como pasar el enfoque
+  end else if Key = VK_ESCAPE then begin
+    //Toma el control de esta tecla
+    TerminarEdicion(evsTecEscape, valIniCelda, edGrilla.Text);   //termina edición
+    Key := 0;  //Para que no ejecute acciones por defecto, (como pasar el enfoque
+  end;
+end;
+procedure TGrillaEdic.lstGrilla_Exit(Sender: TObject);
+{Si la lista pierde el enfoque es porque estaba en modo de edición y se estaba
+seleccionando desde la lista.}
+begin
   TerminarEdicion(evsEnfoque, valIniCelda, edGrilla.Text);   //termina edición
 end;
 procedure TGrillaEdic.grillaSelection(Sender: TObject; aCol, aRow: Integer);
@@ -150,7 +241,7 @@ begin
   filIniCelda := grilla.Row;   //guarda coordenadas de edición
   edGrilla.Text := txtInic;
   UbicarControles(grilla.CellRect(grilla.Col, grilla.Row));
-  edGrilla.OnExit:=@edGrillaExit;   {Para evitar que el editor quede visible al cambiar el
+  edGrilla.OnExit:=@edGrilla_Exit;   {Para evitar que el editor quede visible al cambiar el
                                      enfoque.}
   if cols[grilla.Col].tipo = ugTipNum then edGrilla.Alignment := taRightJustify
   else edGrilla.Alignment := taLeftJustify;
@@ -159,13 +250,18 @@ begin
   edGrilla.SelStart:=length(edGrilla.Text);  //quita la selección
   if OnIniEditarCelda<>nil then
     OnIniEditarCelda(grilla.Col, grilla.Row, txtInic);
+  //Muestra la lista de completado
+  TestForCompletionList(filIniCelda, colIniCelda, txtInic);
 end;
 procedure TGrillaEdic.TerminarEdicion(eventSalida: TEvSalida; ValorAnter, ValorNuev: string);
 begin
 //debugln('---TerminarEdicion');
   if OnFinEditarCelda<>nil then begin
     OnFinEditarCelda(eventSalida, colIniCelda, filIniCelda, ValorAnter, ValorNuev);
-    if eventSalida = evsNulo then exit;   //Se canceló el fin de la edición
+    if eventSalida = evsNulo then begin
+      exit;   //Se canceló el fin de la edición
+      //Notar que no llama a OnModificado.
+    end;
   end;
   //Se porcede a terminar la edición
   edGrilla.OnExit := nil;  {Para evitar llamada recursiva de este evento. Se debe hacer
@@ -176,18 +272,27 @@ begin
   case eventSalida of
   evsTecEnter: begin
     grilla.Cells[colIniCelda, filIniCelda] := ValorNuev;  //acepta valor
-    AdelantarAFilaVis(grilla);   //pasa a siguiente línea
+    MovASiguienteColVis(grilla);   //pasa a siguiente columna
+//    AdelantarAFilaVis(grilla);   //pasa a siguiente línea
+    if OnModificado<>nil then OnModificado();
   end;
   evsTecTab: begin
     grilla.Cells[colIniCelda, filIniCelda] := ValorNuev;  //acepta valor
     MovASiguienteColVis(grilla);   //pasa a siguiente columna
+    if OnModificado<>nil then OnModificado();
   end;
   evsTecDer: begin
     grilla.Cells[colIniCelda, filIniCelda] := ValorNuev;  //acepta valor
     MovASiguienteColVis(grilla);   //pasa a siguiente columna
+    if OnModificado<>nil then OnModificado();
   end;
   evsEnfoque: begin
     grilla.Cells[colIniCelda, filIniCelda] := ValorNuev;  //acepta valor
+    if OnModificado<>nil then OnModificado();
+  end;
+  evsTecEscape: begin
+    //No cambia el valor
+    //grilla.Cells[colIniCelda, filIniCelda] := ValorAnter;  //acepta valor
   end;
   end;
 end;
@@ -295,12 +400,17 @@ begin
   lstGrilla.Parent := grilla.Parent;  //Ubica como contenedor al mismo contnedor de la grilla
   lstGrilla.Color:=TColor($40FFFF);
   lstGrilla.Visible:=false;
+  lstGrilla.OnSelectionChange := @lstGrilla_SelectionChange;
+  lstGrilla.OnExit := @lstGrilla_Exit;
+  lstGrilla.OnKeyPress := @lstGrilla_KeyPress;
+  lstGrilla.OnKeyDown := @lstGrilla_KeyDown;
   //La opción de edición, l amanejamos aquí
   grilla.Options:=grilla.Options-[goEditing];
   grilla.OnSelection:=@grillaSelection;
   //Configura eventos
-  edGrilla.OnKeyPress:=@edGrillaKeyPress;
-  edGrilla.OnKeyDown:=@edGrillaKeyDown;
+  edGrilla.OnKeyPress := @edGrilla_KeyPress;
+  edGrilla.OnKeyDown  := @edGrilla_KeyDown;
+  edGrilla.OnChange   := @edGrilla_Change;
 end;
 destructor TGrillaEdic.Destroy;
 begin
@@ -455,10 +565,12 @@ begin
         cv.Brush.Color := clWhite;
     end;
     cv.FillRect(aRect);   //fondo
-    if cols[aCol].tipo = ugTipIco then
-      DibCeldaIcono(aCol, aRow, aRect)
-    else
-      DibCeldaTexto(aCol, aRow, aRect);
+    if aCol<cols.Count then begin
+      if cols[aCol].tipo = ugTipIco then
+        DibCeldaIcono(aCol, aRow, aRect)
+      else
+        DibCeldaTexto(aCol, aRow, aRect);
+    end;
     // Dibuja ícono
 {    if (aCol=0) and (aRow>0) then
       ImageList16.Draw(grilla.Canvas, aRect.Left, aRect.Top, 19);}

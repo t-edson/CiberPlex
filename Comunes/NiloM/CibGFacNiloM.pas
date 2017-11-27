@@ -12,7 +12,7 @@ uses
   Classes, SysUtils, dos, Types, fgl, LCLProc, ExtCtrls, Menus, Forms, Controls,
   Graphics, MisUtils, crt, strutils, CibFacturables, CibNiloMConex,
   FormNiloMConex, FormNiloMProp, CibNiloMTarifRut, FormBuscTarif, Globales,
-  CibRegistros, CibTramas, CibUtils;
+  CibTramas, CibBD, CibUtils;
 const
   MAX_TAM_LIN_LOG = 300;  //Lóngitud máxima de línea recibida que se considera válida
 const //Acciones
@@ -94,7 +94,7 @@ type
     costo_tot : Double;     //costo acumulado de todas las llamadas
     num_llam  : integer;    //número de llamadas acumuladas
     col_costo : Integer;    //indica cual es la columna que contiene el costo
-    descolg   : Boolean;    //Bandera de descolgado
+    descolg   :Boolean;    //Bandera de descolgado
     descon    : Boolean;    //Cabina desconectada (sin energía).
     llamAct   : TRegLlamada; //llamada en curso
     trama_tmp : string;     //bolsa temporal para la trama
@@ -105,7 +105,7 @@ type
     procedure ProcesarLinea(linea: string; facCmoneda: double; usuario: string;
       CategLocu: string);
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
+    procedure MenuAccionesVista(MenuPopup: TPopupMenu; nShortCut: integer); override;
   public  //Constructor y destructor
     constructor Create;
     destructor Destroy; override;
@@ -119,7 +119,7 @@ type
     FestadoCnx: TNilEstadoConex;
     mens_error: TStringList;  //acumula los mensajes de error
     lin_serial: string;      //acumula los datos recibidos hasta completar la línea
-    arcLog    : TCibArcReg;
+    arcLog    : TCibTablaHist;
     timer1    : TTimer;      //temporizador
     tic       : integer;     //contador
     llego_prompt: boolean; //bandera para indicar la llegada del prompt del NILO
@@ -147,7 +147,6 @@ type
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
-    ArcReg    : string;   //Archivo de registro para el registro propio del enrutador
     ArcTarif  : string;   //Archivo de configuración de tarifas
     ArcRutas  : string;   //Archivo de configuración de rutas
     MsjError  : string;   //Bandera - Mensaje de error
@@ -228,48 +227,6 @@ begin
   icoPropie := CargaPNG(imagList16, imagList32, rutImag, 'properties');
 end;
 
-function NombFinal(camino : string; nom_loc: string; extension : String): String;
-{Devuelve el nombre final con el que se genera un archivo de registro.
-El nombre final depende del mes actual y del local.
-También se verifica si es accesible el archivo para escritura.
-Si hay problemas se devolverá el error en la variable "MsjError".
-NOTA: Esta función es una copia de la existente en la unidad CibRegistros. Se copia
-aquí para no tener que incluir a CibRegistros, y mantener a esta unidad sin
-dependencias.}
-var
-  mes : String;
-  arc : TextFile;
-  tmp : String;
-  Attr: word;
-begin
-    msjError := '';
-    mes := FormatDateTime('_yyyy_mm', now);  //año-mes
-    tmp := camino + '\' + nom_loc + mes + extension;
-    //Verifica disponibilidad de archivo
-    try
-      if FileExists(tmp) then begin   //ve si existe
-        //Abre y cierra para probar si hay problemas
-        AssignFile(arc, tmp);
-        GetFAttr(arc, Attr);  //verifica atributos
-        if (Attr and readonly)<>0 then begin
-          msjError := 'El archivo de registro: ' + tmp + ' es de sólo lectura';
-          exit;
-        end;
-        Append(arc);    //intenta abrir para agregar
-        CloseFile(arc);
-      end else begin
-        //No existe aún, lo crea
-        StringToFile('',tmp);
-      end;
-      //toma el nombre final y sale
-      NombFinal := tmp;
-    except
-      on E : Exception do
-      begin
-        msjError := 'Error accediendo a: ' + tmp + ' (' + E.Message + ')';
-      end;
-    end;
-end;
 { TRegLlamada }
 procedure TRegLlamada.SetDigitado(AValue: string);
 begin
@@ -613,6 +570,9 @@ generando diversos errores.
 //  costo_tot = costo_tot + llamAct.costo //acumula costo
   CalcularCostoTotNumLLam;               //Actualiza costo
   //Registra la venta en el archivo de registro
+  { TODO : Para ser consistente, este registro debería escribirse en el archivo del grupo:
+   CANADA.2017_10.NILO-m.log (como se hace en el grupo de cabinas) y no en el registro
+   de ventas }
   nser := OnLogVenta(IDE_NIL_LLA, RegVenta(usuario), llamAct.COST_NTER);    //toma serie
   //Si hubo error, ya se mostró en OnLogVenta()
 
@@ -763,11 +723,12 @@ begin
     end;
   end;
 end;
-procedure TCibFacLocutor.MenuAccionesVista(MenuPopup: TPopupMenu);
+procedure TCibFacLocutor.MenuAccionesVista(MenuPopup: TPopupMenu;
+  nShortCut: integer);
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('&Desconectar'   , @mnDesconecClick);
-  AgregarAccion('&Conectar'      , @mnConectarClick);
+  AgregarAccion(nShortCut, '&Desconectar'   , @mnDesconecClick);
+  AgregarAccion(nShortCut, '&Conectar'      , @mnConectarClick);
 end;
 procedure TCibFacLocutor.mnConectarClick(Sender: TObject);
 begin
@@ -794,7 +755,7 @@ end;
 { TCibGFacNiloM }
 //Funcione para manejo del registro
 procedure TCibGFacNiloM.AbrirRegistro();
-{Actualiza nombre final de archivo de registro}
+{Inicia al archivo de registro}
 var
   NombProg, NombLocal: string;
   ModDiseno: boolean;
@@ -802,7 +763,8 @@ begin
   if ModoCopia then exit;
   if OnReqConfigGen<>nil then  //Pide información global
       OnReqConfigGen(NombProg, NombLocal, ModDiseno);
-  ArcReg := NombFinal(rutDatos, NombLocal + '.' + nilConex.puertoN, '.dat');
+  //Abre archivo de rgeistro para este enrutador
+  arcLog.AbrirPLog(rutDatos, NombLocal, Nombre);
   if msjError <> '' then exit;
   EscribeLog('');
   EscribeLog(NombProg);
@@ -881,7 +843,7 @@ procedure TCibGFacNiloM.EscribeLog(mensaje: string);
 {Escribe una línea, solamente en el registro. El mensaje debe ser de una sola línea.
 Aprovecha también para volcar lo que haya quedado en "lin_serial"}
 begin
-    arcLog.EscribReg(ArcReg, lin_serial + '---CIBERPX: ' + mensaje);
+    arcLog.EscribReg(lin_serial + '---CIBERPX: ' + mensaje);
     If msjError <> '' Then MsgErr(msjError);
     lin_serial := '';     //inicia nueva línea
 end;
@@ -1024,7 +986,7 @@ var
   Usuario: string;
 begin
   lin_serial := lin_serial + subcad;
-  msjError := arcLog.EscribReg(ArcReg, lin_serial);  //en el registro, escibe la línea completa.
+  msjError := arcLog.EscribReg(lin_serial);  //en el registro, escibe la línea completa.
   lin_serial := '';   //limpia para acumular de nuevo
   if msjError<>'' then MsgErr(msjError);
   if OnTermWriteLn<>nil then OnTermWriteLn(subcad);  //al terminal envía lo que falta
@@ -1184,11 +1146,14 @@ begin
   //No hay acciones, aún, para el Grupo NiloM
 end;
 procedure TCibGFacNiloM.MenuAccionesModelo(MenuPopup: TPopupMenu);
+var
+  nShortCut: Integer;
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion('Cone&xiones' , @mnVerConexiones, icoConexi);
-  AgregarAccion('B&uscar Tarifas', @mnBuscarTarif, icoBusTar);
-  AgregarAccion('&Propiedades' , @mnPropiedades, icoPropie);
+  nShortCut := -1;
+  AgregarAccion(nShortCut, 'Cone&xiones' , @mnVerConexiones, icoConexi);
+  AgregarAccion(nShortCut, 'B&uscar Tarifas', @mnBuscarTarif, icoBusTar);
+  AgregarAccion(nShortCut, '&Propiedades' , @mnPropiedades, icoPropie);
 end;
 procedure TCibGFacNiloM.mnVerConexiones(Sender: TObject);
 begin
@@ -1208,7 +1173,7 @@ begin
   inherited Create(nombre0, ctfNiloM);
   timer1 := TTimer.Create(nil);
   timer1.Interval:=1000;
-  arcLog    := TCibArcReg.Create;  //crea su propio archivo de registro
+  arcLog    := TCibTablaHist.Create;  //crea su propio archivo de registro
   FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 debugln('-Creando: '+ nombre0);
   tipo       := ctfNiloM;

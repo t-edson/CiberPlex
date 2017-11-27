@@ -48,8 +48,8 @@ object Config: TConfig
     Height = 256
     Top = 0
     Width = 367
-    ActivePage = TabSheet1
-    TabIndex = 0
+    ActivePage = TabSheet3
+    TabIndex = 3
     TabOrder = 3
     object TabSheet1: TTabSheet
       Caption = 'General'

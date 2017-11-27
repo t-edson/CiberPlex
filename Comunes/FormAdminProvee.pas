@@ -61,12 +61,10 @@ type
     procedure fraGri_Modificado(TipModif: TugTipModif);
     procedure fraGri_ReqNuevoReg(fil: integer);
     procedure GrillaAReg(f: integer; reg: TCibRegProvee);
-    procedure ListaAGrilla;
     procedure RegAGrilla(reg: TCibRegProvee; f: integer);
   private
     TabPro: TCibTabProvee;
     fraFiltArbol1: TfraFiltArbol;
-    fraGri     : TfraEditGrilla;
     FormatMon  : string;
     procedure FiltroCambiaFiltro;
     procedure fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
@@ -75,6 +73,8 @@ type
   public
     Modificado : boolean;
     OnGrabado : procedure of object;
+    fraGri     : TfraEditGrilla;
+    procedure ListaAGrilla;
     function GrillaATabString: string;
     procedure Exec(TabPro0: TCibTabProvee; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
