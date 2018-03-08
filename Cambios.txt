@@ -1,3 +1,13 @@
+1.7.2
+=====
+SERVER:
+Se corrige el campo por defecto del filtro, en la ventana de Administ. de Productos.
+Se corrige el filtro de árbol, en la ventana de Administ. de Productos, Insumos y 
+Proveedores.
+Se modifica el evento OnLeerColorFondo a la clase TGrillaEditFor, en la unidad CibGrillas.
+Se incluye el formulario para el ingreso de stock.
+Se incluye formulario para corrección de stock.
+
 1.7.1
 =====
 Se separa el Manual de Usuario de CIBERPLEX, del módulo de Control de Locutorios.
