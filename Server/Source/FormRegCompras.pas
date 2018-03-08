@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
   EditBtn, ExtCtrls, Buttons, FormAdminProvee, FrameEditGrilla,
-  CibProductos, BasicGrilla, UtilsGrilla, MisUtils;
+  CibTabProductos, BasicGrilla, UtilsGrilla, MisUtils;
 type
 
   { TfrmRegCompras }
@@ -43,7 +43,7 @@ type
 
     procedure fraGriLlenarLista(lstGrilla: TListBox; fil, col: integer;
       editTxt: string);
-    procedure fraGriModificado(TipModif: TugTipModif);
+    procedure fraGriModificado(TipModif: TugTipModif; filAfec: integer);
     procedure Proveed_EditChange;
     procedure Proveed_Seleccionado;
     function Validar: boolean;
@@ -97,7 +97,8 @@ begin
     lstGrilla.Items.EndUpdate;
   end;
 end;
-procedure TfrmRegCompras.fraGriModificado(TipModif: TugTipModif);
+procedure TfrmRegCompras.fraGriModificado(TipModif: TugTipModif;
+  filAfec: integer);
 var
   f: Integer;
   tot: Double;
@@ -185,7 +186,7 @@ begin
   fraGri        := TfraEditGrilla.Create(self);
   fraGri.Parent := Panel2;
   fraGri.Align  := alClient;
-  fraGri.AutoAdd:= true;
+  fraGri.AddRowEnd:= true;
   fraGri.IniEncab;
                  fraGri.AgrEncabNum  ('N°'          , 30);
   colCantidad := fraGri.AgrEncabNum  ('CANTIDAD'    , 40);

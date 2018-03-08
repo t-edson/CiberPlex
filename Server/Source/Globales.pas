@@ -65,10 +65,10 @@ initialization
     msgErr('Error. No se puede leer o crear directorios.');
   end;
   //inicia archivos de configuración
-  arcProduc := rutApp + '\productos.txt';    //tabla de productos
-  arcProvee := rutApp + '\proveedores.txt';  //tabla de productos
-  arcInsumo := rutApp + '\insumos.txt';      //tabla de insumos
-  arcGastos := rutApp + '\gastos.txt';       //tabla de gastos
+  arcProduc := rutApp + '\productos.dat';    //tabla de productos
+  arcProvee := rutApp + '\proveedores.dat';  //tabla de productos
+  arcInsumo := rutApp + '\insumos.dat';      //tabla de insumos
+  arcGastos := rutApp + '\gastos.dat';       //tabla de gastos
   arcMensaj := rutApp + '\mensajes.txt';     //tabla de mensajes
   arcEstado := rutApp + '\estado.ini';       //tabla de estado
 

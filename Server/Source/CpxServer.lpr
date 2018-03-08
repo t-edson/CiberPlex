@@ -12,10 +12,11 @@ uses
   CibNiloMTarifRut, FormBuscTarif, FormNiloMConex, FormNiloMEnrutam,
   FormNiloMProp, CibCabinaBase, CibCabinaTarifas, CibGFacCabinas,
   FormAdminCabinas, FormAdminTarCab, FormExplorCab, FormFijTiempo,
-  FormRepIngresos, RegistrosVentas, FormAdminProduc, FormIngVentas,
+  FormRepIngresos, RegistrosVentas, FormAdminProduc,
   FormAgrupRep, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
   FormAdminProvee, FrameFiltArbol, CibBD, FrameEditGrilla, FormAdminInsum,
-  CibGrillas, FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras;
+  CibGrillas, FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras,
+  CibTabProductos, FormIngVentas, CibTabInsumos, FormValStock, FormIngStock;
 
 {$R *.res}
 
@@ -27,7 +28,6 @@ begin
   Application.CreateForm(TfrmBoleta, frmBoleta);
   Application.CreateForm(TfrmRepIngresos, frmRepIngresos);
   Application.CreateForm(TfrmAdminProduc, frmAdminProduc);
-  Application.CreateForm(TfrmIngVentas, frmIngVentas);
   Application.CreateForm(TfrmAgrupRep, frmAgrupRep);
   Application.CreateForm(TfrmInicio, frmInicio);
   Application.CreateForm(TfrmAcercaDe, frmAcercaDe);
@@ -40,6 +40,9 @@ begin
   Application.CreateForm(TfrmRepProducto, frmRepProducto);
   Application.CreateForm(TfrmRepEventos, frmRepEventos);
   Application.CreateForm(TfrmRegCompras, frmRegCompras);
+  Application.CreateForm(TfrmIngVentas, frmIngVentas);
+  Application.CreateForm(TfrmValStock, frmValStock);
+  Application.CreateForm(TfrmIngStock, frmIngStock);
   Application.Run;
 end.
 

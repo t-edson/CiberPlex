@@ -347,6 +347,16 @@ object frmPrincipal: TfrmPrincipal
       ImageIndex = 8
       OnExecute = acSisConfigExecute
     end
+    object acSisIngStock: TAction
+      Category = 'Sis'
+      Caption = 'Ingreso de &Stock'
+      OnExecute = acSisIngStockExecute
+    end
+    object acSisValStock: TAction
+      Category = 'Sis'
+      Caption = '&Validación de Stock'
+      OnExecute = acSisValStockExecute
+    end
   end
   object MainMenu1: TMainMenu
     Images = ImageList16
@@ -1001,6 +1011,15 @@ object frmPrincipal: TfrmPrincipal
           FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
           FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00
         }
+      end
+      object MenuItem42: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem40: TMenuItem
+        Action = acSisIngStock
+      end
+      object MenuItem41: TMenuItem
+        Action = acSisValStock
       end
       object MenuItem39: TMenuItem
         Action = acSisRegCompras

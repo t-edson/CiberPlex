@@ -2,14 +2,15 @@ unit FormPrincipal;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
+  Classes, SysUtils, Types, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
   ComCtrls, Dialogs, StdCtrls, LCLType, MisUtils, ogDefObjGraf, FormIngVentas,
   FormConfig, frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
   FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul,
   FormContDinero, FormSelecObjetos, FormRegCompras, FormInicio, CibTramas,
-  CibFacturables, CibProductos, FormAdminProvee, CibBD, FormAdminInsum,
-  FormCambClave, FormRepProducto, FormRepEventos, UniqueInstance, CibGFacMesas,
-  CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
+  CibFacturables, CibTabProvee, CibTabProductos, CibTabInsumos, FormAdminProvee,
+  CibBD, FormAdminInsum, FormCambClave, FormRepProducto, FormRepEventos,
+  FormValStock, FormIngStock, UniqueInstance, CibGFacMesas, CibGFacClientes,
+  CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -24,6 +25,8 @@ type
     acEdiInsGrMes: TAction;
     acAyuSelRapid: TAction;
     acSisRegCompras: TAction;
+    acSisIngStock: TAction;
+    acSisValStock: TAction;
     acVerRepEve: TAction;
     acVerRepPro: TAction;
     acUsuCamCla: TAction;
@@ -89,6 +92,9 @@ type
     MenuItem38: TMenuItem;
     MenuItem39: TMenuItem;
     MenuItem4: TMenuItem;
+    MenuItem40: TMenuItem;
+    MenuItem41: TMenuItem;
+    MenuItem42: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem61: TMenuItem;
@@ -121,7 +127,9 @@ type
     procedure acAyuContDinExecute(Sender: TObject);
     procedure acAyuSelRapidExecute(Sender: TObject);
     procedure acEdiInsGrMesExecute(Sender: TObject);
+    procedure acSisIngStockExecute(Sender: TObject);
     procedure acSisRegComprasExecute(Sender: TObject);
+    procedure acSisValStockExecute(Sender: TObject);
     procedure acUsuCamClaExecute(Sender: TObject);
     procedure acUsuCerSesExecute(Sender: TObject);
     procedure acSisAdmInsumExecute(Sender: TObject);
@@ -165,6 +173,8 @@ type
     procedure CerrarSesion;
     procedure frmAdminInsum_Grabar;
     procedure frmAdminProvee_Grabar;
+    procedure frmIngStockGrabado;
+    procedure frmValStockGrabado;
     procedure IniciarSesion(usuIni: string='');
     procedure RefrescarEncabezado;
     procedure VerificarCargaInsumos(ActulizRemota: boolean);
@@ -409,7 +419,7 @@ var
   res: String;
 begin
   //Graba en disco en modo MODTAB_NOSTCK
-  res := tabPro.ActualizarTabNoStock(frmAdminProduc.GrillaATabString);
+  res := tabPro.ActualizarTabNoStock(frmAdminProduc.fraGri.TableAsString);
   VerificarCargaProductos(false);
   MsgBox(res);
   frmAdminProduc.Modificado := false;
@@ -417,15 +427,82 @@ end;
 procedure TfrmPrincipal.frmAdminProvee_Grabar;
 begin
   //Graba en disco en modo MODTAB_TOTAL
-  tabPrv.UpdateAll(frmAdminProvee.GrillaATabString);
+  tabPrv.UpdateAll(frmAdminProvee.fraGri.TableAsString);
   VerificarCargaProveedores(false);
   MsgBox(tabPrv.msgUpdate);
   frmAdminProvee.Modificado := false;
 end;
+procedure TfrmPrincipal.frmIngStockGrabado;
+{Se pide grabar los ingresos de stock}
+var
+  res, lin, id, incr, TabIngSTock, desc: String;
+  lineas: TStringList;
+  a: TStringDynArray;
+  prod: TCibRegProduc;
+begin
+  TabIngSTock := frmIngStock.TabIngSTock;
+  res := tabPro.ActualizarTabIngStock(TabIngSTock);
+  VerificarCargaProductos(false);
+  MsgBox(res);
+  //frmIngStock.Modificado := false;
+  //Genera información en el registro
+  lineas := TStringList.Create;
+  lineas.Text := TabIngSTock;
+  for lin in lineas do begin
+    a := Explode(#9, lin);
+    id := a[0];
+    incr := trim(a[1]);
+    prod := tabPro.BuscarProd(id);
+    if prod<>nil then desc := prod.Desc else desc := '';
+    log.PLogInf(usuario, 'Stock de ' + id + '('+ desc +')' + ' incrementado en ' + incr + ' unid.');  //registra el mensaje
+  end;
+  lineas.Destroy;
+end;
+procedure TfrmPrincipal.frmValStockGrabado;
+{Se pide grabar las validaciones del stock}
+var
+  res, lin, id, nuevo, TabIngSTock, desc, difer, stock, tmp: String;
+  lineas: TStringList;
+  a: TStringDynArray;
+  prod: TCibRegProduc;
+  difMonto: double;
+begin
+  TabIngSTock := frmValStock.TabValStock(difMonto);
+  res := tabPro.ActualizarTabIngStock(TabIngSTock);
+  VerificarCargaProductos(false);
+  MsgBox(res);
+  //frmIngStock.Modificado := false;
+  //Genera información en el registro
+  lineas := TStringList.Create;
+  lineas.Text := TabIngSTock;
+  for lin in lineas do begin
+    a := Explode(#9, lin);
+    id := a[0];
+    difer := trim(a[1]);
+    stock := trim(a[2]);
+    nuevo := trim(a[3]);
+    prod := tabPro.BuscarProd(id);
+    if prod<>nil then desc := prod.Desc else desc := '';
+    log.PLogInf(usuario, 'Stock de ' + id + '('+ desc +')' +
+                         ' corregido de ' + stock + ' a ' + nuevo + ' con dif=' +
+                         difer);  //registra el mensaje
+  end;
+  //Mensaje final
+  if difMonto < 0 then begin
+    tmp := FloatToStr(difMonto) + ' faltantes.';
+  end else if difMonto > 0 then begin
+    tmp := FloatToStr(difMonto) + ' sobrantes.';
+  end else begin
+    tmp := FloatToStr(difMonto);
+  end;
+  //registra el mensaje
+  log.PLogInf(usuario, '**Fin de corrección de stock. Monto de diferencia = ' + tmp);
+  lineas.Destroy;
+end;
 procedure TfrmPrincipal.frmAdminInsum_Grabar;
 begin
   //Graba en disco en modo MODTAB_TOTAL
-  tabIns.UpdateAll(frmAdminInsum.GrillaATabString);
+  tabIns.UpdateAll(frmAdminInsum.fraGri.TableAsString);
   VerificarCargaInsumos(false);
   MsgBox(tabIns.msgUpdate);
   frmAdminInsum.Modificado := false;
@@ -481,7 +558,7 @@ procedure TfrmPrincipal.Modelo_ActualizStock(const codPro: string;
 {Se está solicitando actualizar el stock. Esta petición usualmente viene desde una
 boleta.}
 begin
-  tabPro.ActualizarStock(codPro, Ctdad);
+  tabPro.IncrementarStock(codPro, Ctdad);
   if msjError <> '' Then begin
       //Se muestra aquí porque no se va a detener el flujo del programa por
       //un error, porque es prioritario registrar la venta.
@@ -796,16 +873,14 @@ begin
   if tabPrv.msjError <> '' then begin
     //Esto no debería pasar si se maneja bien la tabla
     log.PLogErr(usuario, tabPrv.msjError);
-    MsgErr('Error cargando tabla de proveedores.');
-    MsgErr(tabPro.msjError);
+    MsgErr('Error cargando tabla de proveedores. ' + tabPrv.msjError);
   end;
   tabIns.SetTable(arcInsumo);
   tabIns.UpdateFromDisk;
   if tabIns.msjError <> '' then begin
     //Esto no debería pasar si se maneja bien la tabla
     log.PLogErr(usuario, tabIns.msjError);
-    MsgErr('Error cargando tabla de Insumos.');
-    MsgErr(tabIns.msjError);
+    MsgErr('Error cargando tabla de Insumos.' + tabIns.msjError);
   end;
   //Carga mensajes
   ActualizarMensajes;
@@ -834,6 +909,9 @@ begin
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsum_Grabar;
+
+  frmIngStock.OnGrabado := @frmIngStockGrabado;
+  frmValStock.OnGrabado := @frmValStockGrabado;
 
   frmRepIngresos.OnReqCadMoneda:=@Config.CadMon;
 //  frmRepProducto.OnReqCadMoneda:=@Config.CadMon;
@@ -1223,6 +1301,14 @@ begin
   frmAdminProvee.Exec(tabPrv, FormatMon);
   frmAdminProvee.Hide;
   frmRegCompras.Exec(tabPro, FormatMon);
+end;
+procedure TfrmPrincipal.acSisIngStockExecute(Sender: TObject);
+begin
+  frmIngStock.Exec(tabPro, FormatMon);
+end;
+procedure TfrmPrincipal.acSisValStockExecute(Sender: TObject);
+begin
+  frmValStock.Exec(tabPro, FormatMon);
 end;
 procedure TfrmPrincipal.acSisConfigExecute(Sender: TObject);
 begin
