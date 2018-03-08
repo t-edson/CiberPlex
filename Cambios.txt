@@ -1,3 +1,55 @@
+1.7.1
+=====
+Se separa el Manual de Usuario de CIBERPLEX, del módulo de Control de Locutorios.
+Se cambia el manejador de la base de datos a un formato distinto, que incluye ahora datos de
+los encabezados en el mismo archivo. Esto implica cambiar todos los puntos del proyecto en
+donde se hace acceso a las atblas.
+Se cambia la codificación de las tablas maestras a UTF-8 y la extensión a *.dat.
+Se agregan nuevos tipos de acumulación para los reportes de ingresos.
+Se crean laS unidadES CibTabProductos, CibTabInsumos, CibTabProvee y se elimina la unidad 
+CibProductos.
+Se modifica la unidad FrameEditGrilla, para añadir al frame la opción de trabajar con tablas
+TCibTablaMaest como fuente datos.
+Se corrige un error en TfrmAgrupRep.UbicarFechaVertic() que generaba error en los reportes
+cuando las fechas leídas no estaban el orden creciente.
+
+1.7.0
+=====
+Se elimina la unidad CibRegistros, y se pasa sus funcionalidades a CibBD.
+Se definen las clases TCibTablaMaest y TCibTablaHist, que representan a las tablas maestras
+y tablas históricas.
+Se cambia de nombre a los archivos de registros (se pasa a usar ahora un nombre de tabla y 
+se pone siempre la extensión *.log) y se crea uno nuevo.
+Se aumenta el valor ma´ximo para la cuenta de monedas en la ventana de cuenta de dinero.
+Server:
+-------
+Se mejora considerablemente las unidades CibGrillas y FrameEditGrilla.
+Se avanza en la implementación del formulario FormRegCompras.
+
+
+1.6.3
+=====
+Se corrige el error que impedía abrir el menú contextual con la tecla '+', cuando el visor
+no tenía el enfoque.
+Se modifica AgregarAccion() de la unidad CibUtils, para que cree atajos numéricos 
+automáticamente a los ítems del menú.
+Se modifica al formulario FormFijTiempo, para que tenga atajos prácticos de teclado, para
+configurar el conteo.
+Se modifica TCibArcReg.AbrirPLog(), 
+
+1.6.2
+=====
+Se cambia de nombre a la carpeta programa /Ventas por /Admin, ya que el desarrollo se 
+enfoca más al módulo de administración.
+Se incluye la opción de ocultar campos de la grilla del reporte de ingresos, y ocultarlas 
+también de la gráfica.
+Se agrega el paquete UniqueInstance para permitir solo una instancia del servidor.
+
+1.6.1
+=====
+Se cambia de nombre al formulario frmAgrupVert por frmAgrupVert.
+Se simplifican los formularios de reporte y se agrega gráficos para el reporte de ingresos.
+
 1.6
 ===
 SERVER
@@ -21,17 +73,18 @@ Se crea la opción de configuración "Usuario por defecto".
 Se quita la funcionalidad de eliminar un objeto con la tecla "Delete".
 Se corrige un error en la generación de registros del alquiler de cabinas (el tiempo 
 solicitado aparecía siempre como 0m).
-Se incluye un formualrio de reportes por producto.
+Se incluye un formulario de reportes por producto.
 Se modifica TConfig.Iniciar(), para que no cree una instancia del modelo, cuando se pone
 en modo copia. Esto es úitl para cuando se usa config en el módulo de administración.
 Se cambia el nombre del archivo de configruación al nombre fijo "config.xml".
 Se incluyen en RegistroVentas, funciones para manejar el registro de eventos.
 Se crea el formulario para reporte de eventos.
+Se simplifican varias rutinas en los formularios de reportes.
 
 VENTA
 Se crea el evento OnCambEstadoCnx en TCibServidorPC.
 Se crea la propiedad EstadoConex en TCibServidorPC.
-Se agrega un pael de estado a la ventana principal, y se implementa el primer panel como 
+Se agrega un panel de estado a la ventana principal, y se implementa el primer panel como 
 estado de conexión, con manejo de colores.
 Se elimina el panel de texto que mostraba el archivo de estado, y se crea el panel de
 sincronización.
