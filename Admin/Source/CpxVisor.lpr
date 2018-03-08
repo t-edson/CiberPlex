@@ -13,7 +13,8 @@ uses
   FormConfig, FormAdminProduc, FormAdminInsum, FormAdminProvee, FormExplorServ,
   FormCalcul, FormRepIngresos, FormRepProducto, FormReempProd, FrameSincroBD,
   FormAgrupRep, FormRepEventos, CibBD, CibGrillas, CibTabProductos, FormPropGFac,
-  frameVisCPlex, ObjGraficos, RegistrosVentas, FormIngCompras;
+  frameVisCPlex, ObjGraficos, RegistrosVentas, FormIngCompras, FormIngStock,
+  FormValStock;
 
 {$R *.res}
 
@@ -40,6 +41,8 @@ begin
   Application.CreateForm(TfrmAgrupRep, frmAgrupRep);
   Application.CreateForm(TfrmRepEventos, frmRepEventos);
   Application.CreateForm(TfrmIngCompras, frmIngCompras);
+  Application.CreateForm(TfrmIngStock, frmIngStock);
+  Application.CreateForm(TfrmValStock, frmValStock);
   Application.Run;
 end.
 

@@ -16,7 +16,7 @@ uses
   FormSincronBD, FormExplorServ, FormReempProd, CibTabProductos,
   FormAdminProduc, FormAdminProvee, FormAdminInsum, CibBD, FormCalcul,
   FormRepIngresos, FormConfig, FormRepProducto, FrameSincroBD, FormRepEventos,
-  FormIngCompras, CibTabInsumos, CibTabProvee;
+  FormIngCompras, CibTabInsumos, CibTabProvee, FormIngStock, FormValStock;
 type
   { TForm1 }
   TForm1 = class(TForm)
@@ -33,14 +33,16 @@ type
     acAyuCalc: TAction;
     acHerCamNomPro: TAction;
     acHerSincronizar: TAction;
+    acSisIngStock: TAction;
+    acSisValStock: TAction;
     acVerIngCompras: TAction;
     acVerRepEve: TAction;
     acVerRepPro: TAction;
     acVerRepIng: TAction;
     acHerRegConex: TAction;
-    acVerAdmProve: TAction;
-    acVerAdmInsum: TAction;
-    acVerAdmProd: TAction;
+    acSisAdmProve: TAction;
+    acSisAdmInsum: TAction;
+    acSisAdmProd: TAction;
     acHerExpServ: TAction;
     ActionList1: TActionList;
     ImageList16: TImageList;
@@ -74,6 +76,9 @@ type
     MenuItem32: TMenuItem;
     MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
+    MenuItem35: TMenuItem;
+    MenuItem36: TMenuItem;
+    MenuItem37: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
@@ -105,9 +110,11 @@ type
     procedure acFacVerBolExecute(Sender: TObject);
     procedure acHerCamNomProExecute(Sender: TObject);
     procedure acHerSincronizarExecute(Sender: TObject);
-    procedure acVerAdmInsumExecute(Sender: TObject);
-    procedure acVerAdmProdExecute(Sender: TObject);
-    procedure acVerAdmProveExecute(Sender: TObject);
+    procedure acSisIngStockExecute(Sender: TObject);
+    procedure acSisValStockExecute(Sender: TObject);
+    procedure acSisAdmInsumExecute(Sender: TObject);
+    procedure acSisAdmProdExecute(Sender: TObject);
+    procedure acSisAdmProveExecute(Sender: TObject);
     procedure acHerExpServExecute(Sender: TObject);
     procedure acHerRegConexExecute(Sender: TObject);
     procedure acVerIngComprasExecute(Sender: TObject);
@@ -520,38 +527,6 @@ begin
   end;
   frmIngCompras.Exec(tabPro);
 end;
-procedure TForm1.acVerAdmProdExecute(Sender: TObject);
-begin
-  tabPro.UpdateFromDisk;
-  if tabPro.msjError<>'' then begin
-    //Esto no debería pasar si se maneja bien la tabla
-    MsgErr('Error cargando tabla de productos.');
-    MsgErr(tabPro.msjError);
-  end;
-  frmAdminProduc.Exec(tabPro, '%.2f');
-end;
-procedure TForm1.acVerAdmProveExecute(Sender: TObject);
-begin
-  tabPrv.SetTable(arcProvee);
-  tabPrv.UpdateFromDisk;
-  if tabPrv.msjError<>'' then begin
-    //Esto no debería pasar si se maneja bien la tabla
-    MsgErr('Error cargando tabla de proveedores.');
-    MsgErr(tabPrv.msjError);
-  end;
-  frmAdminProvee.Exec(tabPrv, '%.2f');
-end;
-procedure TForm1.acVerAdmInsumExecute(Sender: TObject);
-begin
-  tabIns.SetTable(arcInsumo);
-  tabIns.UpdateFromDisk;
-  if tabIns.msjError<>'' then begin
-    //Esto no debería pasar si se maneja bien la tabla
-    MsgErr('Error cargando tabla de insumos.');
-    MsgErr(tabIns.msjError);
-  end;
-  frmAdminInsum.Exec(tabIns, '%.2f');
-end;
 procedure TForm1.acVerRepIngExecute(Sender: TObject);
 begin
   frmRepIngresos.Exec('CANADA');
@@ -618,6 +593,49 @@ var
   arcCfgServ: string;
 begin
   fraSincBD.btnSincronCfgClick(self);
+end;
+//Sistema
+procedure TForm1.acSisAdmProdExecute(Sender: TObject);
+begin
+  tabPro.UpdateFromDisk;
+  if tabPro.msjError<>'' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error cargando tabla de productos.');
+    MsgErr(tabPro.msjError);
+  end;
+  frmAdminProduc.Exec(tabPro, '%.2f');
+end;
+procedure TForm1.acSisAdmProveExecute(Sender: TObject);
+begin
+  tabPrv.SetTable(arcProvee);
+  tabPrv.UpdateFromDisk;
+  if tabPrv.msjError<>'' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error cargando tabla de proveedores.');
+    MsgErr(tabPrv.msjError);
+  end;
+  frmAdminProvee.Exec(tabPrv, '%.2f');
+end;
+procedure TForm1.acSisAdmInsumExecute(Sender: TObject);
+begin
+  tabIns.SetTable(arcInsumo);
+  tabIns.UpdateFromDisk;
+  if tabIns.msjError<>'' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error cargando tabla de insumos.');
+    MsgErr(tabIns.msjError);
+  end;
+  frmAdminInsum.Exec(tabIns, '%.2f');
+end;
+procedure TForm1.acSisIngStockExecute(Sender: TObject);
+begin
+  tabPro.UpdateFromDisk(true);
+  frmIngStock.Exec(tabPro, FormatMon);
+end;
+procedure TForm1.acSisValStockExecute(Sender: TObject);
+begin
+  tabPro.UpdateFromDisk(true);
+  frmValStock.Exec(tabPro, FormatMon);
 end;
 //Ayuda
 procedure TForm1.acAyuCalcExecute(Sender: TObject);
