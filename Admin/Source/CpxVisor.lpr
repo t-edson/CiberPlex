@@ -12,7 +12,7 @@ uses
   CibFacturables, FormFijTiempo, FormBoleta, FormSincronBD, FormInicio,
   FormConfig, FormAdminProduc, FormAdminInsum, FormAdminProvee, FormExplorServ,
   FormCalcul, FormRepIngresos, FormRepProducto, FormReempProd, FrameSincroBD,
-  FormAgrupRep, FormRepEventos, CibBD, CibGrillas, CibProductos, FormPropGFac,
+  FormAgrupRep, FormRepEventos, CibBD, CibGrillas, CibTabProductos, FormPropGFac,
   frameVisCPlex, ObjGraficos, RegistrosVentas, FormIngCompras;
 
 {$R *.res}

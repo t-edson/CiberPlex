@@ -13,9 +13,10 @@ uses
   Menus, lclProc, LCLType, LCLIntf, ExtCtrls, ComCtrls, Buttons, MisUtils,
   FormPant, FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos, CibTramas,
   FormBoleta, CibFacturables, CibServidorPC, FormInicio, Globales,
-  FormSincronBD, FormExplorServ, FormReempProd, CibProductos, FormAdminProduc,
-  FormAdminProvee, FormAdminInsum, CibBD, FormCalcul, FormRepIngresos,
-  FormConfig, FormRepProducto, FrameSincroBD, FormRepEventos, FormIngCompras;
+  FormSincronBD, FormExplorServ, FormReempProd, CibTabProductos,
+  FormAdminProduc, FormAdminProvee, FormAdminInsum, CibBD, FormCalcul,
+  FormRepIngresos, FormConfig, FormRepProducto, FrameSincroBD, FormRepEventos,
+  FormIngCompras, CibTabInsumos, CibTabProvee;
 type
   { TForm1 }
   TForm1 = class(TForm)
@@ -255,7 +256,7 @@ var
   tipModif: Integer;
 begin
   //Graba localmente
-  tabPro.ActualizarTabNoStock(frmAdminProduc.GrillaATabString);
+  tabPro.ActualizarTabNoStock(frmAdminProduc.fraGri.TableAsString);
   frmAdminProduc.Modificado := false;
   //Graba en servidor
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
@@ -269,7 +270,7 @@ var
   tipModif: Integer;
 begin
   //Graba localmente
-  tabPrv.UpdateAll(frmAdminProvee.GrillaATabString);
+  tabPrv.UpdateAll(frmAdminProvee.fraGri.TableAsString);
   frmAdminProvee.Modificado := false;
   //Graba en servidor
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
@@ -283,7 +284,7 @@ var
   tipModif: Integer;
 begin
   //Graba localmente
-  tabIns.UpdateAll(frmAdminInsum.GrillaATabString);
+  tabIns.UpdateAll(frmAdminInsum.fraGri.TableAsString);
   frmAdminInsum.Modificado := false;
   //Graba en servidor
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
@@ -359,7 +360,7 @@ begin
   tabPro := TCibTabProduc.Create;
   tabPrv := TCibTabProvee.Create;
   tabIns := TCibTabInsumo.Create;
-  tabPro.SetTable('productos.txt');
+  tabPro.SetTable(arcProduc);
   //Configura barra de estado
   StatusBar1.OnDrawPanel:=@StatusBar1DrawPanel;
   StatusBar1.Panels[0].Style := psOwnerDraw;
@@ -413,6 +414,7 @@ begin
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsumGrabado;
+  Caption := NOM_PROG + ' ' + VER_PROG;
 end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
@@ -530,7 +532,7 @@ begin
 end;
 procedure TForm1.acVerAdmProveExecute(Sender: TObject);
 begin
-  tabPrv.SetTable('proveedores.txt');
+  tabPrv.SetTable(arcProvee);
   tabPrv.UpdateFromDisk;
   if tabPrv.msjError<>'' then begin
     //Esto no debería pasar si se maneja bien la tabla
@@ -541,7 +543,7 @@ begin
 end;
 procedure TForm1.acVerAdmInsumExecute(Sender: TObject);
 begin
-  tabIns.SetTable('insumos.txt');
+  tabIns.SetTable(arcInsumo);
   tabIns.UpdateFromDisk;
   if tabIns.msjError<>'' then begin
     //Esto no debería pasar si se maneja bien la tabla

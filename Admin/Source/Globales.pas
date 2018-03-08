@@ -9,7 +9,7 @@ uses  Classes, SysUtils, dos, Forms,
 const
   //VER_PROG = '0.2b';
   {$I ..\..\version.txt}
-  NOM_PROG = 'CiberPlex Server';   //nombre de programa
+  NOM_PROG = 'CiberPlex Admin';   //nombre de programa
 
 var
    //Variables globales
@@ -65,9 +65,9 @@ initialization
     msgErr('Error. No se puede leer o crear directorios.');
   end;
   //inicia archivos de configuración
-  arcProduc := rutApp + '\productos.txt';    //archivo de productos
-  arcProvee := rutApp + '\proveedores.txt';    //archivo de
-  arcInsumo := rutApp + '\insumos.txt';    //archivo de productos
+  arcProduc := rutApp + '\productos.dat';    //archivo de productos
+  arcProvee := rutApp + '\proveedores.dat';    //archivo de
+  arcInsumo := rutApp + '\insumos.dat';    //archivo de productos
   arcGastos := rutApp + '\gastos.txt';       //archivo de gastos
   arcEstado := rutApp + '\estado.ini';         //archivo de estado
 
