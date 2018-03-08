@@ -67,23 +67,6 @@ type
     Name   : string;
     colType: TCibColType;
     idxCol : word;   //índice a campo
-  private
-    function GetAsString: string;
-    procedure SetAsString(AValue: string);
-    function GetAsFloat: double;
-    procedure SetAsFloat(AValue: double);
-    function GetAsDatTim: Double;
-    procedure SetAsDatTim(AValue: Double);
-  public
-    OnGetStr: TCibEvGetStr;   //Evento para pedir un valor String
-    OnSetStr: TCibEvSetStr;   //Evento para fijar un valor String
-    OnGetFloat: TCibEvGetFloat;   //Evento para pedir un valor Float
-    OnSetFloat: TCibEvSetFloat;   //Evento para fijar un valor Float
-    OnGetDatTim: TCibEvGetDatTim;   //Evento para pedir un valor fecha
-    OnSetDatTim: TCibEvSetDatTim;   //Evento para fijar un valor fecha
-    property AsString: string read GetAsString write SetAsString;
-    property AsFloat: Double read GetAsFloat write SetAsFloat;
-    property AsDatTim: Double read GetAsDatTim write SetAsDatTim;
   end;
 
   { TCibRegistro }
@@ -91,8 +74,13 @@ type
   tabla maestra. Se define como una clase genérica para poder crear la lista
   "TCibTablaMaest.items"}
   TCibRegistro = class
+  private
+    function GetValuesStr: string;
+    procedure SetValuesStr(AValue: string);
   public
-    OnLogError     : TEvProLogError;   //Requiere escribir un Msje de error en el registro
+    values     : array of string;  //Contendor principal para los valores de las columnas
+    {Notar que TCibRegistro contiene todo el contenido de la fila leída del archivo}
+    property valuesStr: string read GetValuesStr write SetValuesStr;
   end;
   TCibRegistro_list = specialize TFPGObjectList<TCibRegistro>;   //lista de ítems
 
@@ -102,28 +90,23 @@ type
   modificaciones.}
   TCibTablaMaest = class
   private
+    idx    : integer;   //posición actual ¿Se usa realmente?
     FmsjError: string;
     procedure SetmsjError(AValue: string);
   protected
     archivo: string;
-    idx    : integer;   //posición actual
-    items  : TCibRegistro_list;  //referencia a lista de registros
-    function AddNewRecord: TCibRegistro; virtual; abstract;
     //Rutinas de modificación de bajo nivel. Protegidas
+    procedure LoadFromStringList(strList: TStringList);
+    procedure LoadFromString(const str: string);
     procedure LoadFromDisk;
     procedure SaveToDisk;
-    procedure LoadFromString(const str: string);
-    function RecToString: string;   //Tal vez se deba usar "Stream" u optimizarse de otra forma.
-    procedure StringToRec(AValue: string);
   public  //Manejo de columnas y exploración de filas
     Fields: array of TCibFieldInfo;
+    items  : TCibRegistro_list;  //referencia a lista de registros
+    function AddNewRecord: TCibRegistro; virtual; abstract;
     function FieldDefsAdd(AName: string; ADataType: TCibColType): integer;
-    function FieldAddStr(AName: string; procGet: TCibEvGetStr; procSet: TCibEvSetStr
-      ): integer;
-    function FieldAddFlt(AName: string; procGet: TCibEvGetFloat; procSet: TCibEvSetFloat
-      ): integer;
-    function FieldAddDatTim(AName: string; procGet: TCibEvGetDatTim; procSet: TCibEvSetDatTim
-      ): integer;
+    function TableHeader: string;
+    function FindColPos(colName: string): integer;
     procedure First;
     procedure Next;
     function EOF: boolean;
@@ -131,7 +114,7 @@ type
     msgUpdate  : string;  //Mensaje de actualziación
     property msjError: string read FmsjError write SetmsjError;  //Mensaje de error
     procedure SaveToString(out str: string);
-    function FindReg(str: string; idxCol: word): integer;
+//    function FindReg(str: string; idxCol: word): integer;
   public  //Eventos
     OnLogError : TEvProLogError;    //Requiere escribir un Msje de error en el registro
     OnDiskSaved: procedure of object;
@@ -144,7 +127,8 @@ type
     procedure UpdateFromDisk(showError: boolean=false);
     procedure UpdateAll(newData: string; showError: boolean=false);
   public  //Inicialización
-    procedure SetTable(archivo0: string);
+    procedure SetCols(linHeader: string); virtual;
+    procedure SetTable(archivo0: string); virtual;
     constructor Create; virtual;
     destructor Destroy; override;
   end;
@@ -173,64 +157,16 @@ type
 
 implementation
 
-{ TCibFieldInfo }
-function TCibFieldInfo.GetAsString: string;
+{ TCibRegistro }
+function TCibRegistro.GetValuesStr: string;
 begin
-  Result := OnGetStr();
+  Result := join(#9, values);  //Habría que optimizar mejor esta rutina join()
 end;
-procedure TCibFieldInfo.SetAsString(AValue: string);
+procedure TCibRegistro.SetValuesStr(AValue: string);
 begin
-  OnSetStr(AValue);
+  values := Explode(#9, AValue);  //Esta rutina Explode() se debe optimizr mejor
 end;
-function TCibFieldInfo.GetAsFloat: double;
-begin
-  Result := OnGetFloat();
-end;
-procedure TCibFieldInfo.SetAsFloat(AValue: double);
-begin
-  OnSetFloat(AValue);
-end;
-function TCibFieldInfo.GetAsDatTim: Double;
-begin
-  Result := OnGetDatTim();
-end;
-procedure TCibFieldInfo.SetAsDatTim(AValue: Double);
-begin
-  OnSetDatTim(AValue);
-end;
-
 { TCibTablaMaest }
-procedure TCibTablaMaest.SaveToDisk;
-{Escribe los datos en disco. Usa un archivo temporal para proteger los datos del archivo
-original. Actualiza la bandera "msjError".}
-var
-  arc: TextFile;    //manejador de archivo
-  tmp_produc : string;
-  i: integer;
-begin
-  msjError := '';
-  //Abre archivo de entrada y salida
-  try
-    tmp_produc := archivo + '.tmp';
-    AssignFile(arc, tmp_produc);
-    rewrite(arc);
-    First;
-    for i := 0 to items.Count-1 do begin
-      writeLn(arc, RecToString);
-      Next;
-    end;
-    CloseFile(arc);
-    //Actualiza archivo de productos
-    DeleteFile(archivo);     //Borra anterior
-    RenameFile(tmp_produc, archivo); //Renombra nuevo
-  except
-    on e: Exception do begin
-      msjError := 'Error grabando: ' + archivo + ' - ' + e.Message;
-      CloseFile(arc);
-    end;
-  end;
-  if OnDiskSaved<>nil then OnDiskSaved();
-end;
 procedure TCibTablaMaest.SaveToString(out str: string);
 {Guarda a disco}
 var
@@ -243,7 +179,7 @@ begin
       lineas := TStringList.Create;
       First;
       for i := 0 to items.Count-1 do begin
-        lineas.Add(RecToString);
+        lineas.Add(items[i].valuesStr);
         Next;
       end;
       str := lineas.Text;
@@ -263,12 +199,57 @@ begin
   if AValue = '' then exit;
   if OnLogError <> nil then OnLogError(FmsjError);
 end;
+procedure TCibTablaMaest.LoadFromStringList(strList: TStringList);
+var
+  linea, encab: string;
+  reg: TCibRegistro;
+  i : integer;
+begin
+  if strList.Count = 0 then begin
+    msjError := 'No hay información de columnas';
+    exit;
+  end;
+  items.Clear;
+  i := 0;   //índice de registro
+  encab := strList[0];  //Lee encabezado
+  SetCols(encab);  //Puede generar error, pero deja seguir
+  //Lee siguientes líneas
+  for i := 1 to strList.Count-1 do begin
+      linea := strList[i];
+      if linea <> '' then begin  //tiene datos
+          reg := AddNewRecord;
+          items.Add(reg);
+          //Carga campos en texto
+          reg.valuesStr := linea;  //Esta rutina no está muy optimizada
+          //actualiza contador y estado de carga
+          if (i Mod 1000 = 0) and (OnLoading<>nil) then OnLoading;
+      end;
+  end;
+end;
+procedure TCibTablaMaest.LoadFromString(const str: string);
+{Carga la tabla, con datos a partir de una cadena de texto.
+Si encuentra error, devuelve una cadena con mensaje de error en "MsjError".}
+var
+  lineas: TStringList;
+begin
+  msjError := '';
+  try
+    lineas := TStringList.Create;
+    lineas.Text:=str;   //carga líneas
+    LoadFromStringList(lineas);
+    //Puede salir con error.
+    lineas.Destroy;
+  except
+    on e:Exception do begin
+      msjError := 'Error cargando: ' + archivo + ' - ' + e.Message;
+    end;
+  end;
+end;
 procedure TCibTablaMaest.LoadFromDisk;
 {Carga el archivo de productos indicado.
 Si encuentra error, devuelve una cadena con mensaje de error en "MsjError".}
 var
-  narc: text;
-  linea: String;
+  lineas: TStringList;
 begin
 consoleTickStart;
   msjError := '';
@@ -277,25 +258,10 @@ consoleTickStart;
     exit;
   end;
   try
-    AssignFile(narc , archivo);
-    reset(narc);
-    try
-      idx := 0;   //índice de registro
-      items.Clear;
-      while not System.EOF(narc) do begin
-        readln(narc, linea);
-        if trim(linea) <> '' then begin  //tiene datos
-//            AgregarItemText(linea);
-            items.Add(AddNewRecord);
-            StringToRec(linea);  //actualiza en "idx"
-            //Aprovechamos para generar evento
-            idx := idx+ 1;
-            if (idx Mod 1000 = 0) and (OnLoading<>nil) then OnLoading;
-        end;
-      end;
-    finally
-      Close(narc);
-    end;
+    lineas := TStringList.Create;
+    lineas.LoadFromFile(archivo);
+    LoadFromStringList(lineas);
+    lineas.Destroy;
   except
     on e:Exception do begin
       msjError := 'Error leyendo: ' + archivo + ' - ' + e.Message;
@@ -304,49 +270,51 @@ consoleTickStart;
   if OnDiskRead<>nil then OnDiskRead();
 consoleTickCount('--');
 end;
-procedure TCibTablaMaest.LoadFromString(const str: string);
-{Carga el archivo de productos indicado.
-Si encuentra error, devuelve una cadena con mensaje de error en "MsjError".}
+procedure TCibTablaMaest.SaveToDisk;
+{Escribe los datos en disco. Usa un archivo temporal para proteger los datos del archivo
+original. Actualiza la bandera "msjError".}
 var
-  lineas: TStringList;
-  linea: String;
+  arc: TextFile;    //manejador de archivo
+  tmp_produc , lin: string;
+  i: integer;
 begin
   msjError := '';
+  //Abre archivo de entrada y salida
   try
-    try
-      lineas := TStringList.Create;
-      lineas.Text:=str;   //carga líneas
-      idx := 0;
-      items.Clear;
-      for linea in lineas do begin
-          if linea <> '' then begin  //tiene datos
-//              AgregarItemText(linea);
-              items.Add(AddNewRecord);
-              StringToRec(linea);  //actualzia en "idx"
-              //actualiza contador y estado de carga
-              idx := idx + 1;
-              if (idx Mod 1000 = 0) and (OnLoading<>nil) then OnLoading;
-          end;
-      end;
-    finally
-      lineas.Destroy;
+    tmp_produc := archivo + '.tmp';
+    AssignFile(arc, tmp_produc);
+    rewrite(arc);
+    //Escribe encabezado
+    writeln(arc, TableHeader);
+    First;
+    for i := 0 to items.Count-1 do begin
+//      writeLn(arc, RecToString);
+      lin := items[i].valuesStr;
+      writeln(arc, lin);
+      Next;
     end;
+    CloseFile(arc);
+    //Actualiza archivo de productos
+    DeleteFile(archivo);     //Borra anterior
+    RenameFile(tmp_produc, archivo); //Renombra nuevo
   except
-    on e:Exception do begin
-      msjError := 'Error cargando: ' + archivo + ' - ' + e.Message;
+    on e: Exception do begin
+      msjError := 'Error grabando: ' + archivo + ' - ' + e.Message;
+      CloseFile(arc);
     end;
   end;
+  if OnDiskSaved<>nil then OnDiskSaved();
 end;
-function TCibTablaMaest.FindReg(str: string; idxCol: word): integer;
-{Busca dentro de un campo, un valor de cadena. Devuelve el índice.}
-begin
-  idx := 0;
-  while idx<items.Count do begin
-    if Fields[idxCol].OnGetStr() = str then exit(idx);
-    inc(idx);
-  end;
-  exit(-1);
-end;
+//function TCibTablaMaest.FindReg(str: string; idxCol: word): integer;
+//{Busca dentro de un campo, un valor de cadena. Devuelve el índice.}
+//begin
+//  idx := 0;
+//  while idx<items.Count do begin
+//    if Fields[idxCol].OnGetStr() = str then exit(idx);
+//    inc(idx);
+//  end;
+//  exit(-1);
+//end;
 function TCibTablaMaest.FieldDefsAdd(AName: string; ADataType: TCibColType): integer;
 {Agrega una columna a la tabla. Devuelve el número de índice de la columna.}
 var
@@ -359,28 +327,38 @@ begin
   Fields[n].idxCol:=n;  //para que sepa a qué número de campo representa
   Result := n;
 end;
-function TCibTablaMaest.FieldAddStr(AName: string; procGet: TCibEvGetStr;
-  procSet: TCibEvSetStr): integer;
-{Agrega un campo, de tipo STring}
+function TCibTablaMaest.TableHeader: string;
+{Devuelve el encabezado a escribir en el archivo de la tabla}
+var
+  i: Integer;
+  idColTyp: Char;
 begin
-  Result := FieldDefsAdd(AName, ctText);
-  Fields[Result].OnGetStr:=procGet;
-  Fields[Result].OnSetStr:=procSet;
+  Result := '';
+  for i:=0 to high(Fields) do begin
+    case Fields[i].colType of
+    ctText  : idColTyp := '0';
+    ctFloat : idColTyp := '1';
+    ctDatTim: idColTyp := '2';
+    end;
+    Result += '"' + Fields[i].Name + '",'+idColTyp + #9;
+  end;
+  //Quita tabulación final
+  if Result<>'' then delete(Result, length(Result), 1);
 end;
-function TCibTablaMaest.FieldAddFlt(AName: string; procGet: TCibEvGetFloat;
-  procSet: TCibEvSetFloat): integer;
-{Agrega un campo, de tipo Float}
+function TCibTablaMaest.FindColPos(colName: string): integer;
+{Busca la posición de una columna en Fields[], por su nombre. Ignora mayúsculas/minúsculas.
+Si no encuentra la columna, devuelve -1 y actualiza msjError.}
+var
+  i: Integer;
 begin
-  Result := FieldDefsAdd(AName, ctFloat);
-  Fields[Result].OnGetFloat:=procGet;
-  Fields[Result].OnSetFloat:=procSet;
-end;
-function TCibTablaMaest.FieldAddDatTim(AName: string; procGet: TCibEvGetDatTim;
-  procSet: TCibEvSetDatTim): integer;
-begin
-  Result := FieldDefsAdd(AName, ctDatTim);
-  Fields[Result].OnGetDatTim:=procGet;
-  Fields[Result].OnSetDatTim:=procSet;
+  Result := -1;
+  colName := UpCase(colName);
+  for i:=0 to high(Fields) do begin
+    if UpCase(Fields[i].Name) = colName then begin
+        exit(i);
+    end;
+  end;
+  msjError := 'Columna "' + colName + '" no existe.';
 end;
 procedure TCibTablaMaest.First;
 begin
@@ -393,53 +371,6 @@ end;
 function TCibTablaMaest.EOF: boolean;
 begin
   Result := idx >= items.Count;
-end;
-function TCibTablaMaest.RecToString: string;
-{Convierte el registro actual a una representación de cadena.
-Incluye siempre un delimitador al final. Esto es por tres motivos:
-1. Porque es más fácil hacerlo así.
-2. Porque no estorba.
-3. Porque facilita cuando se quiere agregar un campos más. }
-var
-  c: Integer;
-  colStr: string;
-begin
-  Result := '';
-  for c := 0 to High(Fields) do begin
-    case Fields[c].colType of
-    ctText: begin
-      colStr := UTF8ToCP1252(Fields[c].OnGetStr());  {Se podría guardar y leer
-       directamente sin convertir, aunque no se ha detectado deterioro en el rendimiento.}
-      colStr := StringReplace(colStr, #10, #2, [rfReplaceAll]);
-      colStr := StringReplace(colStr, #13, #3, [rfReplaceAll]);
-    end;
-    ctFloat:  colStr := N2f(Fields[c].OnGetFloat());
-    ctDatTim: colStr := D2f(Fields[c].OnGetDatTim());
-    end;
-    Result := Result + colStr + #9;
-  end;
-end;
-procedure TCibTablaMaest.StringToRec(AValue: string);
-{Actualiza el registro actual, con el valor de una cadena. Es complementario a
-RecToString().}
-var
-  c: Integer;
-  a: TStringDynArray;
-  tmp: String;
-begin
-  a := Explode(#9, AValue);
-  for c := 0 to High(Fields) do begin
-    case Fields[c].colType of
-    ctText  : begin
-      tmp := CP1252ToUTF8(a[c]);
-      tmp := StringReplace(tmp, #2, #10, [rfReplaceAll]);
-      tmp := StringReplace(tmp, #3, #13, [rfReplaceAll]);
-      Fields[c].OnSetStr(tmp );
-    end;
-    ctFloat : Fields[c].OnSetFloat(f2N(a[c]));
-    ctDatTim: Fields[c].OnSetDatTim(f2D(a[c]));
-    end;
-  end;
 end;
 //Rutinas de modificación de la tabla
 procedure TCibTablaMaest.UpdateFromDisk(showError: boolean = false);
@@ -468,9 +399,45 @@ begin
   end;
   UpdateFromDisk;
 end;
+procedure TCibTablaMaest.SetCols(linHeader: string);
+{Lee información sobre los capos de la tabla.}
+var
+  c, colName: String;
+  campos, a: TStringDynArray;
+  colType: TCibColType;
+begin
+  //Lee primera línea de la tabla que debe tener información de los campos
+  msjError := '';
+  //Verifica validez de la línea de canpos
+  if linHeader='' then begin
+    msjError := 'Error leyendo información de columnas de: ' + archivo;
+    exit;
+  end;
+  //Carga información de columnas
+  setlength(fields, 0);
+  campos := Explode(#9, linHeader);  //Esta rutina no está muy optimizada
+  for c in campos do begin
+    //Los campos vienen en la estructura "CAMPO1",0
+    a := explode(',', c);
+    if high(a)<>1 then begin
+      msjError := 'Error leyendo información de columnas de: ' + archivo;
+      exit;
+    end;
+    colName := copy(a[0],2,length(a[0])-2);
+    case a[1] of
+    '0': colType.:= ctText;
+    '1': colType := ctFloat;
+    '2': colType := ctDatTim;
+    else
+      msjError := 'Error leyendo información de columnas de: ' + archivo;
+      exit;
+    end;
+    FieldDefsAdd(colName, colType);
+  end;
+end;
 //Inicialización
 procedure TCibTablaMaest.SetTable(archivo0: string);
-{Asocia al TCibTabProduc, con un archivo  físico en disco}
+{Asocia al TCibTabProduc, con un archivo  físico en disco.}
 begin
   archivo := archivo0;  //guarda archivo de dónde se carga
 end;
@@ -534,7 +501,7 @@ end;
 function TCibTablaHist.EscribReg(lin: String): string;
 {Versión corta que escribe directamente en "ArcLog"}
 begin
-  EscribReg(ArcLog, lin);
+  Result := EscribReg(ArcLog, lin);
 end;
 
 procedure TCibTablaHist.AbrirPLog(rutDatos, local, tabla: string);

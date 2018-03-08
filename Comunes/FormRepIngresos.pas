@@ -142,7 +142,7 @@ begin
   end;
   grilla.EndUpdate();
   //consoleTickCount('');
-  StatusBar1.Panels[1].Text:='Num. Ventas = ' + IntToSTr(regs.Count) +
+  StatusBar1.Panels[1].Text:='Num. Registros = ' + IntToSTr(regs.Count) +
                              ', Total Ingresos = ' + OnReqCadMoneda(tot);
 end;
 procedure TfrmRepIngresos.CreaCategoriasHoriz(campo: integer);
@@ -173,25 +173,61 @@ begin
   Result := FloatToStr(valor);
 end;
 procedure TfrmRepIngresos.ReporteAgrupado;
-{Genera el reporte argupado, usando la lista de archivos "regs".}
+{Genera el reporte agrupado, usando la lista de archivos "regs".}
 var
   reg: regIng;
-  valores: TCPCellValues;
+  grpFecha: TCPCellValues;
   tot: double;
+  i, c: Integer;
 begin
   frmAgrup.catsVer.Clear;
   // Crea dispersión vertical y acumula contador
   tot := 0.0;
   for reg in regs do begin
-    valores := frmAgrup.UbicarFechaVertic(reg.vfec);
+    grpFecha := frmAgrup.UbicarFechaVertic(reg.vfec);
     //Acumula totales
-    if optsDatos.ItemIndex = 0 then
-      valores.items[reg.posHor] += reg.total  //acumula en la celda que corresponde
-    else
-      valores.items[reg.posHor] += reg.Cant; //acumula en la celda que corresponde
+    if optsDatos.ItemIndex = 0 then begin
+      //Suma el total de los ingresos
+      grpFecha.items[reg.posHor] += reg.total;  //acumula en la celda que corresponde
+    end else if optsDatos.ItemIndex = 1 then begin
+      //Suma la cantidad de productos
+      grpFecha.items[reg.posHor] += reg.Cant; //acumula en la celda que corresponde
+    end else if optsDatos.ItemIndex = 2 then begin
+      //Suma la cantidad de registros
+      grpFecha.items[reg.posHor] += 1; //acumula en la celda que corresponde
+    end else if optsDatos.ItemIndex = 3 then begin
+      //Cantidad de días que hay en la fecha
+      //Despues se llenará
+    end else if optsDatos.ItemIndex = 4 then begin
+      //Ingreso por día
+      grpFecha.items[reg.posHor] += reg.total;  //acumula ingresos, y después dividirá
+    end;
     tot := tot + reg.total;
   end;
-  StatusBar1.Panels[1].Text:='Num. Ventas = ' + IntToSTr(regs.Count) +
+  //Completa el caso de los reportes agrupados por "Nº de días"
+  if optsDatos.ItemIndex = 3 then begin
+    //Pone la cantidad de días que hay en cada fecha
+    for i:=0 to frmAgrup.catsVer.Count-1 do begin
+      grpFecha := TCPCellValues(frmAgrup.catsVer.Objects[i]);
+      //Pone la misma cantidad de días para todas las columnas
+      for c:=0 to high(grpFecha.items) do begin
+        grpFecha.items[c] := grpFecha.dias.Count;
+      end;
+    end;
+  end;
+  //Completa el caso de los reportes agrupados por "Ingreso/día"
+  if optsDatos.ItemIndex = 4 then begin
+    //Pone la cantidad de días que hay en cada fecha
+    for i:=0 to frmAgrup.catsVer.Count-1 do begin
+      grpFecha := TCPCellValues(frmAgrup.catsVer.Objects[i]);
+      //Pone la misma cantidad de días para todas las columnas
+      for c:=0 to high(grpFecha.items) do begin
+        //if grpFecha.dias.Count = 0 then continue; //No debría pasar
+        grpFecha.items[c] := grpFecha.items[c] / grpFecha.dias.Count;
+      end;
+    end;
+  end;
+  StatusBar1.Panels[1].Text:='Num. Registros = ' + IntToSTr(regs.Count) +
                              ', Total Ingresos = ' + OnReqCadMoneda(tot);
 end;
 procedure TfrmRepIngresos.LLenarGrilla;

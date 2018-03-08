@@ -303,9 +303,9 @@ begin
   gri1.MenuCampos:=true;
   //Llena datos
   AgregarTablaCfg('config.xml');
-  AgregarTablaCfg('productos.txt');
-  AgregarTablaCfg('proveedores.txt');
-  AgregarTablaCfg('insumos.txt');
+  AgregarTablaCfg('productos.dat');
+  AgregarTablaCfg('proveedores.dat');
+  AgregarTablaCfg('insumos.dat');
   AgregarTablaCfg('mensajes.txt');
   AgregarTablaCfg('tarifario.txt');
   AgregarTablaCfg('rutas.txt');

@@ -93,14 +93,6 @@ type
 
   {Contenedor de valores para crear reprotes acumulados}
 
-  { TCPCellValues }
-  {Usado para reportes agrupados. Es una lista de valores numéricos ubicados
-  horizontalmente en una tabla. Representa a los contadores o mediciones de una fila.}
-  TCPCellValues = class
-    items : array of double;
-    constructor Create(nCols: integer);
-  end;
-
   //Tipo de agrupamiento de fechas
   TAgrVer = (
     tavDia,  //por día
@@ -108,6 +100,22 @@ type
     tavMes,  //por mes
     tavTot   //total, un solo agrupamiento
   );
+
+  { TCPCellValues }
+  {Usado para reportes agrupados. Es una lista de valores numéricos ubicados
+  horizontalmente en una tabla. Representa a los contadores o mediciones de una fila.}
+  TCPCellValues = class
+  public
+    items : array of double;
+  public  //Campo usados solamente para el calculo de los reportes agrupados por promedio
+    {"dias" se usa para llevar la cuenta de los días que agrupa esta categoría de fecha,
+    ya que se espera tener un TCPCellValues por cada fila que representa a una fecha.}
+    dias : TStringList;
+    procedure RegistrarFecha(fec: TDateTime; agrVert: TAgrVer; fecAgrup: string);
+  public  //Inicialización
+    constructor Create(nCols: integer);
+    destructor Destroy; override;
+  end;
 
   function FechaACad(const fec: TDateTime; agrupVert: TAgrVer; correcDia: integer): string;
   Function FechaLOG(const cad : string): TDate;
@@ -579,10 +587,39 @@ begin
 end;
 
 { TCPCellValues }
+procedure TCPCellValues.RegistrarFecha(fec: TDateTime; agrVert: TAgrVer;
+  fecAgrup: string);
+{Actualiza la lista "dias" con la fecha que corresponde de "fec", porque esto se
+necesita para los reportes que muestran promedio por día.}
+var
+  fecYYYYMMDD: String;
+  i: Integer;
+begin
+  //Obtiene "fec" en formato de cadena YYYYMMDD,
+  if agrVert = tavDia then begin
+    fecYYYYMMDD := fecAgrup;  //Ya se hizo la onversión
+  end else begin
+    //Convierte a fec a formato de "yyyy/mm/dd".
+    DateTimeToString(fecYYYYMMDD, 'yyyy/mm/dd', fec);
+  end;
+  //Agrega a la lista "días"
+  if dias.Find(fecYYYYMMDD, i) then begin
+    //Ya existe
+  end else begin
+    dias.Add(fecYYYYMMDD);  //Agrega
+  end;
+end;
 constructor TCPCellValues.Create(nCols: integer);
 begin
   setlength(items, nCols);  //define tamaño del contenedor
 //  for i:=0 to high(items) do items[i] := 0;
+  dias := TStringList.Create;
+  dias.Sorted := true;  //Para poder realizar las búsquedas con Find
+end;
+destructor TCPCellValues.Destroy;
+begin
+  dias.Destroy;
+  inherited Destroy;
 end;
 
 { regIng }

@@ -32,8 +32,10 @@ const  //Caracteres identificadores para el archivo registros
   IDE_CIB_IBO = 'b';     //registro de ítem de boleta
   IDE_CIB_IBOD= 'x';     //registro de ítem de boleta descartado
   IDE_CIB_BOL = 'B';     //registro de boleta
-  //Identificadores para llamadas
-  IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m
+  //Identificadores para llamadas.
+  //En realidad este tipo de registro no debería ir aquí sino en el registro que geenra
+  //el grupo facturable NILO-m.
+  IDE_NIL_LLA = 'l';     //registro de llamada de NILO-m.
 
 const  //Acciones sobre boletas
   //Acciones sobre la boleta

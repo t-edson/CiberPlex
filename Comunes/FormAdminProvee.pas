@@ -5,7 +5,7 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, Buttons, ActnList, Grids, Menus, LCLType, LCLProc,
   FrameFiltCampo, UtilsGrilla, FrameFiltArbol, FrameEditGrilla, MisUtils,
-  CibProductos, CibUtils;
+  CibTabProvee, CibUtils;
 type
   { TfrmAdminProvee }
   TfrmAdminProvee = class(TForm)
@@ -38,7 +38,6 @@ type
     Splitter1: TSplitter;
     procedure acArcSalirExecute(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure SolicCerrarArbol;
     procedure btnMostCategClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -58,10 +57,8 @@ type
     colNotas   : TugGrillaCol;
     colUltComp : TugGrillaCol;
     colEstado  : TugGrillaCol;
-    procedure fraGri_Modificado(TipModif: TugTipModif);
+    procedure fraGri_Modificado(TipModif: TugTipModif; filAfec: integer);
     procedure fraGri_ReqNuevoReg(fil: integer);
-    procedure GrillaAReg(f: integer; reg: TCibRegProvee);
-    procedure RegAGrilla(reg: TCibRegProvee; f: integer);
   private
     TabPro: TCibTabProvee;
     fraFiltArbol1: TfraFiltArbol;
@@ -74,8 +71,6 @@ type
     Modificado : boolean;
     OnGrabado : procedure of object;
     fraGri     : TfraEditGrilla;
-    procedure ListaAGrilla;
-    function GrillaATabString: string;
     procedure Exec(TabPro0: TCibTabProvee; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
   end;
@@ -119,38 +114,8 @@ begin
     MensajeVisibles(lblNumRegist, fraGri.RowCount-1, fraGri.RowCount-1);
   end;
 end;
-procedure TfrmAdminProvee.RegAGrilla(reg: TCibRegProvee; f: integer);
-{Mueve un registro de la tabla de productos, a una fila de la grilla}
-begin
-  colCodigo.ValStr[f]   := reg.Cod;
-  colCateg.ValStr[f]    := reg.Categ;
-  colSubcat.ValStr[f]   := reg.Subcat;
-  colNomEmp.ValStr[f]   := reg.NomEmpresa;
-  colProductos.ValStr[f]:= reg.Productos;
-  colContacto.ValStr[f] := reg.Contacto;
-  colTelefono.ValStr[f] := reg.Telefono;
-  colEnvio.ValStr[f]   := reg.Envio;
-  colDirecc.ValStr[f]   := reg.Direccion;
-  colNotas.ValStr[f]    := reg.Notas;
-  colUltComp.ValDatTim[f]:=reg.UltCompra;
-  colEstado.ValStr[f]   := reg.Estado;
-end;
-procedure TfrmAdminProvee.GrillaAReg(f: integer; reg: TCibRegProvee);
-begin
-  reg.Cod       := colCodigo.ValStr[f];
-  reg.Categ     := colCateg.ValStr[f];
-  reg.Subcat    := colSubcat.ValStr[f];
-  reg.NomEmpresa:= colNomEmp.ValStr[f];
-  reg.Productos := colProductos.ValStr[f];
-  reg.Contacto  := colContacto.ValStr[f];
-  reg.Telefono  := colTelefono.ValStr[f];
-  reg.Envio     := colEnvio.ValStr[f];
-  reg.Direccion := colDirecc.ValStr[f];
-  reg.Notas     := colNotas.ValStr[f];
-  reg.UltCompra := colUltComp.ValDatTim[f];
-  reg.Estado    := colEstado.ValStr[f];
-end;
-procedure TfrmAdminProvee.fraGri_Modificado(TipModif: TugTipModif);
+procedure TfrmAdminProvee.fraGri_Modificado(TipModif: TugTipModif;
+  filAfec: integer);
 begin
   fraFiltArbol1.LeerCategorias;
 //  RefrescarFiltros;
@@ -160,48 +125,6 @@ procedure TfrmAdminProvee.fraGri_ReqNuevoReg(fil: integer);
 begin
   colCodigo.ValStr[fil] := '#'+IntToStr(fraGri.RowCount-1);
 //  colEstado.ValChr[fil] := ' ';
-end;
-procedure TfrmAdminProvee.ListaAGrilla;
-{Mueve datos de la lista a la grills}
-var
-  f: Integer;
-  reg: TCibRegProvee;
-  n: LongInt;
-  grilla: TStringGrid;
-begin
-  grilla := fraGri.grilla;
-  grilla.BeginUpdate;
-  grilla.RowCount:=1;  //limpia datos
-  n := TabPro.Proveedores.Count+1;
-  grilla.RowCount:= n;
-  f := 1;
-  for reg in TabPro.Proveedores do begin
-    grilla.Cells[0, f] := IntToStr(f);  //ïnidce
-    RegAGrilla(reg, f);
-    f := f + 1;
-  end;
-  grilla.EndUpdate();
-end;
-function TfrmAdminProvee.GrillaATabString: string;
-var
-  TabTmp: TCibTabProvee;
-  f: Integer;
-  reg: TCibRegProvee;
-begin
-  //Mueve datos a lista temporal. Si se ha hecho la validación, no debería fallar.
-  TabTmp:= TCibTabProvee.Create;   //lista temporal
-  for f:=1 to fraGri.RowCount-1 do begin
-    reg := TCibRegProvee.Create;
-    GrillaAReg(f, reg);
-    TabTmp.Proveedores.Add(reg);
-  end;
-  //Convierte lista a cadena
-  TabTmp.SaveToString(Result);
-  TabTmp.Destroy;
-end;
-procedure TfrmAdminProvee.SolicCerrarArbol;
-begin
-  acVerArbCatExecute(self);
 end;
 procedure TfrmAdminProvee.btnMostCategClick(Sender: TObject);
 {Se hace esta llamada por código, porque no se puede asoicar fácilmente un TBitBtn
@@ -220,38 +143,8 @@ begin
   fraGri        := TfraEditGrilla.Create(self);
   fraGri.Parent := self;
   fraGri.Align  := alClient;
-  //Configura grilla.
-  //!!!!!!!!!!!!OJO: Deben agregarse todos los campso para que puedan preservarse en la edición.
-  fraGri.IniEncab;
-                 fraGri.AgrEncabNum   ('N°'          , 25);
-  colCodigo   := fraGri.AgrEncabTxt   ('CÓDIGO'      , 30);
-  colCateg    := fraGri.AgrEncabTxt   ('CATEGORÍA'   , 60);
-  colSubcat   := fraGri.AgrEncabTxt   ('SUBCATEGORÍA', 70);
-  colNomEmp   := fraGri.AgrEncabTxt   ('NOMB.EMPRESA', 90);
-  colProductos:= fraGri.AgrEncabTxt   ('PRODUCTOS'   , 100);
-  colContacto := fraGri.AgrEncabTxt   ('CONTACTOS'   , 80);
-  colTelefono := fraGri.AgrEncabTxt   ('TELÉFONO'    , 80);
-  colEnvio    := fraGri.AgrEncabTxt   ('ENVÍO'       , 40);
-  colDirecc   := fraGri.AgrEncabTxt   ('DIRECCIÓN'   , 120);
-  colNotas    := fraGri.AgrEncabTxt   ('NOTAS'       , 80);
-  colUltComp  := fraGri.AgrEncabDatTim('FEC. ÚLTIMA COMPRA', 60);
-  colEstado   := fraGri.AgrEncabTxt   ('ESTADO', 40);
-  fraGri.FinEncab;
   fraGri.OnGrillaModif:=@fraGri_Modificado;
   fraGri.OnReqNuevoReg:=@fraGri_ReqNuevoReg;
-
-  //Define restricciones a los campos
-  colCodigo.restric:= [ucrNotNull, ucrUnique];
-  colCateg.restric:=[ucrNotNull];   //no nulo
-  colSubcat.restric:=[ucrNotNull];   //no nulo
-
-  fraFiltCampo.Inic(fraGri.gri, 3);
-  fraFiltCampo.OnCambiaFiltro:= @FiltroCambiaFiltro;
-  fraFiltCampo.OnKeyDown:=@fraFiltCampoKeyDown;
-
-  fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Proveedores');
-  fraFiltArbol1.OnCambiaFiltro:= @FiltroCambiaFiltro;
-  fraFiltArbol1.OnSoliCerrar:=@SolicCerrarArbol;
 
 end;
 procedure TfrmAdminProvee.FormDestroy(Sender: TObject);
@@ -272,8 +165,40 @@ end;
 procedure TfrmAdminProvee.Exec(TabPro0: TCibTabProvee; FormatMoneda: string);
 begin
   TabPro := TabPro0;
+  //Configura frame
+  fraGri.IniEncab(TabPro);
+  colCodigo   := fraGri.AgrEncabTxt   ('CÓDIGO'      ,  30, 'ID_PROV');
+  colCateg    := fraGri.AgrEncabTxt   ('CATEGORÍA'   ,  60, 'CATEGORIA');
+  colSubcat   := fraGri.AgrEncabTxt   ('SUBCATEGORÍA',  70, 'SUBCATEGORIA');
+  colNomEmp   := fraGri.AgrEncabTxt   ('NOMB.EMPRESA',  90, 'NOMEMPRESA');
+  colProductos:= fraGri.AgrEncabTxt   ('PRODUCTOS'   , 100, 'PRODUCTOS');
+  colContacto := fraGri.AgrEncabTxt   ('CONTACTOS'   ,  80, 'CONTACTO');
+  colTelefono := fraGri.AgrEncabTxt   ('TELÉFONO'    ,  80, 'TELEFONO');
+  colEnvio    := fraGri.AgrEncabTxt   ('ENVÍO'       ,  40, 'ENVIO');
+  colDirecc   := fraGri.AgrEncabTxt   ('DIRECCIÓN'   , 120, 'DIRECCION');
+  colNotas    := fraGri.AgrEncabTxt   ('NOTAS'       ,  80, 'NOTAS');
+  colUltComp  := fraGri.AgrEncabDatTim('FEC. ÚLTIMA COMPRA', 60,'ULTCOMPRA');
+  colEstado   := fraGri.AgrEncabTxt   ('ESTADO'      ,  40, 'ESTADO');
+  fraGri.FinEncab;
+  if fraGri.MsjError<>'' then begin
+    //Muestra posible mensaje de error, pero deja seguir.
+    MsgErr(fraGri.MsjError);
+  end;
+  //Define restricciones a los campos
+  colCodigo.restric:= [ucrNotNull, ucrUnique];
+  colCateg.restric:=[ucrNotNull];   //no nulo
+  colSubcat.restric:=[ucrNotNull];   //no nulo
+
+  fraFiltCampo.Inic(fraGri.gri, 3);
+  fraFiltCampo.OnCambiaFiltro:= @FiltroCambiaFiltro;
+  fraFiltCampo.OnKeyDown:=@fraFiltCampoKeyDown;
+
+  fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Proveedores');
+  fraFiltArbol1.OnCambiaFiltro:= @FiltroCambiaFiltro;
+  fraFiltArbol1.OnSoliCerrar:=@acVerArbCatExecute;
+  //////////////
   FormatMon := FormatMoneda;
-  ListaAGrilla;  //Hace el llenado inicial de productos
+  fraGri.ReadFromTable;
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;   //Para actualizar mensajes y variables de estado.
   self.Show;
@@ -323,4 +248,4 @@ begin
 end;
 
 end.
-//312
+//326

@@ -200,7 +200,7 @@ begin
   griRegistros.AgrEncabTxt('COL_FECHA'   , 110);
   griRegistros.AgrEncabTxt('MES'         , 40);
   griRegistros.AgrEncabTxt('USUARIO'     , 50);
-  griRegistros.AgrEncabTxt('DESCRIPCIÓN' , 250);
+  griRegistros.AgrEncabTxt('DESCRIPCIÓN' , 300);
   griRegistros.FinEncab;
   griRegistros.OpAutoNumeracion:=true;
   griRegistros.OpDimensColumnas:=true;

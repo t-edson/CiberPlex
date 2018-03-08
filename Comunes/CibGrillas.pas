@@ -1,6 +1,6 @@
 {Unidad con clases para mejorar las que presenta "UtilsGrilla", agregando opciones de
 edición más seguras y completas, a las grillas.
-Tal vez debean incluirse estas clases en la unidad Utilsgrilla, ya que son bastante
+Tal vez deban incluirse estas clases en la unidad Utilsgrilla, ya que son bastante
 genéricas y personalizables.}
 unit CibGrillas;
 {$mode objfpc}{$H+}
@@ -22,7 +22,7 @@ type
   TEvIniEditarCelda = procedure(col, fil: integer; txtInic: string) of object;
   TEvFinEditarCelda = procedure(var eveSal:TEvSalida; col, fil: integer;
                                 var ValorAnter, ValorNuev: string) of object;
-  TEvLeerColorFondo = function(col, fil: integer): TColor of object;
+  TEvLeerColorFondo = function(col, fil: integer; EsSelec: boolean): TColor of object;
   TEvLlenarLista    = procedure(lstGrilla: TListBox; fil, col: integer;
                                 editTxt: string) of object;
 
@@ -71,10 +71,12 @@ type
       Shift: TShiftState; X, Y: Integer); override;
   public
     OnIniEditarCelda : TEvIniEditarCelda;  //Inicia la edición de una celda
-    OnFinEditarCelda : TEvFinEditarCelda;  //Finaliza la edición de una celda
+    OnFinEditarCelda : TEvFinEditarCelda;  //Antes de finalizar la edición de una celda
+    OnFinEditarCelda2: TEvFinEditarCelda;  //Al Finalizar la edición de una celda
     OnLlenarLista    : TEvLlenarLista;     //Se pide llenar la lista de completado
     OnModificado     : procedure of object;
     procedure IniciarEdicion(txtInic: string); virtual;
+    procedure OcultContrEdicion;
     procedure TerminarEdicion(eventSalida: TEvSalida; ValorAnter, ValorNuev: string
       ); virtual;
     function EnEdicion: boolean;
@@ -253,6 +255,15 @@ begin
   //Muestra la lista de completado
   TestForCompletionList(filIniCelda, colIniCelda, txtInic);
 end;
+procedure TGrillaEdic.OcultContrEdicion;
+{Oculta los controles usados para la edición de contenido.}
+begin
+  edGrilla.OnExit := nil;  {Para evitar llamada recursiva de este evento. Se debe hacer
+                            antes de ocultarlo.}
+  edGrilla.Visible:=false;
+  lstGrilla.Visible:=false;
+  if grilla.Visible then grilla.SetFocus;    //retorna enfoque a la grilla
+end;
 procedure TGrillaEdic.TerminarEdicion(eventSalida: TEvSalida; ValorAnter, ValorNuev: string);
 begin
 //debugln('---TerminarEdicion');
@@ -263,17 +274,12 @@ begin
       //Notar que no llama a OnModificado.
     end;
   end;
-  //Se porcede a terminar la edición
-  edGrilla.OnExit := nil;  {Para evitar llamada recursiva de este evento. Se debe hacer
-                            antes de ocultarlo.}
-  edGrilla.Visible:=false;
-  lstGrilla.Visible:=false;
-  if grilla.Visible then grilla.SetFocus;    //retorna enfoque a la grilla
+  //Se procede a terminar la edición
+  OcultContrEdicion;
   case eventSalida of
   evsTecEnter: begin
     grilla.Cells[colIniCelda, filIniCelda] := ValorNuev;  //acepta valor
     MovASiguienteColVis(grilla);   //pasa a siguiente columna
-//    AdelantarAFilaVis(grilla);   //pasa a siguiente línea
     if OnModificado<>nil then OnModificado();
   end;
   evsTecTab: begin
@@ -294,6 +300,9 @@ begin
     //No cambia el valor
     //grilla.Cells[colIniCelda, filIniCelda] := ValorAnter;  //acepta valor
   end;
+  end;
+  if OnFinEditarCelda2<>nil then begin
+    OnFinEditarCelda2(eventSalida, grilla.Col, grilla.Row, ValorAnter, ValorNuev);
   end;
 end;
 function TGrillaEdic.EnEdicion: boolean;
@@ -557,12 +566,17 @@ begin
     end;
     if OpResaltFilaSelec and EsFilaSeleccionada(aRow) then begin
       //Fila seleccionada. (Debe estar activada la opción "goRowHighligh", para que esto funcione bien.)
-      cv.Brush.Color := clBtnFace;
+      if OnLeerColorFondo<>nil then begin
+        cv.Brush.Color := OnLeerColorFondo(aCol, aRow, true);
+      end else begin
+        cv.Brush.Color := clBtnFace;
+      end;
     end else begin
-      if OnLeerColorFondo<>nil then
-        cv.Brush.Color := OnLeerColorFondo(aCol, aRow)
-      else
+      if OnLeerColorFondo<>nil then begin
+        cv.Brush.Color := OnLeerColorFondo(aCol, aRow, false);
+      end else begin
         cv.Brush.Color := clWhite;
+      end;
     end;
     cv.FillRect(aRect);   //fondo
     if aCol<cols.Count then begin

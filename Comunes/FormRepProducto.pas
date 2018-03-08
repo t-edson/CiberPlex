@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, TAGraph, TASeries, Forms, Controls, Graphics,
   Dialogs, ExtCtrls, StdCtrls, EditBtn, LCLProc, Grids, ComCtrls, Menus,
-  ActnList, Buttons, RegistrosVentas, FormAgrupRep, CibProductos, Globales,
+  ActnList, Buttons, RegistrosVentas, FormAgrupRep, CibTabProductos, Globales,
   MisUtils, UtilsGrilla, dateutils;
 const
   MSJ_TODASCATEG  = '<<Todas las Categorías>>';

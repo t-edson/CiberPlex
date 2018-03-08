@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Grids, ExtCtrls,
   Buttons, Menus, ActnList, StdCtrls, LCLProc, LCLType, Clipbrd,
-  UtilsGrilla, CibProductos, CibUtils, FrameFiltCampo,
+  UtilsGrilla, CibTabInsumos, CibUtils, FrameFiltCampo,
   FrameFiltArbol, FrameEditGrilla, FormCalcul, MisUtils;
 type
   { TfrmAdminInsum }
@@ -64,23 +64,18 @@ type
     procedure fraFiltCampoCambiaFiltro;
     procedure fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
-    procedure fraGri_Modificado(TipModif: TugTipModif);
+    procedure fraGri_Modificado(TipModif: TugTipModif; filAfec: integer);
     procedure fraGri_ReqNuevoReg(fil: integer);
     function griLeerColorFondo(col, fil: integer): TColor;
-    procedure SolicCerrarArbol;
   private
     TabIns: TCibTabInsumo;
     fraFiltArbol1: TfraFiltArbol;
-    fraGri     : TfraEditGrilla;
     FormatMon: string;
-    procedure GrillaAReg(f: integer; reg: TCibRegInsumo);
-    procedure ListaAGrilla;
     procedure RefrescarFiltros;
-    procedure RegAGrilla(reg: TCibRegInsumo; f: integer);
   public
+    fraGri     : TfraEditGrilla;
     Modificado : boolean;
     OnGrabado : procedure of object;
-    function GrillaATabString: string;
     procedure Exec(TabPro0: TCibTabInsumo; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
   end;
@@ -125,81 +120,45 @@ begin
     MensajeVisibles(lblNumRegist, fraGri.RowCount-1, fraGri.RowCount-1);
   end;
 end;
-procedure TfrmAdminInsum.RegAGrilla(reg: TCibRegInsumo; f: integer);
-{Mueve un registro de la tabla de productos, a una fila de la grilla}
-begin
-  colCodigo.ValStr[f]   := reg.Cod;
-  colCateg.ValStr[f]    := reg.Categ;
-  colSubcat.ValStr[f]   := reg.Subcat;
-  colDescri.ValStr[f]   := reg.Desc;
-  colUso.ValStr[f]      := reg.Uso;
-  colStock.ValNum[f]    := reg.Stock;
-  colMarca.ValStr[f]    := reg.Marca;
-  colUniCom.ValStr[f]   := reg.UnidComp;
-  colPreCos.ValNum[f]   := reg.PreCosto;
-  colProvee.ValStr[f]   := reg.provee;
-  colUltCom.ValDatTim[f]:= reg.ultCom;
-  colComent.ValStr[F]   := REG.Coment;
-end;
-procedure TfrmAdminInsum.GrillaAReg(f: integer; reg: TCibRegInsumo);
-begin
-  reg.Cod       := colCodigo.ValStr[f];
-  reg.Categ     := colCateg.ValStr[f];
-  reg.Subcat    := colSubcat.ValStr[f];
-  reg.Desc      := colDescri.ValStr[f];
-  reg.Uso       := colUso.ValStr[f];
-  reg.Stock     := colStock.ValNum[f];
-  reg.Marca     := colMarca.ValStr[f];
-  reg.UnidComp  := colUniCom.ValStr[f];
-  reg.PreCosto  := colPreCos.ValNum[f];
-  reg.provee    := colProvee.ValStr[f];
-  reg.ultCom    := colUltCom.ValDatTim[f];
-  REG.Coment    := colComent.ValStr[F];
-end;
-procedure TfrmAdminInsum.ListaAGrilla;
-{Mueve datos de la lista a la grills}
-var
-  f: Integer;
-  reg: TCibRegInsumo;
-  n: LongInt;
-  grilla: TStringGrid;
-begin
-  grilla := fraGri.grilla;
-  grilla.BeginUpdate;
-  grilla.RowCount:=1;  //limpia datos
-  n := TabIns.Insumos.Count+1;
-  grilla.RowCount:= n;
-  f := 1;
-  for reg in TabIns.Insumos do begin
-    grilla.Cells[0, f] := IntToStr(f);
-    RegAGrilla(reg, f);
-    f := f + 1;
-  end;
-  grilla.EndUpdate();
-end;
-function TfrmAdminInsum.GrillaATabString: string;
-{Devuelve la grilla en formato de tabla-archivo (datos listos para escribir) en disco.}
-var
-  TabTmp: TCibTabInsumo;
-  f: Integer;
-  reg: TCibRegInsumo;
-begin
-  //Mueve datos a lista temporal. Si se ha hecho la validación, no debería fallar.
-  TabTmp:= TCibTabInsumo.Create;   //lista temporal
-  for f:=1 to fraGri.RowCount-1 do begin
-    reg := TCibRegInsumo.Create;
-    GrillaAReg(f, reg);
-    TabTmp.Insumos.Add(reg);
-  end;
-  //Convierte lista a cadena
-  TabTmp.SaveToString(Result);
-  TabTmp.Destroy;
-end;
 procedure TfrmAdminInsum.Exec(TabPro0: TCibTabInsumo; FormatMoneda: string);
 begin
   TabIns := TabPro0;
+  //Configura frame
+  fraGri.IniEncab(TabIns);
+  colCodigo := fraGri.AgrEncabTxt   ('CÓDIGO'          , 50, 'ID_INSUM');
+  colCateg  := fraGri.AgrEncabTxt   ('CATEGORÍA'       , 60, 'CATEGORIA');
+  colSubcat := fraGri.AgrEncabTxt   ('SUBCATEGORÍA'    , 60, 'SUBCATEGORIA');
+  colDescri := fraGri.AgrEncabTxt   ('DESCRIPCIÓN'     ,180, 'DESCRIPCION');
+  colUso    := fraGri.AgrEncabTxt   ('USO'             , 70, 'USO');
+  colStock  := fraGri.AgrEncabNum   ('STOCK'           , 40, 'STOCK');
+  colMarca  := fraGri.AgrEncabTxt   ('MARCA RECOMENDADA',70, 'MARCA');
+  colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA' , 80, 'UNIDCOMP');
+  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'    , 55, 'PRECOSTO');
+  colProvee := fraGri.AgrEncabTxt   ('PROVEEDOR'       ,100, 'PROVEE');
+  colUltCom := fraGri.AgrEncabDatTim('FECHA ULT. COMPRA',70, 'ULTCOM');
+  colComent := fraGri.AgrEncabTxt   ('COMENTARIO'      ,100, 'COMENT');
+  fraGri.FinEncab;
+  if fraGri.MsjError<>'' then begin
+    //Muestra posible mensaje de error, pero deja seguir.
+    MsgErr(fraGri.MsjError);
+  end;
+  //Define restricciones a los campos
+  colCodigo.restric:= [ucrNotNull, ucrUnique];
+  colCateg.restric:=[ucrNotNull];   //no nulo
+  colSubcat.restric:=[ucrNotNull];   //no nulo
+  colDescri.restric:=[ucrNotNull];   //no nulo
+
+  fraFiltCampo.Inic(fraGri.gri, 4);
+  fraFiltCampo.OnCambiaFiltro:=@fraFiltCampoCambiaFiltro;
+  fraFiltCampo.OnKeyDown:=@fraFiltCampoKeyDown;
+
+  fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Productos');
+  fraFiltArbol1.OnCambiaFiltro:= @fraFiltCampoCambiaFiltro;
+  fraFiltArbol1.OnSoliCerrar:=@acVerArbCatExecute;
+  //////////////////////////////////////////
   FormatMon := FormatMoneda;
-  ListaAGrilla;  //Hace el llenado inicial de productos
+  fraGri.ReadFromTable;
+
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;   //Para actualizar mensajes y variables de estado.
   self.Show;
@@ -220,37 +179,8 @@ begin
   fraGri        := TfraEditGrilla.Create(self);
   fraGri.Parent := self;
   fraGri.Align  := alClient;
-  //Configura grilla
-  fraGri.IniEncab;
-               fraGri.AgrEncabNum   ('N°'             , 25);
-  colCodigo := fraGri.AgrEncabTxt   ('CÓDIGO'         , 50);
-  colCateg  := fraGri.AgrEncabTxt   ('CATEGORÍA'      , 60);
-  colSubcat := fraGri.AgrEncabTxt   ('SUBCATEGORÍA'   , 60);
-  colDescri := fraGri.AgrEncabTxt   ('DESCRIPCIÓN'    ,180);
-  colUso    := fraGri.AgrEncabTxt   ('USO'            , 70);
-  colStock  := fraGri.AgrEncabNum   ('STOCK'          , 40);
-  colMarca  := fraGri.AgrEncabTxt   ('MARCA RECOMENDADA',70);
-  colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA', 80);
-  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'   , 55);
-  colProvee := fraGri.AgrEncabTxt   ('PROVEEDOR'      , 100);
-  colUltCom := fraGri.AgrEncabDatTim('FECHA ULT. COMPRA', 70);
-  colComent := fraGri.AgrEncabTxt   ('COMENTARIO'     , 100);
-  fraGri.FinEncab;
   fraGri.OnGrillaModif:=@fraGri_Modificado;
   fraGri.OnReqNuevoReg:=@fraGri_ReqNuevoReg;
-  //Define restricciones a los campos
-  colCodigo.restric:= [ucrNotNull, ucrUnique];
-  colCateg.restric:=[ucrNotNull];   //no nulo
-  colSubcat.restric:=[ucrNotNull];   //no nulo
-  colDescri.restric:=[ucrNotNull];   //no nulo
-
-  fraFiltCampo.Inic(fraGri.gri, 4);
-  fraFiltCampo.OnCambiaFiltro:=@fraFiltCampoCambiaFiltro;
-  fraFiltCampo.OnKeyDown:=@fraFiltCampoKeyDown;
-
-  fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Productos');
-  fraFiltArbol1.OnCambiaFiltro:= @fraFiltCampoCambiaFiltro;
-  fraFiltArbol1.OnSoliCerrar:=@SolicCerrarArbol;
 end;
 procedure TfrmAdminInsum.FormShow(Sender: TObject);
 begin
@@ -273,7 +203,8 @@ begin
     fraGri.SetFocus;
   end;
 end;
-procedure TfrmAdminInsum.fraGri_Modificado(TipModif: TugTipModif);
+procedure TfrmAdminInsum.fraGri_Modificado(TipModif: TugTipModif;
+  filAfec: integer);
 begin
   fraFiltArbol1.LeerCategorias;
 //  RefrescarFiltros;
@@ -298,10 +229,6 @@ begin
                             btnGrabar.Focused or
                             btnValidar.Focused or
                             btnMostCateg.Focused) then fraGri.SetFocus;
-end;
-procedure TfrmAdminInsum.SolicCerrarArbol;
-begin
-  acVerArbCatExecute(self);
 end;
 procedure TfrmAdminInsum.btnCerrarClick(Sender: TObject);
 begin
@@ -351,4 +278,4 @@ begin
 end;
 
 end.
-
+//354

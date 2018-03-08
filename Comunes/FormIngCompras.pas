@@ -3,7 +3,7 @@ unit FormIngCompras;
 interface
 uses
   Classes, SysUtils, FileUtil, DateTimePicker, Forms, Controls, Graphics,
-  Dialogs, EditBtn, StdCtrls, Grids, ButtonPanel, CibProductos, UtilsGrilla;
+  Dialogs, EditBtn, StdCtrls, Grids, ButtonPanel, CibTabProductos, UtilsGrilla;
 type
 
   { TfrmIngCompras }

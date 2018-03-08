@@ -3,9 +3,9 @@ unit FormAdminProduc;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Grids, ExtCtrls,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   Buttons, Menus, ActnList, StdCtrls, LCLProc, LCLType, Clipbrd,
-  UtilsGrilla, CibProductos, CibUtils, FrameFiltCampo,
+  UtilsGrilla, CibTabProductos, CibUtils, FrameFiltCampo,
   FrameFiltArbol, FrameEditGrilla, MisUtils;
 type
   { TfrmAdminProduc }
@@ -49,7 +49,6 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure SolicCerrarArbol;
     procedure FormShow(Sender: TObject);
   private  //Referencias a columnas
     colRentab: TugGrillaCol;
@@ -64,26 +63,20 @@ type
     colPreCos: TugGrillaCol;
     colFecCre: TugGrillaCol;
     colFecMod: TugGrillaCol;
-    procedure fraGri_Modificado(TipModif: TugTipModif);
+    procedure fraGri_Modificado(TipModif: TugTipModif; filAfec: integer);
     procedure fraGri_ReqNuevoReg(fil: integer);
   private
     TabPro: TCibTabProduc;
-    regAux: TCibRegProduc;   //registro auxiliar
     fraFiltArbol1: TfraFiltArbol;
-    fraGri     : TfraEditGrilla;
     FormatMon: string;
-    procedure fraFiltCampoCambiaFiltro;
     procedure fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     function griLeerColorFondo(col, fil: integer): TColor;
     procedure RefrescarFiltros;
-    procedure RegAGrilla(reg: TCibRegProduc; f: integer);
-    procedure GrillaAReg(f: integer; reg: TCibRegProduc);
-    procedure ListaAGrilla;
   public
+    fraGri     : TfraEditGrilla;
     Modificado:  boolean;
     OnGrabado : procedure of object;
-    function GrillaATabString: string;
     procedure Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
   end;
@@ -125,79 +118,46 @@ begin
     MensajeVisibles(lblNumRegist, fraGri.RowCount-1, fraGri.RowCount-1);
   end;
 end;
-procedure TfrmAdminProduc.RegAGrilla(reg: TCibRegProduc; f: integer);
-{Mueve un registro de la tabla de productos, a una fila de la grilla}
-begin
-  colCodigo.ValStr[f]   := reg.Cod;
-  colCateg.ValStr[f]    := reg.Categ;
-  colSubcat.ValStr[f]   := reg.Subcat;
-  colPreUni.ValNum[f]   := reg.preVenta;
-  colDescri.ValStr[f]   := reg.Desc;
-  colStock.ValNum[f]    := reg.Stock;
-  colMarca.ValStr[f]    := reg.Marca;
-  colUniCom.ValStr[f]   := reg.UnidComp;
-  colPreCos.ValNum[f]   := reg.PreCosto;
-  colFecCre.ValDatTim[f]:= reg.fecCre;
-  colFecMod.ValDatTim[f]:= reg.fecMod;
-end;
-procedure TfrmAdminProduc.GrillaAReg(f: integer; reg: TCibRegProduc);
-begin
-  reg.Cod       := colCodigo.ValStr[f];
-  reg.Categ     := colCateg.ValStr[f];
-  reg.Subcat    := colSubcat.ValStr[f];
-  reg.preVenta  := colPreUni.ValNum[f];
-  reg.Desc      := colDescri.ValStr[f];
-  reg.Stock     := colStock.ValNum[f];
-  reg.Marca     := colMarca.ValStr[f];
-  reg.UnidComp  := colUniCom.ValStr[f];
-  reg.PreCosto  := colPreCos.ValNum[f];
-  reg.fecCre    := colFecCre.ValDatTim[f];
-  reg.fecMod    := colFecMod.ValDatTim[f];
-end;
-procedure TfrmAdminProduc.ListaAGrilla;
-{Mueve datos de la lista a la grills}
-var
-  f: Integer;
-  reg: TCibRegProduc;
-  n: LongInt;
-  grilla: TStringGrid;
-begin
-  grilla := fraGri.grilla;
-  grilla.BeginUpdate;
-  grilla.RowCount:=1;  //limpia datos
-  n := TabPro.Productos.Count+1;
-  grilla.RowCount:= n;
-  f := 1;
-  for reg in TabPro.Productos do begin
-    grilla.Cells[0, f] := IntToStr(f);
-    RegAGrilla(reg, f);
-    f := f + 1;
-  end;
-  grilla.EndUpdate();
-end;
-function TfrmAdminProduc.GrillaATabString: string;
-{Devuelve la grilla en formato de tabla-archivo (datos listos para escribir) en disco.}
-var
-  TabTmp: TCibTabProduc;
-  f: Integer;
-  reg: TCibRegProduc;
-begin
-  //Mueve datos a lista temporal. Si se ha hecho la validación, no debería fallar.
-  TabTmp:= TCibTabProduc.Create;   //lista temporal
-  for f:=1 to fraGri.RowCount-1 do begin
-    reg := TCibRegProduc.Create;
-    GrillaAReg(f, reg);
-    TabTmp.Productos.Add(reg);
-  end;
-  //Convierte lista a cadena
-  TabTmp.SaveToString(Result);
-  TabTmp.Destroy;
-end;
 procedure TfrmAdminProduc.Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
 begin
   TabPro := TabPro0;
+  //Configura frame
+  fraGri.IniEncab(TabPro);
+  colCodigo := fraGri.AgrEncabTxt   ('CÓDIGO'        , 60, 'ID_PROD');
+  colCateg  := fraGri.AgrEncabTxt   ('CATEGORÍA'     , 70, 'CATEGORIA');
+  colSubcat := fraGri.AgrEncabTxt   ('SUBCATEGORÍA'  , 80, 'SUBCATEGORIA');
+  colPreUni := fraGri.AgrEncabNum   ('PRC.UNITARIO'  , 55, 'PREVENTA');
+  colDescri := fraGri.AgrEncabTxt   ('DESCRIPCIÓN'   ,180, 'DESCRIPCION');
+  colStock  := fraGri.AgrEncabNum   ('STOCK'         , 40, 'STOCK');
+  colStock.editable:=false;   //Los cambios de stock, son otro proceso
+  colMarca  := fraGri.AgrEncabTxt   ('MARCA'         , 50, 'MARCA');
+  colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA',70, 'UNIDCOMP');
+  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 55, 'PRECOSTO');
+  colFecCre := fraGri.AgrEncabDatTim('FECHA CREACION', 70, 'FECCRE');
+  colFecMod := fraGri.AgrEncabDatTim('FECHA MODIFIC.', 70, 'FECMOD');
+  fraGri.FinEncab;
+  fraGri.AddRowEnter := true;  //Para que se puedan agregar nuevas filas
+  if fraGri.MsjError<>'' then begin
+    //Muestra posible mensaje de error, pero deja seguir.
+    MsgErr(fraGri.MsjError);
+  end;
+  //Define restricciones a los campos
+  colCodigo.restric:= [ucrNotNull, ucrUnique];
+  colCateg.restric:=[ucrNotNull];   //no nulo
+  colSubcat.restric:=[ucrNotNull];   //no nulo
+  colDescri.restric:=[ucrNotNull];   //no nulo
+
+  fraFiltCampo.Inic(fraGri.gri, 5);
+  fraFiltCampo.OnCambiaFiltro:=@RefrescarFiltros;
+  fraFiltCampo.OnKeyDown:=@fraFiltCampoKeyDown;
+
+  fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Productos');
+  fraFiltArbol1.OnCambiaFiltro:= @RefrescarFiltros;
+  fraFiltArbol1.OnSoliCerrar:=@acVerArbCatExecute;
+  ///////////////////////////
   FormatMon := FormatMoneda;
-  ListaAGrilla;  //Hace el llenado inicial de productos
+  fraGri.ReadFromTable;
+
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;   //Para actualizar mensajes y variables de estado.
   self.Show;
@@ -214,43 +174,13 @@ begin
   fraFiltArbol1.Align := alLeft;
   Splitter1.Align := alLeft;
   fraFiltArbol1.Visible:=false;
-
+  //Configura Frame de grilla
   fraGri        := TfraEditGrilla.Create(self);
   fraGri.Parent := self;
   fraGri.Align  := alClient;
-  //Configura grilla
-  fraGri.IniEncab;
-               fraGri.AgrEncabNum   ('N°'            , 25);
-  colCodigo := fraGri.AgrEncabTxt   ('CÓDIGO'        , 60);
-  colCateg  := fraGri.AgrEncabTxt   ('CATEGORÍA'     , 70);
-  colSubcat := fraGri.AgrEncabTxt   ('SUBCATEGORÍA'  , 80);
-  colPreUni := fraGri.AgrEncabNum   ('PRC.UNITARIO'  , 55);
-  colDescri := fraGri.AgrEncabTxt   ('DESCRIPCIÓN'   ,180);
-  colStock  := fraGri.AgrEncabNum   ('STOCK'         , 40);
-  colStock.editable:=false;   //Los cambios de stock, son otro proceso
-  colMarca  := fraGri.AgrEncabTxt   ('MARCA'         , 50);
-  colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA',70);
-  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 55);
-  colFecCre := fraGri.AgrEncabDatTim('FECHA CREACION', 70);
-  colFecMod := fraGri.AgrEncabDatTim('FECHA MODIFIC.', 70);
-  fraGri.FinEncab;
   fraGri.OnGrillaModif:=@fraGri_Modificado;
   fraGri.OnReqNuevoReg:=@fraGri_ReqNuevoReg;
-  //Define restricciones a los campos
-  colCodigo.restric:= [ucrNotNull, ucrUnique];
-  colCateg.restric:=[ucrNotNull];   //no nulo
-  colSubcat.restric:=[ucrNotNull];   //no nulo
-  colDescri.restric:=[ucrNotNull];   //no nulo
 
-  fraFiltCampo.Inic(fraGri.gri, 4);
-  fraFiltCampo.OnCambiaFiltro:=@fraFiltCampoCambiaFiltro;
-  fraFiltCampo.OnKeyDown:=@fraFiltCampoKeyDown;
-
-  fraFiltArbol1.Inic(fraGri.gri, colCateg, colSubcat, 'Productos');
-  fraFiltArbol1.OnCambiaFiltro:= @fraFiltCampoCambiaFiltro;
-  fraFiltArbol1.OnSoliCerrar:=@SolicCerrarArbol;
-
-  regAux:= TCibRegProduc.Create;  //registro auxiliar
 end;
 procedure TfrmAdminProduc.FormShow(Sender: TObject);
 begin
@@ -259,10 +189,11 @@ begin
   colPreUni.formato := FormatMon;
   colPreCos.formato := FormatMon;
 end;
-procedure TfrmAdminProduc.fraGri_Modificado(TipModif: TugTipModif);
+procedure TfrmAdminProduc.fraGri_Modificado(TipModif: TugTipModif;
+  filAfec: integer);
 begin
   fraFiltArbol1.LeerCategorias;
-//  RefrescarFiltros;
+  RefrescarFiltros;
 end;
 procedure TfrmAdminProduc.fraGri_ReqNuevoReg(fil: integer);
 begin
@@ -278,10 +209,6 @@ function TfrmAdminProduc.griLeerColorFondo(col, fil: integer): TColor;
 begin
   Result := clWhite;
 end;
-procedure TfrmAdminProduc.fraFiltCampoCambiaFiltro;
-begin
-  RefrescarFiltros;
-end;
 procedure TfrmAdminProduc.fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
@@ -291,7 +218,6 @@ begin
 end;
 procedure TfrmAdminProduc.FormDestroy(Sender: TObject);
 begin
-  regAux.Destroy;
   fraGri.Destroy;
 end;
 
@@ -303,11 +229,6 @@ begin
                               btnGrabar.Focused or
                               btnValidar.Focused or
                               btnMostCateg.Focused) then fraGri.SetFocus;
-end;
-
-procedure TfrmAdminProduc.SolicCerrarArbol;
-begin
-  acVerArbCatExecute(self);
 end;
 procedure TfrmAdminProduc.btnCerrarClick(Sender: TObject);
 begin
@@ -332,7 +253,7 @@ begin
 end;
 procedure TfrmAdminProduc.acArcValidarExecute(Sender: TObject);
 {Realiza la validación de los campos de la grilla. Esto implica ver si los valores de
-cadena, contenidos en todos los campos, se pueden traducir a los valores netivos del
+cadena, contenidos en todos los campos, se pueden traducir a los valores nativos del
 tipo TRegProdu, y si son valores legales.}
 begin
   fraGri.ValidarGrilla;  //Puede mostrar mensaje de error
@@ -348,14 +269,16 @@ procedure TfrmAdminProduc.acHerMostRentabExecute(Sender: TObject);
 {Muestra una columna de rentabilidad}
 var
   f: Integer;
+  regAux: TCibRegProduc;   //registro auxiliar
 begin
+  regAux:= TCibRegProduc.Create;  //registro auxiliar
   colRentab := fraGri.BuscAgreEncabNum('RENTABILIDAD', 50);  //agrega si no existe
   colRentab.formato:='%.2f';
   fraFiltCampo.AgregarColumnaFiltro('Por RENTABILIDAD', colRentab.idx);
   //Calcula la rentabilidad
   for f := 1 to fraGri.RowCount-1 do begin
     try
-      GrillaAReg(f, regAux);
+      fraGri.GrillaAReg(f, regAux);
       if regAux.PreCosto = 0 then begin
         colRentab.ValNum[f] := 0;
       end else begin
@@ -365,7 +288,8 @@ begin
     except
     end;
   end;
+  regAux.Destroy;
 end;
 
 end.
-
+//304

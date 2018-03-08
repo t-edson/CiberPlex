@@ -284,19 +284,23 @@ La idea es que los campos de fecha, se ubiquen siempre verticalmente, en el Stri
 Notar que los elementos de "catsVer0", están ordenados.
 }
 var
-  tmp: String;
-  i: Integer;
+  fecAgrup: String;
+  i, idx: Integer;
 begin
-  tmp := FechaACad(fec, agrVert, ComboBox2.ItemIndex);
-  if catsVer.Find(tmp, i) then begin
+  //Obtiene la cadena que representa al día, semana, mes o total
+  fecAgrup := FechaACad(fec, agrVert, ComboBox2.ItemIndex);
+   //Verifica si "fecAgrup" ya existe en alguna de las veldas verticales
+  if catsVer.Find(fecAgrup, i) then begin
     //Ya existe en "i"
     Result := TCPCellValues(catsVer.Objects[i]);
   end else begin
     //Es nuevo, se debe crear
-    catsVer.Add(tmp);
+    idx := catsVer.Add(fecAgrup);   //Agrega y lee posición
     Result := TCPCellValues.Create(CatsHor.Count);  //crea objeto
-    catsVer.Objects[catsVer.Count-1] := Result;  //guarda la referencia
+    catsVer.Objects[idx] := Result;  //guarda la referencia
   end;
+  //Actualiza la lista de fechas de "Result", para el cálculo del número de días.
+  Result.RegistrarFecha(fec, agrVert, fecAgrup);
 end;
 
 end.

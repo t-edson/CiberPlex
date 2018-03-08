@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   ButtonPanel, StdCtrls, Grids, ActnList, Menus, Buttons, LCLType,
-  FrameFiltCampo, UtilsGrilla, MisUtils, CibFacturables, CibProductos, FormConfig;
+  FrameFiltCampo, UtilsGrilla, MisUtils, CibFacturables, CibTabProductos, FormConfig;
 type
   //Evento para agregar una venta
   TevAgregarVenta = procedure(CibFac: TCibFac; itBol: string) of object;

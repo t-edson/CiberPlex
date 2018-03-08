@@ -90,11 +90,11 @@ type
     procedure ProcesaDigitado(dig: String);
     procedure ProcesarContestada(cansal: String);
   Public
+    descolg   :Boolean;    //Bandera de descolgado
     listLLamadas: regLlamada_list;  //lista de llamadas
     costo_tot : Double;     //costo acumulado de todas las llamadas
     num_llam  : integer;    //número de llamadas acumuladas
     col_costo : Integer;    //indica cual es la columna que contiene el costo
-    descolg   :Boolean;    //Bandera de descolgado
     descon    : Boolean;    //Cabina desconectada (sin energía).
     llamAct   : TRegLlamada; //llamada en curso
     trama_tmp : string;     //bolsa temporal para la trama

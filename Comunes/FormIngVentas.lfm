@@ -1,10 +1,10 @@
 object frmIngVentas: TfrmIngVentas
   Left = 412
-  Height = 241
+  Height = 244
   Top = 300
   Width = 496
   Caption = 'INGRESO DE VENTAS'
-  ClientHeight = 241
+  ClientHeight = 244
   ClientWidth = 496
   Color = 11468718
   KeyPreview = True
@@ -15,7 +15,7 @@ object frmIngVentas: TfrmIngVentas
   object ButtonPanel1: TButtonPanel
     Left = 6
     Height = 26
-    Top = 209
+    Top = 212
     Width = 484
     OKButton.Name = 'OKButton'
     OKButton.DefaultCaption = True
@@ -50,7 +50,7 @@ object frmIngVentas: TfrmIngVentas
   object Panel2: TPanel
     Left = 0
     Height = 54
-    Top = 149
+    Top = 152
     Width = 496
     Align = alBottom
     BevelOuter = bvNone
@@ -275,7 +275,7 @@ object frmIngVentas: TfrmIngVentas
   end
   object grilla: TStringGrid
     Left = 0
-    Height = 125
+    Height = 128
     Top = 24
     Width = 496
     Align = alClient
