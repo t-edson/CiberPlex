@@ -142,6 +142,7 @@ type
     procedure frmAdminProduc_Grabar;
     procedure frmAdminProvee_Grabar;
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+    procedure frmIngStock_Grabar;
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
     procedure Plog(s: string);
@@ -264,13 +265,31 @@ var
 begin
   //Graba localmente
   tabPro.ActualizarTabNoStock(frmAdminProduc.fraGri.TableAsString);
-  frmAdminProduc.Modificado := false;
   //Graba en servidor
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
   frmAdminProduc.Habilitar(false);
   //Se debe grabar en el servidor
   tipModif := MODTAB_NOSTCK;   //tipo de modificación
   ServCab.PonerComando(CVIS_ACTPROD, 0, tipModif, StringFromFile(arcProduc));
+end;
+procedure TForm1.frmIngStock_Grabar;
+var
+  TabIngSTock, res: String;
+  tipModif: Integer;
+begin
+  //Graba localmente
+  TabIngSTock := frmIngStock.TabIngSTock;
+  res := tabPro.ActualizarTabIngStock(TabIngSTock);
+  if tabPro.msjError <> '' then begin
+    //Esto no debería pasar si se maneja bien la tabla
+    MsgErr('Error actualizando tabla de productos.');
+    MsgErr(tabPro.msjError);
+  end;
+  //Graba en el servidor
+  if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
+  frmIngStock.Habilitar(false);
+  tipModif := MODTAB_INGSTCK;   //tipo de modificación
+  ServCab.PonerComando(CVIS_ACTPROD, 0, tipModif, TabIngSTock);
 end;
 procedure TForm1.frmAdminProvee_Grabar;
 var
@@ -421,6 +440,7 @@ begin
   frmAdminProduc.OnGrabado:=@frmAdminProduc_Grabar;
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsumGrabado;
+  frmIngStock.OnGrabado := @frmIngStock_Grabar;
   Caption := NOM_PROG + ' ' + VER_PROG;
 end;
 procedure TForm1.Timer1Timer(Sender: TObject);
@@ -465,9 +485,10 @@ begin
   end;
   C_MENS_PC: begin
     msgexc(trama.traDat);
-    frmAdminProduc.Habilitar(true);  //por si estaba deshabilitado
-    frmAdminProvee.Habilitar(true);  //por si estaba deshabilitado
-    frmAdminInsum.Habilitar(true);  //por si estaba deshabilitado
+    frmAdminProduc.Habilitar(true);  //Por si estaba deshabilitado
+    frmAdminProvee.Habilitar(true);  //Por si estaba deshabilitado
+    frmAdminInsum.Habilitar(true);   //Por si estaba deshabilitado
+    frmIngStock.Habilitar(true);     //Por si estaba deshabilitado
   end;
   C_PAN_COMPL: begin   //se pide una pantalla completa
     EnviaPantalla;
