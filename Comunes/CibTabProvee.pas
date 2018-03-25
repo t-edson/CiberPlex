@@ -5,7 +5,8 @@ interface
 uses
   Classes, SysUtils, fgl, LConvEncoding, MisUtils, LCLProc, CibBD;
 const
-  MODTAB_NOSTCK = 5;  //Modificación de tabla de productos sin tocar el stock
+  MODTAB_NOSTCK = 5;   //Modificación de tabla de productos sin tocar el stock
+  MODTAB_INGSTCK = 6;  //Modificación de tabla de productos, para ingresar stock
 
 type
 

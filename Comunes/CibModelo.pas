@@ -187,7 +187,7 @@ procedure TCibModelo.EjecComando(idVista: string; tram: TCPTrama);
 
  Parámetros:
  * idVista -> Identifica a la vista que genera la petición. Para comandos
-              locales, está en blanco.
+              locales, debe valer '$'.
  * tram -> Es la trama que contiene el comando que debe ejecutarse.
 
 Como este método ejecuta todos los comandos solicitados por la cabinas de Internet, o de

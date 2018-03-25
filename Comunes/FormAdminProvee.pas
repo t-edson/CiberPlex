@@ -3,7 +3,7 @@ unit FormAdminProvee;
 interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Buttons, ActnList, Grids, Menus, LCLType, LCLProc,
+  StdCtrls, Buttons, ActnList, Menus, LCLType, LCLProc,
   FrameFiltCampo, UtilsGrilla, FrameFiltArbol, FrameEditGrilla, MisUtils,
   CibTabProvee, CibUtils;
 type

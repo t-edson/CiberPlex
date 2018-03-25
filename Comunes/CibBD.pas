@@ -31,8 +31,8 @@ unit CibBD;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, Types, LCLProc, LConvEncoding, Dos, MisUtils,
-  CibFacturables;
+  Classes, SysUtils, fgl, Types, LCLProc, LConvEncoding, FileUtil, Dos,
+  MisUtils, CibFacturables;
 const
   //Tipo de modificación a realizar en una tabla
   MODTAB_TOTAL = 0;   //Reemplazar completamente la tabla
@@ -44,7 +44,7 @@ type
   //Evento para solicitar la modficación de una tabla
   TEvModifTablaBD = function(NombTabla: string; tipModif: integer;
                              const datos: string): string of object;
-  //Evento para resgitrar un mensje de error
+  //Evento para registrar un mensje de error
   TEvProLogError = function(msj: string): integer of object;
 
   //Tipos de datos aceptados
@@ -92,7 +92,7 @@ type
   private
     idx    : integer;   //posición actual ¿Se usa realmente?
     FmsjError: string;
-    procedure SetmsjError(AValue: string);
+    procedure SetMsjError(AValue: string);
   protected
     archivo: string;
     //Rutinas de modificación de bajo nivel. Protegidas
@@ -112,7 +112,7 @@ type
     function EOF: boolean;
   public
     msgUpdate  : string;  //Mensaje de actualziación
-    property msjError: string read FmsjError write SetmsjError;  //Mensaje de error
+    property msjError: string read FmsjError write SetMsjError;  //Mensaje de error
     procedure SaveToString(out str: string);
 //    function FindReg(str: string; idxCol: word): integer;
   public  //Eventos
@@ -192,7 +192,7 @@ begin
     end;
   end;
 end;
-procedure TCibTablaMaest.SetmsjError(AValue: string);
+procedure TCibTablaMaest.SetMsjError(AValue: string);
 begin
   if FmsjError = AValue then exit;
   FmsjError:=AValue;
@@ -297,6 +297,7 @@ begin
     //Actualiza archivo de productos
     DeleteFile(archivo);     //Borra anterior
     RenameFile(tmp_produc, archivo); //Renombra nuevo
+    //CopyFile(tmp_produc, archivo);  //Mantiene la copia
   except
     on e: Exception do begin
       msjError := 'Error grabando: ' + archivo + ' - ' + e.Message;

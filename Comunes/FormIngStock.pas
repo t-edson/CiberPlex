@@ -64,6 +64,7 @@ type
     OnGrabado : procedure of object;
     function TabIngStock: string;
     procedure Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
+    procedure Habilitar(estado: boolean);
   end;
 
 var
@@ -198,7 +199,7 @@ begin
   colCateg.editable:=false;
   colSubcat := fraGri.AgrEncabTxt  ('SUBCATEGORÍA'  , 80, 'SUBCATEGORIA');
   colSubcat.editable:=false;
-  colPreUni := fraGri.AgrEncabNum   ('PRC.UNITARIO'  , 55, 'PREVENTA');
+  colPreUni := fraGri.AgrEncabNum   ('PRC.UNITARIO'  , 50, 'PREVENTA');
   colPreUni.editable := false;
   colPreUni.visible := false;
   colDescri := fraGri.AgrEncabTxt  ('DESCRIPCIÓN'   ,180, 'DESCRIPCION');
@@ -224,7 +225,7 @@ begin
   colSubcat.restric:=[ucrNotNull];   //no nulo
   colDescri.restric:=[ucrNotNull];   //no nulo
 
-  fraFiltCampo.Inic(fraGri.gri, 4);
+  fraFiltCampo.Inic(fraGri.gri, 5);
   fraFiltCampo.OnCambiaFiltro := @RefrescarFiltros;
   fraFiltCampo.OnKeyDown := @fraFiltCampoKeyDown;
 
@@ -242,6 +243,10 @@ begin
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;   //Para actualizar mensajes y variables de estado.
   self.Show;
+end;
+procedure TfrmIngStock.Habilitar(estado: boolean);
+begin
+  btnGrabar.Enabled:=estado;
 end;
 procedure TfrmIngStock.btnMostCategClick(Sender: TObject);
 begin

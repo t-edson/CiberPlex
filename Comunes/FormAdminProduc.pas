@@ -75,7 +75,6 @@ type
     procedure RefrescarFiltros;
   public
     fraGri     : TfraEditGrilla;
-    Modificado:  boolean;
     OnGrabado : procedure of object;
     procedure Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
@@ -191,11 +190,25 @@ begin
 end;
 procedure TfrmAdminProduc.fraGri_Modificado(TipModif: TugTipModif;
   filAfec: integer);
+var
+  tmpFlt: String;
+  tmpSel: Integer;
 begin
+  tmpFlt := fraFiltArbol1.FiltroArbolCat;   //Guarda selección
+  tmpSel := fraGri.FilaSelecc;              //Guarda fila seleccionada
   fraFiltArbol1.LeerCategorias;
-  RefrescarFiltros;
+  fraFiltArbol1.FiltroArbolCat := tmpFlt;  //Mantiene el filtro
+  RefrescarFiltros;  //COn el filtro ya definido, lo aplica
+  fraGri.FilaSelecc := tmpSel;             //Mantiene la fila seleccionada
+  if TipModif = umdFilAgre then begin
+    //Se agregó una fila nueva.
+    //Se muestra la nueva fila, por si el filtro la ha ocultado.
+    fraGri.MostrarFila(filAfec);
+  end;
 end;
 procedure TfrmAdminProduc.fraGri_ReqNuevoReg(fil: integer);
+var
+  uFil: Integer;
 begin
   //Llena los campos por defecto.
   colCodigo.ValStr[fil] := '#'+IntToStr(fraGri.RowCount);
@@ -204,6 +217,18 @@ begin
   colPreCos.ValNum[fil] := 0;
   colFecCre.ValDatTim[fil] := now;
   colFecMod.ValDatTim[fil] := now;
+  //Copia propiedades de la última fila.
+  {Esto se hace con el fin de evitar que esta nueva fila se oculte cuando se
+  aplique el filtro, nuevamente, asumiendo que solo se tiene activo el filtro de
+  Categoría-Subcategoría.}
+  fraGri.OcultarFila(fil);  //Se oculta la fila agregada para poder, identificar a la última visible
+  uFil := fraGri.UltimaFilaVisible;
+  if uFil<>-1 then begin
+    colCateg.ValStr[fil]  := colCateg.ValStr[uFil];
+    colSubcat.ValStr[fil] := colSubcat.ValStr[uFil];
+  end;
+  fraGri.MostrarFila(fil);  //Se muestra para poder seleccionarla
+  fragri.SeleccFila(fil);   //Deja seleccionada la nueva fila
 end;
 function TfrmAdminProduc.griLeerColorFondo(col, fil: integer): TColor;
 begin
@@ -220,11 +245,11 @@ procedure TfrmAdminProduc.FormDestroy(Sender: TObject);
 begin
   fraGri.Destroy;
 end;
-
 procedure TfrmAdminProduc.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
     if Key = VK_F3 then fraFiltCampo.SetFocus;
+    if Key = VK_F4 then acVerArbCatExecute(self);
     if (Key = VK_ESCAPE) and (btnCerrar.Focused or
                               btnGrabar.Focused or
                               btnValidar.Focused or

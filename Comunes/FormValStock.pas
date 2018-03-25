@@ -3,7 +3,7 @@ unit FormValStock;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Types, FileUtil, Forms, Controls, Graphics, Dialogs,
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, Buttons, StdCtrls, LCLType, ActnList, UtilsGrilla, FrameFiltCampo,
   FrameFiltArbol, BasicGrilla, MisUtils, CibTabProductos, FrameEditGrilla,
   CibUtils;

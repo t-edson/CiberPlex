@@ -415,14 +415,14 @@ object frmRepIngresos: TfrmRepIngresos
     end
     object TabSheet2: TTabSheet
       Caption = 'Gráfica'
-      ClientHeight = 431
-      ClientWidth = 691
+      ClientHeight = 425
+      ClientWidth = 686
       OnShow = TabSheet2Show
       object Chart1: TChart
         Left = 0
-        Height = 431
+        Height = 425
         Top = 0
-        Width = 691
+        Width = 686
         AxisList = <        
           item
             Minors = <>

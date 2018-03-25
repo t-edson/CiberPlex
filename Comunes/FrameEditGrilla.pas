@@ -136,7 +136,9 @@ type
     procedure gri_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure gri_MouseUpCell(Button: TMouseButton; row, col: integer);
     procedure NumerarFilas;
-  public
+    function GetFilaSelecc: integer;
+    procedure SetFilaSelecc(AValue: integer);
+  public  //Campos generales
     gri          : TGrillaEdicFor;  //Objeto grilla editable
     AddRowEnd    : boolean;         //Se agrega una fila vacía con FinEncab()
     AddRowEnter  : boolean;         //Se agrega una fila vacía cuando se pulsa <enter>
@@ -173,6 +175,11 @@ type
     procedure Filtrar;
     function FilVisibles: integer;
     function FilaVacia(f: integer): boolean;
+    procedure MostrarFila(f: integer);
+    procedure OcultarFila(f: integer);
+    property FilaSelecc: integer read GetFilaSelecc write SetFilaSelecc;
+    procedure SeleccFila(f: integer);
+    function UltimaFilaVisible: integer;
   public  //Trabajo con tablas de datos TCibTablaMaest
     Table    : TCibTablaMaest;  //Referencia a tabla de datos
     colData: TugGrillaCol;  //Columna con la fila completa de la tabla
@@ -301,6 +308,41 @@ begin
   for c := grilla.FixedCols to grilla.ColCount-1 do begin
     if trim(grilla.Cells[c, f])<>'' then exit(false);
   end;
+end;
+procedure TfraEditGrilla.MostrarFila(f: integer);
+{Hace visible la fila indicada.}
+begin
+  if f<0 then exit;
+  if f>gri.grilla.RowCount-1 then exit;
+  gri.grilla.RowHeights[f] := ALT_FILA_DEF;
+end;
+procedure TfraEditGrilla.OcultarFila(f: integer);
+begin
+  if f<0 then exit;
+  if f>gri.grilla.RowCount-1 then exit;
+  gri.grilla.RowHeights[f] := 0;
+end;
+function TfraEditGrilla.GetFilaSelecc: integer;
+begin
+  Result := gri.grilla.Row;
+end;
+procedure TfraEditGrilla.SetFilaSelecc(AValue: integer);
+begin
+  if AValue<0 then exit;
+  if AValue>gri.grilla.RowCount-1 then exit;
+  gri.grilla.Row := AValue;
+end;
+procedure TfraEditGrilla.SeleccFila(f: integer);
+{Selecciona la fila indicada}
+begin
+  if f<0 then exit;
+  if f>gri.grilla.RowCount-1 then exit;
+  gri.grilla.Row := f;
+end;
+function TfraEditGrilla.UltimaFilaVisible: integer;
+{Devuelve la última fila visible de la grilla. Si no encuentra ninguna, devuelve -1.}
+begin
+  Result := UltimaFilaVis(gri.grilla);
 end;
 //Trabajo con tablas de datos TCibTablaMaest
 procedure TfraEditGrilla.IniEncab(tabFuente: TCibTablaMaest);

@@ -2,7 +2,7 @@ unit FormAdminInsum;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Grids, ExtCtrls,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   Buttons, Menus, ActnList, StdCtrls, LCLProc, LCLType, Clipbrd,
   UtilsGrilla, CibTabInsumos, CibUtils, FrameFiltCampo,
   FrameFiltArbol, FrameEditGrilla, FormCalcul, MisUtils;

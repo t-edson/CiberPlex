@@ -4,8 +4,8 @@ interface
 uses
   Classes, SysUtils, dateutils, FileUtil, Forms, Controls, Graphics, Dialogs,
   ExtCtrls, StdCtrls, EditBtn, Grids, Menus, ActnList, LCLProc, ComCtrls,
-  Clipbrd, Globales, RegistrosVentas, FormAgrupRep,
-  UtilsGrilla, MisUtils;
+  Clipbrd, LCLType, Globales, RegistrosVentas, FormAgrupRep,
+  UtilsGrilla, FrameFiltCampo, MisUtils;
 type
 
   { TfrmRepEventos }
@@ -16,11 +16,14 @@ type
     Button1: TButton;
     btnConfig: TButton;
     ComboBox1: TComboBox;
+    fraFiltCampo1: TfraFiltCampo;
     GroupBox1: TGroupBox;
     Label4: TLabel;
     optDia: TRadioButton;
     optSem: TRadioButton;
     optMes: TRadioButton;
+    Panel2: TPanel;
+    Panel3: TPanel;
     StatusBar1: TStatusBar;
     TipoReg: TCheckGroup;
     dat1: TDateEdit;
@@ -49,6 +52,8 @@ type
     procedure CreaCategoriasHoriz(campo: integer);
     function DoReqCadMoneda(valor: double): string;
     function FilaComoTexto(f: integer): string;
+    procedure fraFiltCampo1KeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure LLenarGrilla(conColSem: boolean);
     procedure LlenarRegistro(f: integer; reg: regEven);
     procedure ReporteAgrupado;
@@ -85,6 +90,10 @@ begin
   //LLena grilla
   //DbgOut('Llenando grilla...');
   griRegistros.AsignarGrilla(grilla);
+  fraFiltCampo1.Inic(griRegistros, 5);  //inicia filtro
+  fraFiltCampo1.OnKeyDown := @fraFiltCampo1KeyDown;
+  fraFiltCampo1.Visible := true;
+
   grilla.BeginUpdate;
   grilla.RowCount:=1+regs.Count;  //hace espacio
   f := 1;
@@ -263,6 +272,13 @@ begin
   for c:=COL_INI to grilla.ColCount-1 do begin
     if c=COL_INI then Result := grilla.Cells[c,f]
     else Result := Result + #9 + grilla.Cells[c,f];
+  end;
+end;
+procedure TfrmRepEventos.fraFiltCampo1KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DOWN then begin
+    if grilla.Visible then grilla.SetFocus;
   end;
 end;
 procedure TfrmRepEventos.acGenCopTodExecute(Sender: TObject);  //Copia toda la grilla

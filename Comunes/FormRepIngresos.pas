@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, TAGraph, TASeries, Forms, Controls, Graphics, ExtCtrls,
   StdCtrls, EditBtn, Grids, Menus, ActnList, LCLProc, ComCtrls, Clipbrd,
-  Buttons, Globales, RegistrosVentas, FormAgrupRep,
+  Buttons, LCLType, Globales, RegistrosVentas, FormAgrupRep,
   UtilsGrilla, FrameFiltCampo, BasicGrilla, MisUtils;
 type
 
@@ -71,6 +71,8 @@ type
     procedure DibujarCurva;
     function DoReqCadMoneda(valor: double): string;
     function FilaComoTexto(f: integer): string;
+    procedure fraFiltCampo1KeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure griAgrupadosMouseUpCell(Button: TMouseButton; row, col: integer);
     procedure grillaSelection(Sender: TObject; aCol, aRow: Integer);
     procedure LLenarGrilla;
@@ -128,6 +130,9 @@ begin
   griRegistros.AsignarGrilla(grilla);
   fraFiltCampo1.Inic(griRegistros, 13);  //inicia filtro
   fraFiltCampo2.Inic(griRegistros, 8);  //inicia filtro
+  fraFiltCampo1.OnKeyDown := @fraFiltCampo1KeyDown;
+  fraFiltCampo2.OnKeyDown := @fraFiltCampo1KeyDown;
+
   fraFiltCampo1.Visible := true;
   fraFiltCampo2.Visible := true;
 
@@ -415,6 +420,13 @@ begin
   for c:=COL_INI to grilla.ColCount-1 do begin
     if c=COL_INI then Result := grilla.Cells[c,f]
     else Result := Result + #9 + grilla.Cells[c,f];
+  end;
+end;
+procedure TfrmRepIngresos.fraFiltCampo1KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DOWN then begin
+    if grilla.Visible then grilla.SetFocus;
   end;
 end;
 procedure TfrmRepIngresos.btnConfigClick(Sender: TObject);
