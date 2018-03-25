@@ -1,5 +1,0 @@
-0001	LIMPIEZA	LIMPIEZA		Productos de limpieza				5	70		
-0002	MANTENIMIENTO	ILUMINCACION		Focos o lámparas				2	5		
-COD002	COCINA	INSUMOS		Cualquier insumo de cocina				10	50		
-CO003	COUNTER	INSUMOS		Toner para impresora				200	0		
-COD003	COUNTER	OTRO		<Ingrese descripción>				10	5		
