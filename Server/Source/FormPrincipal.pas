@@ -3,14 +3,14 @@ unit FormPrincipal;
 interface
 uses
   Classes, SysUtils, Types, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
-  ComCtrls, Dialogs, StdCtrls, LCLType, MisUtils, ogDefObjGraf, FormIngVentas,
-  FormConfig, frameCfgUsuarios, Globales, frameVisCPlex, ObjGraficos,
-  FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe, FormCalcul,
-  FormContDinero, FormSelecObjetos, FormRegCompras, FormInicio, CibTramas,
-  CibFacturables, CibTabProvee, CibTabProductos, CibTabInsumos, FormAdminProvee,
-  CibBD, FormAdminInsum, FormCambClave, FormRepProducto, FormRepEventos,
-  FormValStock, FormIngStock, UniqueInstance, CibGFacMesas, CibGFacClientes,
-  CibGFacCabinas, CibGFacNiloM;
+  ComCtrls, Dialogs, StdCtrls, LCLType, FileUtil, MisUtils, ogDefObjGraf,
+  FormIngVentas, FormConfig, frameCfgUsuarios, Globales, frameVisCPlex,
+  ObjGraficos, FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe,
+  FormCalcul, FormContDinero, FormSelecObjetos, FormRegCompras, FormInicio,
+  CibTramas, CibFacturables, CibTabProvee, CibTabProductos, CibTabInsumos,
+  FormAdminProvee, CibBD, FormAdminInsum, FormCambClave, FormRepProducto,
+  FormRepEventos, FormValStock, FormIngStock, UniqueInstance, CibGFacMesas,
+  CibGFacClientes, CibGFacCabinas, CibGFacNiloM;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -173,7 +173,7 @@ type
     procedure CerrarSesion;
     procedure frmAdminInsum_Grabar;
     procedure frmAdminProvee_Grabar;
-    procedure frmIngStockGrabado;
+    procedure frmIngStock_Grabar;
     procedure frmValStockGrabado;
     procedure IniciarSesion(usuIni: string='');
     procedure RefrescarEncabezado;
@@ -198,8 +198,6 @@ type
     procedure Visor_ClickDerGFac(ogGFac: TogGFac; X, Y: Integer);
     procedure Visor_DobleClickFac(ogFac: TogFac; X, Y: Integer);
     procedure Visor_DobleClickGFac(ogGFac: TogGFac; X, Y: Integer);
-    procedure Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
-      ParamY: word; cad: string);
     function Modelo_LogIngre(ident: char; msje: string; dCosto: Double
       ): integer;
     function Modelo_LogError(msj: string): integer;
@@ -422,7 +420,8 @@ begin
   res := tabPro.ActualizarTabNoStock(frmAdminProduc.fraGri.TableAsString);
   VerificarCargaProductos(false);
   MsgBox(res);
-  frmAdminProduc.Modificado := false;
+  //Tal vez sería mejor que se usara PonerComando(), como lo hace
+  //TfrmPrincipal.frmIngStock_Grabar() para centralizar mejor las acciones.
 end;
 procedure TfrmPrincipal.frmAdminProvee_Grabar;
 begin
@@ -432,31 +431,16 @@ begin
   MsgBox(tabPrv.msgUpdate);
   frmAdminProvee.Modificado := false;
 end;
-procedure TfrmPrincipal.frmIngStockGrabado;
+procedure TfrmPrincipal.frmIngStock_Grabar;
 {Se pide grabar los ingresos de stock}
 var
-  res, lin, id, incr, TabIngSTock, desc: String;
-  lineas: TStringList;
-  a: TStringDynArray;
-  prod: TCibRegProduc;
+  TabIngSTock: String;
+  tipModif: Integer;
 begin
   TabIngSTock := frmIngStock.TabIngSTock;
-  res := tabPro.ActualizarTabIngStock(TabIngSTock);
-  VerificarCargaProductos(false);
-  MsgBox(res);
-  //frmIngStock.Modificado := false;
-  //Genera información en el registro
-  lineas := TStringList.Create;
-  lineas.Text := TabIngSTock;
-  for lin in lineas do begin
-    a := Explode(#9, lin);
-    id := a[0];
-    incr := trim(a[1]);
-    prod := tabPro.BuscarProd(id);
-    if prod<>nil then desc := prod.Desc else desc := '';
-    log.PLogInf(usuario, 'Stock de ' + id + '('+ desc +')' + ' incrementado en ' + incr + ' unid.');  //registra el mensaje
-  end;
-  lineas.Destroy;
+  //Mande el comando al modelo.
+  tipModif := MODTAB_INGSTCK;   //tipo de modificación
+  PonerComando(CVIS_ACTPROD, 0, tipModif, TabIngSTock);
 end;
 procedure TfrmPrincipal.frmValStockGrabado;
 {Se pide grabar las validaciones del stock}
@@ -536,10 +520,14 @@ procedure TfrmPrincipal.Modelo_EstadoArchivo;
 {Guarda el estado de los objetos al archivo de estado}
 var
   lest: TStringList;
+  arcEstadoTmp: String;
 begin
   lest:= TSTringList.Create;
   lest.Text := Modelo.CadEstado;
-  lest.SaveToFile(arcEstado);
+  arcEstadoTmp := arcEstado + '.tmp';   //Nombre de archivo temporal
+  if FileExists(arcEstadoTmp) then DeleteFile(arcEstadoTmp);
+  CopyFile(arcEstado, arcEstadoTmp);  //Crea una copia antes de escribir
+  lest.SaveToFile(arcEstado);  //Finalmente escribe
   lest.Destroy;
 end;
 procedure TfrmPrincipal.Modelo_ReqConfigGen(var NombProg, NombLocal: string;
@@ -564,7 +552,6 @@ begin
       //un error, porque es prioritario registrar la venta.
       MsgBox(msjError);
   end;
-
 end;
 procedure TfrmPrincipal.Modelo_RespComando(idVista: string; comando: TCPTipCom;
   ParamX, ParamY: word; cad: string);
@@ -625,11 +612,16 @@ begin
 end;
 function TfrmPrincipal.Modelo_ModifTablaBD(NombTabla: string;
   tipModif: integer; const datos: string): string;
+var
+  TabIngSTock, lin, id, incr, desc: String;
+  lineas: TStringList;
+  a: TStringDynArray;
+  prod: TCibRegProduc;
 begin
   if Upcase(trim(NombTabla)) = 'PRODUCTOS' then begin
     //Se pide modificar la tabla de productos
     case tipModif of
-    MODTAB_TOTAL: begin  //Modifiación total
+    MODTAB_TOTAL: begin  //Modificación total
       tabPro.UpdateAll(datos);
       Result := tabPro.msgUpdate;
       VerificarCargaProductos(true);
@@ -638,6 +630,24 @@ begin
       //Modificación sin tocar el stock.
       Result := tabPro.ActualizarTabNoStock(datos);
       VerificarCargaProductos(true);
+    end;
+    MODTAB_INGSTCK: begin
+      //Modificación de ingreso de stock
+      TabIngSTock := datos;
+      Result := tabPro.ActualizarTabIngStock(TabIngSTock);
+      VerificarCargaProductos(true);
+      //Genera información en el registro
+      lineas := TStringList.Create;
+      lineas.Text := TabIngSTock;
+      for lin in lineas do begin
+        a := Explode(#9, lin);
+        id := a[0];
+        incr := trim(a[1]);
+        prod := tabPro.BuscarProd(id);
+        if prod<>nil then desc := prod.Desc else desc := '';
+        log.PLogInf(usuario, 'Stock de ' + id + '('+ desc +')' + ' incrementado en ' + incr + ' unid.');  //registra el mensaje
+      end;
+      lineas.Destroy;
     end;
     else
       Result := 'No se reconoce tipo de modificación.'
@@ -667,19 +677,22 @@ begin
     end;
   end;
 end;
-procedure TfrmPrincipal.Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
-  ParamY: word; cad: string);
-{Aquí se llega por dos vías, ambas de tipo local (ya que los comandos remotos no llegan
-por aquí):
-1. Un GFac ha solicitado ejecutar un comando. Estos comandos son los que los objetos
+procedure TfrmPrincipal.PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+{Envía un comando al modelo, de la misma forma a como si fuera un comando remoto.
+Aquí se llega por diversas vías, todas de tipo local (los comandos remotos no llegan por
+aquí):
+1. Un GFAC ha solicitado ejecutar un comando. Estos comandos son los que los objetos
 facturables generan a través de su método TCibGFac.EjecAccion.
 2. El visor ha generado un evento, como el arrastre de objetos, que requiere ejecutar
 una acción sobre el modelo.
+3. Acciones de frmIngVentas, frmBoleta, o de frmPrincipal.
 Observar que este método es similar a PonerComando(), pero allí llegan los comandos
 que se generan con acciones de FormPrincipal.}
+
 begin
   TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
-  //Llama como evento, indicando que vista solicitante es la local '$'.
+  //Llama como evento, indicando que es una trama local.
+  //No se incluye nombre del OF y GOF que generan la trama, proque es local.
   Modelo.EjecComando('$', TramaTmp);
 end;
 procedure TfrmPrincipal.Visor_ClickDerFac(ogFac: TogFac; X, Y: Integer);
@@ -840,7 +853,7 @@ begin
   Visor.OnDobleClickFac := @Visor_DobleClickFac;
   Visor.OnDobleClickGFac:= @Visor_DobleClickGFac;
   Visor.OnObjectsMoved  := @Visor_ObjectsMoved;
-  Visor.OnSolicEjecCom  := @Visor_SolicEjecCom;  //Necesario para procesar las acciones de movimiento de boletas
+  Visor.OnSolicEjecCom  := @PonerComando;  //Necesario para procesar las acciones de movimiento de boletas
   Visor.OnReqCadMoneda  := @Config.CadMon;   //Para que pueda mostrar monedas
   Visor.OnMouseUp       := @Visor_MouseUp;
   //Crea los objetos gráficos del visor de acuerdo al archivo INI.
@@ -910,7 +923,7 @@ begin
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsum_Grabar;
 
-  frmIngStock.OnGrabado := @frmIngStockGrabado;
+  frmIngStock.OnGrabado := @frmIngStock_Grabar;
   frmValStock.OnGrabado := @frmValStockGrabado;
 
   frmRepIngresos.OnReqCadMoneda:=@Config.CadMon;
@@ -1130,15 +1143,6 @@ var
 begin
   txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
   PonerComando(CVIS_ACBOLET, ACCITM_GRA, 0, txt);
-end;
-procedure TfrmPrincipal.PonerComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
-{Envía un comando al modelo, de la misma forma a como si fuera un comando remoto.
-}
-begin
-  TramaTmp.Inic(comando, ParamX, ParamY, cad); //usa trama temporal
-  //Llama como evento, indicando que es una trama local.
-  //No se incluye nombre del OF y GOF que geenran la trama, proque es local.
-  Config.grupos.EjecComando('', TramaTmp);
 end;
 //////////////// Acciones //////////////////////
 procedure TfrmPrincipal.acArcRutTrabExecute(Sender: TObject);

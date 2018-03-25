@@ -28,7 +28,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;Reportes;.."/>
+            <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils-0.6;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;.."/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -402,7 +402,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils 0.6b;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;Reportes;.."/>
+      <OtherUnitFiles Value="..\..\..\_Librerias\MisUtils-0.6;..\..\..\_Librerias\ogEditGraf 1.6b;..\..\..\_Librerias\MiConfig 0.3;..\..\..\_Librerias\SynFacilUtils 0.8;..\..\..\_Librerias\Xpres-1.2;..\..\..\_Librerias\UtilsGrilla 0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
