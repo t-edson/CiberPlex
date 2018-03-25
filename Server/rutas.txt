@@ -356,3 +356,286 @@ DEFINIR _internacional    = 5	"c4c1"
 9983	_entel
 
 999	_movistar
+
+////////Internacional
+
+00	_internacional
+
+////////FIJOS DE PROVINCIA////////
+//SERIE	NUMDIG	CANAL	PREFIJO
+
+0412	_fijo_provincia
+0413	_fijo_provincia
+0414	_fijo_provincia
+0415	_fijo_provincia
+0416	_fijo_provincia
+0417	_fijo_provincia
+0418	_fijo_provincia
+04181	_rural_prov
+04182	_rural_prov
+04183	_rural_prov
+
+0422	_fijo_provincia
+0423	_fijo_provincia
+0424	_fijo_provincia
+0425	_fijo_provincia
+0426	_fijo_provincia
+0427	_fijo_provincia
+0428	_fijo_provincia
+04281	_rural_prov
+04282	_rural_prov
+04283	_rural_prov
+
+0432	_fijo_provincia
+0433	_fijo_provincia
+0434	_fijo_provincia
+0435	_fijo_provincia
+0436	_fijo_provincia
+0437	_fijo_provincia
+0438	_fijo_provincia
+04381	_rural_prov
+04382	_rural_prov
+04383	_rural_prov
+
+0442	_fijo_provincia
+0443	_fijo_provincia
+0444	_fijo_provincia
+0445	_fijo_provincia
+0446	_fijo_provincia
+0447	_fijo_provincia
+0448	_fijo_provincia
+04481	_rural_prov
+04482	_rural_prov
+04483	_rural_prov
+
+0512	_fijo_provincia
+0513	_fijo_provincia
+0514	_fijo_provincia
+0515	_fijo_provincia
+0516	_fijo_provincia
+0517	_fijo_provincia
+0518	_fijo_provincia
+05181	_rural_prov
+05182	_rural_prov
+05183	_rural_prov
+
+0522	_fijo_provincia
+0523	_fijo_provincia
+0524	_fijo_provincia
+0525	_fijo_provincia
+0526	_fijo_provincia
+0527	_fijo_provincia
+0528	_fijo_provincia
+05281	_rural_prov
+05282	_rural_prov
+05283	_rural_prov
+
+0532	_fijo_provincia
+0533	_fijo_provincia
+0534	_fijo_provincia
+0535	_fijo_provincia
+0536	_fijo_provincia
+0537	_fijo_provincia
+0538	_fijo_provincia
+05381	_rural_prov
+05382	_rural_prov
+05383	_rural_prov
+
+0542	_fijo_provincia
+0543	_fijo_provincia
+0544	_fijo_provincia
+0545	_fijo_provincia
+0546	_fijo_provincia
+0547	_fijo_provincia
+0548	_fijo_provincia
+05481	_rural_prov
+05482	_rural_prov
+05483	_rural_prov
+
+0562	_fijo_provincia
+0563	_fijo_provincia
+0564	_fijo_provincia
+0565	_fijo_provincia
+0566	_fijo_provincia
+0567	_fijo_provincia
+0568	_fijo_provincia
+05681	_rural_prov
+05682	_rural_prov
+05683	_rural_prov
+
+0612	_fijo_provincia
+0613	_fijo_provincia
+0614	_fijo_provincia
+0615	_fijo_provincia
+0616	_fijo_provincia
+0617	_fijo_provincia
+0618	_fijo_provincia
+06181	_rural_prov
+06182	_rural_prov
+06183	_rural_prov
+
+0622	_fijo_provincia
+0623	_fijo_provincia
+0624	_fijo_provincia
+0625	_fijo_provincia
+0626	_fijo_provincia
+0627	_fijo_provincia
+0628	_fijo_provincia
+06281	_rural_prov
+06282	_rural_prov
+06283	_rural_prov
+
+0632	_fijo_provincia
+0633	_fijo_provincia
+0634	_fijo_provincia
+0635	_fijo_provincia
+0636	_fijo_provincia
+0637	_fijo_provincia
+0638	_fijo_provincia
+06381	_rural_prov
+06382	_rural_prov
+06383	_rural_prov
+
+0642	_fijo_provincia
+0643	_fijo_provincia
+0644	_fijo_provincia
+0645	_fijo_provincia
+0646	_fijo_provincia
+0647	_fijo_provincia
+0648	_fijo_provincia
+06481	_rural_prov
+06482	_rural_prov
+06483	_rural_prov
+
+0652	_fijo_provincia
+0653	_fijo_provincia
+0654	_fijo_provincia
+0655	_fijo_provincia
+0656	_fijo_provincia
+0657	_fijo_provincia
+0658	_fijo_provincia
+06581	_rural_prov
+06582	_rural_prov
+06583	_rural_prov
+
+0662	_fijo_provincia
+0663	_fijo_provincia
+0664	_fijo_provincia
+0665	_fijo_provincia
+0666	_fijo_provincia
+0667	_fijo_provincia
+0668	_fijo_provincia
+06681	_rural_prov
+06682	_rural_prov
+06683	_rural_prov
+
+0672	_fijo_provincia
+0673	_fijo_provincia
+0674	_fijo_provincia
+0675	_fijo_provincia
+0676	_fijo_provincia
+0677	_fijo_provincia
+0678	_fijo_provincia
+06781	_rural_prov
+06782	_rural_prov
+06783	_rural_prov
+
+0722	_fijo_provincia
+0723	_fijo_provincia
+0724	_fijo_provincia
+0725	_fijo_provincia
+0726	_fijo_provincia
+0727	_fijo_provincia
+0728	_fijo_provincia
+07281	_rural_prov
+07282	_rural_prov
+07283	_rural_prov
+
+0732	_fijo_provincia
+0733	_fijo_provincia
+0734	_fijo_provincia
+0735	_fijo_provincia
+0736	_fijo_provincia
+0737	_fijo_provincia
+0738	_fijo_provincia
+07381	_rural_prov
+07382	_rural_prov
+07383	_rural_prov
+
+0742	_fijo_provincia
+0743	_fijo_provincia
+0744	_fijo_provincia
+0745	_fijo_provincia
+0746	_fijo_provincia
+0747	_fijo_provincia
+0748	_fijo_provincia
+07481	_rural_prov
+07482	_rural_prov
+07483	_rural_prov
+
+0762	_fijo_provincia
+0763	_fijo_provincia
+0764	_fijo_provincia
+0765	_fijo_provincia
+0766	_fijo_provincia
+0767	_fijo_provincia
+0768	_fijo_provincia
+07681	_rural_prov
+07682	_rural_prov
+07683	_rural_prov
+
+0822	_fijo_provincia
+0823	_fijo_provincia
+0824	_fijo_provincia
+0825	_fijo_provincia
+0826	_fijo_provincia
+0827	_fijo_provincia
+0828	_fijo_provincia
+08281	_rural_prov
+08282	_rural_prov
+08283	_rural_prov
+
+0832	_fijo_provincia
+0833	_fijo_provincia
+0834	_fijo_provincia
+0835	_fijo_provincia
+0836	_fijo_provincia
+0837	_fijo_provincia
+0838	_fijo_provincia
+08381	_rural_prov
+08382	_rural_prov
+08383	_rural_prov
+
+0842	_fijo_provincia
+0843	_fijo_provincia
+0844	_fijo_provincia
+0845	_fijo_provincia
+0846	_fijo_provincia
+0847	_fijo_provincia
+0848	_fijo_provincia
+08481	_rural_prov
+08482	_rural_prov
+08483	_rural_prov
+
+////////NÙMEROS PORTADOS////////
+//SERIE	NUMDIG	CANAL	PREFIJO
+
+949196091 _movistar
+997516684 _movistar
+997521575 _movistar
+948660071 _movistar
+947566111 _movistar
+995412452 _movistar
+962980893 _movistar
+991420090 _movistar
+997892376 _entel
+993362746 _entel
+951766191 _entel
+987937704 _entel
+992478980 _entel
+994823936 _entel
+989640126 _entel
+994687714 _entel
+994623021 _entel
+984764240 _vitel
+993291891 _vitel
