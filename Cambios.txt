@@ -1,6 +1,21 @@
+1.7.3
+=====
+Se mejora el comportamiento para cuando se inserta un nuevo registro y hay filtros activos, 
+en la ventana de Administración de productos.
+Se elimina el campo "TfrmAdminProduc.Modificado", en la unidad FormAdminProduc.
+Se elimina el método TfrmPrincipal.Visor_SolicEjecCom() y se pasa a usar 
+TfrmPrincipal.PonerComando().
+Se modifica TfrmPrincipal.frmIngStock_Grabar() para que la acción se ejcute llamando a 
+PonerComando() y no lo haga directamente.
+Se implementa la opción de modificar el stock remotamente con el formulario (Ingreso de 
+stock).
+
 1.7.2
 =====
 SERVER:
+Se actualizó la ruta de la librería "MisUtils".
+Se modifica rutina TfrmPrincipal.Modelo_EstadoArchivo() para que cree una copia antes de 
+modificar el archivo de estado, por seguridad.
 Se corrige el campo por defecto del filtro, en la ventana de Administ. de Productos.
 Se corrige el filtro de árbol, en la ventana de Administ. de Productos, Insumos y 
 Proveedores.
