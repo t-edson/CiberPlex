@@ -46,6 +46,7 @@ type
     Image22: TImage;
     Image23: TImage;
     Image24: TImage;
+    Image25: TImage;
     Image3: TImage;
     Image4: TImage;
     Image5: TImage;
@@ -210,9 +211,10 @@ begin
   ctfCabinas: begin
     ogCab := TogCabina.Create(motEdi.v2d, Fac);
     motEdi.AgregarObjGrafico(ogCab, false);
-    ogCab.icoPC := Image5.Picture.Graphic;   //asigna imagen
-    ogCab.icoPCdes:= Image6.Picture.Graphic;   //asigna imagen
-    ogCab.icoUSU := Image2.Picture.Graphic;  //asigna imagen
+    ogCab.icoPC    := Image5.Picture.Graphic;   //asigna imagen
+    ogCab.icoPCdes := Image6.Picture.Graphic;   //asigna imagen
+    ogCab.icoUSU   := Image2.Picture.Graphic;  //asigna imagen
+    ogCab.icoComent := Image25.Picture.Graphic;
     ogCab.icoRedAct := Image3.Picture.Graphic;
     ogCab.icoRedDes := Image4.Picture.Graphic;
     ogCab.SizeLocked := true;

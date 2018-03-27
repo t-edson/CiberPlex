@@ -51,7 +51,8 @@ type
   TCibColType = (
     ctText,     //columna de tipo texto
     ctFloat,    //columna de tipo numérico
-    ctDatTim    //Columna de tipo Fecha
+    ctDatTim,   //Columna de tipo Fecha
+    ctBool      //Columna de tipo Booleana
   );
 
   TCibEvGetStr = function(): string of object;
@@ -429,6 +430,7 @@ begin
     '0': colType.:= ctText;
     '1': colType := ctFloat;
     '2': colType := ctDatTim;
+    '3': colType := ctBool;
     else
       msjError := 'Error leyendo información de columnas de: ' + archivo;
       exit;

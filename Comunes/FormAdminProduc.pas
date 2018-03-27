@@ -63,6 +63,8 @@ type
     colPreCos: TugGrillaCol;
     colFecCre: TugGrillaCol;
     colFecMod: TugGrillaCol;
+    colActivo: TugGrillaCol;
+    colProvee: TugGrillaCol;
     procedure fraGri_Modificado(TipModif: TugTipModif; filAfec: integer);
     procedure fraGri_ReqNuevoReg(fil: integer);
   private
@@ -134,6 +136,8 @@ begin
   colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 55, 'PRECOSTO');
   colFecCre := fraGri.AgrEncabDatTim('FECHA CREACION', 70, 'FECCRE');
   colFecMod := fraGri.AgrEncabDatTim('FECHA MODIFIC.', 70, 'FECMOD');
+  colActivo := fraGri.AgrEncabBool  ('ACTIVO'        , 30, 'ACTIVO');
+  colProvee := fraGri.AgrEncabTxt   ('PROVEEDOR'     , 70, 'PROVEE');
   fraGri.FinEncab;
   fraGri.AddRowEnter := true;  //Para que se puedan agregar nuevas filas
   if fraGri.MsjError<>'' then begin

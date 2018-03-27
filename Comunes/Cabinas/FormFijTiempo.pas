@@ -167,6 +167,8 @@ begin
     chkLibre.Checked := not chkLibre.Checked;
   end else if (Key = VK_NUMPAD5) and not TextSeleccionado then begin
     chkHorGra.Checked := not chkHorGra.Checked;
+  end else if (Key = VK_SUBTRACT) and not TextSeleccionado then begin
+    BitBtn2Click(self);
   end;
 end;
 
@@ -221,6 +223,7 @@ procedure TfrmFijTiempo.BitBtn2Click(Sender: TObject);
 begin
   cancelo := True;
   Self.Hide;
+  Self.Close;
 end;
 
 procedure TfrmFijTiempo.chkLibreChange(Sender: TObject);

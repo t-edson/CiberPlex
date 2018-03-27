@@ -761,6 +761,12 @@ object frmExplorCab: TfrmExplorCab
       ImageIndex = 15
       OnExecute = acHerCancelTranExecute
     end
+    object acVerCarpDesc: TAction
+      Category = 'Ver'
+      Caption = 'Ver Carpeta de &descargas'
+      ImageIndex = 4
+      OnExecute = acVerCarpDescExecute
+    end
   end
   object Timer1: TTimer
     OnTimer = Timer1Timer
@@ -971,6 +977,9 @@ object frmExplorCab: TfrmExplorCab
     end
     object MenuItem3: TMenuItem
       Caption = '&Ver'
+      object MenuItem26: TMenuItem
+        Action = acVerCarpDesc
+      end
       object MenuItem15: TMenuItem
         Action = acVerRefresc
         Bitmap.Data = {

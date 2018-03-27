@@ -26,6 +26,7 @@ const //Acciones sobre las PC
   C_CABIN_FIJCTA = 06;  //Fija el tiempo de una cabina.
   C_CABIN_PONPAU = 07;  //Pone una cabina en pausa
   C_CABIN_QUIPAU = 08;  //Quita a una cabina, el estado de pausa
+  C_CABIN_EDICOM = 09;  //Edita un comentario
 
   /////// Comandos que se ejecutan remótamente ////////
   //Se ha tratado de respetar el nombre de los comandos del NILOTER-m
@@ -100,17 +101,19 @@ type
     cabCuenta: TCabCuenta;    //campos de conteo de la cabina
     cabConex : TCabConexion;  //campos de conexión de la cabina
     FNombrePC: string;
-    PausadS: integer;  {tiempo pausado en segundos (Contador de
-                        tiempo que la cabina se encuentra en pausa)}
+    PausadS: integer;   {tiempo pausado en segundos (Contador de
+                         tiempo que la cabina se encuentra en pausa)}
     tic    : integer;   //contador para temporización
-    SinRed : boolean;  {Para usar al objeto, solamente como contenedor, sin conexión
-                        por Socket.}
-    //Vaiables temporales
-    ResponderA: string;  //Id de vista, a dónde se debe responder el mensaje
-    DatosjRecib: Boolean;   //bandera para saber cuándo llegan datos de la PC remota
-    arcSal : string;   //Variable para procesar el comando C_FIJ_ARSAL
-    RutaActual: string;  //Ruta de trabajo actual de la cabina
+    SinRed : boolean;   {Para usar al objeto, solamente como contenedor, sin conexión
+                         por Socket.}
+    //VaRiables temporales
+    ResponderA: string;   //Id de vista, a dónde se debe responder el mensaje
+    DatPaqRecib: Boolean; //Bandera para saber cuándo llegan paquetes parciales de la PC remota
+    DatPaqMsje: string;  //Último mensaje recibido cuando se activa DatPaqRecib
+    arcSal    : string;   //Variable para procesar el comando C_FIJ_ARSAL
+    RutaActual: string;   //Ruta de trabajo actual de la cabina
     procedure LimpiarCabina;
+    procedure mnEditComent(Sender: TObject);
     procedure mnDetenCuenta(Sender: TObject);
     procedure mnFijTiempoIni(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
@@ -265,6 +268,7 @@ var
   icoModifCuenta: integer;
   icoDetenCuenta: integer;
   icoPonerManten: integer;
+  icoAgregComent: integer;
   icoPausarCuent: integer;
   icoReinicCuent: integer;
   icoVerExplorad: integer;
@@ -285,6 +289,7 @@ begin
   icoModifCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clockEdit');
   icoDetenCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clock_stop');
   icoPonerManten := CargaPNG(imagList16, imagList32, rutImag, 'PcMant');
+  icoAgregComent := CargaPNG(imagList16, imagList32, rutImag, 'note');
   icoPausarCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
   icoReinicCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
   icoVerExplorad := CargaPNG(imagList16, imagList32, rutImag, 'folderSearch');
@@ -530,7 +535,8 @@ begin
   frmVisMsj.PonerMsje(msj);  //Envía mensaje a su formaulario
   if (msj<>'') and (msj[1]='-') then begin
     //LLegaron mensajes de pedazos de tramas recibidas.
-    DatosjRecib := true;  //Cctualiza bandera
+    DatPaqRecib := true;  //Actualiza bandera
+    DatPaqMsje  := msj;   //CAptura último mensaje
   end;
 end;
 function TCibFacCabina.GetIP: string;
@@ -565,7 +571,7 @@ begin
             N2f(y) + #9 +
             B2f(ConConexion) + #9 +
             NombrePC + #9 +
-            #9 + #9 + #9;
+            Coment + #9 + #9 + #9;
 end;
 procedure TCibFacCabina.SetCadPropied(AValue: string);
 var
@@ -579,6 +585,7 @@ begin
    y := f2N(campos[4]);
    ConConexion := f2B(campos[5]);  //si es TRUE (y SinRed=FALSE), inicia la conexión
    NombrePC := campos[6];
+   Coment := campos[7];
    if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFacCabina.SetNombrePC(AValue: string);
@@ -681,12 +688,12 @@ begin
   end;
   {Genera mensajes a cliente. Se temporiza a un segundo, para evitar mandar demasiados
   mensajes, a los Visores. }
-  if DatosjRecib then begin
+  if DatPaqRecib then begin
     //Hubo datos recibidos en este intervalo
     //Este mensaje es útil para ver el estado, cuando se piden archivos grandes y
     //no hay manera de saber, en el Visor, si los datos están llegando.
-    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_DAT_RECIB, 0, IdFac + #9 + '');
-    DatosjRecib := false;
+    OnRespComando(ResponderA, RFAC_CABIN, R_CABIN_DAT_RECIB, 0, IdFac + #9 + DatPaqMsje);
+    DatPaqRecib := false;
   end;
 end;
 function TCibFacCabina.Faltante: integer;
@@ -1110,6 +1117,9 @@ begin
     if cabCuenta.estado <> EST_PAUSAD then exit;
     cabCuenta.estado := EST_CONTAN;
   end;
+  C_CABIN_EDICOM: begin
+    Coment := traDat;
+  end;
   //Comandos remotos
   C_CABIN_BLOQ_PC: begin
     TCP_envComando(C_BLOQ_PC, 0, 0);
@@ -1164,14 +1174,17 @@ begin
 end;
 procedure TCibFacCabina.MenuAccionesVista(MenuPopup: TPopupMenu;
   nShortCut: integer);
-{Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejcuten
+{Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejecuten
 desde aquí.}
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion(nShortCut, '&Iniciar Cuenta'       , @mnInicCuenta , icoInicCuenta );
-  AgregarAccion(nShortCut, '&Modificar Tiempo'     , @mnModifCuenta, icoModifCuenta);
-  AgregarAccion(nShortCut, '&Detener Cuenta'       , @mnDetenCuenta, icoDetenCuenta);
-  AgregarAccion(nShortCut, 'Poner en &Mantenimiento',@mnPonerManten, icoPonerManten);
+  //Se ha visto que  la acción "Iniciar Cuenta" se puede reemplazar con "Modificar Tiempo".
+  //AgregarAccion(nShortCut, '&Iniciar Cuenta'        , @mnInicCuenta , icoInicCuenta );
+  AgregarAccion(nShortCut, '&Modificar Tiempo'      , @mnModifCuenta, icoModifCuenta);
+  AgregarAccion(nShortCut, '&Detener Cuenta'        , @mnDetenCuenta, icoDetenCuenta);
+  AgregarAccion(nShortCut, '&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
+  AgregarAccion(nShortCut, 'Editar &Comentario'    , @mnEditComent, icoAgregComent);
+  AgregarAccion(nShortCut, 'Poner en &Mantenimiento', @mnPonerManten, icoPonerManten);
   if cabCuenta.estado = EST_CONTAN then begin
     AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent);
   end else if cabCuenta.estado = EST_PAUSAD then begin
@@ -1181,7 +1194,6 @@ begin
     //acciones (Que siempre haya la misma cantidad).
     AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent).Enabled:=false;
   end;
-  AgregarAccion(nShortCut, '&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
   AgregarAccion(nShortCut, '&Fijar Tiempo Inic.'   , @mnFijTiempoIni, -1);
 //  AgregarAccion(nShortCut, 'Propiedades' , @mnVerMsjesRed, -1););
 end;
@@ -1238,6 +1250,13 @@ begin
   end;
   OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONMAN, 0, IdFac);
 end;
+procedure TCibFacCabina.mnEditComent(Sender: TObject);
+var
+  tmp: String;
+begin
+  tmp := InputBox('','Ingrese Comentario: ', Coment);
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_EDICOM, 0, IdFac + #9 + tmp);
+end;
 procedure TCibFacCabina.mnPausarCuent(Sender: TObject);
 begin
   if cabCuenta.estado <> EST_CONTAN then begin
@@ -1254,10 +1273,10 @@ begin
   end;
   OnSolicEjecCom(CFAC_CABIN, C_CABIN_QUIPAU, 0, IdFac);
 end;
-
 procedure TCibFacCabina.mnVerExplorad(Sender: TObject);
 {Muestra el explorador de archivos}
 begin
+  frmExpArc.rutArchivos := rutArchivos;  //Actualiza ruta de archivos de descarga
   frmExpArc.Exec(self);
 end;
 procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);

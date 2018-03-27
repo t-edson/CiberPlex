@@ -727,8 +727,8 @@ procedure TCibFacLocutor.MenuAccionesVista(MenuPopup: TPopupMenu;
   nShortCut: integer);
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion(nShortCut, '&Desconectar'   , @mnDesconecClick);
   AgregarAccion(nShortCut, '&Conectar'      , @mnConectarClick);
+  AgregarAccion(nShortCut, '&Desconectar'   , @mnDesconecClick);
 end;
 procedure TCibFacLocutor.mnConectarClick(Sender: TObject);
 begin

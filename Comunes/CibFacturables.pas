@@ -155,9 +155,11 @@ type
   TCibFac = class
   protected
     FNombre: string;
+    FComent: string;
     Fx: double;
     Fy: double;
     procedure SetNombre(AValue: string); virtual;
+    procedure SetComent(AValue: string);
     function GetCadEstado: string;          virtual; abstract;
     procedure SetCadEstado(AValue: string); virtual; abstract;
     function GetCadPropied: string;         virtual; abstract;
@@ -181,6 +183,7 @@ type
     MsjError: string;      //para mensajes de error
     Grupo   : TCibGFac;    //Referencia a su grupo.
     property Nombre: string read FNombre write SetNombre;  //Nombre del objeto
+    property Coment: string read FComent write SetComent;  //Comentario
     property CadEstado: string read GetCadEstado write SetCadEstado;
     property CadPropied: string read GetCadPropied write SetCadPropied;
     function IdFac: string;  //Identificador del Facturable
@@ -645,6 +648,12 @@ procedure TCibFac.SetNombre(AValue: string);
 begin
   if FNombre = AValue then exit;
   FNombre := AValue;
+  if OnCambiaPropied<>nil then OnCambiaPropied();
+end;
+procedure TCibFac.SetComent(AValue: string);
+begin
+  if FComent = AValue then Exit;
+  FComent := AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFac.Setx(AValue: double);

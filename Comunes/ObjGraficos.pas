@@ -116,11 +116,12 @@ end;
 TogCabina = class(TogFac)
 private
 public
-  icoPC      : TGraphic;    //PC con control
-  icoPCdes   : TGraphic;    //PC sin control
-  icoUSU     : TGraphic;    //referencia a ícono
-  icoRedAct  : TGraphic;    //referencia a ícono
-  icoRedDes  : TGraphic;    //referencia a ícono
+  icoPC      : TGraphic;    //Referencia a ícono de PC con control
+  icoPCdes   : TGraphic;    //Referencia a ícono de PC sin control
+  icoUSU     : TGraphic;    //Referencia a ícono de usuario
+  icoComent  : TGraphic;    //Referencia a ícono
+  icoRedAct  : TGraphic;    //Referencia a ícono
+  icoRedDes  : TGraphic;    //Referencia a ícono
   procedure DibujarTiempo;
   procedure Dibujar; override;  //Dibuja el objeto gráfico
   procedure ProcDesac(estado0: Boolean);   //Para responder evento de Habilitar/Deshabilitar
@@ -478,7 +479,7 @@ begin
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, nombre);
-  //dibuja íconos de PC y de conexión
+  //Dibuja íconos de PC y de conexión
   if cab.ConConexion then begin
     if cab.EstadoConex = cecConectado then begin
       v2d.DibujarImagenN(icoRedAct, x+38, y+30);
@@ -495,7 +496,11 @@ begin
      if icoUSU<>NIL then v2d.DibujarImagenN(icoUSU, x, y+35);
      DibujarTiempo;
   end;
-  //muestra consumo
+  //Dibuja íconos de Comentario
+  if cab.Coment<>'' then begin
+     if icoComent<>NIL then v2d.DibujarImagenN(icoComent, x+50, y+50);
+  end;
+  //Muestra consumo
   v2d.FijaLapiz(psSolid, 1, clBlack);
   v2d.FijaRelleno(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);

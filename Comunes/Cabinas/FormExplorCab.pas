@@ -3,9 +3,9 @@ unit FormExplorCab;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, FileUtil, LazFileUtils, LConvEncoding, Forms, Controls,
-  Graphics, Dialogs, StdCtrls, ExtCtrls, Buttons, ActnList, Menus, ComCtrls,
-  Grids, LCLProc, CibFacturables, CibTramas, UtilsGrilla, MisUtils;
+  Classes, SysUtils, Types, FileUtil, LazFileUtils, LConvEncoding, Forms,
+  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, Buttons, ActnList, Menus,
+  ComCtrls, Grids, LCLProc, CibFacturables, CibTramas, UtilsGrilla, MisUtils;
 type
   { TfrmExplorCab }
   TfrmExplorCab = class(TForm)
@@ -22,6 +22,7 @@ type
     acArcAbrirRem: TAction;
     acArcFijRut: TAction;
     acHerCancelTran: TAction;
+    acVerCarpDesc: TAction;
     acVerRefresc: TAction;
     ActionList1: TActionList;
     btnBloqDesb: TButton;
@@ -52,6 +53,7 @@ type
     MenuItem23: TMenuItem;
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
+    MenuItem26: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
@@ -84,6 +86,7 @@ type
     procedure acPCDesbloqExecute(Sender: TObject);
     procedure acPCReinicExecute(Sender: TObject);
     procedure acPCVerPantExecute(Sender: TObject);
+    procedure acVerCarpDescExecute(Sender: TObject);
     procedure acVerRefrescExecute(Sender: TObject);
     procedure btnApagarClick(Sender: TObject);
     procedure btnReinicClick(Sender: TObject);
@@ -112,6 +115,7 @@ type
     procedure EstadoControles(estad: boolean);
     procedure SubirArchivo(arc: string);
   public
+    rutArchivos: string;   //Debe inicializarse para acceder a la ruta de archivo
     property EsperandoRpta: boolean //Indica que se espera la llegada de una respuesta
        read FEsperandoRpta write SetEsperandoRpta;
     procedure LlenarLista(lista: string);
@@ -393,7 +397,7 @@ begin
 end;
 procedure TfrmExplorCab.FormDropFiles(Sender: TObject;
   const FileNames: array of String);
-//Se ahn soltado archivos aquí
+//Se han soltado archivos aquí
 begin
   if high(FileNames) > 0 then begin
     MsgExc('Solo se puede subir un archivo a la vez');
@@ -445,25 +449,32 @@ procedure TfrmExplorCab.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; 
 {Recibe respuesras de los comandos. Se ejecuta en el Visor.}
 var
   rutArc: string;
+  pdp: SizeInt;
+  a: TStringDynArray;
+  porc: Single;
 begin
   if ParamX = R_CABIN_DAT_RECIB then begin
-    //Este tipo de mensajes se tarat de forma especial, porque son solo notificaciones
-    //de llegada de Paquetes de datos, que pueden ser producto de un archivo garnde que se
+    //Este tipo de mensajes se trata de forma especial, porque son solo notificaciones
+    //de llegada de Paquetes de datos, que pueden ser producto de un archivo grande que se
     //ha solicitado.
     if EsperandoRpta then begin
       //De seguro que se mandó un comando largo, y se está esperando que termine de llegar
       nEspDatos := 0;   //reinicia contador de espera
-      DebugLn('paquete recibido');
-      //Indica visualmente que están llegando datos
-      if copy(StatusBar1.Panels[0].Text,1,12)<>'Recibiendo: ' then begin
-        //Había otro mensaje
-        StatusBar1.Panels[0].Text := 'Recibiendo: ';
-      end else begin
-        //Ya está el mensaje
-        if length(StatusBar1.Panels[0].Text) > 20 then
-          StatusBar1.Panels[0].Text := 'Recibiendo: '
-        else
-          StatusBar1.Panels[0].Text := StatusBar1.Panels[0].Text + '#';
+      //Extrae información del porcentaje recibido
+      //El formato del texto es "-Acumuando paquetes de trama: 123/1234 bytes"
+      try  //Para prevenir error
+        pdp := Pos(':', cad);
+        if pdp = 0 then exit;
+        delete(cad, 1, pdp);   //Quita "-Acumuando paquetes de trama:"
+        cad := trim(cad);
+        pdp := Pos(' ', cad);
+        delete(cad, pdp, 10);  //Quita "bytes"
+        a := explode('/',cad);
+        porc := StrToInt(a[0])/StrToInt(a[1]);
+        StatusBar1.Panels[0].Text := Format('Recibiendo: %.1f %%', [porc*100]);
+  //      DebugLn('Recibido:' + a[0]+','+a[1]);
+      except
+        exit;
       end;
     end;
     exit;
@@ -653,6 +664,11 @@ begin
   picPant.Picture := nil;
   cab.OnSolicEjecCom(CFAC_CABIN, C_CABIN_PAN_COMP, 0, cab.IdFac);
   StatusBar1.Panels[0].Text:='Leyendo pantalla...';
+end;
+procedure TfrmExplorCab.acVerCarpDescExecute(Sender: TObject);
+//Muestra la carpeta de descargas
+begin
+  MisUtils.Exec('explorer', rutArchivos);
 end;
 procedure TfrmExplorCab.acPCReinicExecute(Sender: TObject);
 var
