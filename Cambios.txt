@@ -1,4 +1,21 @@
-1.7.3
+1.7.4
+=====
+Se argegan 2 campos más a la tabla de productos.
+Se agrega el tipo "ctBool" a TCibColType, en la unidad CibBD.
+Se agrega el menú "Ver Carpeta de la Aplicación", en CIBERPLEX ADMIN.
+Se agrega el menú "Ver Carpeta de descargas", en la vetana "Explorador de Archvos" de las PC
+cliente en CIBERPLEX SERVER.
+Se mejora en TCibFacCabina, la captura de mensajes de paquetes recibidos, con la rutina
+TCibFacCabina.cabConexRegMensaje().
+Se incluye información de porcentaje de descarga en la ventana "Expxloador de Archivos."
+Se incluye la propiedad Coment, y ya guarda en disco.
+Se incluye la opción para editar lso comentarios en las cabinas y se le agrega un ícono 
+descriptivo.
+Se reordenan los íconos del menú conetxtual, para uniformizar y mejorar el acceso.
+Se elimina la opción "Iniciar cuenta", para usar "Modificar TIempo".
+Se crea acceso pro teclado para cerrar el formulario de Modifiación de tiempo de las cabinas.
+
+1.7.3JH
 =====
 Se mejora el comportamiento para cuando se inserta un nuevo registro y hay filtros activos, 
 en la ventana de Administración de productos.
