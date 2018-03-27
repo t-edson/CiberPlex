@@ -35,6 +35,7 @@ type
     acHerSincronizar: TAction;
     acSisIngStock: TAction;
     acSisValStock: TAction;
+    acVerCarpApli: TAction;
     acVerIngCompras: TAction;
     acVerRepEve: TAction;
     acVerRepPro: TAction;
@@ -117,6 +118,7 @@ type
     procedure acSisAdmProveExecute(Sender: TObject);
     procedure acHerExpServExecute(Sender: TObject);
     procedure acHerRegConexExecute(Sender: TObject);
+    procedure acVerCarpApliExecute(Sender: TObject);
     procedure acVerIngComprasExecute(Sender: TObject);
     procedure acVerRepEveExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
@@ -538,6 +540,10 @@ begin
   frmLog.Show;
 end;
 //Aciones VER
+procedure TForm1.acVerCarpApliExecute(Sender: TObject);
+begin
+  Exec('explorer', rutApp);
+end;
 procedure TForm1.acVerIngComprasExecute(Sender: TObject);
 begin
   tabPro.UpdateFromDisk;

@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 196
+  Left = 323
   Height = 614
-  Top = 146
+  Top = 147
   Width = 999
   Caption = 'CiberPlex Admin'
   ClientHeight = 594
@@ -164,12 +164,6 @@ object Form1: TForm1
       OnExecute = acAyuCalcExecute
       ShortCut = 117
     end
-    object acVerRepIng: TAction
-      Category = 'Ver'
-      Caption = 'Reporte de &Ingresos'
-      ImageIndex = 15
-      OnExecute = acVerRepIngExecute
-    end
     object acHerSincronizar: TAction
       Category = 'Her'
       Caption = '&Sincronizar tablas'
@@ -180,17 +174,6 @@ object Form1: TForm1
       Category = 'Her'
       Caption = '&Cambiar nombre de producto'
       OnExecute = acHerCamNomProExecute
-    end
-    object acVerRepPro: TAction
-      Category = 'Ver'
-      Caption = 'Reporte de &Productos'
-      ImageIndex = 33
-      OnExecute = acVerRepProExecute
-    end
-    object acVerRepEve: TAction
-      Category = 'Ver'
-      Caption = 'Reporte de &Eventos'
-      OnExecute = acVerRepEveExecute
     end
     object acSisAdmProd: TAction
       Category = 'Sis'
@@ -226,6 +209,29 @@ object Form1: TForm1
       Caption = 'Validación de stock'
       OnExecute = acSisValStockExecute
     end
+    object acVerCarpApli: TAction
+      Category = 'Ver'
+      Caption = 'Ver Carpeta de la Aplicación'
+      ImageIndex = 3
+      OnExecute = acVerCarpApliExecute
+    end
+    object acVerRepIng: TAction
+      Category = 'Ver'
+      Caption = 'Reporte de &Ingresos'
+      ImageIndex = 15
+      OnExecute = acVerRepIngExecute
+    end
+    object acVerRepPro: TAction
+      Category = 'Ver'
+      Caption = 'Reporte de &Productos'
+      ImageIndex = 33
+      OnExecute = acVerRepProExecute
+    end
+    object acVerRepEve: TAction
+      Category = 'Ver'
+      Caption = 'Reporte de &Eventos'
+      OnExecute = acVerRepEveExecute
+    end
   end
   object MainMenu1: TMainMenu
     Images = ImageList16
@@ -249,12 +255,15 @@ object Form1: TForm1
     end
     object MenuItem18: TMenuItem
       Caption = '&Ver'
+      object MenuItem34: TMenuItem
+        Action = acVerCarpApli
+      end
       object MenuItem19: TMenuItem
         Caption = 'Pantalla Servidor'
         OnClick = MenuItem19Click
       end
-      object MenuItem34: TMenuItem
-        Action = acVerIngCompras
+      object MenuItem24: TMenuItem
+        Caption = '-'
       end
       object MenuItem31: TMenuItem
         Action = acVerRepIng
@@ -336,9 +345,6 @@ object Form1: TForm1
       end
       object MenuItem33: TMenuItem
         Action = acVerRepEve
-      end
-      object MenuItem24: TMenuItem
-        Caption = '-'
       end
     end
     object MenuItem1: TMenuItem

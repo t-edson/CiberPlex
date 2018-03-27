@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug"/>
-    <Units Count="64">
+    <Units Count="65">
       <Unit0>
         <Filename Value="CpxVisor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -21,13 +21,13 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="FormPrincipal"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="422"/>
-        <CursorPos X="54" Y="490"/>
-        <FoldState Value=" TL0061 T4A08 T5kV02 T8kR2]KMqR01111G]C3kc07627 pjCmG0B0131F piYm5095 T6ke[J49 T0lTdV0181B'"/>
+        <TopLine Value="401"/>
+        <CursorPos X="20" Y="545"/>
+        <FoldState Value=" TL0061 T4A08 T5J0{z]E7LB{w T8k42O]FMqT01111G]C3ke076 pibj80C7 pj1jL0T6]9TkN0331D]Tejb0A3 T6kg0]HT0lVdVA]PcnXF5A THs52d!"/>
         <UsageCount Value="207"/>
         <Bookmarks Count="2">
-          <Item0 X="6" Y="400" ID="3"/>
-          <Item1 Y="386" ID="2"/>
+          <Item0 X="6" Y="402" ID="3"/>
+          <Item1 Y="388" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -71,8 +71,8 @@
         <Filename Value="Globales.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="49"/>
-        <CursorPos X="32" Y="69"/>
+        <TopLine Value="7"/>
+        <CursorPos X="10" Y="18"/>
         <UsageCount Value="201"/>
       </Unit5>
       <Unit6>
@@ -100,8 +100,8 @@
         <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="228"/>
-        <CursorPos X="18" Y="241"/>
+        <TopLine Value="79"/>
+        <CursorPos X="51" Y="100"/>
         <UsageCount Value="210"/>
       </Unit8>
       <Unit9>
@@ -200,9 +200,9 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="13"/>
-        <CursorPos X="32" Y="164"/>
-        <FoldState Value=" T4404 T5id02 T8C2d]73j20U118 picke03113 T6j402]8MlD211 T0jDM4A TLm5222t"/>
+        <TopLine Value="12"/>
+        <CursorPos X="22" Y="95"/>
+        <FoldState Value=" T4404 T8C2d2o"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -298,7 +298,6 @@
         <CursorPos X="20" Y="306"/>
         <UsageCount Value="203"/>
         <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
       </Unit26>
       <Unit27>
         <Filename Value="..\..\Comunes\FormRepEventos.pas"/>
@@ -468,7 +467,6 @@
         <EditorIndex Value="2"/>
         <TopLine Value="137"/>
         <CursorPos Y="249"/>
-        <FoldState Value=" T4404 T5iQ02 T8i02H T3iV0U7 piYjT0u0111]S6iX023 TMk401 T0igM4J TLjK03("/>
         <UsageCount Value="80"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -603,7 +601,7 @@
         <TopLine Value="173"/>
         <CursorPos X="51" Y="477"/>
         <FoldState Value=" T570T TL9013 T7BJO T8J052 T3iJ0o8 piajW093 pjUd2F[84Sj924314 T0iMn1N]abmNc2H]9XiMN2F7K T6if01H16q"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="10"/>
       </Unit61>
       <Unit62>
         <Filename Value="..\..\Comunes\NiloM\CibNiloMTarifRut.pas"/>
@@ -619,128 +617,131 @@
         <CursorPos X="15" Y="1227"/>
         <UsageCount Value="1"/>
       </Unit63>
+      <Unit64>
+        <Filename Value="..\..\..\_Librerias\MisUtils-0.6\MisUtils.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="36"/>
+        <CursorPos X="10" Y="55"/>
+        <UsageCount Value="10"/>
+      </Unit64>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="525" Column="6" TopLine="504"/>
+        <Caret Line="526" Column="6" TopLine="506"/>
       </Position1>
       <Position2>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="524" Column="6" TopLine="502"/>
+        <Caret Line="535" Column="34" TopLine="510"/>
       </Position2>
       <Position3>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="523" Column="6" TopLine="500"/>
+        <Caret Line="630" Column="3" TopLine="601"/>
       </Position3>
       <Position4>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="524" Column="6" TopLine="502"/>
+        <Caret Line="635" Column="3" TopLine="606"/>
       </Position4>
       <Position5>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="525" Column="6" TopLine="504"/>
+        <Caret Line="636" Column="3" TopLine="607"/>
       </Position5>
       <Position6>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="526" Column="6" TopLine="506"/>
+        <Caret Line="632" Column="15" TopLine="515"/>
       </Position6>
       <Position7>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="535" Column="34" TopLine="510"/>
+        <Caret Line="261" Column="39" TopLine="165"/>
       </Position7>
       <Position8>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="630" Column="3" TopLine="601"/>
+        <Caret Line="301" Column="26" TopLine="268"/>
       </Position8>
       <Position9>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="635" Column="3" TopLine="606"/>
+        <Caret Line="273" Column="30" TopLine="269"/>
       </Position9>
       <Position10>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="636" Column="3" TopLine="607"/>
+        <Caret Line="261" Column="39" TopLine="167"/>
       </Position10>
       <Position11>
-        <Filename Value="formprincipal.pas"/>
-        <Caret Line="632" Column="15" TopLine="515"/>
+        <Filename Value="..\..\Comunes\FormIngStock.pas"/>
+        <Caret Line="169"/>
       </Position11>
       <Position12>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="261" Column="39" TopLine="165"/>
+        <Caret Line="431" Column="48" TopLine="271"/>
       </Position12>
       <Position13>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="301" Column="26" TopLine="268"/>
+        <Caret Line="281" Column="3" TopLine="176"/>
       </Position13>
       <Position14>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="273" Column="30" TopLine="269"/>
+        <Caret Line="271" Column="18" TopLine="262"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\Comunes\FormAdminProduc.pas"/>
-        <Caret Line="125" TopLine="148"/>
+        <Filename Value="formprincipal.pas"/>
+        <Caret Line="289" Column="15" TopLine="262"/>
       </Position15>
       <Position16>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="261" Column="39" TopLine="167"/>
+        <Caret Line="268" TopLine="186"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\Comunes\FormIngStock.pas"/>
-        <Caret Line="169"/>
+        <Filename Value="formprincipal.pas"/>
+        <Caret Line="280" Column="3" TopLine="240"/>
       </Position17>
       <Position18>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="431" Column="48" TopLine="271"/>
+        <Caret Line="281" Column="3" TopLine="262"/>
       </Position18>
       <Position19>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="281" Column="3" TopLine="176"/>
+        <Caret Line="282" TopLine="240"/>
       </Position19>
       <Position20>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="271" Column="18" TopLine="262"/>
+        <Caret Line="284" TopLine="263"/>
       </Position20>
       <Position21>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="289" Column="15" TopLine="262"/>
+        <Caret Line="270" Column="21" TopLine="180"/>
       </Position21>
       <Position22>
-        <Filename Value="formprincipal.pas"/>
-        <Caret Line="268" TopLine="186"/>
+        <Filename Value="..\..\Comunes\FormIngStock.pas"/>
+        <Caret Line="67" TopLine="13"/>
       </Position22>
       <Position23>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="280" Column="3" TopLine="240"/>
+        <Caret Line="292" Column="27" TopLine="270"/>
       </Position23>
       <Position24>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="281" Column="3" TopLine="262"/>
+        <Caret Line="270" Column="18" TopLine="161"/>
       </Position24>
       <Position25>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="282" TopLine="240"/>
+        <Caret Line="438" Column="33" TopLine="422"/>
       </Position25>
       <Position26>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="284" TopLine="263"/>
+        <Caret Line="434" Column="25" TopLine="423"/>
       </Position26>
       <Position27>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="270" Column="21" TopLine="180"/>
+        <Caret Line="433" Column="25" TopLine="422"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\Comunes\FormIngStock.pas"/>
-        <Caret Line="67" TopLine="13"/>
+        <Filename Value="formprincipal.pas"/>
+        <Caret Line="435" Column="25" TopLine="424"/>
       </Position28>
       <Position29>
         <Filename Value="formprincipal.pas"/>
-        <Caret Line="292" Column="27" TopLine="270"/>
+        <Caret Line="545" Column="6" TopLine="401"/>
       </Position29>
-      <Position30>
-        <Filename Value="formprincipal.pas"/>
-        <Caret Line="270" Column="18" TopLine="161"/>
-      </Position30>
     </JumpHistory>
   </ProjectSession>
   <Debugging>
