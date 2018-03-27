@@ -240,6 +240,11 @@ begin
   //Agrega los ítems del menú que son comunes a todos los facturables
   mn :=  TMenuItem.Create(nil);
   mn.Action := acFacAgrVen;
+  mn.Caption:= '&0. ' + mn.Caption;
+  PopUp.Items.Add(mn);
+
+  mn :=  TMenuItem.Create(nil);
+  mn.Action := acFacVerBol;
   mn.Caption:= '&1. ' + mn.Caption;
   PopUp.Items.Add(mn);
 
@@ -249,13 +254,8 @@ begin
   PopUp.Items.Add(mn);
 
   mn :=  TMenuItem.Create(nil);
-  mn.Action := acFacVerBol;
-  mn.Caption:= '&3. ' + mn.Caption;
-  PopUp.Items.Add(mn);
-
-  mn :=  TMenuItem.Create(nil);
   mn.Action := acFacMovBol;
-  mn.Caption:= '&4. ' + mn.Caption;
+  mn.Caption:= '&3. ' + mn.Caption;
   PopUp.Items.Add(mn);
 
   mn :=  TMenuItem.Create(nil);
@@ -263,7 +263,7 @@ begin
   PopUp.Items.Add(mn);
 
   //Agrega acciones generales
-  ogFac.fac.MenuAccionesVista(PopUp, 5);
+  ogFac.fac.MenuAccionesVista(PopUp, 4);
   //Agrega acciones que solo correrán en el Servidor, en Modelo
   fac := Modelo.BuscarPorID(ogFac.fac.IdFac);  //ubica facturable en el modelo
   if fac = nil then exit;   //no debería pasar
