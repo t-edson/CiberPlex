@@ -21,7 +21,7 @@ TNiloConexion se usa también (siguiendo el esquema de CPCabinaBase), como un co
 de las propiedades de la conexión serial.
 
 La conexión serial se implementa usando la librería "Synaser" y sigue el mismo esquema
-de manejo de hilos que se usa en la unidad CPCabinaBase.
+de manejo de hilos que se usa en la unidad CibCabinaBase.
 
                                   Por Tito Hinostroza  03/07/2016
 }
@@ -39,7 +39,7 @@ type
     necDetenido,      //el proceso se detuvo (no hay control)
     necMuerto         //proceso detenido
   );
-  TEvCambiaEstado = procedure(nuevoEstado: TNilEstadoConex) of object;
+  TEvNilCambiaEstado = procedure(nuevoEstado: TNilEstadoConex) of object;
   TEvRegMensaje = procedure(NomObj: string; msj: string) of object;
   TEvProcesarCad = procedure(cad: string) of object;
   TEvTermWriteLn = procedure(const subcad: string; const lin: string) of object;
@@ -71,7 +71,7 @@ type
   public
     //Eventos. Se ejecutan de forma sincronizada.
     OnProcesarCad : TEvProcesarCad;  //indica que hay un caracter listo
-    OnCambiaEstado: TEvCambiaEstado;
+    OnCambiaEstado: TEvNilCambiaEstado;
     OnRegMensaje  : TEvRegMensaje;
     property estado: TNilEstadoConex read Festado write Setestado;
     procedure EnvComando(com: string);
@@ -113,7 +113,7 @@ type
     procedure Desconectar;
     procedure EnvComando(com: string; IncluirSalto: boolean = true);
   public  //Eventos. Si se agregan o eliminan, actualizar Destroy().
-    OnCambiaEstado: TEvCambiaEstado;
+    OnCambiaEstado: TEvNilCambiaEstado;
     OnRegMensaje  : TEvRegMensaje;  //Indica que ha llegado un mensaje de la conexión
     OnProcesarCad : TEvProcesarCad; {Se ha recibido una cadena por el puerto serial. La
                                      cadena puede contener cualquier caracter incluyendo

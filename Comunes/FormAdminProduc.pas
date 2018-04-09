@@ -21,7 +21,7 @@ type
     btnMostCateg: TBitBtn;
     btnCerrar: TBitBtn;
     btnGrabar: TBitBtn;
-    chkMostInac: TCheckBox;
+    chkOcultInac: TCheckBox;
     fraFiltCampo: TfraFiltCampo;
     ImageList1: TImageList;
     lblFiltCateg: TLabel;
@@ -46,6 +46,7 @@ type
     procedure acVerArbCatExecute(Sender: TObject);
     procedure btnCerrarClick(Sender: TObject);
     procedure btnMostCategClick(Sender: TObject);
+    procedure chkOcultInacChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -65,6 +66,8 @@ type
     colFecMod: TugGrillaCol;
     colActivo: TugGrillaCol;
     colProvee: TugGrillaCol;
+    function FiltroInac(const f: integer): boolean;
+    function fraGriLeerColorFondo(col, fil: integer; EsSelec: boolean): TColor;
     procedure fraGri_Modificado(TipModif: TugTipModif; filAfec: integer);
     procedure fraGri_ReqNuevoReg(fil: integer);
   private
@@ -73,7 +76,6 @@ type
     FormatMon: string;
     procedure fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
-    function griLeerColorFondo(col, fil: integer): TColor;
     procedure RefrescarFiltros;
   public
     fraGri     : TfraEditGrilla;
@@ -88,6 +90,10 @@ var
 implementation
 {$R *.lfm}
 { TfrmAdminProduc }
+function TfrmAdminProduc.FiltroInac(const f: integer):boolean;
+begin
+  Result := colActivo.ValBool[f];
+end;
 procedure TfrmAdminProduc.RefrescarFiltros;
 {Configura los filtros que aplican, y muestra información sobre ellos.}
 var
@@ -97,19 +103,25 @@ begin
   fraGri.LimpiarFiltros;
   lblFiltCateg.Caption:='';
   hayFiltro := false;
-  //Verifica filtro de Árbol de categoría
+  //Verifica Filtro de Árbol de categoría
   txtBusc := fraFiltArbol1.FiltroArbolCat;
   if txtBusc<>'' then begin
     hayFiltro := true;
     fraGri.AgregarFiltro(@fraFiltArbol1.Filtro);
     lblFiltCateg.Caption := 'Filtro de categ.: ' + txtBusc;
   end;
-  //Verifica filtro de "fraFiltCampo"
+  //Verifica Filtro de "fraFiltCampo"
   txtBusc := fraFiltCampo.txtBusq;
   if txtBusc<>'' then begin
     hayFiltro := true;
     fraGri.AgregarFiltro(@fraFiltCampo.Filtro);
     lblFiltCateg.Caption := lblFiltCateg.Caption + ', Texto de búsqueda: ' + txtBusc;
+  end;
+  //Agrega Filtro de Activos
+  if chkOcultInac.Checked then begin
+    hayFiltro := true;
+    fraGri.AgregarFiltro(@FiltroInac);
+    lblFiltCateg.Caption := lblFiltCateg.Caption + ', Ocultos Inactivos';
   end;
   fraGri.Filtrar;   //Filtra con todos los filtros agregados
   if hayFiltro then begin
@@ -144,6 +156,7 @@ begin
     //Muestra posible mensaje de error, pero deja seguir.
     MsgErr(fraGri.MsjError);
   end;
+  fraGri.OnLeerColorFondo := @fraGriLeerColorFondo;
   //Define restricciones a los campos
   colCodigo.restric:= [ucrNotNull, ucrUnique];
   colCateg.restric:=[ucrNotNull];   //no nulo
@@ -201,13 +214,33 @@ begin
   tmpFlt := fraFiltArbol1.FiltroArbolCat;   //Guarda selección
   tmpSel := fraGri.FilaSelecc;              //Guarda fila seleccionada
   fraFiltArbol1.LeerCategorias;
-  fraFiltArbol1.FiltroArbolCat := tmpFlt;  //Mantiene el filtro
-  RefrescarFiltros;  //COn el filtro ya definido, lo aplica
+  fraFiltArbol1.FiltroArbolCat := tmpFlt;  //Mantiene el FiltroInac
+  RefrescarFiltros;  //COn el FiltroInac ya definido, lo aplica
   fraGri.FilaSelecc := tmpSel;             //Mantiene la fila seleccionada
   if TipModif = umdFilAgre then begin
     //Se agregó una fila nueva.
-    //Se muestra la nueva fila, por si el filtro la ha ocultado.
+    //Se muestra la nueva fila, por si el FiltroInac la ha ocultado.
     fraGri.MostrarFila(filAfec);
+  end;
+end;
+function TfrmAdminProduc.fraGriLeerColorFondo(col, fil: integer;
+  EsSelec: boolean): TColor;
+const
+  COL_SEL = $D0D0D0;
+begin
+  if not colActivo.ValBool[fil] then begin
+    //Desactivado
+    if EsSelec then begin
+      Result := abs(COL_SEL - $101010);
+    end else begin
+      Result := $E0E0E0;
+    end;
+  end else begin
+    if EsSelec then begin
+      Result := COL_SEL;
+    end else begin
+      Result := clWhite;
+    end;
   end;
 end;
 procedure TfrmAdminProduc.fraGri_ReqNuevoReg(fil: integer);
@@ -223,7 +256,7 @@ begin
   colFecMod.ValDatTim[fil] := now;
   //Copia propiedades de la última fila.
   {Esto se hace con el fin de evitar que esta nueva fila se oculte cuando se
-  aplique el filtro, nuevamente, asumiendo que solo se tiene activo el filtro de
+  aplique el FiltroInac, nuevamente, asumiendo que solo se tiene activo el FiltroInac de
   Categoría-Subcategoría.}
   fraGri.OcultarFila(fil);  //Se oculta la fila agregada para poder, identificar a la última visible
   uFil := fraGri.UltimaFilaVisible;
@@ -233,10 +266,6 @@ begin
   end;
   fraGri.MostrarFila(fil);  //Se muestra para poder seleccionarla
   fragri.SeleccFila(fil);   //Deja seleccionada la nueva fila
-end;
-function TfrmAdminProduc.griLeerColorFondo(col, fil: integer): TColor;
-begin
-  Result := clWhite;
 end;
 procedure TfrmAdminProduc.fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -269,7 +298,10 @@ a un acción, mostrando solo el ícono.}
 begin
   acVerArbCatExecute(self);
 end;
-
+procedure TfrmAdminProduc.chkOcultInacChange(Sender: TObject);
+begin
+  RefrescarFiltros;
+end;
 ///////////////////////// Acciones ////////////////////////////////
 procedure TfrmAdminProduc.acArcGrabarExecute(Sender: TObject);
 {Aplica los cambios a la tabla}

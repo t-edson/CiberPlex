@@ -27,6 +27,7 @@ const //Acciones sobre las PC
   C_CABIN_PONPAU = 07;  //Pone una cabina en pausa
   C_CABIN_QUIPAU = 08;  //Quita a una cabina, el estado de pausa
   C_CABIN_EDICOM = 09;  //Edita un comentario
+  C_CABIN_SACMAN = 10;  //Solicita sacar de mantenimiento a una PC
 
   /////// Comandos que se ejecutan remótamente ////////
   //Se ha tratado de respetar el nombre de los comandos del NILOTER-m
@@ -120,10 +121,11 @@ type
     procedure mnModifCuenta(Sender: TObject);
     procedure mnPausarCuent(Sender: TObject);
     procedure mnPonerManten(Sender: TObject);
+    procedure mnSacarManten(Sender: TObject);
     procedure mnReinicCuent(Sender: TObject);
     procedure mnVerMsjesRed(Sender: TObject);
     function VerCorteAutomatico: boolean;
-    procedure cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
+    procedure cabCambiaEstadoConex(nuevoEstado: TCibEstadoConex);
   protected  //"Getter" and "Setter"
     FConConexion: boolean;
     FTransc: integer;   //Tiempo transcurrido en segundos.
@@ -171,7 +173,7 @@ type
   private //rutinas de actualización de campos de estado
     procedure ActualizaTranscYCosto;
   public  //campos de conexión
-    function EstadoConex: TCabEstadoConex;
+    function EstadoConex: TCibEstadoConex;
     function EstadoConexN: integer;
     function EstadoConexStr: string;
     function Conectado: boolean;
@@ -264,7 +266,6 @@ const
   RUT_ICONOS = '..\Iconos\Cabinas';
 
 var
-  icoInicCuenta: integer;
   icoModifCuenta: integer;
   icoDetenCuenta: integer;
   icoPonerManten: integer;
@@ -272,7 +273,6 @@ var
   icoPausarCuent: integer;
   icoReinicCuent: integer;
   icoVerExplorad: integer;
-//  icoFijTiempoIni: integer;
   icoVerMsjesRed: integer;
   icoAdminTarifas: integer;
   icoAdminEquipos: integer;
@@ -285,7 +285,7 @@ var
 begin
   rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
   //Iconos del facturable
-  icoInicCuenta  := CargaPNG(imagList16, imagList32, rutImag, 'xclock');
+  //icoInicCuenta  := CargaPNG(imagList16, imagList32, rutImag, 'xclock');
   icoModifCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clockEdit');
   icoDetenCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clock_stop');
   icoPonerManten := CargaPNG(imagList16, imagList32, rutImag, 'PcMant');
@@ -293,7 +293,7 @@ begin
   icoPausarCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
   icoReinicCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
   icoVerExplorad := CargaPNG(imagList16, imagList32, rutImag, 'folderSearch');
-//  icoFijTiempoIni:= CargaPNG(imagList16, imagList32, rutImag, '');
+  //icoFijTiempoIni:= CargaPNG(imagList16, imagList32, rutImag, '');
   icoVerMsjesRed := CargaPNG(imagList16, imagList32, rutImag, 'terminal');
   //Íconos del grupo
   icoAdminTarifas := CargaPNG(imagList16, imagList32, rutImag, 'PcDollar');
@@ -331,7 +331,7 @@ begin
   end;
 end;
 { TCibFacCabina }
-procedure TCibFacCabina.cabCambiaEstadoConex(nuevoEstado: TCabEstadoConex);
+procedure TCibFacCabina.cabCambiaEstadoConex(nuevoEstado: TCibEstadoConex);
 {Evento de cambio de estado de la conexión}
 begin
   //Se considera un cambio de estado
@@ -828,7 +828,7 @@ begin
   end;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-function TCibFacCabina.EstadoConex: TCabEstadoConex;
+function TCibFacCabina.EstadoConex: TCibEstadoConex;
 begin
   Result := cabConex.estado;
 end;
@@ -1085,6 +1085,9 @@ begin
   C_CABIN_PONMAN: begin  //Se pide detener la cuenta de las PC
     PonerManten;
     end;
+  C_CABIN_SACMAN: begin
+    SacarManten;
+    end;
   C_CABIN_TRASLA: begin  //Se pide trasladar desde una cabina a otra
     //Se supone que la cabina se moverá a "cab2"
     //Ubica el facturable a donde se moverá
@@ -1180,11 +1183,19 @@ begin
   InicLlenadoAcciones(MenuPopup);
   //Se ha visto que  la acción "Iniciar Cuenta" se puede reemplazar con "Modificar Tiempo".
   //AgregarAccion(nShortCut, '&Iniciar Cuenta'        , @mnInicCuenta , icoInicCuenta );
-  AgregarAccion(nShortCut, '&Modificar Tiempo'      , @mnModifCuenta, icoModifCuenta);
+  if EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
+    AgregarAccion(nShortCut, '&Modificar Tiempo'      , @mnModifCuenta, icoModifCuenta);
+  end else begin
+    AgregarAccion(nShortCut, '&Iniciar Cuenta'      , @mnModifCuenta, icoModifCuenta);
+  end;
   AgregarAccion(nShortCut, '&Detener Cuenta'        , @mnDetenCuenta, icoDetenCuenta);
   AgregarAccion(nShortCut, '&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
   AgregarAccion(nShortCut, 'Editar &Comentario'    , @mnEditComent, icoAgregComent);
-  AgregarAccion(nShortCut, 'Poner en &Mantenimiento', @mnPonerManten, icoPonerManten);
+  if cabCuenta.estado = EST_MANTEN then begin
+    AgregarAccion(nShortCut, 'Sacar de &Mantenimiento', @mnSacarManten, icoPonerManten);
+  end else begin
+    AgregarAccion(nShortCut, 'Poner en &Mantenimiento', @mnPonerManten, icoPonerManten);
+  end;
   if cabCuenta.estado = EST_CONTAN then begin
     AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent);
   end else if cabCuenta.estado = EST_PAUSAD then begin
@@ -1249,6 +1260,14 @@ begin
     exit;
   end;
   OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONMAN, 0, IdFac);
+end;
+procedure TCibFacCabina.mnSacarManten(Sender: TObject);
+begin
+  //if not Detenida then begin
+  //  MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
+  //  exit;
+  //end;
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_SACMAN, 0, IdFac);
 end;
 procedure TCibFacCabina.mnEditComent(Sender: TObject);
 var

@@ -99,6 +99,7 @@ begin
   grilla.RowCount:= TabPro.Productos.Count+1;
   f := 1;
   for reg in TabPro.Productos do begin
+    if not reg.Activo then continue;  //Filtra productos no activos
     grilla.Cells[1,f] := reg.Cod;
     grilla.Cells[2,f] := reg.Categ;
     grilla.Cells[3,f] := reg.Subcat;
@@ -115,7 +116,7 @@ begin
   //Configura grilla
   gri := TUtilGrilla.Create(grilla);
   gri.IniEncab;
-  gri.AgrEncab('N°'          , 0, -1, taRightJustify);
+  gri.AgrEncab('N°'          , 30, -1, taRightJustify);
   gri.AgrEncab('CÓDIGO'      , 50);
   gri.AgrEncab('CATEGORÍA'   , 70);
   gri.AgrEncab('SUBCATEGORÍA', 70);
@@ -169,10 +170,12 @@ begin
 end;
 function TfrmIngVentas.ProdSeleccionado: TCibRegProduc;
 {Devuelve el producto seleccionado. Si no hay ninguno seleccioando, devuelve NIL.}
+var
+  cod: String;
 begin
   if grilla.Row<1 then exit(nil);
-  Result := TabPro.Productos[grilla.Row-1];  //funcioan porque se llena en orden
-  //cod := grilla.Cells[1, grilla.Row];  //lee código de producto
+  cod := grilla.Cells[1, grilla.Row];  //lee código de producto
+  Result := TabPro.BuscarProd(cod);
 end;
 function TfrmIngVentas.ActualizarTotal(mostrarError: boolean): boolean;
 {Actualiza el valor del campo TOTAL. Si encuentar error, devuelve FALSE.}

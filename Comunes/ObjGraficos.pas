@@ -5,7 +5,7 @@ unit ObjGraficos;
 interface
 uses
   Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
-  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase, CibNiloMConex,
+  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase, CibNiloMConex, CibTramas,
   CibGFacClientes, CibGFacCabinas, CibGFacNiloM, CibFacturables, CibGFacMesas;
 const
   //Constantes de Colores

@@ -1,4 +1,4 @@
-{Contiene las definiciones básicas que se necesitan para el objeto TCPCabina.
+{Contiene las definiciones básicas que se necesitan para el objeto TCibFacCabina.
 Contiene la definición de las siguientes clases:
 
 * TSocketCabina-> Es un hilo, que se se usa para abrir una conexión Ethernet a la cabina.
@@ -13,14 +13,6 @@ Contiene la definición de las siguientes clases:
 La conexión por red se implementa usando un hilo, porque la librería usada, solo
 ofrece coenxiones con bloqueo, y lo que se desea es manejar la conexión por eventos.
 Las únicas clases que debe usarse desde el exterior son "TCabConexion" y "TCabCuenta".
-
-TSocketNilo-+
-            |
-            +- TNiloConexion (parámetros de la conexión)
-            -- TCabCuenta    (parámetros de cuenta)
-
-TNiloConexion se usa también, como un contenedor de las propiedades de la conexión serial,
-así como "TCabCuenta", es un contenedor de los parámetros de cuenta.
 
 La conexión por Red se implementa usando sockets con la librería "Synapse".
 
@@ -62,47 +54,21 @@ type
   end;
 
 type
-  // Estados de la conexión de la cabina.
-  TCabEstadoConex = (
-    cecConectando,    //conectando
-    cecConectado,     //conectado con socket
-    cecDetenido,      //el proceso se detuvo (no hay control)
-    cecMuerto         //proceso detenido
-  );
-
-  TEvCambiaEstado = procedure(nuevoEstado: TCabEstadoConex) of object;
-  TEvTramaLista = procedure(NomCab: string; tram: TCPTrama) of object;
 
   { TSocketCabina }
   {Esta clase es la conexión a la cabina. Es un hilo para manejar las conexiones de
    manera asíncrona. Está pensada para ser usada solo por TCabConexion.
    El ciclo de conexión normal de TSocketCabina es:
    cecConectando -> cecConectado }
-  TSocketCabina = class(TThread)
+  TSocketCabina = class(TCibConexBase)
   private
-    Festado: TCabEstadoConex;
     ip: string;
-    sock: TTCPBlockSocket;
-    regMsje: string;   //Usada como para pasar parámetro a EventoMensaje()
-    ProcTrama: TCPProcTrama; //Para procesar tramas
     procedure AbrirConexion;
     procedure Abrir;
-    procedure EventoTramaLista;
-    procedure EventoCambiaEstado;
-    procedure EventoRegMensaje;
-    procedure ProcTramaRegMensaje(NomPC: string; msj: string);
   protected
-    //Acciones sincronizadas
-    procedure ProcesarTrama;
-    procedure Setestado(AValue: TCabEstadoConex);
-    procedure RegMensaje(msje: string);
     procedure Execute; override;
   public
     //Eventos. Se ejecutan de forma sincronizada.
-    OnTramaLista  : TEvTramaLista;  //indica que hay una Trama lista esperando
-    OnCambiaEstado: TEvCambiaEstado;
-    OnRegMensaje  : TEvRegMensaje;
-    property estado: TCabEstadoConex read Festado write Setestado;
     procedure TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string=
       '');
     constructor Create(ip0: string);
@@ -119,20 +85,20 @@ type
    cecMuerto -> cecConectando -> cecConectado -> cecConectando -> cecConectado -> ...
    }
   TCabConexion = class
-    procedure hiloCambiaEstado(nuevoEstado: TCabEstadoConex);
+    procedure hiloCambiaEstado(nuevoEstado: TCibEstadoConex);
     procedure hiloRegMensaje(NomCab: string; msj: string);
     procedure hiloTerminate(Sender: TObject);
     procedure hiloTramaLista(NomCab: string; tram: TCPTrama);
   private
     FIP: string;
-    Festado: TCabEstadoConex;
+    Festado: TCibEstadoConex;
     hilo: TSocketCabina;
     function GetEstadoN: integer;
     procedure SetEstadoN(AValue: integer);
     procedure SetIP(AValue: string);
   public
     mac : string;   //Dirección Física
-    property estado: TCabEstadoConex read Festado
+    property estado: TCibEstadoConex read Festado
              write Festado;   {"estado" es una propiedad de solo lectura, pero se habilita
                                la escritura, para cuando se usa CabConexión sin Red}
     property estadoN: integer read GetEstadoN write SetEstadoN;
@@ -141,7 +107,7 @@ type
   public
     OnCambiaEstado: TEvCambiaEstado;
     OnRegMensaje  : TEvRegMensaje;  //Indica que ha llegado un mensaje de la conexión
-    OnTramaLista  : TEvTramaLista;  //indica que hay una trama lista esperando
+    OnTramaLista  : TEvTramaLista;  //Indica que hay una trama lista esperando
     MsjError: string;       //Mensajes de error producidos.
     MsjesCnx: TstringList;  //Almanena los últimos mensajes de la conexión.
     procedure Conectar;
@@ -204,7 +170,7 @@ begin
                            del Sistema Operativo}
   if sock.LastError <> 0 then begin
     RegMensaje('Error de conexion.');
-    { Genera temproización por si "sock.Connect", sale inmediátamente. Esto suele suceder
+    { Genera temporización por si "sock.Connect", sale inmediátamente. Esto suele suceder
      cuando hay un error de red. }
     sleep(1000);
     exit;          //falló
@@ -218,49 +184,7 @@ begin
    Abrir;  //puede tomar unos segundos
  until (estado = cecConectado) or Terminated;
 end;
-procedure TSocketCabina.EventoCambiaEstado;
-// Dispara evento de cambio de estado
-begin
-  if OnCambiaEstado<>nil then begin
-    OnCambiaEstado(Festado);
-  end;
-end;
-procedure TSocketCabina.EventoRegMensaje;
-begin
-  if OnRegMensaje<>nil then begin
-    OnRegMensaje('', regMsje);
-  end;
-end;
-procedure TSocketCabina.ProcTramaRegMensaje(NomPC: string; msj: string);
-{Este mensaje es geenrado por el procesador de tramas}
-begin
- regMsje := msj;
- Synchronize(@EventoRegMensaje);
-end;
-procedure TSocketCabina.EventoTramaLista;
-begin
-  if OnTramaLista<>nil then begin
-    OnTramaLista('', ProcTrama.trama);
-  end;
-end;
 //Acciones sincronizadas
-procedure TSocketCabina.ProcesarTrama;
-{Procesa cuando se ha recibido una trama completa.}
-begin
- Synchronize(@EventoTramaLista);
-end;
-procedure TSocketCabina.Setestado(AValue: TCabEstadoConex);
-begin
- if Festado=AValue then Exit;
- Festado:=AValue;
- Synchronize(@EventoCambiaEstado); //dispara evento sicnronizando
-end;
-procedure TSocketCabina.RegMensaje(msje: string);
-{Procedimiento para generar un mensaje dentro del hilo.}
-begin
- regMsje := msje;
- Synchronize(@EventoRegMensaje);
-end;
 procedure TSocketCabina.Execute;
 var
   buffer: String = '';
@@ -332,23 +256,15 @@ begin
                              "cecDetenido" para TSocketCabina.
                              Notar que esta asignación de estado, no generará el evento de
                              cambio de estado, porque estamos en el constructor}
-  sock := TTCPBlockSocket.Create;
-  FreeOnTerminate := False;  //para controlar el fin
-  ProcTrama:= TCPProcTrama.Create;
-  ProcTrama.OnRegMensaje:=@ProcTramaRegMensaje;
   inherited Create(true);  //crea suspendido
 end;
 destructor TSocketCabina.Destroy;
 begin
-  ProcTrama.Destroy;
-  sock.Destroy;
-  RegMensaje('Proceso terminado.');
-  //estado := cecMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
   inherited Destroy;
 end;
 
 { TCabConexion }
-procedure TCabConexion.hiloCambiaEstado(nuevoEstado: TCabEstadoConex);
+procedure TCabConexion.hiloCambiaEstado(nuevoEstado: TCibEstadoConex);
 begin
   if Festado = nuevoEstado then exit;
   Festado := nuevoEstado;
@@ -377,7 +293,7 @@ begin
  hiloCambiaEstado(cecDetenido);
 end;
 function TCabConexion.estadoStr: string;
-{Convierte TCabEstadoConex a cadena}
+{Convierte TCibEstadoConex a cadena}
 begin
  case Festado of
  cecConectando : exit('Conectando');
@@ -401,7 +317,7 @@ begin
 end;
 procedure TCabConexion.SetEstadoN(AValue: integer);
 begin
- Festado := TCabEstadoConex(AValue);
+ Festado := TCibEstadoConex(AValue);
 end;
 procedure TCabConexion.Conectar;
 {Crea el hilo con la IP actual e inicia la conexión}
@@ -475,4 +391,4 @@ begin
 end;
 
 end.
-
+//470

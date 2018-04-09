@@ -6,8 +6,10 @@ object frmValStock: TfrmValStock
   Caption = 'Validación de Stock'
   ClientHeight = 468
   ClientWidth = 795
+  KeyPreview = True
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
   LCLVersion = '1.6.2.0'
   object Panel2: TPanel
     Left = 0
@@ -24,14 +26,6 @@ object frmValStock: TfrmValStock
       Width = 200
       ClientHeight = 32
       ClientWidth = 200
-      TabOrder = 2
-    end
-    object chkMostInac: TCheckBox
-      Left = 48
-      Height = 19
-      Top = 5
-      Width = 111
-      Caption = 'Mostrar &Inactivos'
       TabOrder = 1
     end
     object btnMostCateg: TBitBtn
@@ -77,6 +71,15 @@ object frmValStock: TfrmValStock
       }
       OnClick = btnMostCategClick
       TabOrder = 0
+    end
+    object chkOcultInac: TCheckBox
+      Left = 48
+      Height = 19
+      Top = 8
+      Width = 109
+      Caption = 'Ocultar &Inactivos'
+      OnChange = chkOcultInacChange
+      TabOrder = 2
     end
   end
   object Panel3: TPanel

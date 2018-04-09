@@ -22,7 +22,7 @@ type
     btnFind: TSpeedButton;
     btnGrabar: TBitBtn;
     btnMostCateg: TBitBtn;
-    chkMostInac: TCheckBox;
+    chkOcultInac: TCheckBox;
     ComboBox2: TComboBox;
     Edit1: TEdit;
     fraFiltArbol1: TfraFiltArbol;
@@ -38,6 +38,7 @@ type
     procedure acArcSalirExecute(Sender: TObject);
     procedure acVerArbCatExecute(Sender: TObject);
     procedure btnMostCategClick(Sender: TObject);
+    procedure chkOcultInacChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -52,7 +53,9 @@ type
     colDescri: TugGrillaCol;
     colMarca : TugGrillaCol;
     colUniCom: TugGrillaCol;
+    colActivo: TugGrillaCol;
     FormatMon: string;
+    function FiltroInac(const f: integer): boolean;
     procedure fraFiltCampoKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure fraGriCeldaEditada(var eveSal: TEvSalida; col, fil: integer;
@@ -94,6 +97,12 @@ begin
     hayFiltro := true;
     fraGri.AgregarFiltro(@fraFiltCampo.Filtro);
     lblFiltCateg.Caption := lblFiltCateg.Caption + ', Texto de búsqueda: ' + txtBusc;
+  end;
+  //Agrega Filtro de Activos
+  if chkOcultInac.Checked then begin
+    hayFiltro := true;
+    fraGri.AgregarFiltro(@FiltroInac);
+    lblFiltCateg.Caption := lblFiltCateg.Caption + ', Ocultos Inactivos';
   end;
   fraGri.Filtrar;   //Filtra con todos los filtros agregados
   if hayFiltro then begin
@@ -151,6 +160,11 @@ begin
   if Key = VK_DOWN then begin
     fraGri.SetFocus;
   end;
+end;
+
+function TfrmIngStock.FiltroInac(const f: integer): boolean;
+begin
+  Result := colActivo.ValBool[f];
 end;
 procedure TfrmIngStock.fraGriCeldaEditada(var eveSal: TEvSalida; col,
   fil: integer; var ValorAnter, ValorNuev: string);
@@ -212,6 +226,8 @@ begin
   colMarca.visible := false;
   colUniCom := fraGri.AgrEncabTxt  ('UNID. DE COMPRA',70, 'UNIDCOMP');
   colUniCom.visible := false;
+  colActivo := fraGri.AgrEncabBool  ('ACTIVO'        , 30, 'ACTIVO');
+  colActivo.visible := false;
   fraGri.FinEncab;
   if fraGri.MsjError<>'' then begin
     //Muestra posible mensaje de error, pero deja seguir.
@@ -242,6 +258,7 @@ begin
 
   fraFiltArbol1.LeerCategorias;
   RefrescarFiltros;   //Para actualizar mensajes y variables de estado.
+  chkOcultInac.Checked := true;
   self.Show;
 end;
 procedure TfrmIngStock.Habilitar(estado: boolean);
@@ -251,6 +268,11 @@ end;
 procedure TfrmIngStock.btnMostCategClick(Sender: TObject);
 begin
   acVerArbCatExecute(self);
+end;
+
+procedure TfrmIngStock.chkOcultInacChange(Sender: TObject);
+begin
+  RefrescarFiltros;
 end;
 ///////////////////////// Acciones ////////////////////////////////
 procedure TfrmIngStock.acArcGrabarExecute(Sender: TObject);

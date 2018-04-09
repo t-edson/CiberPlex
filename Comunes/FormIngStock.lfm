@@ -26,14 +26,6 @@ object frmIngStock: TfrmIngStock
       Width = 200
       ClientHeight = 32
       ClientWidth = 200
-      TabOrder = 2
-    end
-    object chkMostInac: TCheckBox
-      Left = 48
-      Height = 19
-      Top = 5
-      Width = 111
-      Caption = 'Mostrar &Inactivos'
       TabOrder = 1
     end
     object btnMostCateg: TBitBtn
@@ -79,6 +71,15 @@ object frmIngStock: TfrmIngStock
       }
       OnClick = btnMostCategClick
       TabOrder = 0
+    end
+    object chkOcultInac: TCheckBox
+      Left = 48
+      Height = 19
+      Top = 8
+      Width = 109
+      Caption = 'Ocultar &Inactivos'
+      OnChange = chkOcultInacChange
+      TabOrder = 2
     end
   end
   object Panel3: TPanel

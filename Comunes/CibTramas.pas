@@ -1,8 +1,18 @@
+{Unidad que define clases que permiten procesar las tramas e implementar conexiones
+mediante TCP/IP, usando hilos.
+Los tipos aquí definidos se han penasado para trabajar con Ciberplex, usando las tramas
+de comunicación con encabezados de 9 bytes, pero podrían también usarse para otro tipo
+de aplicación que desee comunciarse pro Red, siempre que se adapte al formato de las
+tramas.
+
+                                        Creado por Tito Hinostroza
+                                        Modificado por Tito Hinostroza 27/03/2018
+}
 unit CibTramas;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, fgl, LCLProc;
+  Classes, SysUtils, fgl, LCLProc, blcksock;
 
 Const
   ID_ENCABEZ = 15;    //Identificador de mensaje
@@ -131,7 +141,6 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
   );
 
 type
-  TEvRegMensaje = procedure(NomPC: string; msj: string) of object;
   { TCPTrama }
   {Objeto que representa a una trama de comunicación del Servidor con las PC cliente.}
   TCPTrama = class
@@ -159,11 +168,12 @@ type
   TCPTrama_list = specialize TFPGObjectList<TCPTrama>;
 
   TEvTramaRecibida = procedure of object;  //evento de trama recibida
+  TEvRegMensaje = procedure(NomPC: string; msj: string) of object;
 
-  { TCPProcTrama }
+  { TCibProcTrama }
   {Procesador de Tramas. Objeto que permite reconstruir las tramas a partir de los
    paquetes recibidos.}
-  TCPProcTrama = class
+  TCibProcTrama = class
     estad_tra: integer;
     BytesRecib: Integer;
     BytesEsper: Integer;
@@ -181,7 +191,7 @@ type
   end;
 
   { TPilaCom }
-  {Modela a una pila LIFO de comandos. Pensada para ser usada en el envío de ocmandos}
+  {Modela a una pila LIFO de comandos. Pensada para ser usada en el envío de comandos}
   TPilaCom = class
   private
     items: TCPTrama_list;
@@ -194,6 +204,55 @@ type
     function PrimerComando: TCPTrama;
   public  //Constructor y destructor
     constructor Create;
+    Destructor Destroy; override;
+  end;
+
+type //Manejo de la conexión con hilos
+
+  // Estados de la conexión
+  TCibEstadoConex = (
+    cecConectando,    //Conectando.
+    cecConectado,     //Conectado con socket.
+    cecDetenido,      //El proceso se detuvo (no hay control).
+    cecMuerto         //Proceso detenido.
+  );
+
+  TEvCambiaEstado = procedure(nuevoEstado: TCibEstadoConex) of object;
+
+  TEvTramaLista = procedure(NomPC: string; tram: TCPTrama) of object;
+
+  { TCibConexBase }
+  {Clase base que se usa para implementar conexiones con sockets trabajando como hilos.
+   Notar que esta clase define a un hilo y debe ser impleemntada como tal.
+   Se puede usar tanto para el lado del cliente como para la del servidor. La diferencia
+   estaría en cómo se implemente el Execute().}
+  TCibConexBase = class(TThread)
+  private
+    procedure EventoTramaLista;
+    procedure EventoCambiaEstado;
+    procedure EventoRegMensaje;
+  protected
+    FEstado   : TCibEstadoConex;
+    Sock      : TTCPBlockSocket;
+    ProcTrama : TCibProcTrama; //Para procesar tramas
+    tmpEstCnx : TCibEstadoConex; //Para pasar parámetro a EventoCambiaEstado()
+    tmpRegMsje: string;          //Para pasar parámetro a EventoRegMensaje()
+  public  //Eventos y Acciones sincronizadas
+    OnRegMensaje : TEvRegMensaje;   //Indica quue desea registrar un mensaje
+    OnTramaLista : TEvTramaLista;  //Indica que hay una trama lista esperando
+    OnCambiaEstado : TEvCambiaEstado;  //Cambio en estado de la conexión
+    procedure SetEstado(AValue: TCibEstadoConex);
+    procedure RegMensaje(msje: string);
+    procedure ProcTramaRegMensaje(NomPC: string; msj: string);
+  public
+    property Estado: TCibEstadoConex read FEstado write SetEstado;
+    function Conectado: boolean;
+    function EstadoConexStr: string;
+    procedure ProcesarTrama;
+  public
+    //Constructor Create; override;
+    constructor Create(CreateSuspended: Boolean;
+                       const StackSize: SizeUInt = DefaultStackSize);
     Destructor Destroy; override;
   end;
 
@@ -219,6 +278,82 @@ begin
   Result[8] := Chr((ParamY shr 8) and 255);
   Result[9] := Chr((ParamY) and 255);
 End;
+
+{ TCibConexBase }
+//Acciones sincronizadas
+procedure TCibConexBase.SetEstado(AValue: TCibEstadoConex);
+begin
+  if FEstado=AValue then Exit;
+  FEstado:=AValue;
+  tmpEstCnx := FEstado;
+  Synchronize(@EventoCambiaEstado); //dispara evento sicnronizando
+end;
+procedure TCibConexBase.RegMensaje(msje: string);
+{Procedimiento para generar un mensaje dentro del hilo.}
+begin
+  tmpRegMsje := msje;
+  Synchronize(@EventoRegMensaje);
+end;
+procedure TCibConexBase.ProcTramaRegMensaje(NomPC: string; msj: string);
+begin
+ //Genera mensajes detallados de la conexión
+ tmpRegMsje := msj;
+ Synchronize(@EventoRegMensaje);
+end;
+procedure TCibConexBase.ProcesarTrama;
+//Llegó una trama y hay que hacer algo. La trama está en "Encab" y "traDat"
+begin
+  //Dispara evento sincronizando con proceso padre. Esto puede hacer que deba
+  //esperar hasta que haya terminado algún procesamiento.
+  Synchronize(@EventoTramaLista);
+End;
+
+constructor TCibConexBase.Create(CreateSuspended: Boolean;
+  const StackSize: SizeUInt);
+begin
+ sock := TTCPBlockSocket.create;
+ FreeOnTerminate := False;
+ ProcTrama:= TCibProcTrama.Create;
+ ProcTrama.OnRegMensaje := @ProcTramaRegMensaje;
+  inherited Create(CreateSuspended, StackSize);
+end;
+
+destructor TCibConexBase.Destroy;
+begin
+  ProcTrama.Destroy;
+  sock.Destroy;
+  RegMensaje('Proceso terminado.');
+  //estado := cecMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
+  inherited Destroy;
+end;
+
+procedure TCibConexBase.EventoTramaLista;
+begin
+  if OnTramaLista <> nil then OnTramaLista('', ProcTrama.trama);
+end;
+procedure TCibConexBase.EventoCambiaEstado;
+begin
+  if OnCambiaEstado<>nil then OnCambiaEstado(tmpEstCnx);
+end;
+procedure TCibConexBase.EventoRegMensaje;
+begin
+  if OnRegMensaje<>nil then OnRegMensaje('', tmpRegMsje);
+end;
+function TCibConexBase.Conectado: boolean;
+begin
+  Result := FEstado = cecConectado;
+end;
+function TCibConexBase.EstadoConexStr: string;
+{Convierte TCabEstadoConex a cadena}
+begin
+ case FEstado of
+ cecConectando : exit('Conectando');
+ cecConectado  : exit('Conectado');
+ cecDetenido   : exit('Detenido');
+ cecMuerto     : exit('Muerto');
+ end;
+end;
+
 { TCPTrama }
 function TCPTrama.GetEncab: string;
 begin
@@ -313,8 +448,8 @@ begin
   items.Destroy;
   inherited Destroy;
 end;
-{ TCPProcTrama }
-procedure TCPProcTrama.AcumularTrama(dat: string; pos_ini: Longint = 0; pos_fin: Longint = 0);
+{ TCibProcTrama }
+procedure TCibProcTrama.AcumularTrama(dat: string; pos_ini: Longint = 0; pos_fin: Longint = 0);
 {Agrega los bytes de dat a la "traDat()"
 "pos_ini" es la posición inicial donde se encuentran los datos en "dat()"
 Si no se especifica se asume que se debe copiar desde el principio.
@@ -328,7 +463,7 @@ begin
     pos_fin := length(dat); //valor por defecto
   trama.traDat += copy(dat, pos_ini, pos_fin - pos_ini + 1);
 End;
-procedure TCPProcTrama.FinTrama;
+procedure TCibProcTrama.FinTrama;
 //Se llama al finalizar la recepción de una trama
 begin
     estad_tra := EST_ESPERANDO;   //Termina recepción
@@ -336,7 +471,7 @@ begin
     BytesEsper := 0;
     trama.traDat := '';             //Inicia la matriz de datos
 end;
-procedure TCPProcTrama.DatosRecibidos(var s: string; ProcesarTrama: TEvTramaRecibida);
+procedure TCibProcTrama.DatosRecibidos(var s: string; ProcesarTrama: TEvTramaRecibida);
 {Procesa un fragmento de trama de datos que ha llegado por el puerto.
  Si se detecta error, en el procesamiento, se devuelve el mensaje en "msjErr".
  Cuando se ha terminado de procesar una trama completa, llama al evento ProcesarTrama().}
@@ -435,12 +570,12 @@ begin
   end;
 end;
 //Constructor y Destructor
-constructor TCPProcTrama.Create;
+constructor TCibProcTrama.Create;
 begin
   trama  := TCPTrama.Create;
   FinTrama();  //Inicia recepción
 end;
-destructor TCPProcTrama.Destroy;
+destructor TCibProcTrama.Destroy;
 begin
   trama.Destroy;
   inherited Destroy;

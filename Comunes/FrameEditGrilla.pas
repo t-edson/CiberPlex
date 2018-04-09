@@ -346,7 +346,7 @@ begin
 end;
 //Trabajo con tablas de datos TCibTablaMaest
 procedure TfraEditGrilla.IniEncab(tabFuente: TCibTablaMaest);
-{Rutina de inicio para definri encabezados, cuando se trabaja con Tablas}
+{Rutina de inicio para definir encabezados, cuando se trabaja con Tablas}
 begin
   MsjError := '';
   Table := tabFuente;
@@ -486,7 +486,8 @@ begin
   try
     lineas := TStringList.Create;
     //Notar que se incluye también el encabezado
-    for f := 0 to grilla.RowCount-1 do begin
+    lineas.Add(Table.TableHeader);
+    for f := 1 to grilla.RowCount-1 do begin
       lineas.Add(grilla.Cells[colData.idx, f]);
     end;
     Result := lineas.Text;

@@ -23,7 +23,9 @@ type
     class var COL_tPre      : integer;
     class var COL_fecCre    : integer;
     class var COL_fecMod    : integer;
+    class var COL_Act       : integer;
   private
+    function GetActivo: Boolean;
     function GetCateg: string;
     function GetCod: string;
     function GetDesc: string;
@@ -37,6 +39,7 @@ type
     function GetSubcat: string;
     function GettPre: Double;
     function GetUnidComp: string;
+    procedure SetActivo(AValue: Boolean);
     procedure SetCateg(AValue: string);
     procedure SetCod(AValue: string);
     procedure SetDesc(AValue: string);
@@ -66,6 +69,7 @@ type
     property tPre    : Double    read GettPre     write SettPre    ; //NUMÉRICO. Tiempo de preparación
     property fecCre  : TDateTime read GetfecCre   write SetfecCre  ; //Fecha de creación
     property fecMod  : TDateTime read GetfecMod   write SetfecMod  ; //Fecha de modificación.
+    property Activo  : Boolean   read GetActivo   write SetActivo  ; //ïtem activo
   public
     constructor Create;
   end;
@@ -97,6 +101,14 @@ end;
 procedure TCibRegProduc.SetCod(AValue: string);
 begin
   values[COL_Cod] := AValue;
+end;
+function TCibRegProduc.GetActivo: Boolean;
+begin
+  Result := f2B(values[COL_Act]);
+end;
+procedure TCibRegProduc.SetActivo(AValue: Boolean);
+begin
+  values[COL_Act] := B2f(AValue);
 end;
 function TCibRegProduc.GetCateg: string;
 begin
@@ -300,11 +312,12 @@ var
   tabtmp: TCibTabProduc;
   nProNuevos, nProElimin: Integer;
 begin
+  msjError := '';
   //Carga nuevos datos para la búsqueda
   tabtmp := TCibTabProduc.Create;
   tabtmp.LoadFromString(nuevDatos);
   if tabtmp.msjError<>'' then begin
-    msjError:= 'Error modificando tabla de productos.';
+    msjError:= tabtmp.msjError;
     Result := msjError;
     exit;
   end;
@@ -363,6 +376,7 @@ begin
   TCibRegProduc.COL_TPRE     := FindColPos('TPREPAR');
   TCibRegProduc.COL_FECCRE   := FindColPos('FECCRE');
   TCibRegProduc.COL_FECMOD   := FindColPos('FECMOD');
+  TCibRegProduc.COL_Act      := FindColPos('ACTIVO');
   //Puede salir con error en "msjError".
 end;
 constructor TCibTabProduc.Create;

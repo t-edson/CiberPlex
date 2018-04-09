@@ -177,7 +177,7 @@ type
     function tarif_LogInf(mensaje: string): integer;
   public  //Eventos que se pueden generar de forma automática
     //Eventos reflejo de "TNiloConexion"
-    OnCambiaEstadoCnx: TEvCambiaEstado;  //Cambia el estado de la conexión
+    OnCambiaEstadoCnx: TEvNilCambiaEstado;  //Cambia el estado de la conexión
     OnRegMensaje  : TEvRegMensaje;  //Indica que ha llegado un mensaje de la conexión
     OnProcesarCad : TEvProcesarCad; //indica que hay una cadena lista esperando
     OnProcesarLin : TEvRegMensaje;  //Se genera una línea para registrar mensaje
@@ -727,8 +727,8 @@ procedure TCibFacLocutor.MenuAccionesVista(MenuPopup: TPopupMenu;
   nShortCut: integer);
 begin
   InicLlenadoAcciones(MenuPopup);
-  AgregarAccion(nShortCut, '&Conectar'      , @mnConectarClick);
   AgregarAccion(nShortCut, '&Desconectar'   , @mnDesconecClick);
+  AgregarAccion(nShortCut, '&Conectar'      , @mnConectarClick);
 end;
 procedure TCibFacLocutor.mnConectarClick(Sender: TObject);
 begin
