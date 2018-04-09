@@ -350,8 +350,7 @@ begin
     if tabPro.msjError <> '' then begin
       //Esto no debería pasar si se maneja bien la tabla
       log.PLogErr(usuario, tabPro.msjError);
-      MsgErr('Error cargando tabla de productos.');
-      MsgErr(tabPro.msjError);
+      MsgErr('Error cargando tabla de productos:' + tabPro.msjError);
     end;
   end;
 end;
