@@ -126,7 +126,7 @@ type
     procedure fraVisCPlex1ClickDer(xp, yp: integer);
     procedure MenuItem19Click(Sender: TObject);
     procedure PaintBox1Click(Sender: TObject);
-    procedure procesoTramaLista(tram: TCPTrama);
+    procedure procesoTramaLista(NomPC: string; tram: TCPTrama);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -148,8 +148,8 @@ type
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
     procedure Plog(s: string);
-    procedure ServCab_CambEstadoCnx(nuevoEstado: TServEstadoConex);
-    procedure ServCab_RegMensajeCnx(msj: string);
+    procedure ServCab_CambEstadoCnx(nuevoEstado: TCibEstadoConex);
+    procedure ServCab_RegMensajeCnx(NomPC: string; msj: string);
     procedure StatusBar1DrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel;
       const Rect: TRect);
     procedure Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
@@ -175,11 +175,11 @@ begin
   DateTimeToString(tmp,'hh:mm:ss:zzz', now);
   frmLog.Memo1.Lines.Add(tmp + ' ' + s);
 end;
-procedure TForm1.ServCab_CambEstadoCnx(nuevoEstado: TServEstadoConex);
+procedure TForm1.ServCab_CambEstadoCnx(nuevoEstado: TCibEstadoConex);
 begin
   StatusBar1.Panels[0].Text := ServCab.EstadoConexStr;
 end;
-procedure TForm1.ServCab_RegMensajeCnx(msj: string);
+procedure TForm1.ServCab_RegMensajeCnx(NomPC: string; msj: string);
 //Se ha geenrado un mensaje de conexión.
 begin
   frmSincronBD.RegMensaje(msj);
@@ -339,7 +339,7 @@ procedure TForm1.StatusBar1DrawPanel(StatusBar: TStatusBar;
   Panel: TStatusPanel; const Rect: TRect);
 begin
   if panel.Index = 0 then begin
-    if ServCab.EstadoConex = secConectando then begin
+    if ServCab.Estado = cecConectando then begin
       if tic mod 2 = 0 then begin
 //        StatusBar.Canvas.Font.Bold := true;
         StatusBar.Canvas.Font.Color:=clGreen;
@@ -355,7 +355,7 @@ begin
         StatusBar.Canvas.Rectangle(Rect);
         StatusBar.Canvas.TextRect(Rect, 2 + Rect.Left, 2 + Rect.Top, dic('Conectando...'));
       end;
-    end else if ServCab.EstadoConex = secConectado then begin
+    end else if ServCab.Estado = cecConectado then begin
       StatusBar.Canvas.Font.Color:=clWhite;
       StatusBar.Canvas.Pen.Color := clGreen;
       StatusBar.Canvas.Brush.Color := clGreen;
@@ -383,8 +383,8 @@ begin
   ServCab := TCibServidorPC.create;
   //evento de llegada de trama
   ServCab.OnTramaLista:=@procesoTramaLista;
-  ServCab.OnRegMensajeCnx:=@ServCab_RegMensajeCnx;
-  ServCab.OnCambEstadoCnx:=@ServCab_CambEstadoCnx;
+  ServCab.OnRegMensaje:=@ServCab_RegMensajeCnx;
+  ServCab.OnCambiaEstado:=@ServCab_CambEstadoCnx;
   tabPro := TCibTabProduc.Create;
   tabPrv := TCibTabProvee.Create;
   tabIns := TCibTabInsumo.Create;
@@ -403,10 +403,6 @@ begin
   tabIns.Destroy;
   tabPrv.Destroy;
   tabPro.Destroy;
-  ServCab.OnTramaLista:=nil;  //para evitar eventos al morir
-  ServCab.OnRegMensajeCnx:=nil;  //para evitar eventos al morir
-  ServCab.Terminate;
-  ServCab.WaitFor;
   ServCab.Free;
   Visor.Destroy;
 end;
@@ -448,7 +444,7 @@ end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
   tic := tic + 1;  //incrementa contador
-  if ServCab.EstadoConex = secConectando then
+  if ServCab.Estado = cecConectando then
     StatusBar1.InvalidatePanel(0,[ppText]);
   //Aprovecha para refrescar la ventana de boleta
   if (frmBoleta<>nil) and frmBoleta.Visible then
@@ -469,7 +465,7 @@ procedure TForm1.MenuItem19Click(Sender: TObject);
 begin
   frmPant.Show;
 end;
-procedure TForm1.procesoTramaLista(tram: TCPTrama);
+procedure TForm1.procesoTramaLista(NomPC: string; tram: TCPTrama);
 begin
   frmSincronBD.TramaLista(tram);
   fraSincBD.TramaLista(tram);
