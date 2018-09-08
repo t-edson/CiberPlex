@@ -123,7 +123,7 @@ type
     procedure acVerRepEveExecute(Sender: TObject);
     procedure acVerRepIngExecute(Sender: TObject);
     procedure acVerRepProExecute(Sender: TObject);
-    procedure fraVisCPlex1ClickDer(xp, yp: integer);
+    procedure fraVisCPlex1ClickDer(Shift: TShiftState; xp, yp: integer);
     procedure MenuItem19Click(Sender: TObject);
     procedure PaintBox1Click(Sender: TObject);
     procedure procesoTramaLista(NomPC: string; tram: TCPTrama);
@@ -154,7 +154,7 @@ type
       const Rect: TRect);
     procedure Visor_SolicEjecCom(comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
-    procedure Visor_ClickDer(x, y: integer);
+    procedure Visor_ClickDer(Shift: TShiftState; x, y: integer);
     function CadMon(valor: double): string;
   public
     Visor: TfraVisCPlex;
@@ -191,7 +191,7 @@ begin
   //Envía el comando al servidor
   ServCab.PonerComando(comando, ParamX, ParamY, cad);
 end;
-procedure TForm1.Visor_ClickDer(x, y: integer);
+procedure TForm1.Visor_ClickDer(Shift: TShiftState; x, y: integer);
 var
   ogFac: TogFac;
   Nombre, nomFac: String;
@@ -276,12 +276,12 @@ begin
 end;
 procedure TForm1.frmIngStock_Grabar;
 var
-  TabIngSTock, res: String;
+  TabIngSTock: String;
   tipModif: Integer;
 begin
   //Graba localmente
   TabIngSTock := frmIngStock.TabIngSTock;
-  res := tabPro.ActualizarTabIngStock(TabIngSTock);
+  tabPro.ActualizarTabIngStock(TabIngSTock);
   if tabPro.msjError <> '' then begin
     //Esto no debería pasar si se maneja bien la tabla
     MsgErr('Error actualizando tabla de productos.');
@@ -373,13 +373,13 @@ begin
   Visor:= TfraVisCPlex.Create(self);
   Visor.Parent := self;
   Visor.Align:=alClient;
-  Visor.motEdi.OnClickDer:=@fraVisCPlex1ClickDer;
+  Visor.motEdi.OnMouseUpRight:=@fraVisCPlex1ClickDer;
   Visor.Left:=300;
   Visor.Top:=0;
   Visor.Width:=400;
   Visor.Height:=300;
   Visor.Visible:=true;
-  Visor.motEdi.OnClickDer:=@Visor_ClickDer;
+  Visor.motEdi.OnMouseUpRight:=@Visor_ClickDer;
   ServCab := TCibServidorPC.create;
   //evento de llegada de trama
   ServCab.OnTramaLista:=@procesoTramaLista;
@@ -407,8 +407,6 @@ begin
   Visor.Destroy;
 end;
 procedure TForm1.FormShow(Sender: TObject);
-var
-  arcCfgServ: String;
 begin
 //  frmLog.show;
 //  frmLog.SetFocus;
@@ -451,7 +449,7 @@ begin
     frmBoleta.ActualizarDatos;
 
 end;
-procedure TForm1.fraVisCPlex1ClickDer(xp,yp: integer);   //Evento Click Derecho
+procedure TForm1.fraVisCPlex1ClickDer(Shift: TShiftState; xp, yp: integer);   //Evento Click Derecho
 var
   og: TObjGraf;
 begin
@@ -612,8 +610,6 @@ begin
   frmReempProd.Exec(Config.Local);
 end;
 procedure TForm1.acHerSincronizarExecute(Sender: TObject);
-var
-  arcCfgServ: string;
 begin
   fraSincBD.btnSincronCfgClick(self);
 end;

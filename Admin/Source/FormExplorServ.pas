@@ -167,8 +167,8 @@ begin
   Timer1Timer(self);   //Actualizamos de una vez, para no esperar al Timer
 end;
 procedure TfrmExplorServ.Timer1Timer(Sender: TObject);
-var
-  cab : TCibServidorPC;
+//var
+//  cab : TCibServidorPC;
 begin
   //if not self.Visible then exit;
   //cab := TCibFacCabina(fac);
@@ -655,9 +655,9 @@ begin
   end;
 end;
 procedure TfrmExplorServ.acArcAbrirRemExecute(Sender: TObject);
-var
-  cab: TCibServidorPC;
-  arc: string;
+//var
+//  cab: TCibServidorPC;
+//  arc: string;
 begin
 //  cab := TCibServidorPC(fac);
 //  if CarpetaSelec(arc) then begin
