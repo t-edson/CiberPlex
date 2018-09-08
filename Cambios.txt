@@ -1,3 +1,18 @@
+1.7.5
+=====
+Se cambia el orden del menú de los locutorios.
+Se crea una clase base para derivar las clases TSocketCabina (unidad CibCabinaBase) y 
+TCibServidorPC (unidad CibServidorPC en CIBERPLEX-ADMIN), para reutilizar código y mejorar
+la conexión.
+Se agregó el comando C_CABIN_SACMAN a la unidad CinGFacCabinas.
+Se define el texto de los menú de cabinas, de forma dinámica, de modo que lean el estado 
+y trabajen de forma más inteligente.
+Se modifica la ventana de administración de productos, para que se resalten los ítems
+desactivados y se puedan filtrarlos.
+Se modifican las ventanas de Ingreso de Stock y de Validación de Stock, para que permitan
+ocultar los ítems desactivados.
+Se modifica la ventana de ingreso de ventas para que no muestre los ítems desactivados.
+
 1.7.4
 =====
 Se argegan 2 campos más a la tabla de productos.
