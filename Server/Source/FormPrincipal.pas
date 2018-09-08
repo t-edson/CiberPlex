@@ -736,7 +736,7 @@ begin
   for og in Visor.motEdi.seleccion do begin
     if og.Tipo = OBJ_GRUP then begin
       //Es un grupo. Ubica el obejto
-      Gfac := Modelo.ItemPorNombre(og.Nombre);
+      Gfac := Modelo.ItemPorNombre(og.Name);
       if Gfac=nil then exit;
       Gfac.x := og.x;
       Gfac.y := og.y;
@@ -744,7 +744,7 @@ begin
       //Es un facturable
       Gfac := Modelo.ItemPorNombre(TogFac(og).NomGrupo);  //ubica a su grupo
       if Gfac=nil then exit;
-      fac := Gfac.ItemPorNombre(og.Nombre);
+      fac := Gfac.ItemPorNombre(og.Name);
       fac.x := og.x;
       fac.y := og.y;
     end;
