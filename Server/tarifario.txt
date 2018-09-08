@@ -1,12 +1,8 @@
 MONEDA = S/
-										
-DEFINIR _movistar    COMO 60	0.4	MOVIST "MOVISTAR LOCAL" FINDEFINIR
-DEFINIR _claro       COMO 60	0.4	CLARO	 "CLARO LOCAL"    FINDEFINIR
-DEFINIR _entel      COMO 60	0.4	ENTEL "ENTEL LOCAL"   FINDEFINIR
-DEFINIR _vitel      COMO 60	0.4	VITEL "VITEL LOCAL"   FINDEFINIR
-DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
-										
-//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO					
+
+DEFINIR _movistar    COMO 60	0.4	MOVIST "CELULAR LOCAL" FINDEFINIR
+
+//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO
 001	60	0.3	"LDI"	"EEUU"
 001204	60	0.3	"LDI"	"CANADA"
 001242	60	1	"LDI"	"BAHAMAS"
@@ -275,11 +271,11 @@ DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
 0033698	60	0.7	"LDI"	"FRANCIA - MOVIL - BOUYGUES"
 0033699	60	0.7	"LDI"	"FRANCE - MOVIL - BOUYGUES"
 003387	60	0.7	"LDI"	"FRANCIA - PERSONAL - NUMBERING"
-0034	60	0.3	"LDI"	"ESPA—A"
-00341	60	0.3	"LDI"	"ESPA—A - MADRID"
-00343	60	0.3	"LDI"	"ESPA—A - BARCELONA"
-00346	60	0.7	"LDI"	"ESPA—A - MOVIL"
-003491	60	0.3	"LDI"	"ESPA—A - MADRID"
+0034	60	0.3	"LDI"	"ESPA√ëA"
+00341	60	0.3	"LDI"	"ESPA√ëA - MADRID"
+00343	60	0.3	"LDI"	"ESPA√ëA - BARCELONA"
+00346	60	0.7	"LDI"	"ESPA√ëA - MOVIL"
+003491	60	0.3	"LDI"	"ESPA√ëA - MADRID"
 0034922	60	0.4	"LDI"	"ISLAS CANARIAS"
 0034928	60	0.4	"LDI"	"ISLAS CANARIAS"
 003493	60	0.3	"LDI"	"ESPANA - BARCELONA"
@@ -709,12 +705,12 @@ DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
 00568	60	0.8	"LDI"	"CHILE - MOVIL"
 00569	60	0.8	"LDI"	"CHILE - MOVIL"
 0057	60	0.3	"LDI"	"COLOMBIA"
-005712	60	0.3	"LDI"	"COLOMBIA - BOGOT¡"
-005713	60	0.3	"LDI"	"COLOMBIA - BOGOT¡"
-005714	60	0.3	"LDI"	"COLOMBIA - BOGOT¡"
-005715	60	0.3	"LDI"	"COLOMBIA - BOGOT¡"
-005716	60	0.3	"LDI"	"COLOMBIA - BOGOT¡"
-005717	60	0.3	"LDI"	"COLOMBIA - BOGOT¡"
+005712	60	0.3	"LDI"	"COLOMBIA - BOGOT√Å"
+005713	60	0.3	"LDI"	"COLOMBIA - BOGOT√Å"
+005714	60	0.3	"LDI"	"COLOMBIA - BOGOT√Å"
+005715	60	0.3	"LDI"	"COLOMBIA - BOGOT√Å"
+005716	60	0.3	"LDI"	"COLOMBIA - BOGOT√Å"
+005717	60	0.3	"LDI"	"COLOMBIA - BOGOT√Å"
 0057227	60	0.3	"LDI"	"COLOMBIA - PALMIRA"
 0057228	60	0.3	"LDI"	"COLOMBIA - PALMIRA"
 005723	60	0.3	"LDI"	"COLOMBIA - CALI"
@@ -740,14 +736,14 @@ DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
 0057635	60	0.3	"LDI"	"COLOMBIA - PEREIRA"
 005790	60	0.3	"LDI"	"COLOMBIA - PREMIUM"
 0058	60	0.4	"LDI"	"VENEZUELA"
+0058212	60	0.4	"LDI"	"VENEZUELA - CARACAS"
+00584	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 005812	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 005814	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 005815	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 005816	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 005817	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 005818	60	0.7	"LDI"	"VENEZUELA - MOVIL"
-0058212	60	0.4	"LDI"	"VENEZUELA - CARACAS"
-005841	60	0.7	"LDI"	"VENEZUELA - MOVIL"
 00590	60	0.8	"LDI"	"GUADALUPE"
 00591	60	0.6	"LDI"	"BOLIVIA"
 005911	60	0.9	"LDI"	"BOLIVIA - MOVIL"
@@ -1057,10 +1053,10 @@ DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
 00996502	60	0.8	"LDI"	"KYRGYZSTAN - MOVIL"
 00996517	60	0.8	"LDI"	"KYRGYZSTAN - MOVIL"
 00998	60	1.2	"LDI"	"UZBEKISTAN"
-										
-//FIJOS Y RURALES DE PROVINCIA										
-										
-//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO					
+
+//FIJOS Y RURALES DE PROVINCIA
+
+//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO
 041	60	0.3	"LDN FIJ"	"AMAZONAS"
 04181	60	1.4	"RURAL"	"AMAZONAS RURAL"
 04182	60	1.4	"RURAL"	"AMAZONAS RURAL"
@@ -1153,11 +1149,11 @@ DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
 08481	60	1.4	"RURAL"	"CUSCO RURAL"
 08482	60	1.4	"RURAL"	"CUSCO RURAL"
 08483	60	1.4	"RURAL"	"CUSCO RURAL"
-										
 
-//FIJOS LOCALES										
-										
-//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO					
+
+//FIJOS LOCALES
+
+//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO
 2	60	0.2	"LOCAL"	"LOCAL"
 3	60	0.2	"LOCAL"	"LOCAL"
 4	60	0.2	"LOCAL"	"LOCAL"
@@ -1180,318 +1176,24 @@ DEFINIR _tesam       COMO 60	0.8	MOVIL	 "CELUL. LOCAL TESAM"  FINDEFINIR
 83	60	0.8	"RURAL"	"LIMA RURAL"
 86	60	0.8	"RURAL"	"LIMA RURAL"
 87	60	0.8	"RURAL"	"LIMA RURAL"
-						
+
 ///////////MOVILES LOCALES. ///////////
-										
-//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO	
+
+//NUM	SERIE	PASO	COSTO	CATEG.	DESTINO
 
 9	60	0.5	"MOVIL"	"CELULAR LOCAL"
 #	60	0.2	"MOVIL"	"RPM MOVISTAR"
 *	60	0.2	"MOVIL"	"RPM MOVISTAR"
 09	60	0.2	"MOVIL"	"RPC CLARO"
 
-//------------serie 92-----------------
-920	_movistar
-921	_vitel
-922	_entel
-923	_entel
-924	_entel
+//------------Serie celular-----------------
+91	_movistar
+92	_movistar
+93	_movistar
+94	_movistar
+95	_movistar
+96	_movistar
+97	_movistar
+98	_movistar
+99	_movistar
 
-//------------serie 93-----------------
-930	_vitel
-931	_vitel
-932	_claro
-9328	_movistar
-9329	_movistar
-933	_entel
-934	_entel
-935	_vitel
-936	_entel
-937	_movistar
-9370	_entel
-9371	_entel
-9372	_entel
-9373	_entel
-938	_movistar
-939	_movistar
-
-//------------serie 94-----------------
-940	_claro
-941	_claro
-9418	_movistar
-9419	_movistar
-942	_movistar
-9422	_claro
-9423	_claro
-9427	_claro
-943	_movistar
-9433	_claro
-9435	_claro
-9437	_claro
-944	_claro
-9444	_movistar
-9446	_movistar
-9448	_movistar
-9449	_movistar
-
-945	_movistar
-946	_entel
-
-9466	_claro
-9467	_claro
-9468	_claro
-9469	_movistar
-947	_movistar
-9471	_entel
-9472	_entel
-9473	_entel
-9477	_claro
-948	_movistar
-94805	_claro
-94806	_claro
-94807	_claro
-94808	_claro
-94809	_claro
-9482	_claro
-9483	_claro
-9487	_claro
-
-949	_movistar
-94907	_claro
-94908	_claro
-94909	_claro
-9491	_claro
-9492	_claro
-9493	_claro
-9497	_claro
-
-//------------serie 95-----------------
-950	_movistar
-9501	_claro
-9502	_claro
-9503	_claro
-9507	_claro
-951	_movistar
-9511	_claro
-9512	_claro
-9513	_claro
-9517	_claro
-952	_movistar
-9521	_entel
-9523	_claro
-9524	_claro
-953	_claro
-95310	_entel
-9535	_movistar
-9536	_movistar
-9539	_movistar
-954	_movistar
-9541	_claro
-9547	_claro
-955	_entel
-9556	_movistar
-9557	_claro
-9558	_movistar
-9559	_movistar
-956	_movistar
-9562	_claro
-9563	_claro
-9567	_claro
-957	_movistar
-9570	_claro
-9571	_claro
-9572	_claro
-9573	_claro
-9577	_claro
-
-958	_movistar
-95805	_claro
-95806	_claro
-95807	_claro
-95808	_claro
-95809	_claro
-9581	_claro
-9582	_claro
-9583	_claro
-9587	_claro
-95895	_claro
-95896	_claro
-95897	_claro
-95898	_claro
-95899	_claro
-
-959	_movistar
-9591	_claro
-9592	_claro
-9593	_claro
-9597	_claro
-
-//------------serie 96-----------------
-960	_entel   
-9600	_claro
-
-961	_movistar
-9612	_claro
-9613	_claro
-9614	_claro
-9617	_claro
-9618	_claro
-
-962	_movistar
-9622	_claro
-9623	_claro
-9627	_claro
-
-963	_claro
-9635	_movistar
-9636	_movistar
-9639	_movistar
-
-964	_movistar
-9641	_claro
-9642	_claro
-9643	_claro
-
-965	_claro
-9650	_movistar
-9656	_movistar
-9658	_movistar
-9659	_movistar
-
-966	_movistar
-9663	_claro
-9664	_claro
-9667	_claro
-
-967	_claro
-96765	_movistar
-96766	_movistar
-96768	_movistar
-96790	_movistar
-96791	_movistar
-96798	_movistar
-96799	_movistar
-
-968	_movistar
-96820	_entel
-96821	_claro
-96830	_claro
-96831	_claro
-96832	_claro
-96833	_claro
-96834	_claro
-96835	_claro
-9687	_claro
-
-969	_movistar
-9693	_claro
-9697	_claro
-
-//------------serie 97-----------------
-970	_entel
-9700	_movistar
-9702	_claro
-9709	_movistar
-
-971	_movistar
-
-972	_claro
-9720	_entel
-9721	_entel
-9726	_claro
-9728	_claro
-9729	_claro
-
-973	_claro
-9738	_movistar
-9739	_movistar
-
-974	_claro
-9740	_movistar
-9741	_movistar
-9749	_movistar
-
-975	_movistar
-976	_movistar
-9762	_claro
-9763	_claro
-
-977	_entel
-9770	_claro
-9771	_claro
-9772	_movistar
-
-978	_movistar
-97820	_claro
-97821	_entel
-9783	_claro
-9786	_claro
-9787	_claro
-
-979	_movistar
-9793	_claro
-9797	_claro
-
-//------------serie 98-----------------
-980	_claro
-98000	_entel
-98001	_entel
-98002	_entel
-9800	_movistar
-9801	_movistar
-9802	_movistar
-9803	_movistar
-
-981	_entel
-9816	_movistar
-9817	_movistar
-9818	_movistar
-9819	_movistar
-
-982	_claro
-98260	_movistar
-98261	_movistar
-
-983	_claro
-9834	_entel
-9835	_entel
-9836	_movistar
-9839	_movistar
-
-984	_movistar
-9841	_claro
-9842	_claro
-9843	_claro
-9844	_claro
-9847	_claro
-
-985	_movistar
-986	_claro
-987	_claro
-988	_movistar
-989	_claro
-
-//------------serie 99-----------------
-990	_movistar
-991	_claro
-992	_claro
-993	_claro
-994	_claro
-9940	_entel
-9941	_entel
-9942	_entel
-9944	_movistar
-9945	_movistar
-
-995	_movistar
-996	_movistar
-997	_claro
-
-998	_movistar
-9981	_entel
-99820	_tesam
-99821	_tesam
-9982	_entel
-9983	_entel
-
-999	_movistar
