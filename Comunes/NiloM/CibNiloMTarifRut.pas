@@ -94,7 +94,7 @@ type   //Tipos para manejo de definiciones
       true);
   public
     msjError: string;
-    tkPrepro: TSynHighlighterAttributes;  //atributo para procesar definiciones
+    tnPrepro: integer;  //Token para procesar definiciones
     definiciones: TNilDefinicion_list;
     function ExisteDefinicion(def: String): TNilDefinicion;
     function CogerTok: string;
@@ -172,8 +172,8 @@ type
     destructor Destroy; override;
   end;
 
-  procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
-  procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
+  procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var tnPrepro: integer);
+  procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var tnPrepro: integer);
 
   function VerificarCadCodpre(cad : String): string;
   Function CodifPref(codStr: string; var Err: string): Byte;
@@ -195,47 +195,51 @@ begin
     end;
     Result := True;   //concidieron
 End;
-procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
+procedure ConfigurarSintaxisTarif(hl: TSynFacilSyn; var tnPrepro: integer);
 {Configura la sintaxis de un resaltador, para que reconozca la sintaxis de un tarifario
 para un NILO-mC/D/E}
+var
+  tkPrepro: TSynHighlighterAttributes;
 begin
   hl.ClearSpecials;               //para empezar a definir tokens
   hl.CreateAttributes;            //Limpia atributos
   hl.ClearMethodTables;           //limpìa tabla de métodos
-  attPrepro := hl.NewTokType('preprocesador');
-  attPrepro.Foreground:=clRed;        //color de texto
-  attPrepro.Style:=[fsBold];
+  tnPrepro := hl.NewTokType('preprocesador', tkPrepro);
+  tkPrepro.Foreground:=clRed;        //color de texto
+  tkPrepro.Style:=[fsBold];
   hl.tkKeyword.Style:=[fsBold];
   //Define tokens. Notar que la definición de número es particular
   hl.DefTokIdentif('[$A-Za-z_]', '[A-Za-z0-9_]*');
-  hl.DefTokContent('[0-9#*]', '[0-9#*.]*', hl.tkNumber);
-  hl.DefTokDelim('"','"', hl.tkString);
-  hl.DefTokDelim('//','',hl.tkComment);
+  hl.DefTokContent('[0-9#*]', '[0-9#*.]*', hl.tnNumber);
+  hl.DefTokDelim('"','"', hl.tnString);
+  hl.DefTokDelim('//','',hl.tnComment);
   hl.tkComment.Style:=[];
   //define palabras claves
-  hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', attPrepro);
-  hl.AddIdentSpecList('MONEDA', hl.tkKeyword);
+  hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', tnPrepro);
+  hl.AddIdentSpecList('MONEDA', hl.tnKeyword);
   hl.Rebuild;  //reconstruye
 end;
-procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var attPrepro: TSynHighlighterAttributes);
+procedure ConfigurarSintaxisRutas(hl: TSynFacilSyn; var tnPrepro: integer);
 {Configura la sintaxis de un resaltador, para que reconozca la sintaxis de una tabla de
 rutas para un NILO-mC/D/E}
+var
+  tkPrepro: TSynHighlighterAttributes;
 begin
   hl.ClearSpecials;               //para empezar a definir tokens
   hl.CreateAttributes;            //Limpia atributos
   hl.ClearMethodTables;           //limpìa tabla de métodos
-  attPrepro := hl.NewTokType('preprocesador');
-  attPrepro.Foreground:=clRed;        //color de texto
-  attPrepro.Style:=[fsBold];
+  tnPrepro := hl.NewTokType('preprocesador', tkPrepro);
+  tkPrepro.Foreground:=clRed;        //color de texto
+  tkPrepro.Style:=[fsBold];
   hl.tkKeyword.Style:=[fsBold];
   //Define tokens. Notar que la definición de número es particular
   hl.DefTokIdentif('[$A-Za-z_]', '[A-Za-z0-9_]*');
-  hl.DefTokContent('[0-9#*]', '[0-9#*.]*', hl.tkNumber);
-  hl.DefTokDelim('"','"', hl.tkString);
-  hl.DefTokDelim('//','',hl.tkComment);
+  hl.DefTokContent('[0-9#*]', '[0-9#*.]*', hl.tnNumber);
+  hl.DefTokDelim('"','"', hl.tnString);
+  hl.DefTokDelim('//','',hl.tnComment);
   hl.tkComment.Style:=[];
   //define palabras claves
-  hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', attPrepro);
+  hl.AddIdentSpecList('DEFINIR COMO FINDEFINIR', tnPrepro);
   hl.Rebuild;  //reconstruye
 end;
 function VerificarCadCodpre(cad : String): string;
@@ -443,37 +447,37 @@ end;
 function TContextTar.EsDEFINIR: boolean;
 {Indica si el identificador actual es la directiva DEFINIR}
 begin
-  Result := (TokenType = tkPrepro) and (upcase(Token) = 'DEFINIR') ;
+  Result := (TokenType = tnPrepro) and (upcase(Token) = 'DEFINIR') ;
 end;
 function TContextTar.EsCOMO: boolean;
 begin
-  Result := (TokenType = tkPrepro) and (upcase(Token) = 'COMO') ;
+  Result := (TokenType = tnPrepro) and (upcase(Token) = 'COMO') ;
 end;
 function TContextTar.EsFINDEFINIR: boolean;
 begin
-  Result := (TokenType = tkPrepro) and (upcase(Token) = 'FINDEFINIR') ;
+  Result := (TokenType = tnPrepro) and (upcase(Token) = 'FINDEFINIR') ;
 end;
 function TContextTar.EsMoneda: boolean;
 begin
-  Result := (TokenType = lex.tkKeyword) and (upcase(Token) = 'MONEDA') ;
+  Result := (TokenType = lex.tnKeyword) and (upcase(Token) = 'MONEDA') ;
 end;
 function TContextTar.EsNumero: boolean;
 begin
-  Result := TokenType = lex.tkNumber;
+  Result := TokenType = lex.tnNumber;
 end;
 function TContextTar.EsCadena: boolean;
 begin
-  Result := TokenType = lex.tkString;
+  Result := TokenType = lex.tnString;
 end;
 function TContextTar.EsIdentif: boolean;
 begin
-  Result := TokenType = lex.tkIdentif;
+  Result := TokenType = lex.tnIdentif;
 end;
 function TContextTar.EsDefinicion(var def: TNilDefinicion): boolean;
 {Indica si el token actual es una definición. De ser así, devuelve TRUE y actualiza la
 referencia.}
 begin
-  if TokenType<>lex.tkIdentif then exit(false);  //no es identificador
+  if TokenType<>lex.tnIdentif then exit(false);  //no es identificador
   def := ExisteDefinicion(token);  //busca el identificador
   Result := def<>nil;
 end;
@@ -525,7 +529,7 @@ begin
     end else if EsDEFINIR then begin
       Next;  //coge identificador
       SkipWhites;
-      if TokenType<> lex.tkIdentif then begin
+      if TokenType<> lex.tnIdentif then begin
         msjError := 'Se esperaba identificador.'; exit;
       end;
       ident := token;  //toma identificador
@@ -552,7 +556,7 @@ begin
         //toma hasta fin de línea
         conten := '';
         while not eof do begin
-          if TokenType <> lex.tkComment then conten := conten + token;
+          if TokenType <> lex.tnComment then conten := conten + token;
           next;
         end;
         AgregaDefinicion(ident, conten, fil);
@@ -565,7 +569,7 @@ begin
     end else if EsDefinicion(def) then begin
       //hay una definición que hay que reemplazar
       tok := def.con;   //reemplaza con su contenido
-    end else if TokenType = lex.tkComment then begin
+    end else if TokenType = lex.tnComment then begin
       //es un comentario
       tok := '';   //elimina
     end else begin  //es un token común
@@ -818,7 +822,7 @@ begin
   tarifas:= regTarifa_list.Create(true);
   tarNula:= TRegTarifa.Create;  //crea tarifa con campos en blanco
   ctx := TContextTar.Create;
-  ConfigurarSintaxisTarif(ctx.xLex, ctx.tkPrepro);  //usa la misma sintaxis que el resaltador
+  ConfigurarSintaxisTarif(ctx.xLex, ctx.tnPrepro);  //usa la misma sintaxis que el resaltador
 end;
 destructor TNiloMTabTar.Destroy;
 begin
@@ -967,7 +971,7 @@ begin
   rutasTmp:= regRuta_list.Create(true);
   rutas:= regRuta_list.Create(true);
   ctx := TContextTar.Create;
-  ConfigurarSintaxisRutas(ctx.xLex, ctx.tkPrepro);  //usa la misma sintaxis que el resaltador
+  ConfigurarSintaxisRutas(ctx.xLex, ctx.tnPrepro);  //usa la misma sintaxis que el resaltador
 end;
 destructor TNiloMTabRut.Destroy;
 begin

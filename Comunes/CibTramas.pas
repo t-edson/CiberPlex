@@ -209,7 +209,7 @@ type
 
 type //Manejo de la conexión con hilos
 
-  // Estados de la conexión
+  // Estados de una  conexión
   TCibEstadoConex = (
     cecConectando,    //Conectando.
     cecConectado,     //Conectado con socket.
@@ -250,14 +250,13 @@ type //Manejo de la conexión con hilos
     function EstadoConexStr: string;
     procedure ProcesarTrama;
   public
-    //Constructor Create; override;
     constructor Create(CreateSuspended: Boolean;
                        const StackSize: SizeUInt = DefaultStackSize);
     Destructor Destroy; override;
   end;
 
   function GenEncabez(tam: Longint; TipoDato: TCPTipCom; ParamX: word = 0; ParamY: word = 0): string;
-
+  function EstadoConexACadena(estado: TCibEstadoConex): string;
 implementation
 
 function GenEncabez(tam: Longint; TipoDato: TCPTipCom; ParamX: word = 0; ParamY: word = 0): string;
@@ -278,6 +277,16 @@ begin
   Result[8] := Chr((ParamY shr 8) and 255);
   Result[9] := Chr((ParamY) and 255);
 End;
+function EstadoConexACadena(estado: TCibEstadoConex): string;
+begin
+ case Estado of
+ cecConectando : exit('Conectando');
+ cecConectado  : exit('Conectado');
+ cecDetenido   : exit('Detenido');
+ cecMuerto     : exit('Muerto');
+ else exit('Desconocido');
+ end;
+end;
 
 { TCibConexBase }
 //Acciones sincronizadas
@@ -307,7 +316,6 @@ begin
   //esperar hasta que haya terminado algún procesamiento.
   Synchronize(@EventoTramaLista);
 End;
-
 constructor TCibConexBase.Create(CreateSuspended: Boolean;
   const StackSize: SizeUInt);
 begin
@@ -317,7 +325,6 @@ begin
  ProcTrama.OnRegMensaje := @ProcTramaRegMensaje;
   inherited Create(CreateSuspended, StackSize);
 end;
-
 destructor TCibConexBase.Destroy;
 begin
   ProcTrama.Destroy;
@@ -326,7 +333,6 @@ begin
   //estado := cecMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
   inherited Destroy;
 end;
-
 procedure TCibConexBase.EventoTramaLista;
 begin
   if OnTramaLista <> nil then OnTramaLista('', ProcTrama.trama);
@@ -346,12 +352,7 @@ end;
 function TCibConexBase.EstadoConexStr: string;
 {Convierte TCabEstadoConex a cadena}
 begin
- case FEstado of
- cecConectando : exit('Conectando');
- cecConectado  : exit('Conectado');
- cecDetenido   : exit('Detenido');
- cecMuerto     : exit('Muerto');
- end;
+ Result := EstadoConexACadena(Festado);
 end;
 
 { TCPTrama }

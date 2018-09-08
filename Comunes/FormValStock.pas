@@ -55,6 +55,7 @@ type
     colCodigo: TugGrillaCol;
     colCateg : TugGrillaCol;
     colSubcat: TugGrillaCol;
+    colPreUni: TugGrillaCol;
     colDescri: TugGrillaCol;
     colMarca : TugGrillaCol;
     colUniCom: TugGrillaCol;
@@ -283,6 +284,9 @@ begin
   colCateg.editable:=false;
   colSubcat := fraGri.AgrEncabTxt  ('SUBCATEGORÍA'  , 80, 'SUBCATEGORIA');
   colSubcat.editable:=false;
+  colPreUni := fraGri.AgrEncabNum   ('PRC.UNITARIO'  , 50, 'PREVENTA');
+  colPreUni.editable := false;
+  colPreUni.visible := false;
   colDescri := fraGri.AgrEncabTxt  ('DESCRIPCIÓN'   ,180, 'DESCRIPCION');
   colDescri.editable:=false;
   colStock  := fraGri.AgrEncabNum  ('STOCK'         , 45, 'STOCK');

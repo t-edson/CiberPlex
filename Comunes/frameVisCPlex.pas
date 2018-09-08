@@ -70,7 +70,7 @@ type
       cad: string);
     procedure motEdi_MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure motEdi_ClickDer(x, y: integer);
+    procedure motEdi_ClickDer(Shift: TShiftState; x, y: integer);
     procedure motEdi_DblClick(Sender: TObject);
     procedure motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
     procedure motEdi_ObjectsMoved;
@@ -82,7 +82,7 @@ type
     OnSolicEjecCom  : TEvSolicEjecCom;  //Se solicita ejecutar una acción
     OnReqCadMoneda  : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     //OnMouseUp: TMouseEvent;          //se us el que está definido en el frame
-    OnClickDer      : TOnClickDer;      //Click derecho en el visor
+    OnClickDer      : TEvMouse;      //Click derecho en el visor
     OnClickDerFac   : TEvMouseFac;      //Click derecho en un facturable del visor
     OnClickDerGFac  : TEvMouseGFac;     //Click derecho en un grupo del visor
     OnDobleClick    : TNotifyEvent;     //Doble click en el visor
@@ -130,7 +130,7 @@ begin
   If Shift = [ssCtrl, ssShift, ssRight] Then  //<Shift>+<Ctrl> + <Botón derecho>
      begin
       EstPuntero := EP_DESP_PANT;
-      MoverDesp(x_pulso - X, y_pulso - Y);
+      ScrollDesp(x_pulso - X, y_pulso - Y);
       Refrescar;
       Exit;
      End;
@@ -202,7 +202,7 @@ begin
   case Fac.tipo of
   ctfClientes: begin
     ogCli := TogCliente.Create(motEdi.v2d, Fac);
-    motEdi.AgregarObjGrafico(ogCli, false);
+    motEdi.AddGraphObject(ogCli, false);
     ogCli.icono := Image14.Picture.Graphic;   //asigna imagen
     ogCli.SizeLocked := true;
     ogCli.PosLocked := not FModDiseno;  //depende del estado actual
@@ -210,7 +210,7 @@ begin
   end;
   ctfCabinas: begin
     ogCab := TogCabina.Create(motEdi.v2d, Fac);
-    motEdi.AgregarObjGrafico(ogCab, false);
+    motEdi.AddGraphObject(ogCab, false);
     ogCab.icoPC    := Image5.Picture.Graphic;   //asigna imagen
     ogCab.icoPCdes := Image6.Picture.Graphic;   //asigna imagen
     ogCab.icoUSU   := Image2.Picture.Graphic;  //asigna imagen
@@ -223,7 +223,7 @@ begin
   end;
   ctfNiloM: begin
     ogNil := TogNiloM.Create(motEdi.v2d, Fac);
-    motEdi.AgregarObjGrafico(ogNil, false);
+    motEdi.AddGraphObject(ogNil, false);
     ogNil.icoTelCol := Image9.Picture.Graphic;   //asigna imagen
     ogNil.icoTelDes := Image10.Picture.Graphic;
     ogNil.icoTelDes2:= Image11.Picture.Graphic;
@@ -233,7 +233,7 @@ begin
   end;
   ctfMesas: begin
     ogMes := TogMesa.Create(motEdi.v2d, Fac);
-    motEdi.AgregarObjGrafico(ogMes, false);
+    motEdi.AddGraphObject(ogMes, false);
     ogMes.icoMesaSim := Image17.Picture.Graphic;   //asigna imagen
     ogMes.icoMesaDob1:= Image18.Picture.Graphic;   //asigna imagen
     ogMes.icoMesaDob2:= Image19.Picture.Graphic;   //asigna imagen
@@ -260,7 +260,7 @@ begin
   case GFac.tipo of
   ctfClientes: begin
     ogGClies := TogGClientes.Create(motEdi.v2d, TCibGFacCabinas(GFac));
-    motEdi.AgregarObjGrafico(ogGClies, false);
+    motEdi.AddGraphObject(ogGClies, false);
     ogGClies.icono := Image13.Picture.Graphic;   //asigna imagen
     ogGClies.SizeLocked := true;
     ogGClies.PosLocked := not FModDiseno;  //depende del esatdo actual
@@ -268,7 +268,7 @@ begin
   end;
   ctfCabinas : begin  //Es grupo de cabinas TCibGFacCabinas
     ogGCabs := TogGCabinas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
-    motEdi.AgregarObjGrafico(ogGCabs, false);
+    motEdi.AddGraphObject(ogGCabs, false);
     ogGCabs.icono := Image7.Picture.Graphic;   //asigna imagen
     ogGCabs.SizeLocked := true;
     ogGCabs.PosLocked := not FModDiseno;  //depende del esatdo actual
@@ -276,7 +276,7 @@ begin
   end;
   ctfNiloM: begin
     ogGNiloM := TogGNiloM.Create(motEdi.v2d, TCibGFacNiloM(GFac));
-    motEdi.AgregarObjGrafico(ogGNiloM, false);
+    motEdi.AddGraphObject(ogGNiloM, false);
     ogGNiloM.icoConec := Image8.Picture.Graphic;   //asigna imagen
     ogGNiloM.icoDesc  := Image12.Picture.Graphic;
     ogGNiloM.SizeLocked := true;
@@ -285,7 +285,7 @@ begin
   end;
   ctfMesas: begin
     ogGMes := TogGMesas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
-    motEdi.AgregarObjGrafico(ogGMes, false);
+    motEdi.AddGraphObject(ogGMes, false);
     ogGMes.icono := Image16.Picture.Graphic;   //asigna imagen
     ogGMes.SizeLocked := true;
     ogGMes.PosLocked := not FModDiseno;  //depende del esatdo actual
@@ -309,7 +309,7 @@ begin
 end;
 function TfraVisCPlex.Seleccionado: TObjGraf;  //atajo
 begin
-  Result := motEdi.Seleccionado;
+  Result := motEdi.Selected;
 end;
 function TfraVisCPlex.SeleccionarGru(NomGFac: string): boolean;
 var
@@ -319,7 +319,7 @@ begin
     if og is TogGFac then begin
       if TogGFac(og).GFac.Nombre = NomGFac then begin
         //Ubico el objeto
-        motEdi.DeseleccionarTodos;
+        motEdi.UnselectAll;
         og.Selec;  //selecciona
         motEdi.Refrescar;  //refresca
         exit(true);
@@ -336,7 +336,7 @@ begin
     if og is TogFac then begin
       if TogFac(og).Fac.IdFac = IdOgFac then begin
         //Ubico el objeto
-        motEdi.DeseleccionarTodos;
+        motEdi.UnselectAll;
         og.Selec;  //selecciona
         motEdi.Refrescar;  //refresca
         exit(true);
@@ -420,7 +420,7 @@ que objetos deben existir}
 //debugln('>Buscando:' + fac.Nombre);
     for og in Motedi.objetos do if og.Tipo = OBJ_FACT then begin
       ogFac := TogFac(og);  //restaura tipo
-      if (ogFac.NomGrupo = fac.Grupo.Nombre) and (ogFac.Nombre = fac.Nombre) then begin
+      if (ogFac.NomGrupo = fac.Grupo.Nombre) and (ogFac.Name = fac.Nombre) then begin
         //hay, devuelve la referencia
         Result := ogFac;  //restaura tipo
         Result.Fac := fac;   //actualiza la referencia
@@ -438,7 +438,7 @@ begin
   for fac in grupo.items do begin
     ogFac := AgregarSiNoHay(fac);
     if ogFac<>nil then begin
-      ogFac.ReConstGeom;
+      ogFac.Resize(ogFac.Width, ogFac.Height);
       ogFac.Data:='';  //Para que no se elimine.
     end;
   end;
@@ -538,7 +538,7 @@ habrá un grupo.}
     og: TObjGraf;
   begin
     for og in Motedi.objetos do if og.Tipo = OBJ_GRUP then begin
-      if TogGFac(og).nombre = gfac.Nombre then begin
+      if TogGFac(og).Name = gfac.Nombre then begin
         //Hay. Porque no debería haber grupos con el mismo nombre.
         ogGFac := TogGFac(og);  //devuelve referencia
         exit(true);
@@ -594,8 +594,8 @@ begin
   while i<motEdi.objetos.Count do begin
     og := motEdi.objetos[i];
     if og.Data = 'x' then begin
-debugln('>Eliminando: ' + og.Nombre);
-      motEdi.EliminarObjGrafico(og);
+debugln('>Eliminando: ' + og.Name);
+      motEdi.DeleteGraphObject(og);
     end else begin
       Inc(i);
     end;
@@ -703,7 +703,7 @@ begin
   dx := (sel[sel.Count-1].x - sel[0].x) / (sel.Count - 1);
   for i := 1 to sel.Count-1 do begin
     xNue := sel[i-1].x + dx;
-    sel[i].Ubicar(xNue, sel[i].y);
+    sel[i].Locate(xNue, sel[i].y);
   end;
   if OnObjectsMoved<>nil then OnObjectsMoved;
 //  motedi.Refrescar;
@@ -721,7 +721,7 @@ begin
   dy := (sel[sel.Count-1].y - sel[0].y) / (sel.Count - 1);
   for i := 1 to sel.Count-1 do begin
     yNue := sel[i-1].y + dy;
-    sel[i].Ubicar(sel[i].x, yNue);
+    sel[i].Locate(sel[i].x, yNue);
   end;
   if OnObjectsMoved<>nil then OnObjectsMoved;
 //  motedi.Refrescar;
@@ -771,12 +771,12 @@ begin
     if OnDobleClickGFac<>nil then OnDobleClickGFac(ogGFac, Mouse.CursorPos.x, Mouse.CursorPos.y);
   end;
 end;
-procedure TfraVisCPlex.motEdi_ClickDer(x, y: integer);
+procedure TfraVisCPlex.motEdi_ClickDer(Shift: TShiftState; x, y: integer);
 var
   ogFac: TogFac;
   ogGfac: TogGFac;
 begin
-  if OnClickDer<>nil then OnClickDer(x, y);
+  if OnClickDer<>nil then OnClickDer(Shift, x, y);
   if Seleccionado = nil then exit;
   if FacSeleccionado <> nil then begin //Se ha seleccionado un facturable.
     ogFac := FacSeleccionado;
@@ -810,13 +810,13 @@ begin
   motEdi := TModEdicion2.Create(PaintBox1);
   motEdi.OnObjectsMoved   := @motEdi_ObjectsMoved;
   motEdi.OnInicArrastreFac:= @motEdi_InicArrastreFac;
-  motEdi.OnClickDer       := @motEdi_ClickDer;
+  motEdi.OnMouseUpRight   := @motEdi_ClickDer;
   motEdi.OnDblClick       := @motEdi_DblClick;
   motEdi.OnMouseUp        := @motEdi_MouseUp;
-  decod := TCPDecodCadEstado.Create;
-  grupos:= TCibModelo.Create('GrupVis', true);  //Crea en modo copia
-  grupos.OnReqCadMoneda  :=@gruposReqCadMoneda;
-  grupos.OnSolicEjecCom  :=@gruposSolicEjecCom;
+  decod  := TCPDecodCadEstado.Create;
+  grupos := TCibModelo.Create('GrupVis', true);  //Crea en modo copia
+  grupos.OnReqCadMoneda   := @gruposReqCadMoneda;
+  grupos.OnSolicEjecCom   := @gruposSolicEjecCom;
 end;
 destructor TfraVisCPlex.Destroy;
 begin

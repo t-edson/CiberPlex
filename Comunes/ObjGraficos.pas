@@ -72,7 +72,7 @@ const //Constantes a usar en el "TObjGraf.tipo", para categorizar a los objetos 
   OBJ_GRUP = 2;
 type
 {TogFac, es el objeto intermedio usado para modelar a todos los objetos facturables.}
-TogFac = class(TObjGraf )
+TogFac = class(TObjGraf)
 private
   Ffac: TCibFac;   //Referencia a su facturable
   procedure Setfac(AValue: TCibFac);
@@ -81,7 +81,7 @@ public
   Boleta     : TogBoleta;   //La boleta
   property Fac: TCibFac read Ffac write Setfac;   //contenedor de propiedades
   function gru: TCibGFac;  //referencia al grupo
-  procedure ReConstGeom; override; //Hace público este método
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override; //Hace público este método
   constructor Create(mGraf: TMotGraf); override ;
   destructor Destroy; override;
 end;
@@ -104,10 +104,10 @@ TogCliente = class(TogFac)
 private
 public
   icono      : TGraphic;    //PC con control
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
   function cli: TCibFacCliente; inline;  //acceso a la cabina
 protected
-  procedure ReubicElemen; override;
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override;
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
@@ -123,16 +123,16 @@ public
   icoRedAct  : TGraphic;    //Referencia a ícono
   icoRedDes  : TGraphic;    //Referencia a ícono
   procedure DibujarTiempo;
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
   procedure ProcDesac(estado0: Boolean);   //Para responder evento de Habilitar/Deshabilitar
   function Contando: boolean;
   function Detenida: boolean;
   function EnManten: boolean;
   function cab: TCibFacCabina; inline;  //acceso a la cabina
 protected
-  procedure ReubicElemen; override;
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override;
 private
-  BotDes   : TogButton;          //Refrencia global al botón de Desactivar
+  //BotDes   : TogButton;          //Refrencia global al botón de Desactivar
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
@@ -146,12 +146,10 @@ public
   icoTelDes   : TGraphic;    //Teléfono descolgado
   icoTelDes2  : TGraphic;    //Teléfono descolgado con llamada contestada
   procedure DibujarDatosLlam;
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
   function loc: TCibFacLocutor; inline;  //acceso a la cabina
 protected
-  procedure ReubicElemen; override;
-private
-  BotDes   : TogButton;          //Refrencia global al botón de Desactivar
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true);
 public  //Constructor y detsructor
   constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
@@ -171,11 +169,11 @@ public
   icoSilla2   : TGraphic;    //Silla
   icoSilla3   : TGraphic;    //Silla
   icoSilla4   : TGraphic;    //Silla
-  procedure ReConstGeom; override;
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override;
+  procedure Draw; override;  //Dibuja el objeto gráfico
   function Mesa: TCibFacMesa; inline;  //acceso a la cabina
 protected
-  procedure ReubicElemen; override;
+  procedure ReLocate(newX, newY: Single; UpdatePCtrls: boolean=true); override;
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
@@ -186,7 +184,7 @@ TogGClientes = class(TogGFac)
 private
 public
   icono  : TGraphic;    //PC con control
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
 protected
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
@@ -197,7 +195,7 @@ TogGCabinas = class(TogGFac)
 private
 public
   icono  : TGraphic;    //PC con control
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
 protected
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
@@ -209,7 +207,7 @@ private
 public
   icoConec: TGraphic;    //NiloM conectado
   icoDesc : TGraphic;    //NiloM desconectado
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
 protected
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
@@ -220,7 +218,7 @@ TogGMesas = class(TogGFac)
 private
 public
   icono  : TGraphic;    //PC con control
-  procedure Dibujar; override;  //Dibuja el objeto gráfico
+  procedure Draw; override;  //Dibuja el objeto gráfico
 protected
 public  //constructor y detsructor
   constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
@@ -247,7 +245,7 @@ procedure TogBoleta.Dibujar;
 var s: string;
 begin
 //    v2d.Barra(x, y, x + width, y + height, clYellow);  //siempre de tamaño fijo
-    v2d.FijaRelleno(clYellow);
+    v2d.SetBrush(clYellow);
     v2d.RectRedonR(x, y, x + width, y + height);  //siempre de tamaño fijo
     s := Format('S/ %f',[bol.TotPag]);
 //    v2d.Texto(x+2, y+1, s);
@@ -314,13 +312,11 @@ begin
   Ffac:=AValue;             //Referencia al objeto
   Boleta.bol := Avalue.Boleta;   //y también el de la boleta
   //Al actualizar la referencia, se debte también actualizar las variables copia
-  nombre := Ffac.Nombre;         //Referencia al objeto como cadena
+  Name := Ffac.Nombre;         //Referencia al objeto como cadena
   NomGrupo := Ffac.Grupo.Nombre;  {Se guarda la referencia al NomGrupo como cadena, porque una
                                 cadena es una referencia segura, ya que la referencia
                                 Fcab, puede quedar apuntando a objetos liberados.}
-  fx := Ffac.x;
-  fy := Ffac.y;
-  ReubicElemen;    //Se reubican, porque pueden cambiar la ubicación X,Y
+  Relocate(Ffac.x, Ffac.y);    //Se reubican, porque pueden cambiar la ubicación X,Y
   {No necesita actualizar alguna otra propiedad porque, el acceso a las propiedades
    adicionales, se hace a través de la referencia "Fac".}
 end;
@@ -328,9 +324,9 @@ function TogFac.gru: TCibGFac;
 begin
   Result := Ffac.Grupo;
 end;
-procedure TogFac.ReConstGeom;
+procedure TogFac.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 begin
-  inherited ReConstGeom;
+  inherited;
 end;
 constructor TogFac.Create(mGraf: TMotGraf);
 begin
@@ -349,10 +345,8 @@ procedure TogGFac.SetGFac(AValue: TCibGFac);
 begin
   FGFac:=AValue;            //Referencia al objeto
   //Se ha cambiado la referencia, actualizamos las propiedades que son copia
-  nombre := GFac.Nombre;         //Referencia al objeto como cadena
-  fx := GFac.x;
-  fy := GFac.y;
-  ReubicElemen;    //Se reubican, porque pueden cambiar la ubicación X,Y
+  Name := GFac.Nombre;         //Referencia al objeto como cadena
+  ReLocate(GFac.x, GFac.y);    //Se reubican, porque pueden cambiar la ubicación X,Y
   {No necesita actualizar alguna otra propiedad porque, el acceso a las propiedades
    adicionales, se hace a través de la referencia "GFac".}
 end;
@@ -365,7 +359,7 @@ end;
 ///////////////////////////  FACTURABLES /////////////////////////////
 //////////////////////////////////////////////////////////////////////
 { TogCliente }
-procedure TogCliente.Dibujar();
+procedure TogCliente.Draw;
 begin
   //--------------Dibuja cuerpo de tabla
 //  x2 := x + width;
@@ -377,20 +371,20 @@ begin
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(X, Y -20, nombre);
+  v2d.Texto(X, Y -20, name);
   //dibuja ícono
   v2d.DibujarImagenN(icono, x, y);
   //muestra boleta
   if cli.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
-procedure TogCliente.ReubicElemen;
+procedure TogCliente.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 //Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
 //cambiar las dimensiones.
 begin
   inherited;
   //ubica boleta
-  Boleta.Ubicar(x-8,y+45);
+  Boleta.Locate(x-8,y+45);
 end;
 function TogCliente.cli: TCibFacCliente;
 {Función de acceso por comodidad}
@@ -402,14 +396,12 @@ constructor TogCliente.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
   boleta.Width:=67;
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  nombre := 'Cliente';
-  Self.Ubicar(100,100);
-  width := 50;
-  height := 65;
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Name := 'Cliente';
+  Self.Locate(100,100);
   Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
                 crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(50, 65);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogCabina }
 procedure TogCabina.DibujarTiempo;
@@ -419,26 +411,26 @@ begin
   //dibuja cuadro de estado
   v2d.SetText(clBlack, 10,'',false);
   if cab.tLibre then begin
-    v2d.FijaRelleno(COL_VERD_CLARO);   //siempre verde
+    v2d.SetBrush(COL_VERD_CLARO);   //siempre verde
   end else if cab.EstadoCta = EST_PAUSAD then begin
     //Esta pausado. Parpadea en amarillo
     if trunc(now*86400) mod 2 = 0 then begin
-      v2d.FijaRelleno(COL_AMAR_OSCUR);
+      v2d.SetBrush(COL_AMAR_OSCUR);
     end else begin
-      v2d.FijaRelleno(COL_AMAR_CLARO);
+      v2d.SetBrush(COL_AMAR_CLARO);
     end;
   end else begin
      //Hay tiempo, verificar si falta poco
      if cab.Faltante <= 0 then begin
        //Genera parpadeo
        if cab.TranscSeg mod 2 = 0 then
-         v2d.FijaRelleno(COL_ROJO_CLARO)
+         v2d.SetBrush(COL_ROJO_CLARO)
        else
-         v2d.FijaRelleno(COL_AMAR_CLARO);
+         v2d.SetBrush(COL_AMAR_CLARO);
      end else if cab.Faltante < 5*60 then begin
-       v2d.FijaRelleno(COL_AMAR_CLARO);
+       v2d.SetBrush(COL_AMAR_CLARO);
      end else begin
-       v2d.FijaRelleno(COL_VERD_CLARO);
+       v2d.SetBrush(COL_VERD_CLARO);
      end;
   end;
   v2d.RectangR(x, y, x+60, y+36);
@@ -463,7 +455,7 @@ begin
   //escribe tiempo
   v2d.Texto(x+4,y+17,tmp);
 end;
-procedure TogCabina.Dibujar();
+procedure TogCabina.Draw;
 var
   x2:Single;
   s: String;
@@ -478,7 +470,7 @@ begin
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(X + 2, Y -20, nombre);
+  v2d.Texto(X + 2, Y -20, Name);
   //Dibuja íconos de PC y de conexión
   if cab.ConConexion then begin
     if cab.EstadoConex = cecConectado then begin
@@ -502,7 +494,7 @@ begin
   end;
   //Muestra consumo
   v2d.FijaLapiz(psSolid, 1, clBlack);
-  v2d.FijaRelleno(TColor($D5D5D5));
+  v2d.SetBrush(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
   if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
     //solo muestra tiempo, en conteo
@@ -513,9 +505,9 @@ begin
        v2d.SetText(clRed, 10, '', true);
        v2d.Texto(x+25, y+40, 'GRATIS');
     end;
-    BotDes.estado:= true;
+    //BotDes.estado:= true;
   end else begin
-    BotDes.estado:= false;
+    //BotDes.estado:= false;
   end;
   //muestra boleta
   if cab.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
@@ -527,18 +519,15 @@ begin
   end;
   inherited;
 end;
-procedure TogCabina.ReubicElemen;
+procedure TogCabina.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 //Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
 //cambiar las dimensiones.
-var
-  x2: Single;
 begin
   inherited;
-  x2 := x + width;
-  Buttons[0].Ubicar(x2 - 24, y + 1);
-//   Botones[2].Ubicar(x2 - 20, y + 3);  //Botón Cerrar
+//  x2 := x + width;
+//  Buttons[0].Ubicar(x2 - 24, y + 1);
   //ubica boleta
-  Boleta.Ubicar(x+5,y+110);
+  Boleta.Locate(x+5,y+110);
 end;
 function TogCabina.Contando: boolean;
 begin
@@ -560,21 +549,19 @@ end;
 procedure TogCabina.ProcDesac(estado0: Boolean);
 begin
 //   Desactivado := estado0;
-   BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
+//   BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
 end;
 //constructor y detsructor
 constructor TogCabina.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
-  BotDes := AddButton(24, 24, BOT_REPROD, @ProcDesac);
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  nombre := 'Cabina';
-  Self.Ubicar(100,100);
-  width := 85;
-  height := 130;
+  //BotDes := AddButton(24, 24, BOT_REPROD, @ProcDesac);
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Name := 'Cabina';
+  Self.Locate(100,100);
   Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
                 crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(85, 130);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
   ProcDesac(False);   //Desactivado := False
 end;
 { TogNiloM }
@@ -582,8 +569,8 @@ procedure TogNiloM.DibujarDatosLlam;
   procedure MensajeNllamadas;
   {Muestar el mensaje tres líneea, que indica que está esperando llamadas }
   begin
-    v2d.FijaRelleno(TColor($D0D0D0));
-//    v2d.FijaRelleno(clBlue);
+    v2d.SetBrush(TColor($D0D0D0));
+//    v2d.SetBrush(clBlue);
     v2d.RectangR(x-3, y-2, x+97, y+50);
     v2d.Texto(x+1,y   , 'Esperando');
     v2d.Texto(x+1,y+16, 'marcación...');
@@ -598,7 +585,7 @@ begin
     if loc.llamAct <> nil then begin  //Hay llamadas, Al menos la actual.
       if loc.llamAct.CONTEST then v2d.SetText(clRed, 10,'',false)
       else v2d.SetText(clBlack, 10,'',false);
-      v2d.FijaRelleno(TColor($D0D0D0));
+      v2d.SetBrush(TColor($D0D0D0));
       v2d.RectangR(x-3, y-2, x+97, y+50);
       //muestra tiempo transcurrido
       v2d.Texto(x+1,y   , loc.llamAct.digitado);
@@ -617,7 +604,7 @@ begin
     //No muestra cuadro
   end;
 end;
-procedure TogNiloM.Dibujar();
+procedure TogNiloM.Draw;
 var
   x2:Single;
   s: String;
@@ -627,18 +614,18 @@ begin
   //y2 := y + height;
   //Dibuja fondo rectangular
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-  if loc.descon then v2d.FijaRelleno(COL_GRIS_CLARO)
-  else v2d.FijaRelleno(TColor($BCF5A9));
+  if loc.descon then v2d.SetBrush(COL_GRIS_CLARO)
+  else v2d.SetBrush(TColor($BCF5A9));
   v2d.RectangR(x, y, x2, y + height);
   //Dibuja visor
-  v2d.FijaRelleno(clBlack);
+  v2d.SetBrush(clBlack);
   v2d.RectangR(x+16, y+10, x2-16, y + 40);
-  if loc.descon then v2d.FijaRelleno(COL_GRIS_CLARO)
-  else v2d.FijaRelleno(clBlue);
+  if loc.descon then v2d.SetBrush(COL_GRIS_CLARO)
+  else v2d.SetBrush(clBlue);
   v2d.RectangR(x+22, y+16, x2-22, y + 30);
 
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(X + 2, Y -20, nombre);  //Nombre de objeto
+  v2d.Texto(X + 2, Y -20, name);  //Nombre de objeto
   //dibuja ícono de teléfono
   if loc.descolg then begin
     v2d.DibujarImagenN(icoTelDes, x+28, y+52);
@@ -649,26 +636,22 @@ begin
   DibujarDatosLlam;
   //muestra consumo en moneda
   v2d.FijaLapiz(psSolid, 1, clBlack);
-  v2d.FijaRelleno(TColor($D5D5D5));
+  v2d.SetBrush(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
   s := loc.Grupo.OnReqCadMoneda(loc.costo_tot);  //costo en formato de moneda
   v2d.SetText(clBlue, 11,'',false);
   v2d.TextoR(x+2, y+88, width-4, 22, s);
-  BotDes.estado:= true;
   //muestra boleta
   if loc.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
-procedure TogNiloM.ReubicElemen;
+procedure TogNiloM.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 //Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
 //cambiar las dimensiones.
 begin
   inherited;
-  //x2 := x + width;
-  Buttons[0].Ubicar(x + 64, y + 60);
-//   Botones[2].Ubicar(x2 - 20, y + 3);  //Botón Cerrar
   //ubica boleta
-  Boleta.Ubicar(x+5,y+110);
+  Boleta.Locate(x+5,y+110);
 end;
 function TogNiloM.loc: TCibFacLocutor;
 begin
@@ -677,36 +660,32 @@ end;
 procedure TogNiloM.ProcDesac(estado0: Boolean);
 begin
 //   Desactivado := estado0;
-   BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
 end;
 //constructor y detsructor
 constructor TogNiloM.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
-  BotDes := AddButton(24, 24, BOT_REPROD, @ProcDesac);
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  nombre := 'Locutorio';
-  Self.Ubicar(100,100);
-  width := 94;
-  height := 130;
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Name := 'Locutorio';
+  Self.Locate(100,100);
   Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
                 crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(94, 130);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogMesa }
-procedure TogMesa.Dibujar();
+procedure TogMesa.Draw;
 begin
   //--------------Dibuja cuerpo de tabla
 //  x2 := x + width;
   //y2 := y + height;
   //Frente
 //  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
-//  v2d.FijaRelleno(clWhite);
+//  v2d.SetBrush(clWhite);
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(X, Y -20, nombre);
+  v2d.Texto(X, Y -20, Name);
   //Dibuja mesa
   //dibuja ícono de sillas
   v2d.DibujarImagenN(icoSilla1, x , y + 38);
@@ -746,60 +725,58 @@ begin
   if Mesa.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
-procedure TogMesa.ReubicElemen;
+procedure TogMesa.ReLocate(newX, newY: Single; UpdatePCtrls: boolean);
 //Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
 //cambiar las dimensiones.
 begin
   inherited;
   //ubica boleta
-  Boleta.Ubicar(x + width/2 - 40, y + height - 20);
+  Boleta.Locate(x + width/2 - 40, y + height - 20);
 end;
 function TogMesa.Mesa: TCibFacMesa;
 {Función de acceso por comodidad}
 begin
   Result := TCibFacMesa(Fac);
 end;
-procedure TogMesa.ReConstGeom;
+procedure TogMesa.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 begin
   case Mesa.tipMesa of
   cmt1x1: begin
-      width := 105;
-      height := 110;
+      newWidth := 105;
+      newHeight := 110;
   end;
   cmt1x2: begin
-      width := 140;
-      height := 110;
+      newWidth := 140;
+      newHeight := 110;
   end;
   cmt2x1: begin
-      width := 105;
-      height := 145;
+      newWidth := 105;
+      newHeight := 145;
   end;
   cmt2x2: begin
-      width := 140;
-      height := 145;
+      newWidth := 140;
+      newHeight := 145;
   end;
   end;
-  inherited ReConstGeom;
+  inherited Resize(newWidth, newHeight);
 end;
 //constructor y detsructor
 constructor TogMesa.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
   boleta.Width:=80;
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  nombre := 'Cliente';
-  Ubicar(100,100);
-  width := 105;
-  height := 110;
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Name := 'Cliente';
+  Locate(100,100);
   Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
                 crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(105, 110);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 //////////////////////////////////////////////////////////////////////
 ///////////////////////////  GRUPOS /////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 { TogGClientes }
-procedure TogGClientes.Dibujar;
+procedure TogGClientes.Draw;
 begin
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
@@ -807,22 +784,20 @@ begin
   v2d.DibujarImagenN(icono, x, y-2);
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(x + 33, y+3, nombre);
+  v2d.Texto(x + 33, y+3, Name);
   inherited;
 end;
 constructor TogGClientes.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  Self.Ubicar(100,100);
-  width := 100;
-  height := 29;
-  nombre := 'Grupo Clientes';
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Self.Locate(100,100);
+  Name := 'Grupo Clientes';
   GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogGCabinas }
-procedure TogGCabinas.Dibujar;
+procedure TogGCabinas.Draw;
 begin
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
@@ -830,22 +805,20 @@ begin
   v2d.DibujarImagenN(icono, x, y-2);
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(x + 33, y+3, nombre);
+  v2d.Texto(x + 33, y+3, Name);
   inherited;
 end;
 constructor TogGCabinas.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  Self.Ubicar(100,100);
-  width := 100;
-  height := 29;
-  nombre := 'Grupo Cabinas';
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Self.Locate(100,100);
+  Name := 'Grupo Cabinas';
   GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogGNiloM }
-procedure TogGNiloM.Dibujar;
+procedure TogGNiloM.Draw;
 begin
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
@@ -857,22 +830,20 @@ begin
   end;
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(x + 33, y+3, nombre);
-  inherited Dibujar;
+  v2d.Texto(x + 33, y+3, Name);
+  inherited Draw;
 end;
 constructor TogGNiloM.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  Self.Ubicar(100,100);
-  width := 100;
-  height := 29;
-  nombre := 'Grupo NiloM';
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Self.Locate(100,100);
+  Name := 'Grupo NiloM';
   GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogGMesas }
-procedure TogGMesas.Dibujar;
+procedure TogGMesas.Draw;
 begin
   //--------------Dibuja encabezado
   v2d.FijaLapiz(psSolid, 1, COL_GRIS);
@@ -880,19 +851,17 @@ begin
   v2d.DibujarImagenN(icono, x, y-2);
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
-  v2d.Texto(x + 33, y+3, nombre);
+  v2d.Texto(x + 33, y+3, Name);
   inherited;
 end;
 constructor TogGMesas.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  pc_SUP_CEN.visible:=false;  //oculta punto de control
-  Self.Ubicar(100,100);
-  width := 100;
-  height := 29;
-  nombre := 'Grupo Clientes';
+  pcTOP_CEN.visible:=false;  //oculta punto de control
+  Self.Locate(100,100);
+  Name := 'Grupo Clientes';
   GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
-  ReConstGeom;     //Se debe llamar después de crear los puntos de control para poder ubicarlos
+  Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 
 end.

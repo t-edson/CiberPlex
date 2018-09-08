@@ -15,6 +15,8 @@ type
     acArcGrabar: TAction;
     acArcValidar: TAction;
     acHerMostRentab: TAction;
+    acImportArc: TAction;
+    acExportArc: TAction;
     acVerArbCat: TAction;
     ActionList1: TActionList;
     btnValidar: TBitBtn;
@@ -29,6 +31,13 @@ type
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
+    MenuItem11: TMenuItem;
+    MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
+    MenuItem16: TMenuItem;
+    MenuItem17: TMenuItem;
     MenuItem18: TMenuItem;
     MenuItem19: TMenuItem;
     MenuItem2: TMenuItem;
@@ -36,12 +45,18 @@ type
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
+    OpenDialog1: TOpenDialog;
     Panel1: TPanel;
     Panel2: TPanel;
+    SaveDialog1: TSaveDialog;
     Splitter1: TSplitter;
     procedure acArcGrabarExecute(Sender: TObject);
     procedure acArcValidarExecute(Sender: TObject);
+    procedure acExportArcExecute(Sender: TObject);
+    procedure acImportArcExecute(Sender: TObject);
     procedure acHerMostRentabExecute(Sender: TObject);
     procedure acVerArbCatExecute(Sender: TObject);
     procedure btnCerrarClick(Sender: TObject);
@@ -196,7 +211,21 @@ begin
   fraGri.Align  := alClient;
   fraGri.OnGrillaModif:=@fraGri_Modificado;
   fraGri.OnReqNuevoReg:=@fraGri_ReqNuevoReg;
-
+  //Actualiza menú
+  MenuItem7.Action := fraGri.acEdiNuevo;
+  MenuItem7.ImageIndex := -1;
+  MenuItem8.Action := fraGri.acEdiCopCel;
+  MenuItem8.ImageIndex := -1;
+  MenuItem11.Action := fraGri.acEdiCopFil;
+  MenuItem11.ImageIndex := -1;
+  MenuItem12.Action := fraGri.acEdiPegar;
+  MenuItem12.ImageIndex := -1;
+  MenuItem13.Action := fraGri.acEdiElimin;
+  MenuItem13.ImageIndex := -1;
+  MenuItem14.Action := fraGri.acEdiSubir;
+  MenuItem14.ImageIndex := -1;
+  MenuItem15.Action := fraGri.acEdiBajar;
+  MenuItem15.ImageIndex := -1;
 end;
 procedure TfrmAdminProduc.FormShow(Sender: TObject);
 begin
@@ -318,6 +347,26 @@ cadena, contenidos en todos los campos, se pueden traducir a los valores nativos
 tipo TRegProdu, y si son valores legales.}
 begin
   fraGri.ValidarGrilla;  //Puede mostrar mensaje de error
+end;
+procedure TfrmAdminProduc.acImportArcExecute(Sender: TObject);
+var
+  filName: String;
+begin
+  if not OpenDialog1.Execute then exit;
+  filName := OpenDialog1.FileName;
+  if not FileExists(filName) then exit;
+  fraGri.ReadFromString(StringFromFile(filName));
+//  TabPro.ActualizarTabNoStock();
+end;
+procedure TfrmAdminProduc.acExportArcExecute(Sender: TObject);
+var
+  filName: String;
+begin
+  SaveDialog1.FileName := 'producto_items.dat';
+  if not SaveDialog1.Execute then exit;
+  filName := SaveDialog1.FileName;
+  //if not FileExists(filName) then exit;
+  StringToFile(fraGri.TableAsString, filName);
 end;
 //Acciones Ver
 procedure TfrmAdminProduc.acVerArbCatExecute(Sender: TObject);

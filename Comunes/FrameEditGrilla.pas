@@ -190,6 +190,7 @@ type
     procedure UpdateColData(UpdateTable: boolean = false);
     procedure WriteToTable;
     function TableAsString: string;
+    procedure ReadFromString(str: string);
   public  //Inicialización
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
@@ -495,7 +496,29 @@ begin
     lineas.Destroy;
   end;
 end;
-
+procedure TfraEditGrilla.ReadFromString(str: string);
+//LLena los datos de la grilla a partir de una cadane
+var
+  lineas: TStringList;
+  f: Integer;
+begin
+  lineas:= TStringList.Create;
+  lineas.Text := str;  //Divide en líneas
+  if lineas.Count=0 then begin
+    MsgErr('No se encontarron datos');
+    exit;
+  end;
+  if lineas[0] <>Table.TableHeader then begin
+    MsgErr('Formato de columnas distinto');
+    exit;
+  end;
+  grilla.RowCount := lineas.Count;
+  for f := 1 to grilla.RowCount-1 do begin
+    grilla.Cells[colData.idx, f] := lineas[f];
+  end;
+  MsgErr('Grilla actualizada.');
+  lineas.Destroy;
+end;
 procedure TfraEditGrilla.EstadoAcciones(estado: boolean);
 begin
 //  for i:=0 to ActionList1.ActionCount-1 do begin

@@ -106,6 +106,7 @@ begin
     grilla.Cells[4,f] := Config.CadMon(reg.PreVenta);
     grilla.Cells[5,f] := reg.Desc;
     grilla.Cells[6,f] := FloatToStr(reg.Stock);
+    grilla.Cells[7,f] := reg.Marca;
     f := f + 1;
   end;
   grilla.EndUpdate();
@@ -116,13 +117,14 @@ begin
   //Configura grilla
   gri := TUtilGrilla.Create(grilla);
   gri.IniEncab;
-  gri.AgrEncab('N°'          , 30, -1, taRightJustify);
+  gri.AgrEncab('N°'          , 30, -1, taRightJustify).visible := false;
   gri.AgrEncab('CÓDIGO'      , 50);
   gri.AgrEncab('CATEGORÍA'   , 70);
   gri.AgrEncab('SUBCATEGORÍA', 70);
   gri.AgrEncab('PRC.UNITARIO', 55, -1, taRightJustify);
   gri.AgrEncab('DESCRIPCIÓN' , 180);
   gri.AgrEncab('STOCK'       , 40, -1, taRightJustify);
+  gri.AgrEncab('MARCA'       , 70).visible := false;
   gri.FinEncab;
   gri.OpAutoNumeracion:=true;
   gri.OpDimensColumnas:=true;

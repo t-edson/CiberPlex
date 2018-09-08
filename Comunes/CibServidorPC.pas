@@ -17,6 +17,12 @@ const
   MSJ_REINIC_CONEX = 'Reiniciando conexión...';
 type
 
+  { TThreadSockServer }
+  {Esta clase es la conexión que se usa para conectarse en modo Servidor. Es un hilo para
+  manejar las conexiones de manera asíncrona. Está pensada para ser usada solo por
+  TCibServidorPC.
+  Se define que TThreadSockCabina solo maneje dos estados:
+  cecConectando -> cecConectado }
   TThreadSockServer = class(TCibConexBase)
   private
     pilaCmds: TPilaCom;          //Pila de comandos
@@ -41,11 +47,11 @@ type
    }
   TCibServidorPC = class
   private
-    function GetEstado: TCibEstadoConex;
+    Festado: TCibEstadoConex;
     procedure hiloCambiaEstado(nuevoEstado: TCibEstadoConex);
     procedure hiloRegMensaje(NomPC: string; msj: string);
+    procedure hiloTerminate(Sender: TObject);
     procedure hiloTramaLista(NomPC: string; tram: TCPTrama);
-    procedure SetEstado(AValue: TCibEstadoConex);
   public
     hilo : TThreadSockServer;
     OnCambiaEstado: TEvCambiaEstado;
@@ -56,85 +62,18 @@ type
     function Conectado: boolean;
     function EstadoConexStr: string;
     procedure EnviaArchivo(tipCom: TCPTipCom; archivo: String);
-    property Estado: TCibEstadoConex read GetEstado write SetEstado;
+    property Estado: TCibEstadoConex read FEstado;  //De solo lectura
     function HayComando: boolean;
   public
+    procedure Conectar;
+    procedure Desconectar;
     constructor Create;
     destructor Destroy; override;
   end;
 
 
 implementation
-
-function TCibServidorPC.GetEstado: TCibEstadoConex;
-begin
-  Result := hilo.Estado;
-end;
-
-procedure TCibServidorPC.hiloCambiaEstado(nuevoEstado: TCibEstadoConex);
-begin
-  if OnCambiaEstado<>nil then OnCambiaEstado(nuevoEstado);
-end;
-
-procedure TCibServidorPC.hiloRegMensaje(NomPC: string; msj: string);
-begin
-  if OnRegMensaje<>nil then OnRegMensaje(NomPC, msj);
-end;
-
-procedure TCibServidorPC.hiloTramaLista(NomPC: string; tram: TCPTrama);
-begin
-  if OnTramaLista<>nil then OnTramaLista(NomPC, tram);
-end;
-
-procedure TCibServidorPC.SetEstado(AValue: TCibEstadoConex);
-begin
-  hilo.Estado := AValue;
-end;
-
-{ TCibServidorPC }
-procedure TCibServidorPC.PonerComando(tipCom: TCPTipCom; ParamX, ParamY: word;
-  const datos: string);
-begin
-  hilo.PonerComando(tipCom, ParamX, ParamY, datos);
-end;
-
-function TCibServidorPC.Conectado: boolean;
-begin
-  Result := hilo.Conectado;
-end;
-
-function TCibServidorPC.EstadoConexStr: string;
-begin
-  Result := hilo.EstadoConexStr;
-end;
-
-procedure TCibServidorPC.EnviaArchivo(tipCom: TCPTipCom; archivo: String);
-begin
-  hilo.EnviaArchivo(tipCom, archivo);
-end;
-
-function TCibServidorPC.HayComando: boolean;
-begin
-  Result := hilo.HayComando;
-end;
-
-constructor TCibServidorPC.Create;
-begin
-  hilo := TThreadSockServer.Create;
-  hilo.OnCambiaEstado := @hiloCambiaEstado; //para detectar cambios de estado
-  hilo.OnRegMensaje := @hiloRegMensaje;     //Para recibir mensajes
-  hilo.OnTramaLista := @hiloTramaLista;
-end;
-destructor TCibServidorPC.Destroy;
-begin
-  hilo.OnTramaLista:=nil;  //para evitar eventos al morir
-  hilo.OnRegMensaje:=nil;  //para evitar eventos al morir
-  hilo.Terminate;
-  hilo.WaitFor;
-  hilo.Destroy;
-  inherited Destroy;
-end;
-
+{ TThreadSockServer }
 procedure TThreadSockServer.EnviaArchivo(tipCom: TCPTipCom; archivo : String);
 //Envía una archivo como parte de la trama. Debe indicarse un comando
 //que incluya un archivo como datos.
@@ -142,8 +81,6 @@ begin
   if estad_tra <> EST_ESPERANDO then exit;
   PonerComando(tipCom, 0, 0, StringFromFile(archivo));
 End;
-
-{ TThreadSockServer }
 procedure TThreadSockServer.Execute;
 var
   ClientSock:TSocket;
@@ -231,16 +168,122 @@ end;
 //Constructor y destructor
 constructor TThreadSockServer.Create;
 begin
-  FEstado := cecDetenido; {Estado inicial. Este estado es solo temporal, se fija
-              así para que se genere el evento OnCambiaEstado, al pasar al estado de
-              "conectando", en el Execute(). Notar que esta asignación de estado, no
+  FEstado := cecConectando; {Estado inicial. Aún no está conectando, pero se asume que
+                             está en proceso de conexión. Además, no existe estado
+                             "cecDetenido" para TThreadSockCabina.
+                             Notar que esta asignación de estado, no
               generará el evento de cambio de estado.}
   pilaCmds := TPilaCom.Create;
-  inherited Create(false);
+  inherited Create(true);
 end;
 destructor TThreadSockServer.Destroy;
 begin
   pilaCmds.Destroy;
   inherited Destroy;
 end;
+
+{ TCibServidorPC }
+procedure TCibServidorPC.hiloCambiaEstado(nuevoEstado: TCibEstadoConex);
+begin
+  if Festado = nuevoEstado then exit;
+  Festado := nuevoEstado;
+  if OnCambiaEstado<>nil then OnCambiaEstado(Festado);
+end;
+procedure TCibServidorPC.hiloRegMensaje(NomPC: string; msj: string);
+begin
+  if OnRegMensaje<>nil then OnRegMensaje(NomPC, msj);
+end;
+procedure TCibServidorPC.hiloTerminate(Sender: TObject);
+begin
+  { Se ha salido del Execute() y el hilo ya no procesa la conexión. El hilo pasa a un
+  estado suspendido, pero aún existe el objeto en memoria, porque no se le define con
+  auto-destrucción.}
+ hiloCambiaEstado(cecDetenido);
+end;
+procedure TCibServidorPC.hiloTramaLista(NomPC: string; tram: TCPTrama);
+begin
+  if OnTramaLista<>nil then OnTramaLista(NomPC, tram);
+end;
+procedure TCibServidorPC.PonerComando(tipCom: TCPTipCom; ParamX, ParamY: word;
+  const datos: string);
+begin
+  hilo.PonerComando(tipCom, ParamX, ParamY, datos);
+end;
+function TCibServidorPC.Conectado: boolean;
+begin
+  Result := hilo.Conectado;
+end;
+function TCibServidorPC.EstadoConexStr: string;
+begin
+  Result := EstadoConexACadena(Festado);
+end;
+procedure TCibServidorPC.EnviaArchivo(tipCom: TCPTipCom; archivo: String);
+begin
+  hilo.EnviaArchivo(tipCom, archivo);
+end;
+function TCibServidorPC.HayComando: boolean;
+begin
+  Result := hilo.HayComando;
+end;
+procedure TCibServidorPC.Conectar;
+{Inicia la conexión con el hilo.}
+begin
+  if Festado in [cecConectando, cecConectado] then begin
+    // El hilo ya existe, y esta conectado o en proceso de conexión.
+    { TODO : Para ser más precisos se debería ver si se le ha dado la orden de terminar
+    el hilo mirando hilo.Terminated. De ser así, la muerte del hilo es solo cuestion
+    de tiempo, (milisegundos si está en estado cecConectado o segundos si está en
+    estado cecConectando)
+    }
+    exit;
+  end;
+  if Festado = cecDetenido then begin
+    // El proceso fue terminado, tal vez porque dio error.
+    hilo.Destroy;   //libera referencia
+    hilo := nil;
+    //Festado := cecMuerto;  //No es muy útil, fijar este estado, porque seguidamente se cambiará
+  end;
+  hilo := TThreadSockServer.Create;
+  hilo.OnCambiaEstado := @hiloCambiaEstado; //Para detectar cambios de estado
+  hilo.OnCambiaEstado(hilo.estado);         //Genera el primer evento de estado
+  hilo.OnTerminate    := @hiloTerminate;    //Para detectar que ha muerto
+  hilo.OnRegMensaje   := @hiloRegMensaje;   //Para recibir mensajes
+  hilo.OnTramaLista   := @hiloTramaLista;
+  // Inicia el hilo. Aquí empezará con el estado "Conectando"
+  hilo.Start;
+end;
+procedure TCibServidorPC.Desconectar;
+begin
+  if Festado = cecMuerto then begin
+    exit;  //Ya está muerto el proceso, o está a punto de morir
+  end;
+  // La única forma de matar al proceso es dándole la señal
+  hilo.Terminate;
+  {puede tomar unos segundos hasta que el hilo pase a estado suspendido (milisegundos si está
+  en estado cecConectado o segundos si está en  estado cecConectando)
+  }
+end;
+constructor TCibServidorPC.Create;
+begin
+  Festado := cecMuerto;  //Este es el estado inicial, porque no se ha creado el hilo
+  Conectar;
+end;
+destructor TCibServidorPC.Destroy;
+begin
+  hilo.OnTramaLista:=nil;  //para evitar eventos al morir
+  hilo.OnRegMensaje:=nil;  //para evitar eventos al morir
+  if Festado<>cecMuerto then begin
+    if hilo = nil then begin
+      {Este es un caso especial, cuando no se llegó a conectar nunca el hilo}
+    end else begin
+      //Caso normal en que se ha creado el hilo
+      hilo.Terminate;
+      hilo.WaitFor;
+      hilo.Destroy;
+      //estado := cecMuerto;  //No es útil fijar el estado aquí, porque el objeto será destruido
+    end;
+  end;
+  inherited Destroy;
+end;
+
 end.

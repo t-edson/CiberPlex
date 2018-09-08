@@ -34,7 +34,7 @@ type
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
     function ExtraerBloqueEstado(lisEstado: TStringList; out estado,
-      nomGrup: string; var tipo: TCibTipFact): boolean;
+      nomGrup: string; out tipo: TCibTipFact): boolean;
     procedure gof_ReqConfigGen(var NombProg, NombLocal: string;
       var ModDiseno: boolean);
     procedure GCab_ArchCambRemot(ruta, nombre: string);
@@ -85,7 +85,7 @@ implementation
 
 { TCibModelo }
 function TCibModelo.ExtraerBloqueEstado(lisEstado: TStringList;
-  out estado, nomGrup: string; var tipo: TCibTipFact): boolean;
+  out estado, nomGrup: string; out tipo: TCibTipFact): boolean;
 {Extrae de la cadena de estado de la aplicación (guardada en lisEstado), el fragmento
 que corresponde al estado de un grupo facturable. El estado se devuelve en "estado"
 Normalmente lisEstado , tendrá la forma:
@@ -106,7 +106,10 @@ var
   lin0: String;
 begin
   estado := '';
-  if lisEstado.Count=0 then exit;   //está vacía
+  if lisEstado.Count=0 then begin
+    estado := '';
+    exit(false);   //está vacía
+  end;
   lin0 := lisEstado[0];
   if (lin0='') or (lin0[1]<>'<') then begin
     MsgErr('Error en cadena de estado. Se esperaba "<".');

@@ -38,7 +38,7 @@ const //Acciones sobre las PC
   C_CABIN_REIN_PC = 23;  //Comando para reiniciar PC
 //  CCABIN_MOS_TPO = 24;
   C_CABIN_APAG_PC = 25;  //Comando para apagar PC
-//  C_CABIN_ENCEPC = 26;  //Encender PC
+  C_CABIN_ENCEPC  = 26;  //Encender PC
 //  C_CABIN_MENS_PC = 27;  //Comando de envío de mensaje a PC
 //  C_CABIN_GEN_TEC = 28;  //Comando de generar tecla pulsada
 //  C_CABIN_DE_SCSV = 29;  //Comando para desactivar protector de pantalla
@@ -116,6 +116,7 @@ type
     procedure LimpiarCabina;
     procedure mnEditComent(Sender: TObject);
     procedure mnDetenCuenta(Sender: TObject);
+    procedure mnEncenderPC(Sender: TObject);
     procedure mnFijTiempoIni(Sender: TObject);
     procedure mnInicCuenta(Sender: TObject);
     procedure mnModifCuenta(Sender: TObject);
@@ -1040,9 +1041,11 @@ begin
   end;
   //Copia variables de estado, incluyendo la boleta.
   cab2.CadEstado := CadEstado;
+  cab2.Coment := Coment;  //Copia el comentario también
   //Limpia cabina fuente
   LimpiarCabina;
   LimpiarBol;
+  Coment := '';
   //Envía comandos para restablecer estado
   TCP_envComando(C_BLOQ_PC, 0, 0);
   Application.ProcessMessages;    //Para darle tiempo a enviar
@@ -1136,6 +1139,10 @@ begin
   C_CABIN_APAG_PC: begin   //Comando para apagar PC
       TCP_envComando(C_APAG_PC, 0, 0);
     end;
+  C_CABIN_ENCEPC : begin
+    //TCP_envComando(C_ENCE_PC, 0, 0);
+    cabConex.SendWakeOnLan;  //Envía comando
+  end;
   C_CABIN_PAN_COMP: begin  //Solicitar captura de pantalla
       //Guarda el id de quien pidió la pantalla, para poder devolverla adecuadamente
   debugln('+Solicitando imagen desde: '+ self.IdFac);
@@ -1205,7 +1212,8 @@ begin
     //acciones (Que siempre haya la misma cantidad).
     AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent).Enabled:=false;
   end;
-  AgregarAccion(nShortCut, '&Fijar Tiempo Inic.'   , @mnFijTiempoIni, -1);
+  AgregarAccion(nShortCut, '&Encender PC.'           , @mnEncenderPC, -1);
+  AgregarAccion(nShortCut, '&Fijar Tiempo Inic.'     , @mnFijTiempoIni, -1);
 //  AgregarAccion(nShortCut, 'Propiedades' , @mnVerMsjesRed, -1););
 end;
 procedure TCibFacCabina.MenuAccionesModelo(MenuPopup: TPopupMenu);
@@ -1302,6 +1310,19 @@ procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);
 {Muestra el formulario para ver los mensajes de red.}
 begin
   frmVisMsj.Exec(Nombre);
+end;
+procedure TCibFacCabina.mnEncenderPC(Sender: TObject);
+{Fija el tiempo inicial de una cabina.}
+var
+  nnStr: String;
+  nn: Longint;
+begin
+  if EstadoCta = EST_MANTEN then begin
+    if MsgYesNo('Cabina en mantenimiento. ¿Encender?') <> 1 then exit;
+  end;
+  MsgBox('Encendiendo');
+  //Fija minutos
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_ENCEPC, 0, IdFac);
 end;
 procedure TCibFacCabina.mnFijTiempoIni(Sender: TObject);
 {Fija el tiempo inicial de una cabina.}

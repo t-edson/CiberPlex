@@ -210,7 +210,7 @@ begin
 end;
 procedure TfrmNiloMProp.FormCreate(Sender: TObject);
 var
-  attPrepro: TSynHighlighterAttributes;
+  attPrepro: integer;
 begin
   edTarif := TSynFacilEditor.Create(editTarif,'tarifario','txt');
   edRutas := TSynFacilEditor.Create(editRutas,'rutas','txt');

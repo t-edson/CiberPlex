@@ -223,7 +223,7 @@ type
       lineas: TStringList;
       procedure Inic(const cad: string; var lin0: string);
       function ExtraerNombre(const lin: string): string;
-      function Extraer(var car: char; var nombre, cadena: string): boolean;
+      function Extraer(out car: char; var nombre, cadena: string): boolean;
     public  //constructor y destructor
       constructor Create;
       destructor Destroy; override;
@@ -1106,7 +1106,7 @@ begin
     Result := copy(lin, 2, p-2);
   end;
 end;
-function TCPDecodCadEstado.Extraer(var car: char; var nombre, cadena: string): boolean;
+function TCPDecodCadEstado.Extraer(out car: char; var nombre, cadena: string): boolean;
 {Extrae una subcadena (de una o varias líneas) de la cadena de estado, que corresponden a
 los datos de un facturable. Si no encuentra más datos, devuelve FALSE.
 La cadena de estado, tiene la forma:

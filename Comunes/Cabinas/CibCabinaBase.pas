@@ -1,12 +1,12 @@
 {Contiene las definiciones básicas que se necesitan para el objeto TCibFacCabina.
 Contiene la definición de las siguientes clases:
 
-* TSocketCabina-> Es un hilo, que se se usa para abrir una conexión Ethernet a la cabina.
-                 A TSocketCabina no debe accederse directamente. Tiene su propia temporización
+* TThreadSockCabina-> Es un hilo, que se se usa para abrir una conexión Ethernet a la cabina.
+                 A TThreadSockCabina no debe accederse directamente. Tiene su propia temporización
                  y rutinas de reconexión para mantener el enlace con la cabina remota.
 
-* TCabConexion -> Es como una envoltura para el hilo TSocketCabina. Facilita el manejo de
-                 la conexión por red, ya que administrar directamente al hilo, requiere
+* TCabConexion -> Es como una envoltura para el hilo TThreadSockCabina. Facilita el manejo
+                 de la conexión por red, ya que administrar directamente al hilo, requiere
                  un cuidado mayor.
 * TCabCuenta -> Contiene los parámetros de la cuenta de la cabina.
 
@@ -22,7 +22,7 @@ unit CibCabinaBase;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, LCLProc, MisUtils, blcksock, CibTramas;
+  Classes, SysUtils, LCLProc, MisUtils, blcksock, CibTramas, synamisc;
 type
   //Estado de conteo de las cabinas.
   TcabEstadoCuenta = (
@@ -55,12 +55,12 @@ type
 
 type
 
-  { TSocketCabina }
+  { TThreadSockCabina }
   {Esta clase es la conexión a la cabina. Es un hilo para manejar las conexiones de
    manera asíncrona. Está pensada para ser usada solo por TCabConexion.
-   El ciclo de conexión normal de TSocketCabina es:
+   El ciclo de conexión normal de TThreadSockCabina es:
    cecConectando -> cecConectado }
-  TSocketCabina = class(TCibConexBase)
+  TThreadSockCabina = class(TCibConexBase)
   private
     ip: string;
     procedure AbrirConexion;
@@ -76,7 +76,7 @@ type
   end;
 
   { TCabConexion }
-  {Se usa esta clase como una envoltura para administrar la conexión TSocketCabina,
+  {Se usa esta clase como una envoltura para administrar la conexión TThreadSockCabina,
    ya que es un hilo, y el manejo directo se hace problemático, por las peculiaridades
    que tienen los hilos.
    El ciclo de conexión normal de TCabConexion es:
@@ -92,7 +92,7 @@ type
   private
     FIP: string;
     Festado: TCibEstadoConex;
-    hilo: TSocketCabina;
+    hilo: TThreadSockCabina;
     function GetEstadoN: integer;
     procedure SetEstadoN(AValue: integer);
     procedure SetIP(AValue: string);
@@ -104,6 +104,7 @@ type
     property estadoN: integer read GetEstadoN write SetEstadoN;
     function estadoStr: string;
     property IP: string read FIP write SetIP;
+    procedure SendWakeOnLan;
   public
     OnCambiaEstado: TEvCambiaEstado;
     OnRegMensaje  : TEvRegMensaje;  //Indica que ha llegado un mensaje de la conexión
@@ -160,8 +161,8 @@ begin
   hor_ini := date;
 end;
 
-{ TSocketCabina }
-procedure TSocketCabina.Abrir;
+{ TThreadSockCabina }
+procedure TThreadSockCabina.Abrir;
 {Intenta abrir una conexión}
 begin
   estado := cecConectando;
@@ -177,7 +178,7 @@ begin
   end;
   estado := cecConectado;
 end;
-procedure TSocketCabina.AbrirConexion;
+procedure TThreadSockCabina.AbrirConexion;
 begin
  RegMensaje('Abriendo puerto ...');
  repeat
@@ -185,7 +186,7 @@ begin
  until (estado = cecConectado) or Terminated;
 end;
 //Acciones sincronizadas
-procedure TSocketCabina.Execute;
+procedure TThreadSockCabina.Execute;
 var
   buffer: String = '';
   tics: Integer;
@@ -228,7 +229,7 @@ begin
     sleep(100);  //periodo del lazo
   end;
 end;
-procedure TSocketCabina.TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word;
+procedure TThreadSockCabina.TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string='');
 {Envía una trama sencilla de datos, al socket. }
 var
@@ -248,17 +249,17 @@ begin
     sock.SendString(cad);
   end;
 end;
-constructor TSocketCabina.Create(ip0: string);
+constructor TThreadSockCabina.Create(ip0: string);
 begin
   ip := ip0;
   Festado := cecConectando; {Estado inicial. Aún no está conectando, pero se asume que
                              está en proceso de conexión. Además, no existe estado
-                             "cecDetenido" para TSocketCabina.
+                             "cecDetenido" para TThreadSockCabina.
                              Notar que esta asignación de estado, no generará el evento de
                              cambio de estado, porque estamos en el constructor}
   inherited Create(true);  //crea suspendido
 end;
-destructor TSocketCabina.Destroy;
+destructor TThreadSockCabina.Destroy;
 begin
   inherited Destroy;
 end;
@@ -295,12 +296,12 @@ end;
 function TCabConexion.estadoStr: string;
 {Convierte TCibEstadoConex a cadena}
 begin
- case Festado of
- cecConectando : exit('Conectando');
- cecConectado  : exit('Conectado');
- cecDetenido   : exit('Detenido');
- cecMuerto     : exit('Muerto');
- end;
+ Result := EstadoConexACadena(Festado);
+end;
+procedure TCabConexion.SendWakeOnLan;
+{Enciende remotamente una cabina}
+begin
+  WakeOnLan(mac, '');
 end;
 procedure TCabConexion.SetIP(AValue: string);
 begin
@@ -331,18 +332,18 @@ begin
     }
     exit;
   end;
-  if estado = cecDetenido then begin
+  if Festado = cecDetenido then begin
     // El proceso fue terminado, tal vez porque dio error.
     hilo.Destroy;   //libera referencia
     hilo := nil;
     //Festado := cecMuerto;  //No es muy útil, fijar este estado, porque seguidamente se cambiará
   end;
-  hilo := TSocketCabina.Create(FIP);
-  hilo.OnCambiaEstado:=@hiloCambiaEstado; //para detectar cambios de estado
-  hilo.OnCambiaEstado(hilo.estado);       //genera el primer evento de estado
-  hilo.OnTerminate:=@hiloTerminate;       //para detectar que ha muerto
-  hilo.OnRegMensaje:=@hiloRegMensaje;     //Para recibir mensajes
-  hilo.OnTramaLista:=@hiloTramaLista;
+  hilo := TThreadSockCabina.Create(FIP);
+  hilo.OnCambiaEstado := @hiloCambiaEstado; //Para detectar cambios de estado
+  hilo.OnCambiaEstado(hilo.estado);         //Genera el primer evento de estado
+  hilo.OnTerminate    := @hiloTerminate;    //Para detectar que ha muerto
+  hilo.OnRegMensaje   := @hiloRegMensaje;   //Para recibir mensajes
+  hilo.OnTramaLista   := @hiloTramaLista;
   // Inicia el hilo. Aquí empezará con el estado "Conectando"
   hilo.Start;
 end;
