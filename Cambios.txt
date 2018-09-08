@@ -1,3 +1,16 @@
+1.7.6
+=====
+Se cambia el nombre de la clase TSocketCabina a TThreadSockCabina.
+Se cambia el modo de control del hilo de conexión 'hilo' en TCibServidorPC (en la unidad 
+CibServidorPC), para que se parezca más a la clase TCabCOnexion y así mejorar las opciones
+de reconexión, ante fallas.
+Se agrega la opción "Encender PC" al menú contextual de las cabinas.
+Se agrega el campo "MARCA" a la ventana de ingreso de ventas, y se oculta el campo "Nº".
+Se configura para que los comentarios de cabinas, se trasladen también, cuando se traslada
+una cabina.
+Se quita el botón en el objeto gráfico de las cabinas.
+Se actualiza el motor gráfico ogEditGraf a la versión 1.7
+
 1.7.5
 =====
 Se cambia el orden del menú de los locutorios.
