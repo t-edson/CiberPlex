@@ -639,7 +639,7 @@ begin
     MsgErr('Error cargando tabla de productos.');
     MsgErr(tabPro.msjError);
   end;
-  frmAdminProduc.Exec(tabPro, '%.2f');
+  frmAdminProduc.Exec(tabPro, '%.2f', true);
 end;
 procedure TForm1.acSisAdmProveExecute(Sender: TObject);
 begin

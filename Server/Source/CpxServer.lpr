@@ -16,7 +16,7 @@ uses
   FormAgrupRep, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
   FormAdminProvee, FrameFiltArbol, CibBD, FrameEditGrilla, FormAdminInsum,
   FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras,
-  FormIngVentas, FormValStock, FormIngStock, FormVista;
+  FormIngVentas, FormValStock, FormIngStock, FormVista, ModuleBD;
 
 {$R *.res}
 
@@ -44,6 +44,7 @@ begin
   Application.CreateForm(TfrmValStock, frmValStock);
   Application.CreateForm(TfrmIngStock, frmIngStock);
   Application.CreateForm(TfrmVisor, frmVisor);
+  Application.CreateForm(TModBD, ModBD);
   Application.Run;
 end.
 

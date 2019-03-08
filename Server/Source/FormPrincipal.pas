@@ -10,7 +10,7 @@ uses
   CibTramas, CibFacturables, CibTabProvee, CibTabProductos, CibTabInsumos,
   FormAdminProvee, CibBD, FormAdminInsum, FormCambClave, FormRepProducto,
   FormRepEventos, FormValStock, FormIngStock, UniqueInstance, CibGFacMesas,
-  CibGFacClientes, CibGFacCabinas, CibGFacNiloM, FormVista;
+  CibGFacClientes, CibGFacCabinas, CibGFacNiloM, FormVista, ModuleBD;
 type
   { TfrmPrincipal }
   TfrmPrincipal = class(TForm)
@@ -179,6 +179,7 @@ type
     procedure frmAdminInsum_Grabar;
     procedure frmAdminProvee_Grabar;
     procedure frmIngStock_Grabar(Manual: boolean);
+    procedure Modelo_BDinsert(sqlText: string);
     procedure frmValStockGrabado;
     procedure IniciarSesion(usuIni: string='');
     procedure RefrescarEncabezado;
@@ -536,6 +537,11 @@ function TfrmPrincipal.Modelo_LogError(msj: string): integer;
 begin
   Result := log.PLogErr(usuario, msj);
 end;
+procedure TfrmPrincipal.Modelo_BDinsert(sqlText: string);
+{Direcciona sentencia a la base de datos}
+begin
+  ModBD.ExecuteInsert(sqlText);
+end;
 procedure TfrmPrincipal.Modelo_EstadoArchivo;
 {Guarda el estado de los objetos al archivo de estado}
 var
@@ -848,23 +854,37 @@ begin
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
 begin
-  Config.Iniciar('config.xml');  //lee configuración
+  Config.Iniciar('config.xml');  {Lee configuración, incluyendo datos del modelo,
+                                  de modo que se crean los GFAC y FAC también. }
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
   LeerEstadoDeArchivo;   //Lee después de leer la configuración
-  //Inicializa Grupos
+  //Inicia base de datos
+  ModBD.Init(rutDatos, Config.Local);
+  If ModBD.msjError <> '' then begin
+     MsgErr(ModBD.msjError);
+     //No tiene sentido seguir, si no se puede abrir la Base de datos
+     Close;
+  end;
+  //Inicializa comunicación del modelo. Toda petición de información del modelo
+  //se pasan a la aplicación principal
   Modelo.OnCambiaPropied:= @Modelo_CambiaPropied;
+  Modelo.OnGuardarEstado:= @Modelo_EstadoArchivo;
+  Modelo.OnActualizStock:= @Modelo_ActualizStock;
+  Modelo.OnRespComando  := @Modelo_RespComando;
+  Modelo.OnModifTablaBD := @Modelo_ModifTablaBD;
+
   Modelo.OnLogInfo      := @Modelo_LogInfo;
   Modelo.OnLogVenta     := @Modelo_LogVenta;
   Modelo.OnLogIngre     := @Modelo_LogIngre;
   Modelo.OnLogError     := @Modelo_LogError;
-  Modelo.OnGuardarEstado:= @Modelo_EstadoArchivo;
+  Modelo.OnBDinsert     := @Modelo_BDinsert;
+
   Modelo.OnReqConfigGen := @Modelo_ReqConfigGen;
   Modelo.OnReqConfigUsu := @Modelo_ReqConfigUsu;
-  Modelo.OnReqCadMoneda := @Config.CadMon;
-  Modelo.OnActualizStock:= @Modelo_ActualizStock;
-  Modelo.OnRespComando  := @Modelo_RespComando;
+  Modelo.OnReqCadMoneda := @Config.ReqCadMon;
+
   Modelo.OnArchCambRemot:= @Modelo_ArchCambRemot;
-  Modelo.OnModifTablaBD := @Modelo_ModifTablaBD;
+  Modelo.listo := true;  //Indica que ya se completó la caraga
 //  Modelo.OnSolicEjecCom := @Visor_SolicEjecCom;  {Se habilita para que las acciones
 //                            puedan responderse desde el mismo modelo (ver Visor_ClickDerFac)}
   //Configura Visor para comunicar sus eventos
@@ -874,7 +894,7 @@ begin
   Visor.OnDobleClickGFac:= @Visor_DobleClickGFac;
   Visor.OnObjectsMoved  := @Visor_ObjectsMoved;
   Visor.OnSolicEjecCom  := @PonerComando;  //Necesario para procesar las acciones de movimiento de boletas
-  Visor.OnReqCadMoneda  := @Config.CadMon;   //Para que pueda mostrar monedas
+  Visor.OnReqCadMoneda  := @Config.ReqCadMon;   //Para que pueda mostrar monedas
   Visor.OnMouseUp       := @Visor_MouseUp;
   //Crea los objetos gráficos del visor de acuerdo al archivo INI.
   Visor.ActualizarPropiedades(Modelo.CadPropiedades);
@@ -930,7 +950,7 @@ begin
   frmBoleta.OnComentarItem := @frmBoleta_ComentarItem;
   frmBoleta.OnDividirItem  := @frmBoleta_DividirItem;
   frmBoleta.OnGrabarItem   := @frmBoletaGrabarItem;
-  frmBoleta.OnReqCadMoneda := @Config.CadMon;
+  frmBoleta.OnReqCadMoneda := @Config.ReqCadMon;
   log.PLogInf(usuario, IntToStr(tabPro.Productos.Count) + ' productos cargados.');
   log.PLogInf(usuario, IntToStr(tabPrv.Proveedores.Count) + ' proveedores cargados.');
   log.PLogInf(usuario, IntToStr(tabIns.Insumos.Count) + ' insumos cargados.');
@@ -946,11 +966,11 @@ begin
   frmIngStock.OnGrabado := @frmIngStock_Grabar;
   frmValStock.OnGrabado := @frmValStockGrabado;
 
-  frmRepIngresos.OnReqCadMoneda:=@Config.CadMon;
+  frmRepIngresos.OnReqCadMoneda:=@Config.ReqCadMon;
 
   //Pruebas con el nuevo Visor de Ciberplex
   //frmVisor.Show;
-  frmVisor.ActualizarPropiedades(Modelo.CadPropiedades);
+  //frmVisor.ActualizarPropiedades(Modelo.CadPropiedades);
 end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
@@ -1076,7 +1096,7 @@ begin
   if tic mod 60 = 0 then begin  //para evitar escribir muchas veces en disco
     Modelo_EstadoArchivo; //Por si ha habido cambios
   end;
-  frmVisor.ActualizarEstado(Modelo.CadEstado);
+  //frmVisor.ActualizarEstado(Modelo.CadEstado);
 end;
 procedure TfrmPrincipal.ConfigfcVistaUpdateChanges;
 //Cambios en vista

@@ -1,3 +1,16 @@
+2.0
+===
+-- SERVER -- 
+Se agrega el DataModule ModuleDB, para incluir una conexión a una base de datos SQLite. La idea 
+es probar una migración de la base de datos, para pasar a usar SQLite.
+De momento se estará trabajando en modo de prueba, actualizando las dos bases de datos en 
+paralelo.
+Se ha agregado el campo "listo", al modelo para saber cuando se encuentra ya activo.
+Se agrega una protección al evento TCibGFacNiloM.timer1Timer() para no ejecutarse cuando no
+se encuentra listo el modelo. Así se activa crear un archivo de registro con nombre erróneo.
+Se cambian algunos nombres de métodos en la unidad CibModelo.
+Se crea el nuevo comando C_BD_HISTOR, para modificar la base de datos histórica.
+
 1.9
 ===
 Se crea, a modo de prueba, el formulario FormVista y el frame frameVista, para intentar crear un

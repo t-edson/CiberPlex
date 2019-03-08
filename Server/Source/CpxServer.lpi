@@ -57,24 +57,27 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="5">
+    <RequiredPackages Count="6">
       <Item1>
-        <PackageName Value="uniqueinstance_package"/>
+        <PackageName Value="FCL"/>
       </Item1>
       <Item2>
-        <PackageName Value="TAChartLazarusPkg"/>
+        <PackageName Value="uniqueinstance_package"/>
       </Item2>
       <Item3>
-        <PackageName Value="LazControls"/>
+        <PackageName Value="TAChartLazarusPkg"/>
       </Item3>
       <Item4>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="LazControls"/>
       </Item4>
       <Item5>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SynEdit"/>
       </Item5>
+      <Item6>
+        <PackageName Value="LCL"/>
+      </Item6>
     </RequiredPackages>
-    <Units Count="56">
+    <Units Count="57">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -404,6 +407,12 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Frame"/>
       </Unit55>
+      <Unit56>
+        <Filename Value="ModuleBD.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="ModBD"/>
+        <ResourceBaseClass Value="DataModule"/>
+      </Unit56>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -414,7 +423,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\_libraries\MisUtils-0.6;..\..\..\_libraries\ogEditGraf-2.5;..\..\..\_libraries\MiConfig-0.4;..\..\..\_libraries\SynFacilUtils-1.1;..\..\..\_libraries\Xpres-1.3;..\..\..\_libraries\UtilsGrilla-0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;.."/>
+      <OtherUnitFiles Value="..\..\..\_libraries\MisUtils-0.6;..\..\..\_libraries\ogEditGraf-2.6;..\..\..\_libraries\MiConfig-0.4;..\..\..\_libraries\SynFacilUtils-1.1;..\..\..\_libraries\Xpres-1.3;..\..\..\_libraries\UtilsGrilla-0.8;..\..\Synapse;..\..\Comunes;..\..\Comunes\Cabinas;..\..\Comunes\NiloM;..\..\Comunes\Clientes;..\..\Comunes\Mesas;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
