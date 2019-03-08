@@ -19,50 +19,51 @@ type
     FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
-    procedure gof_ReqConfigUsu(var Usuario: string);
-    procedure gof_RespComando(idVista: string; comando: TCPTipCom; ParamX,
+    procedure gfac_BDinsert(sqlText: string);
+    procedure gfac_ReqConfigUsu(var Usuario: string);
+    procedure gfac_RespComando(idVista: string; comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
-    procedure gof_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
+    procedure gfac_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
-    function gof_LogIngre(ident: char; msje: string; dCosto: Double): integer;
-    function gof_LogError(msj: string): integer;
-    function gof_LogVenta(ident: char; msje: string; dCosto: Double): integer;
-    procedure gof_ActualizStock(const codPro: string; const Ctdad: double);
-    function gof_ReqCadMoneda(valor: double): string;
-    procedure gof_CambiaPropied;
-    function gof_LogInfo(msj: string): integer;
+    function gfac_LogIngre(ident: char; msje: string; dCosto: Double): integer;
+    function gfac_LogError(msj: string): integer;
+    function gfac_LogVenta(ident: char; msje: string; dCosto: Double): integer;
+    procedure gfac_ActualizStock(const codPro: string; const Ctdad: double);
+    function gfac_ReqCadMoneda(valor: double): string;
+    procedure gfac_CambiaPropied;
+    function gfac_LogInfo(msj: string): integer;
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
-    function ExtraerBloqueEstado(lisEstado: TStringList; out estado,
-      nomGrup: string; out tipo: TCibTipFact): boolean;
-    procedure gof_ReqConfigGen(var NombProg, NombLocal: string;
+    procedure gfac_ReqConfigGen(var NombProg, NombLocal: string;
       var ModDiseno: boolean);
     procedure GCab_ArchCambRemot(ruta, nombre: string);
   public  //Eventos.
-    {Cuando este objeto forma parte del modelo, necesita comunciarse con la aplicación,
+    {Cuando este objeto forma parte del modelo, necesita comunicarse con la aplicación,
     para leer información o ejecutar acciones. Para esto se usan los eventos.}
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad de algun grupo
-    OnLogInfo      : TEvFacLogInfo;       //Se quiere registrar un mensaje en el registro
-    OnLogVenta     : TEvBolLogVenta;      //Se quiere registrar una venta en el registro
-    OnLogIngre     : TEvBolLogVenta;      //Se quiere registrar un ingreso en el registro
-    OnLogError     : TEvFacLogError;    //Requiere escribir un Msje de error en el registro
-//    OnLeerCadPropied: TEvLeerCadPropied;  //requiere leer cadena de propiedades
-//    OnLeerCadEstado: TEvLeerCadPropied;   //requiere leer cadena de estado
     OnGuardarEstado: procedure of object;
-    OnReqConfigGen : TEvReqConfigGen;  //Se requiere información de configruación
-    OnReqConfigUsu : TEvReqConfigUsu;   //Se requiere información general
-    OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     OnActualizStock: TEvBolActStock;   //Se requiere actualizar el stock
     OnRespComando  : TEvRespComando;   //Indica que tiene la respuesta de un comando
     OnModifTablaBD : TEvModifTablaBD;  //Indica que se desea modificar una tabla
+    //Escritura a BD
+    OnLogInfo      : TEvFacLogInfo;   //Se quiere registrar un mensaje en el registro
+    OnLogVenta     : TEvBolLogVenta;  //Se quiere registrar una venta en el registro
+    OnLogIngre     : TEvBolLogVenta;  //Se quiere registrar un ingreso en el registro
+    OnLogError     : TEvFacLogError;  //Requiere escribir un Msje de error en el registro
+    OnBDinsert     : TEvSQLexecute;   //Requiere insertar un registro a una tabla
+    //Requerimiento de información
+    OnReqConfigGen : TEvReqConfigGen;  //Se requiere información de configruación
+    OnReqConfigUsu : TEvReqConfigUsu;  //Se requiere información general
+    OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     //Estos eventos se generan cuando este objeto forma parte de un Visor.
     OnSolicEjecCom : TEvSolicEjecCom;  //Se solicita ejecutar una acción
     //Eventos de cabinas
     OnArchCambRemot: TEvArchCambRemot;
   public
-    nombre : string;         //Es un identificador del grupo. Es útil solo para depuración.
-    items  : TCibGFact_list; //lista de grupos facturables
-    DeshabEven: boolean;     //deshabilita los eventos
+    nombre : string;          //Es un identificador del grupo. Es útil solo para depuración.
+    items  : TCibGFact_list;  //lista de grupos facturables
+    DeshabEven: boolean;      //deshabilita los eventos
+    listo  : boolean;         //Bandera que indica que el modelo está cargado y listo.
     property ModoCopia: boolean  {Indica si se quiere manejar al objeto sin conexión (como en un visor),
                                   debería hacerse antes de que se agreguen objetos a "items"}
              read FModoCopia;
@@ -72,8 +73,8 @@ type
     function ItemPorNombre(nomb: string): TCibGFac;
     function BuscaNombreItem(StrBase: string): string;
     function BuscarPorID(idFac: string): TCibFac;
-    procedure Agregar(gof: TCibGFac);
-    procedure Eliminar(gf: TCibGFac);
+    procedure Agregar(gfac: TCibGFac);
+    procedure Eliminar(gfac: TCibGFac);
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
     procedure EjecComando(idVista: string; tram: TCPTrama);
   public  //constructor y destructor
@@ -81,10 +82,12 @@ type
     destructor Destroy; override;
   end;
 
+  function ExtraerBloqueEstado(lisEstado: TStringList;
+           out estado, nomGrup: string; out tipo: TCibTipFact): boolean;
+
 implementation
 
-{ TCibModelo }
-function TCibModelo.ExtraerBloqueEstado(lisEstado: TStringList;
+function ExtraerBloqueEstado(lisEstado: TStringList;
   out estado, nomGrup: string; out tipo: TCibTipFact): boolean;
 {Extrae de la cadena de estado de la aplicación (guardada en lisEstado), el fragmento
 que corresponde al estado de un grupo facturable. El estado se devuelve en "estado"
@@ -137,29 +140,96 @@ begin
     exit(true);    //Sale sin error
   end;
 end;
-procedure TCibModelo.gof_CambiaPropied;
+{ TCibModelo }
+//Respuesta a eventos
+procedure TCibModelo.gfac_CambiaPropied;
 begin
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
-function TCibModelo.gof_LogInfo(msj: string): integer;
+procedure TCibModelo.gfac_ActualizStock(const codPro: string;
+  const Ctdad: double);
+begin
+  {Porpaga el evento, ya que se supone que no se tiene acceso al alamacén desde aquí}
+  if not DeshabEven and (OnActualizStock<>nil) then OnActualizStock(codPro, Ctdad);
+end;
+procedure TCibModelo.gfac_RespComando(idVista: string;
+  comando: TCPTipCom; ParamX, ParamY: word; cad: string);
+begin
+  if not DeshabEven and (OnRespComando<>nil) then
+    OnRespComando(idVista, comando, ParamX, ParamY, cad);
+end;
+function TCibModelo.gfac_LogInfo(msj: string): integer;
 begin
   if not DeshabEven and (OnLogInfo<>nil) then Result := OnLogInfo(msj);
 end;
-function TCibModelo.gof_LogVenta(ident:char; msje:string; dCosto:Double): integer;
+function TCibModelo.gfac_LogVenta(ident:char; msje:string; dCosto:Double): integer;
 begin
   if not DeshabEven and (OnLogVenta<>nil) then
     Result := OnLogVenta(ident, msje, dCosto);
 end;
-function TCibModelo.gof_LogIngre(ident: char; msje: string;
+function TCibModelo.gfac_LogIngre(ident: char; msje: string;
   dCosto: Double): integer;
 begin
   if not DeshabEven and (OnLogIngre<>nil) then
     Result := OnLogIngre(ident, msje, dCosto);
 end;
-function TCibModelo.gof_LogError(msj: string): integer;
+function TCibModelo.gfac_LogError(msj: string): integer;
 begin
   if not DeshabEven and (OnLogError<>nil) then
     Result := OnLogError(msj);
+end;
+procedure TCibModelo.gfac_BDinsert(sqlText: string);
+begin
+  if not DeshabEven and (OnBDinsert<>nil) then
+    OnBDinsert(sqlText);
+end;
+procedure TCibModelo.gfac_ReqConfigGen(var NombProg, NombLocal: string; var ModDiseno: boolean);
+{Permite preguntar al modelo por parámetros de configuración general.
+Notar que este evento siempre funciona. Auqnue no haya sido inicializado "OnReqConfigGen".
+Una forma de saber se se ha incializado el evento es verificar el valor que devuelve, por
+ejemplo, en el campo "NombProg", que siempre debe ser diferente de Nulo.}
+begin
+  if OnReqConfigGen<>nil then begin
+    OnReqConfigGen(NombProg, NombLocal, ModDiseno);
+  end else begin
+    NombProg := '';
+    NombLocal := '';
+    ModDiseno := false;
+  end;
+end;
+procedure TCibModelo.gfac_ReqConfigUsu(var Usuario: string);
+begin
+  if OnReqConfigUsu<>nil then begin
+    OnReqConfigUsu(Usuario);
+  end else begin
+    Usuario := '';
+  end;
+end;
+function TCibModelo.gfac_ReqCadMoneda(valor: double): string;
+begin
+  if OnReqCadMoneda=nil then
+    Result := ''
+  else
+    Result := OnReqCadMoneda(valor);
+end;
+procedure TCibModelo.gfac_SolicEjecCom(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+{Un Gfac solicita ejecutar una acción, en uno de sus elementos.}
+begin
+  if not DeshabEven and (OnSolicEjecCom<>nil) then
+    OnSolicEjecCom(comando, ParamX, ParamY, cad);
+end;
+function TCibModelo.ItemPorNombre(nomb: string): TCibGFac;
+{Busca a uno de los grupos de facturables, por su nombre. Si no encuentra, devuelve NIL}
+var
+  gf : TCibGFac;
+begin
+//  debugln('-busc:'+nomb);
+  for gf in items do begin
+    if gf.Nombre = nomb then exit(gf);
+  end;
+  //no encontró
+  exit(nil);
 end;
 procedure TCibModelo.EjecRespuesta(comando: TCPTipCom; ParamX,
   ParamY: word; cad: string);
@@ -221,7 +291,7 @@ begin
       if OnRespComando<>nil then OnRespComando(idVista, RVIS_CAPPANT, 0, 0, StringFromFile(arch));
     end;
   CVIS_ACTPROD: begin   //Se pide modificar la tabla de productos
-    if OnModifTablaBD<>nil then begin
+    if OnModifTablaBD <> nil then begin
       Res := OnModifTablaBD('productos', tram.posY, tram.traDat);
       //La salida puede ser un mensaje de confirmación o error
       if OnRespComando<>nil then OnRespComando(idVista, C_MENS_PC, 0, 0, Res);
@@ -263,71 +333,23 @@ begin
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automática, o algún otro evento similar que requiera guardar el estado.}
     end;
+  C_BD_HISTOR: begin
+    //Se pide una acción sobre la base de datos histórica.
+    //Estas bases de datos son más que nada para agregar registros.
+    { TODO : Tal vez haya que precisar mejor este comando, creando comandos adicionales o subcomandos }
+    if OnBDinsert <> nil then begin
+      OnBDinsert(tram.traDat);  //Ejecuta comando SQL
+    end;
+  end;
   else
     debugln('  ¡¡Comando no implementado!!');
   end;
-end;
-procedure TCibModelo.gof_ReqConfigGen(var NombProg, NombLocal: string; var ModDiseno: boolean);
-begin
-  if OnReqConfigGen<>nil then begin
-    OnReqConfigGen(NombProg, NombLocal, ModDiseno);
-  end else begin
-    NombProg := '';
-    NombLocal := '';
-    ModDiseno := false;
-  end;
-end;
-procedure TCibModelo.gof_ReqConfigUsu(var Usuario: string);
-begin
-  if OnReqConfigUsu<>nil then begin
-    OnReqConfigUsu(Usuario);
-  end else begin
-    Usuario := '';
-  end;
-end;
-function TCibModelo.gof_ReqCadMoneda(valor: double): string;
-begin
-  if OnReqCadMoneda=nil then
-    Result := ''
-  else
-    Result := OnReqCadMoneda(valor);
-end;
-procedure TCibModelo.gof_ActualizStock(const codPro: string;
-  const Ctdad: double);
-begin
-  {Porpaga el evento, ya que se supone que no se tiene acceso al alamacén desde aquí}
-  if not DeshabEven and (OnActualizStock<>nil) then OnActualizStock(codPro, Ctdad);
-end;
-procedure TCibModelo.gof_SolicEjecCom(comando: TCPTipCom; ParamX,
-  ParamY: word; cad: string);
-{Un Gfac solicita ejecutar una acción, en uno de sus elementos.}
-begin
-  if not DeshabEven and (OnSolicEjecCom<>nil) then
-    OnSolicEjecCom(comando, ParamX, ParamY, cad);
-end;
-procedure TCibModelo.gof_RespComando(idVista: string;
-  comando: TCPTipCom; ParamX, ParamY: word; cad: string);
-begin
-  if not DeshabEven and (OnRespComando<>nil) then
-    OnRespComando(idVista, comando, ParamX, ParamY, cad);
 end;
 procedure TCibModelo.GCab_ArchCambRemot(ruta, nombre: string);
 begin
   if not DeshabEven and (OnArchCambRemot<>nil) then begin
     OnArchCambRemot(ruta, nombre);
   end;
-end;
-function TCibModelo.ItemPorNombre(nomb: string): TCibGFac;
-{Busca a uno de los grupos de facturables, por su nombre. Si no encuentra, devuelve NIL}
-var
-  gf : TCibGFac;
-begin
-//  debugln('-busc:'+nomb);
-  for gf in items do begin
-    if gf.Nombre = nomb then exit(gf);
-  end;
-  //no encontró
-  exit(nil);
 end;
 function TCibModelo.BuscaNombreItem(StrBase: string): string;
 {Genera un nombre de ítem que no exista en el grupo. Para ello se toma un nombre base
@@ -373,7 +395,6 @@ begin
 
   items.Clear;  //elimina todos para crearlos de nuevo
   lin := lineas[0];  //toma primera línea
-  //
   lineas.Delete(0);   //elimina primera línea
   for lin in lineas do begin
     if copy(lin,1,2) = '[[' then begin  //Marca de inicio
@@ -479,46 +500,51 @@ begin
     exit(nil);
   Result := gfac.ItemPorNombre(nomFac);
 end;
-procedure TCibModelo.Agregar(gof: TCibGFac);
+procedure TCibModelo.Agregar(gfac: TCibGFac);
 {Agrega un grupo de facturables al objeto. Notar que esta rutina solo configura
 los eventos, antes de agregar.}
 begin
-  //Configura eventos
-  gof.OnCambiaPropied:= @gof_CambiaPropied;
-  gof.OnLogInfo      := @gof_LogInfo;
-  gof.OnLogVenta     := @gof_LogVenta;
-  gof.OnLogIngre     := @gof_LogIngre;
-  gof.OnLogError     := @gof_LogError;
-  gof.OnReqConfigGen := @gof_ReqConfigGen;
-  gof.OnReqConfigUsu:=@gof_ReqConfigUsu;
-  gof.OnReqCadMoneda := @gof_ReqCadMoneda;
-  gof.OnActualizStock:= @gof_ActualizStock;
-  gof.OnSolicEjecCom := @gof_SolicEjecCom;
-  gof.OnRespComando  := @gof_RespComando;
-  gof.OnBuscarGFac   := @ItemPorNombre;
-  case gof.tipo of
+  //Configura eventos del grupo, que se direccionan al modelo
+  gfac.OnCambiaPropied:= @gfac_CambiaPropied;
+  gfac.OnActualizStock:= @gfac_ActualizStock;
+  gfac.OnRespComando  := @gfac_RespComando;
+
+  gfac.OnLogInfo      := @gfac_LogInfo;
+  gfac.OnLogVenta     := @gfac_LogVenta;
+  gfac.OnLogIngre     := @gfac_LogIngre;
+  gfac.OnLogError     := @gfac_LogError;
+
+  gfac.OnReqConfigGen := @gfac_ReqConfigGen;
+  gfac.OnReqConfigUsu := @gfac_ReqConfigUsu;
+  gfac.OnReqCadMoneda := @gfac_ReqCadMoneda;
+
+  gfac.OnSolicEjecCom := @gfac_SolicEjecCom;
+  //Eventos que se resuelven en el mismo modelo
+  gfac.OnBuscarGFac   := @ItemPorNombre;
+  case gfac.tipo of
   ctfCabinas: begin
-    TCibGFacCabinas(gof).OnTramaLista:=@EjecComando;
-    TCibGFacCabinas(gof).OnArchCambRemot:=@GCab_ArchCambRemot;
+    //Eventos propios de las cabinas
+    TCibGFacCabinas(gfac).OnTramaLista:=@EjecComando;
+    TCibGFacCabinas(gfac).OnArchCambRemot:=@GCab_ArchCambRemot;
   end;
   ctfNiloM: begin
     {Se aprovecha aquí para leer los archivos de configuración. No se encontró un mejor
     lugar, ya que lo que se desea, es que los archivos de configuración se carguen solo
     una vez, sea que el NILO-m se agrege por el  menú principal o se carge del archivo
     de configuración.}
-    if not TCibGFacNiloM(gof).ModoCopia then begin
+    if not TCibGFacNiloM(gfac).ModoCopia then begin
       //En modo copia, no se cargan las configuraciones
-      TCibGFacNiloM(gof).LeerArchivosConfig;   //si genera error, muestra su mensaje
+      TCibGFacNiloM(gfac).LeerArchivosConfig;   //si genera error, muestra su mensaje
     end;
   end;
   end;
   //Agrega
-  items.Add(gof);
+  items.Add(gfac);
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
-procedure TCibModelo.Eliminar(gf: TCibGFac);
+procedure TCibModelo.Eliminar(gfac: TCibGFac);
 begin
-  items.Remove(gf);
+  items.Remove(gfac);
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 //constructor y destructor

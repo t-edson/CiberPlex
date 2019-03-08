@@ -369,11 +369,11 @@ begin
 //  v2d.FijaRelleno(clWhite);
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X, Y -20, name);
   //dibuja ícono
-  v2d.DibujarImagenN(icono, x, y);
+  v2d.DrawImageN(icono, x, y);
   //muestra boleta
   if cli.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
@@ -468,32 +468,32 @@ begin
 //  v2d.FijaRelleno(clWhite);
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, Name);
   //Dibuja íconos de PC y de conexión
   if cab.ConConexion then begin
     if cab.EstadoConex = cecConectado then begin
-      v2d.DibujarImagenN(icoRedAct, x+38, y+30);
-      v2d.DibujarImagenN(icoPC, x+12, y+20);
+      v2d.DrawImageN(icoRedAct, x+38, y+30);
+      v2d.DrawImageN(icoPC, x+12, y+20);
     end else begin
-      v2d.DibujarImagenN(icoRedDes, x+38, y+30);
-      v2d.DibujarImagenN(icoPCdes, x+12, y+20);
+      v2d.DrawImageN(icoRedDes, x+38, y+30);
+      v2d.DrawImageN(icoPCdes, x+12, y+20);
     end;
   end else begin
-    v2d.DibujarImagenN(icoPCdes, x+12, y+20);
+    v2d.DrawImageN(icoPCdes, x+12, y+20);
   end;
   if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
      //muestra ícono de persona
-     if icoUSU<>NIL then v2d.DibujarImagenN(icoUSU, x, y+35);
+     if icoUSU<>NIL then v2d.DrawImageN(icoUSU, x, y+35);
      DibujarTiempo;
   end;
   //Dibuja íconos de Comentario
   if cab.Coment<>'' then begin
-     if icoComent<>NIL then v2d.DibujarImagenN(icoComent, x+50, y+50);
+     if icoComent<>NIL then v2d.DrawImageN(icoComent, x+50, y+50);
   end;
   //Muestra consumo
-  v2d.FijaLapiz(psSolid, 1, clBlack);
+  v2d.SetPen(psSolid, 1, clBlack);
   v2d.SetBrush(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
   if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
@@ -513,9 +513,9 @@ begin
   if cab.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   if cab.EstadoCta = EST_MANTEN then begin
     //dibuja aspa roja
-    v2d.FijaLapiz(psSolid, 3, clred);
-    v2d.Linea(x,y,x2,y+90);
-    v2d.Linea(x2,y,x,y+90);
+    v2d.SetPen(psSolid, 3, clred);
+    v2d.Line(x,y,x2,y+90);
+    v2d.Line(x2,y,x,y+90);
   end;
   inherited;
 end;
@@ -613,7 +613,7 @@ begin
   x2 := x + width;
   //y2 := y + height;
   //Dibuja fondo rectangular
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   if loc.descon then v2d.SetBrush(COL_GRIS_CLARO)
   else v2d.SetBrush(TColor($BCF5A9));
   v2d.RectangR(x, y, x2, y + height);
@@ -628,14 +628,14 @@ begin
   v2d.Texto(X + 2, Y -20, name);  //Nombre de objeto
   //dibuja ícono de teléfono
   if loc.descolg then begin
-    v2d.DibujarImagenN(icoTelDes, x+28, y+52);
+    v2d.DrawImageN(icoTelDes, x+28, y+52);
   end else begin
-     v2d.DibujarImagenN(icoTelCol, x+28, y+52);
+     v2d.DrawImageN(icoTelCol, x+28, y+52);
   end;
   //Dibuja datos de llamada
   DibujarDatosLlam;
   //muestra consumo en moneda
-  v2d.FijaLapiz(psSolid, 1, clBlack);
+  v2d.SetPen(psSolid, 1, clBlack);
   v2d.SetBrush(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
   s := loc.Grupo.OnReqCadMoneda(loc.costo_tot);  //costo en formato de moneda
@@ -683,42 +683,42 @@ begin
 //  v2d.SetBrush(clWhite);
 //  v2d.RectRedonR(x, y, x2, y2);
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X, Y -20, Name);
   //Dibuja mesa
   //dibuja ícono de sillas
-  v2d.DibujarImagenN(icoSilla1, x , y + 38);
-  v2d.DibujarImagenN(icoSilla2, x + 37, y);
+  v2d.DrawImageN(icoSilla1, x , y + 38);
+  v2d.DrawImageN(icoSilla2, x + 37, y);
   //dibuja ícono de mesa
   case Mesa.tipMesa of
   cmt1x1: begin
-      v2d.DibujarImagenN(icoSilla3, x + 70, y + 38);
-      v2d.DibujarImagenN(icoSilla4, x + 37, y + 70);
-      v2d.DibujarImagenN(icoMesaSim, x + 26, y + 26);
+      v2d.DrawImageN(icoSilla3, x + 70, y + 38);
+      v2d.DrawImageN(icoSilla4, x + 37, y + 70);
+      v2d.DrawImageN(icoMesaSim, x + 26, y + 26);
   end;
   cmt1x2: begin
-      v2d.DibujarImagenN(icoSilla2, x + 73, y);
-      v2d.DibujarImagenN(icoSilla3, x + 105, y + 38);
-      v2d.DibujarImagenN(icoSilla4, x + 37, y + 70);
-      v2d.DibujarImagenN(icoSilla4, x + 73, y + 70);
-      v2d.DibujarImagenN(icoMesaDob1, x + 26, y + 26);
+      v2d.DrawImageN(icoSilla2, x + 73, y);
+      v2d.DrawImageN(icoSilla3, x + 105, y + 38);
+      v2d.DrawImageN(icoSilla4, x + 37, y + 70);
+      v2d.DrawImageN(icoSilla4, x + 73, y + 70);
+      v2d.DrawImageN(icoMesaDob1, x + 26, y + 26);
   end;
   cmt2x1: begin
-      v2d.DibujarImagenN(icoSilla1, x , y + 74);
-      v2d.DibujarImagenN(icoSilla3, x + 70, y + 38);
-      v2d.DibujarImagenN(icoSilla3, x + 70, y + 74);
-      v2d.DibujarImagenN(icoSilla4, x + 37, y + 105);
-      v2d.DibujarImagenN(icoMesaDob2, x + 26, y + 26);
+      v2d.DrawImageN(icoSilla1, x , y + 74);
+      v2d.DrawImageN(icoSilla3, x + 70, y + 38);
+      v2d.DrawImageN(icoSilla3, x + 70, y + 74);
+      v2d.DrawImageN(icoSilla4, x + 37, y + 105);
+      v2d.DrawImageN(icoMesaDob2, x + 26, y + 26);
   end;
   cmt2x2: begin
-      v2d.DibujarImagenN(icoSilla1, x , y + 74);
-      v2d.DibujarImagenN(icoSilla2, x + 73, y);
-      v2d.DibujarImagenN(icoSilla3, x + 105, y + 38);
-      v2d.DibujarImagenN(icoSilla3, x + 105, y + 74);
-      v2d.DibujarImagenN(icoSilla4, x + 37, y + 105);
-      v2d.DibujarImagenN(icoSilla4, x + 73, y + 105);
-      v2d.DibujarImagenN(icoMesaDob3, x + 26, y + 26);
+      v2d.DrawImageN(icoSilla1, x , y + 74);
+      v2d.DrawImageN(icoSilla2, x + 73, y);
+      v2d.DrawImageN(icoSilla3, x + 105, y + 38);
+      v2d.DrawImageN(icoSilla3, x + 105, y + 74);
+      v2d.DrawImageN(icoSilla4, x + 37, y + 105);
+      v2d.DrawImageN(icoSilla4, x + 73, y + 105);
+      v2d.DrawImageN(icoMesaDob3, x + 26, y + 26);
   end;
   end;
   //muestra boleta
@@ -779,9 +779,9 @@ end;
 procedure TogGClientes.Draw;
 begin
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   //dibuja íconos
-  v2d.DibujarImagenN(icono, x, y-2);
+  v2d.DrawImageN(icono, x, y-2);
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(x + 33, y+3, Name);
@@ -800,9 +800,9 @@ end;
 procedure TogGCabinas.Draw;
 begin
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   //dibuja íconos
-  v2d.DibujarImagenN(icono, x, y-2);
+  v2d.DrawImageN(icono, x, y-2);
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(x + 33, y+3, Name);
@@ -821,12 +821,12 @@ end;
 procedure TogGNiloM.Draw;
 begin
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   //dibuja íconos
   if TCibGFacNiloM(GFac).estadoCnx = necConectado then begin
-    v2d.DibujarImagenN(icoConec, x, y-2);
+    v2d.DrawImageN(icoConec, x, y-2);
   end else begin
-    v2d.DibujarImagenN(icoDesc, x, y-2);
+    v2d.DrawImageN(icoDesc, x, y-2);
   end;
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
@@ -846,9 +846,9 @@ end;
 procedure TogGMesas.Draw;
 begin
   //--------------Dibuja encabezado
-  v2d.FijaLapiz(psSolid, 1, COL_GRIS);
+  v2d.SetPen(psSolid, 1, COL_GRIS);
   //dibuja íconos
-  v2d.DibujarImagenN(icono, x, y-2);
+  v2d.DrawImageN(icono, x, y-2);
   //Muestra Nombre
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(x + 33, y+3, Name);

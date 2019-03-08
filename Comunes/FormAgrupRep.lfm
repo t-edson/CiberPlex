@@ -8,7 +8,7 @@ object frmAgrupRep: TfrmAgrupRep
   ClientWidth = 385
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '1.8.0.6'
   object GroupBox1: TGroupBox
     Left = 8
     Height = 232

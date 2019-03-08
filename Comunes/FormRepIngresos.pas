@@ -66,7 +66,7 @@ type
     griRegistros : TUtilGrilla;
     griAgrupados : TUtilGrilla;
     tipGraf: integer;       //tipo de gráfica
-    frmAgrup: TfrmAgrupRep; //formualrio de agrupación
+    frmAgrup: TfrmAgrupRep; //formulario de agrupación
     procedure CreaCategoriasHoriz(campo: integer);
     procedure DibujarCurva;
     function DoReqCadMoneda(valor: double): string;

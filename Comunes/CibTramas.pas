@@ -132,7 +132,9 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     CVIS_ACTPROV = $E8,  //Comando Actualizar tabla de proveedores
     CVIS_ACTINSU = $E9,  //Comando Actualizar tabla de insumos
 
-    CVIS_ACBOLET = $EF,  //Acción sobre boleta (Incluye sub-somandos en ParamX)
+    C_BD_HISTOR  = $EE,  //Comando a la base de dato histórica
+    CVIS_ACBOLET = $EF,  //Acción sobre boleta (Incluye sub-comandos en ParamX)
+
     CFAC_CABIN = $F0,  //Acción sobre una cabina (Incluye sub-somandos en ParamX)
     RFAC_CABIN = $F1,  //Respuesta de una cabina (Incluye sub-somandos en ParamX)
     CFAC_NILOM = $F2,  //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)

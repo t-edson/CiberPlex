@@ -330,6 +330,7 @@ begin
     pro := BuscarProd(protmp.Cod);
     if pro = nil then begin
       inc(nProNuevos); //Es producto nuevo. No se tiene stock
+      protmp.Stock := 0;  //Pone a cero los productos nuevos.
     end else begin  //restaura el stock
       pro.estReg:='u';   //marca como usado
       protmp.Stock:= pro.Stock;

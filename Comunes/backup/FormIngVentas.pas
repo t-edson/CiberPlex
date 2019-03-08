@@ -103,7 +103,7 @@ begin
     grilla.Cells[1,f] := reg.Cod;
     grilla.Cells[2,f] := reg.Categ;
     grilla.Cells[3,f] := reg.Subcat;
-    grilla.Cells[4,f] := Config.ReqCadMon(reg.PreVenta);
+    grilla.Cells[4,f] := Config.CadMon(reg.PreVenta);
     grilla.Cells[5,f] := reg.Desc;
     grilla.Cells[6,f] := FloatToStr(reg.Stock);
     grilla.Cells[7,f] := reg.Marca;
@@ -122,7 +122,7 @@ begin
   gri.AgrEncab('CATEGORÍA'   , 70);
   gri.AgrEncab('SUBCATEGORÍA', 70);
   gri.AgrEncab('PRC.UNITARIO', 55, -1, taRightJustify);
-  gri.AgrEncab('DESCRIPCIÓN' , 200);
+  gri.AgrEncab('DESCRIPCIÓN' , 190);
   gri.AgrEncab('STOCK'       , 40, -1, taRightJustify);
   gri.AgrEncab('MARCA'       , 70).visible := false;
   gri.FinEncab;

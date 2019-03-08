@@ -10,7 +10,7 @@ uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
   CibFacturables, CibGFacCabinas, CibGFacNiloM, CibModelo, CibTramas,
-  CibGFacMesas, ogEditionMot, MisUtils;
+  CibGFacMesas, ogMotEdicion, MisUtils;
 type
   TEvMouseFac = procedure(ogFac: TogFac; X, Y: Integer) of object;
   TEvMouseGFac = procedure(ogGFac: TogGFac; X, Y: Integer) of object;
@@ -131,10 +131,10 @@ begin
      begin
       EstPuntero := EP_DESP_PANT;
       ScrollDesp(x_pulso - X, y_pulso - Y);
-      Refresh;
+      Refrescar;
       Exit;
      End;
-  If ParaMover = True Then VerifyForMove(X, Y);
+  If ParaMover = True Then VerificarParaMover(X, Y);
   If EstPuntero = EP_SELECMULT Then begin  //modo seleccionando multiples formas
       x2Sel := X;
       y2Sel := Y;
@@ -150,7 +150,7 @@ begin
             end;
           end;
       End;
-      Refresh;
+      Refrescar;
   end Else If EstPuntero = EP_MOV_OBJS Then begin  //mueve la selección
 //        If perfil = PER_OPER Then Exit;  //No permite mover
       if ObjBloqueados then begin
@@ -165,16 +165,16 @@ begin
         Modif := True;
         for s in seleccion do
             s.MouseMove(x,y, seleccion.Count);
-        Refresh;
+        Refrescar;
       end;
   end Else If EstPuntero = EP_DIMEN_OBJ Then begin
       //se está dimensionando un objeto
       CapturoEvento.MouseMove(X, Y, seleccion.Count);
-      Refresh;
+      Refrescar;
   end Else
       If CapturoEvento <> NIL Then begin
          CapturoEvento.MouseMove(X, Y, seleccion.Count);
-         Refresh;
+         Refrescar;
       end Else begin  //Movimiento simple
           s := VerifyMouseMove(X, Y);
           if s <> NIL then s.MouseOver(Sender, Shift, X, Y);  //pasa el evento
@@ -321,7 +321,7 @@ begin
         //Ubico el objeto
         motEdi.UnselectAll;
         og.Selec;  //selecciona
-        motEdi.Refresh;  //refresca
+        motEdi.Refrescar;  //refresca
         exit(true);
       end;
     end;
@@ -338,7 +338,7 @@ begin
         //Ubico el objeto
         motEdi.UnselectAll;
         og.Selec;  //selecciona
-        motEdi.Refresh;  //refresca
+        motEdi.Refrescar;  //refresca
         exit(true);
       end;
     end;
@@ -600,7 +600,7 @@ debugln('>Eliminando: ' + og.Name);
       Inc(i);
     end;
   end;
-  motEdi.Refresh;
+  motEdi.Refrescar;
 end;
 procedure TfraVisCPlex.ActualizarEstado(cadEstado: string);
 {Actualiza el estado de los objetos existentes. No se cambian las propiedades ni se
@@ -618,7 +618,7 @@ begin
   if cadEstado='' then exit;
   grupos.CadEstado := cadEstado;  //solo cambia las variables de estado de "grupos"
   //Los objetos gráficos "verán" los cambios, porque tienen referencias a sus objetos fuente
-  motEdi.Refresh;
+  motEdi.Refrescar;
 end;
 procedure TfraVisCPlex.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string);

@@ -92,7 +92,7 @@ type
     procedure Iniciar(nombXML: string=''; ModoCopia: boolean=false);
     procedure Mostrar;
   public //Funciones de moneda
-    function CadMon(valor: double): string;
+    function ReqCadMon(valor: double): string;
     function LeeMon(txt: string): double;
   end;
 
@@ -109,7 +109,7 @@ implementation
 { TConfig }
 function CadMoneda(valor: double): string; inline;
 begin
-  Result := Config.CadMon(valor);
+  Result := Config.ReqCadMon(valor);
 end;
 function LeeMoneda(txt: string): double;
 begin
@@ -248,7 +248,7 @@ begin
   PageControl1.PageIndex := 0;
   Showmodal;
 end;
-function TConfig.CadMon(valor: double): string;
+function TConfig.ReqCadMon(valor: double): string;
 {Función que devuelve un valor, en el formato de moneda usado para toda la aplicación.
  Inicialmenet se trabajaba con "CurrencyString", pero eso limitaba la implementación del
  spnNumDecChange(), para simular cómo quedaría un cantidad en moneda.}

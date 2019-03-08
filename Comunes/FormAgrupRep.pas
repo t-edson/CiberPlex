@@ -1,3 +1,4 @@
+{Formulario para configurar los reportes agrupados.}
 unit FormAgrupRep;
 {$mode objfpc}{$H+}
 interface

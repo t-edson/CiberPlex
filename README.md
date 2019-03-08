@@ -1,4 +1,4 @@
-CiberPlex 1.8.0
+CiberPlex 2.0.0
 ===============
 
 CiberPlex es un sistema de ventas, con interfaz gráfica, aplicado al control de alquiler de cabinas de Internet y de llamadas para locutorios, desarrollado en Lazarus y FreePascal. 

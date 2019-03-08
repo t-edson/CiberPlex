@@ -97,7 +97,7 @@ type
   public
     fraGri     : TfraEditGrilla;
     OnGrabado : procedure of object;
-    procedure Exec(TabPro0: TCibTabProduc; FormatMoneda: string; EsAdmin: boolean);
+    procedure Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
     procedure Habilitar(estado: boolean);
   end;
 
@@ -148,8 +148,7 @@ begin
     MensajeVisibles(lblNumRegist, fraGri.RowCount-1, fraGri.RowCount-1);
   end;
 end;
-procedure TfrmAdminProduc.Exec(TabPro0: TCibTabProduc; FormatMoneda: string;
-                               EsAdmin: boolean);
+procedure TfrmAdminProduc.Exec(TabPro0: TCibTabProduc; FormatMoneda: string);
 begin
   TabPro := TabPro0;
   //Configura frame
@@ -163,11 +162,7 @@ begin
   colStock.editable:=false;   //Los cambios de stock, son otro proceso
   colMarca  := fraGri.AgrEncabTxt   ('MARCA'         , 50, 'MARCA');
   colUniCom := fraGri.AgrEncabTxt   ('UNID. DE COMPRA',70, 'UNIDCOMP');
-  if EsAdmin then begin  //Solo en modo "Admin" se muestra
-    colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 55, 'PRECOSTO');
-  end else begin
-    colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 0, 'PRECOSTO');
-  end;
+  colPreCos := fraGri.AgrEncabNum   ('PRECIO COSTO'  , 55, 'PRECOSTO');
   colFecCre := fraGri.AgrEncabDatTim('FECHA CREACION', 70, 'FECCRE');
   colFecMod := fraGri.AgrEncabDatTim('FECHA MODIFIC.', 70, 'FECMOD');
   colActivo := fraGri.AgrEncabBool  ('ACTIVO'        , 30, 'ACTIVO');

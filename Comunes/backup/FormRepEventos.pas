@@ -126,40 +126,40 @@ begin
   grilla.RowCount:=1+regs.Count;  //hace espacio
   f := 1;
   for reg in regs do begin
-    if reg.descrip.StartsWith('Stock') then begin
-      if reg.descrip.Contains('incrementado') then begin
-        grilla.Cells[1, f] := reg.ident;
-        grilla.Cells[2, f] := reg.serie;
-        grilla.Cells[3, f] := reg.FECHA_LOG_str;
-        //grilla.Cells[4, f] := reg.FECHA_LOG_str;
-        grilla.Cells[5, f] := reg.USUARIO;
-        grilla.Cells[6, f] := '    ' + reg.descrip;
-        inc(f);
-      end else if reg.descrip.Contains('corregido') then begin
-        p := pos('(', reg.descrip);
-        q := pos(')', reg.descrip);
-        d := pos('dif=', reg.descrip);
-        dif := copy(reg.descrip, d + 4).ToSingle;
-        desc := copy(reg.descrip, p +1 , q - p);
-        if dif = 0 then Continue;
-
-        grilla.Cells[1, f] := reg.ident;
-        grilla.Cells[2, f] := reg.serie;
-        grilla.Cells[3, f] := reg.FECHA_LOG_str;
-        //grilla.Cells[4, f] := reg.FECHA_LOG_str;
-        grilla.Cells[5, f] := reg.USUARIO;
-        if dif < 0 then begin
-          grilla.Cells[6, f] := '    ' + desc + ' -> Faltan ' + FloatToStr(dif);
-        end else begin
-          grilla.Cells[6, f] := '    ' + desc + ' -> Sobra ' + FloatToStr(-dif);
-        end;
-        inc(f);
-      end;
-    end;
-    if reg.descrip.StartsWith('**Fin') then begin
-      LlenarRegistro(f, reg);
-      inc(f);
-    end;
+//    if reg.descrip.StartsWith('Stock') then begin
+//      if reg.descrip.Contains('incrementado') then begin
+//        grilla.Cells[1, f] := reg.ident;
+//        grilla.Cells[2, f] := reg.serie;
+//        grilla.Cells[3, f] := reg.FECHA_LOG_str;
+//        //grilla.Cells[4, f] := reg.FECHA_LOG_str;
+//        grilla.Cells[5, f] := reg.USUARIO;
+//        grilla.Cells[6, f] := '    ' + reg.descrip;
+//        inc(f);
+//      end else if reg.descrip.Contains('corregido') then begin
+//        p := pos('(', reg.descrip);
+//        q := pos(')', reg.descrip);
+//        d := pos('dif=', reg.descrip);
+//        dif := copy(reg.descrip, d + 4).ToSingle;
+//        desc := copy(reg.descrip, p +1 , q - p);
+//        if dif = 0 then Continue;
+//
+//        grilla.Cells[1, f] := reg.ident;
+//        grilla.Cells[2, f] := reg.serie;
+//        grilla.Cells[3, f] := reg.FECHA_LOG_str;
+//        //grilla.Cells[4, f] := reg.FECHA_LOG_str;
+//        grilla.Cells[5, f] := reg.USUARIO;
+//        if dif < 0 then begin
+//          grilla.Cells[6, f] := '    ' + desc + ' -> Faltan ' + FloatToStr(dif);
+//        end else begin
+//          grilla.Cells[6, f] := '    ' + desc + ' -> Sobra ' + FloatToStr(-dif);
+//        end;
+//        inc(f);
+//      end;
+//    end;
+//    if reg.descrip.StartsWith('**Fin') then begin
+//      LlenarRegistro(f, reg);
+//      inc(f);
+//    end;
   end;
   grilla.RowCount:=1+f;  //hace espacio
   grilla.EndUpdate();

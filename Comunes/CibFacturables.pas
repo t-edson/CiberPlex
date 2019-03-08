@@ -140,8 +140,9 @@ type
 
   TEvBolLogVenta = function(ident:char; msje:string; dCosto:Double): integer of object;
   TEvBolActStock = procedure(const codPro: string; const Ctdad: double) of object;
-  TEvFacLogInfo = function(msj: string): integer of object;
-  TevFacLogError = function(msj: string): integer of object;
+  TEvFacLogInfo  = function(msj: string): integer of object;
+  TEvFacLogError = function(msj: string): integer of object;
+  TEvSQLexecute  = procedure(sqlText: string) of object;
   //Solicita ejecutar un comando
   TEvSolicEjecCom = procedure(comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
   TEvRespComando = procedure(idVista: string; comando: TCPTipCom; ParamX, ParamY: word; cad: string) of object;
@@ -288,14 +289,17 @@ type
     procedure mnPropiedades(Sender: TObject);
   public  //Eventos para que el grupo se comunique con la aplicación principal
     OnCambiaPropied: procedure of object; //cuando cambia alguna variable de propiedad
-    OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
-    OnReqConfigUsu : TEvReqConfigUsu;   //Se requiere información general
-    OnReqConfigMon : TEvReqConfigMon;   //Se requiere información de moneda
-    OnReqCadMoneda : TevReqCadMoneda;   //Se requiere convertir a foramto de moneda
+    //Escritura a BD
     OnLogInfo      : TEvFacLogInfo;     //se quiere registrar un mensaje en el registro
     OnLogVenta     : TEvBolLogVenta;    //Requiere escribir una venta en el registro
     OnLogIngre     : TEvBolLogVenta;    //Requiere escribir un ingreso en el registro
     OnLogError     : TevFacLogError;    //Requiere escribir un Msje de error en el registro
+    //Requerimiento de información
+    OnReqConfigGen : TEvReqConfigGen;   //Se requiere información general
+    OnReqConfigUsu : TEvReqConfigUsu;   //Se requiere información general
+    OnReqConfigMon : TEvReqConfigMon;   //Se requiere información de moneda
+    OnReqCadMoneda : TevReqCadMoneda;   //Se requiere convertir a formato de moneda
+
     OnActualizStock: TEvBolActStock;    //cuando se requiere actualizar el stock
     OnSolicEjecCom : TEvSolicEjecCom;   //Solicita ejecutar acciones
     OnRespComando  : TEvRespComando;    //Cuando se solicta responder a un comando.

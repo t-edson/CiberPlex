@@ -65,6 +65,17 @@ type
 
   { TCibFacLocutor }
   TCibFacLocutor = class(TCibFac)
+  public //Métodos estáticos para codificar/decodificar cadenas
+    class function CodCadEstado(sNombre: String; descolg, descon: boolean;
+      costo_tot: Double; num_llam: integer; llamActEstado: string): string;
+    class procedure DecodCadEstado(str: String; out sNombre: String; out descolg,
+      descon: boolean; out costo_tot: Double; out num_llam: integer; out
+  sLlamActEstado: string);
+    class function CodCadPropied(sNombre: string; num_can: char;
+      tpoLimitado: integer; ctoLimitado: double; sx, sy: double): string;
+    class procedure DecodCadPropied(str: String; out sNombre: string; out
+      num_can: char; out tpoLimitado: integer; out ctoLimitado: double; out sx,
+  sy: double);
   private
     procedure ActualizaLlamadaContestada;
     procedure ConectarLlamada;
@@ -351,7 +362,7 @@ begin
   HORA_INI := now;
 end;
 { TCibFacLocutor }
-procedure TCibFacLocutor.CalcularCostoTotNumLLam();
+procedure TCibFacLocutor.CalcularCostoTotNumLLam;
 {Calcula el costo total de las llamadas en "costo_tot" y el número de llamadas en
  "num_llam". Este esquema de trabajo (usar una función para actualizar campos) se hace
  considerando que si se decide no envíar al visor, toda la  lista "listLLamadas", se
@@ -367,6 +378,31 @@ begin
     end;
     num_llam := listLLamadas.Count;
 End;
+class function TCibFacLocutor.CodCadEstado(sNombre: String; descolg,
+  descon: boolean; costo_tot: Double; num_llam: integer; llamActEstado: string
+  ): string;
+begin
+  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
+         sNombre + #9 +    {el nombre es obligatorio para identificarlo unívocamente}
+         B2f(descolg) + #9 + B2f(descon) + #9 +
+         N2f(costo_tot) + #9 + I2f(num_llam) + #9 +
+         llamActEstado + #9;
+end;
+class procedure TCibFacLocutor.DecodCadEstado(str: String;
+  out sNombre: String; out descolg, descon: boolean;
+  out costo_tot: Double; out num_llam: integer; out sLlamActEstado: string);
+var
+  campos: TStringDynArray;
+begin
+  delete(str, 1, 1);  //recorta identificador
+  campos    := Explode(#9, str);
+  sNombre   := campos[0];
+  descolg   := f2B(campos[1]);
+  descon    := f2B(campos[2]);
+  costo_tot := f2N(campos[3]);
+  num_llam  := f2I(campos[4]);
+  sLlamActEstado := campos[5];
+end;
 function TCibFacLocutor.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
@@ -377,11 +413,7 @@ begin
     llamActEstado := ''
   else
     llamActEstado := llamAct.CadEstado;
-  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
-         nombre + #9 +    {el nombre es obligatorio para identificarlo unívocamente}
-         B2f(descolg) + #9 + B2f(descon) + #9 +
-         N2f(costo_tot) + #9 + I2f(num_llam) + #9 +
-         llamActEstado + #9;
+  Result := CodCadEstado(nombre, descolg, descon, costo_tot, num_llam, llamActEstado);
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -391,48 +423,60 @@ procedure TCibFacLocutor.SetCadEstado(AValue: string);
 recibiendo la llamada actual. Por ello la lista de llamadas en el visor no es
 oonsistente con la lista de llamadas del modelo.}
 var
-  lineas, campos: TStringDynArray;
-  lin: String;
+  tmp, sLlamActEstado, lin: String;
+  lineas: TStringDynArray;
 begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
-  delete(lin, 1, 1);  //recorta identificador
-  campos    := Explode(#9, lin);
-  descolg   := f2B(campos[1]);
-  descon    := f2B(campos[2]);
-  costo_tot := f2N(campos[3]);
-  num_llam  := f2I(campos[4]);
-  if campos[5]='' then begin  //No hay llamada actual
+  DecodCadEstado(lin, tmp, descolg, descon, costo_tot, num_llam, sLlamActEstado);
+  if sLlamActEstado = '' then begin  //No hay llamada actual
     llamAct := nil;
   end else begin  //Hay llamada actual
     if llamAct=nil then  //Si no hay llamada actual, la creamos, sino reusamos.
       llamAct := AgregarFila();
-    llamAct.CadEstado:=campos[5];
+    llamAct.CadEstado := sLlamActEstado;
   end;
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
 end;
-function TCibFacLocutor.GetCadPropied: string;
+class function TCibFacLocutor.CodCadPropied(sNombre: string; num_can: char;
+      tpoLimitado: integer; ctoLimitado: double; sx, sy: double): string;
 begin
-  Result := Nombre + #9 +
+  Result := sNombre + #9 +
             num_can + #9 +
             I2f(tpoLimitado) + #9 +
             N2f(ctoLimitado) + #9 +
-            N2f(x) + #9 +
-            N2f(y) + #9 +
+            N2f(sx) + #9 +
+            N2f(sy) + #9 +
             #9 + #9 + #9;;
 end;
-procedure TCibFacLocutor.SetCadPropied(AValue: string);
+class procedure TCibFacLocutor.DecodCadPropied(str: String;
+      out sNombre: string; out num_can: char;
+      out tpoLimitado: integer; out ctoLimitado: double; out sx, sy: double);
 var
   campos: TStringDynArray;
 begin
-  campos := Explode(#9, Avalue);
-  Nombre := campos[0];
+  campos := Explode(#9, str);
+  sNombre := campos[0];
   num_can := campos[1][1];
   tpoLimitado := f2I(campos[2]);
   ctoLimitado := f2N(campos[3]);
-  x := f2N(campos[4]);
-  y := f2N(campos[5]);
+  sx := f2N(campos[4]);
+  sy := f2N(campos[5]);
+end;
+function TCibFacLocutor.GetCadPropied: string;
+begin
+  Result := CodCadPropied(Nombre, num_can, tpoLimitado, ctoLimitado, x, y);
+end;
+procedure TCibFacLocutor.SetCadPropied(AValue: string);
+var
+  sy, sx: double;
+  sNombre: string;
+begin
+  DecodCadPropied(AValue, sNombre, num_can, tpoLimitado, ctoLimitado, sx, sy);
+  Nombre := sNombre;
+  x := sx;
+  y := sy;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFacLocutor.ProcesaDigitado(dig: String);
@@ -479,7 +523,7 @@ begin
   end;
   llamAct := nil;    //Termina la llamada actual.
 end;
-procedure TCibFacLocutor.ProcesaDescolgado();
+procedure TCibFacLocutor.ProcesaDescolgado;
 begin
     llamAct := nil;    //Límpia bandera de llamada
     descolg := True;   //La llamada está descolgada
@@ -761,8 +805,7 @@ var
   ModDiseno: boolean;
 begin
   if ModoCopia then exit;
-  if OnReqConfigGen<>nil then  //Pide información global
-      OnReqConfigGen(NombProg, NombLocal, ModDiseno);
+  OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   //Abre archivo de rgeistro para este enrutador
   arcLog.AbrirPLog(rutDatos, NombLocal, Nombre);
   if msjError <> '' then exit;
@@ -793,7 +836,11 @@ procedure TCibGFacNiloM.timer1Timer(Sender: TObject);
 {Temporiza el objeto, cada segundo}
 var
   it : TCibFac;
+  NombProg, NombLocal: string;
+  ModDiseno: boolean;
 begin
+  OnReqConfigGen(NombProg, NombLocal, ModDiseno);
+  if NombProg='' then exit;   //Aún no se ha inicializado el modelo
   tic := tic + 1;
   //Temporiza a todos los locutorios, para su funcionamiento interno
   for it in items do  begin
@@ -817,6 +864,9 @@ function TCibGFacNiloM.tarif_LogInf(mensaje: string): integer;
 //Se solicita registrar un mensaje informativo
 begin
   Result := OnLogInfo(mensaje);
+  OnSolicEjecCom(C_BD_HISTOR, 0,0,
+    'INSERT INTO EVENTOS VALUES(NULL, 1, ''2019-01-31'', ''yo'', ''Hola'');'
+  );
 end;
 //Funciones para escribir en los archivos de registros
 procedure TCibGFacNiloM.VolcarErrorLog;

@@ -141,6 +141,22 @@ object frmAdminProduc: TfrmAdminProduc
       OnClick = btnMostCategClick
       TabOrder = 0
     end
+    object BitBtn1: TBitBtn
+      Left = 384
+      Height = 30
+      Top = 0
+      Width = 120
+      Action = acExportArc
+      TabOrder = 3
+    end
+    object BitBtn2: TBitBtn
+      Left = 512
+      Height = 30
+      Top = 0
+      Width = 139
+      Action = acImportArc
+      TabOrder = 4
+    end
   end
   object Splitter1: TSplitter
     Left = 154

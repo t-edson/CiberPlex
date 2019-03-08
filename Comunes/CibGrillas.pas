@@ -70,6 +70,7 @@ type
     procedure grillaMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer); override;
   public
+    tecEdicion       : set of char;
     OnIniEditarCelda : TEvIniEditarCelda;  //Inicia la edición de una celda
     OnFinEditarCelda : TEvFinEditarCelda;  //Antes de finalizar la edición de una celda
     OnFinEditarCelda2: TEvFinEditarCelda;  //Al Finalizar la edición de una celda
@@ -237,7 +238,10 @@ procedure TGrillaEdic.IniciarEdicion(txtInic: string);
 {Inicia la edición del valor de una celda}
 begin
 //debugln('IniciarEdicion');
-  if not cols[grilla.Col].editable then exit;
+  if not cols[grilla.Col].editable then begin
+    Beep;
+    exit;
+  end;
   valIniCelda := grilla.Cells[grilla.Col, grilla.Row];
   colIniCelda := grilla.Col;   //guarda coordenadas de edición
   filIniCelda := grilla.Row;   //guarda coordenadas de edición
@@ -352,8 +356,8 @@ begin
 end;
 procedure TGrillaEdic.grillaKeyPress(Sender: TObject; var Key: char);
 begin
-  inherited grillaKeyPress(Sender, Key);
-  if Key in ['0'..'9','a'..'z','A'..'Z','+'] then begin
+  inherited grillaKeyPress(Sender, Key);  //LLama a evento OnKeyPress()
+  if Key in tecEdicion then begin
     IniciarEdicion(Key);
     Key := #0;  //Para no dejar pasar accesos directos Botones.  Se detectó un error en unas pruebas
   end else begin
@@ -387,7 +391,7 @@ begin
   if Button = mbLeft then begin
     grilla.MouseToCell(X, Y, ACol, ARow );
     if ARow<grilla.FixedRows then exit;   //no en el encabezado
-    if ACol<grilla.FixedCols then exit;   //no en el encabezado
+//    if ACol<grilla.FixedCols then exit;   //no en el encabezado
     if (ColClick = ACol) and (RowClick = ARow) then begin
       //Click en la celda seleccionada.
       IniciarEdicion(grilla.Cells[grilla.Col, grilla.Row]);
@@ -397,6 +401,8 @@ end;
 constructor TGrillaEdic.Create(grilla0: TStringGrid);
 begin
   inherited Create(grilla0);
+  //Tecla de edición por defecto
+  tecEdicion := ['0'..'9','a'..'z','A'..'Z','+','-'];
   //Crea el control de edición
   edGrilla := TEdit.Create(nil);
   edGrilla.Parent := grilla.Parent;  //Ubica como contenedor al mismo contnedor de la grilla

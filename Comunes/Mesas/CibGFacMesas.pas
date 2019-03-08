@@ -27,6 +27,13 @@ type
   { TCibFacMesa }
   {Define al objeto Cliente de Ciberplex}
   TCibFacMesa = class(TCibFac)
+  public //Métodos estáticos para codificar/decodificar cadenas
+    class function CodCadEstado(sNombre: String): string;
+    class procedure DecodCadEstado(str: String; out sNombre: String);
+    class function CodCadPropied(sNombre: string; sx, sy: double;
+      tipMesa: TCibMesaTip): string;
+    class procedure DecodCadPropied(str: String; out sNombre: string; out sx,
+      sy: double; out tipMesa: TCibMesaTip);
   private
     frmConfig: TfrmPropMesa;
     procedure mnConfigurar(Sender: TObject);
@@ -106,24 +113,39 @@ begin
 end;
 
 { TCibFacMesa }
+class function TCibFacMesa.CodCadPropied(sNombre: string; sx, sy: double;
+                tipMesa: TCibMesaTip): string;
+begin
+  Result := sNombre + #9 +
+            N2f(sx) + #9 +
+            N2f(sy) + #9 +
+            I2f(ord(tipMesa)) + #9 + #9;
+end;
+class procedure TCibFacMesa.DecodCadPropied(str: String;
+            out sNombre: string; out sx, sy: double; out tipMesa: TCibMesaTip);
+var
+  campos: TStringDynArray;
+begin
+  campos := Explode(#9, str);
+  SNombre := campos[0];
+  sx := f2N(campos[1]);
+  sy := f2N(campos[2]);
+  tipMesa := TCibMesaTip(f2I(campos[3]));
+end;
 function TCibFacMesa.GetCadPropied: string;
 {Las propiedades son los compos que definen la configuración de un cliente. Se
 fijan al inicio, y no es común cambiarlos luego.}
 begin
-  Result := Nombre + #9 +
-            N2f(x) + #9 +
-            N2f(y) + #9 +
-            I2f(ord(tipMesa)) + #9 + #9;
+  Result := CodCadPropied(Nombre, x, y, tipMesa);
 end;
 procedure TCibFacMesa.SetCadPropied(AValue: string);
 var
-  campos: TStringDynArray;
+  sx, sy: double;
+  sNombre: string;
 begin
-   campos := Explode(#9, Avalue);
-   Nombre := campos[0];
-   x := f2N(campos[1]);
-   y := f2N(campos[2]);
-   tipMesa := TCibMesaTip(f2I(campos[3]));
+   DecodCadPropied(AValue, sNombre, sx, sy, tipMesa);
+   Nombre := sNombre;
+   x := sx; y := sy;
    if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 function TCibFacMesa.RegVenta(usu: string): string;
@@ -135,13 +157,25 @@ begin
            Nombre + #9 +
            Grupo.CategVenta + #9 + #9 + #9
 end;
+class function TCibFacMesa.CodCadEstado(sNombre: String): string;
+begin
+  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
+         sNombre + #9 +  {el nombre es obligatorio para identificar unívocamente}
+         #9;
+end;
+class procedure TCibFacMesa.DecodCadEstado(str: String; out sNombre: String);
+var
+  campos: TStringDynArray;
+begin
+  delete(str, 1, 1);  //recorta identificador
+  campos := Explode(#9, str);
+  sNombre := campos[0];
+end;
 function TCibFacMesa.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
 begin
-  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
-         Nombre + #9 +  {el nombre es obligatorio para identificar unívocamente}
-         #9;
+  Result := CodCadEstado(Nombre);
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -149,14 +183,12 @@ end;
 procedure TCibFacMesa.SetCadEstado(AValue: string);
 {Fija los campos de estado.}
 var
-  lin: String;
+  lin, tmp: String;
   lineas: TStringDynArray;
 begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
-  //aquí aseguramos que no hay red
-  delete(lin, 1, 1);  //recorta identificador
-//  campos := Explode(#9, lin);
+  DecodCadEstado(lin, tmp);
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
 end;

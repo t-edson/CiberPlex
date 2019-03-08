@@ -98,6 +98,19 @@ type
   { TCibFacCabina }
   {Define al objeto Cabina de Ciberplex}
   TCibFacCabina = class(TCibFac)
+  public //Métodos estáticos para codificar/decodificar cadenas
+    class function CodCadEstado(sNombre: String; estadoConex: TCibEstadoConex;
+      HoraPC: TDateTime; PantBloq: Boolean; estado: TcabEstadoCuenta;
+  hor_ini: TDateTime; tSolic: TDateTime; tLibre: boolean; horGra: boolean;
+  FTransc: integer; FCosto: double): string;
+    class procedure DecodCadEstado(str: String; out sNombre: String; out
+      estadoConex: TCibEstadoConex; out HoraPC: TDateTime; out PantBloq: Boolean; out
+  estado: TcabEstadoCuenta; out hor_ini: TDateTime; out tSolic: TDateTime; out
+  tLibre, horGra: boolean; out FTransc: integer; out FCosto: double);
+    class function CodCadPropied(sNombre, IP, mac: string; sx, sy: double;
+      ConConexion: boolean; NombrePC, sComent: string): string;
+    class procedure DecodCadPropied(str: String; out sNombre, IP, mac: string; out
+      sx, sy: double; out ConConexion: boolean; out NombrePC, sComent: string);
   private  //campos privados
     cabCuenta: TCabCuenta;    //campos de conteo de la cabina
     cabConex : TCabConexion;  //campos de conexión de la cabina
@@ -561,33 +574,59 @@ begin
   cabConex.mac := AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
+class function TCibFacCabina.CodCadPropied(sNombre, IP, mac: string;
+  sx, sy: double; ConConexion: boolean; NombrePC, sComent: string): string;
+{Codifica la cadena de estado, a partir de las variables indicadas. Se pone fuera de
+TCibFacCabina para poder usarse sin crear instancias de TCibFacCabina}
+begin
+  Result := sNombre + #9 +
+            IP + #9 +
+            mac + #9 +
+            N2f(sx) + #9 +
+            N2f(sy) + #9 +
+            B2f(ConConexion) + #9 +
+            NombrePC + #9 +
+            sComent + #9 + #9 + #9;
+end;
+class procedure TCibFacCabina.DecodCadPropied(str: String;
+  out sNombre, IP, mac: string; out sx, sy: double;
+  out ConConexion: boolean; out NombrePC, sComent: string);
+{Decodifica la cadena de propiedades, en las variables indicadas. Se pone fuera de
+TCibFacCabina para poder usarse sin crear instancias de TCibFacCabina}
+var
+  campos: TStringDynArray;
+begin
+  campos := Explode(#9, str);
+  sNombre := campos[0];
+  IP := campos[1];
+  mac := campos[2];
+  sx := f2N(campos[3]);
+  sy := f2N(campos[4]);
+  ConConexion := f2B(campos[5]);  //si es TRUE (y SinRed=FALSE), inicia la conexión
+  NombrePC := campos[6];
+  sComent := campos[7];
+end;
 function TCibFacCabina.GetCadPropied: string;
 {Las propiedades son los compos que definen la configuración de una cabina. Se fijan al
 inicio, y no es común cambiarlos luego}
 begin
-  Result := Nombre + #9 +
-            IP + #9 +
-            mac + #9 +
-            N2f(x) + #9 +
-            N2f(y) + #9 +
-            B2f(ConConexion) + #9 +
-            NombrePC + #9 +
-            Coment + #9 + #9 + #9;
+  Result := CodCadPropied(Nombre, IP, mac, x, y, ConConexion, NombrePC, Coment);
 end;
 procedure TCibFacCabina.SetCadPropied(AValue: string);
 var
-  campos: TStringDynArray;
+  sComent, sNombrePC, sIP, sMac, sNombre: string;
+  sConConexion: boolean;
+  sy, sx: double;
 begin
-   campos := Explode(#9, Avalue);
-   Nombre := campos[0];
-   IP := campos[1];
-   mac := campos[2];
-   x := f2N(campos[3]);
-   y := f2N(campos[4]);
-   ConConexion := f2B(campos[5]);  //si es TRUE (y SinRed=FALSE), inicia la conexión
-   NombrePC := campos[6];
-   Coment := campos[7];
-   if OnCambiaPropied<>nil then OnCambiaPropied();
+  DecodCadPropied(AValue, sNombre, sIP, sMac, sx, sy, sConConexion, sNombrePC, sComent);
+  Nombre := sNombre;
+  IP := sIP;
+  Mac := sMac;
+  x := sx; y := sy;
+  ConConexion := sConConexion;
+  NombrePC := sNombrePC;
+  Coment := sComent;
+  if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFacCabina.SetNombrePC(AValue: string);
 begin
@@ -727,30 +766,94 @@ begin
   Result := FTransc - tarif.toler;
   If Result < 0 Then Result := 0;
 end;
+class function TCibFacCabina.CodCadEstado(
+  //Campos principales
+  sNombre: String;
+  estadoConex: TCibEstadoConex;
+  HoraPC: TDateTime;
+  PantBloq: Boolean;
+  //Campos de la cuenta
+  estado      : TcabEstadoCuenta;
+  hor_ini     : TDateTime;
+  tSolic      : TDateTime;
+  tLibre      : boolean;
+  horGra      : boolean;
+  //Campos adicionales
+  FTransc     : integer;
+  FCosto      : double): string;
+{Codifica la cadena de estado, a partir de las variables indicadas. Se pone fuera de
+TCibFacCabina para poder usarse sin crear instancias de TCibFacCabina}
+begin
+  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
+         sNombre + #9 +    {el nombre es obligatorio para identificar unívocamente a la cabina}
+         I2f(Ord(estadoConex))+ #9 + {se coloca primero el Estado de la conexión, porque
+             es el campo que siempre debe actualizarse, cuando hay conexión remota activada}
+         T2f(HoraPC) + #9 +  //Este campo no tiene significado si no hay conexión
+         B2f(PantBloq);  //Este campo no tiene significado si no hay conexión
+  if estado <> EST_NORMAL then begin
+    // En el estado EST_NORMAL, no es necesario enviar los demás campos
+    Result += #9 +
+         I2f(Ord(estado)) + #9 +
+         T2f(hor_ini) + #9 +
+         T2f(tSolic)  + #9 +
+         B2f(tLibre)  + #9 +
+         B2f(horGra)  + #9 +
+         I2f(FTransc) + #9 +
+         N2f(FCosto);
+  end;
+end;
+class procedure TCibFacCabina.DecodCadEstado(str: String; out sNombre: String;
+  out estadoConex: TCibEstadoConex; out HoraPC: TDateTime; out
+  PantBloq: Boolean; out estado: TcabEstadoCuenta; out hor_ini: TDateTime; out
+  tSolic: TDateTime; out tLibre, horGra: boolean; out FTransc: integer; out
+  FCosto: double);
+{Decodifica la cadena de estado, en las variables indicadas. Se pone fuera de
+TCibFacCabina para poder usarse sin crear instancias de TCibFacCabina}
+var
+  campos: TStringDynArray;
+begin
+  delete(str, 1, 1);  //recorta identificador
+  campos := Explode(#9, str);
+  //Extrae Campos
+  estadoConex := TCibEstadoConex(f2I(campos[1]));
+  HoraPC := f2T(campos[2]);
+  PantBloq := f2B(campos[3]);
+  if high(campos)>=4 then begin
+    //Hay información de campos adicionaleas
+    estado   := TcabEstadoCuenta(f2I(campos[4]));
+    hor_ini  := f2T(campos[5]);
+    tSolic   := f2T(campos[6]);
+    tLibre   := f2B(campos[7]);
+    horGra   := f2B(campos[8]);
+    FTransc  := f2I(campos[9]);   //el tiempo transcurrido se lee directamente
+    FCosto   := f2N(campos[10]);   //el costo se lee directamente en el campo FCosto
+  end else begin
+    //No hay información adicional, se asumen valores por defecto
+    estado   := EST_NORMAL;
+    hor_ini  := trunc(now);  //para que no hay errores en el cálculo
+    tSolic   := 0;
+    tLibre   := false;
+    horGra   := false;
+    FTransc  := 0;   //el tiempo transcurrido se lee directamente
+    FCosto   := 0;   //el costo se lee directamente en el campo FCosto
+  end;
+end;
 function TCibFacCabina.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
 begin
-  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
-         Nombre + #9 +    {el nombre es obligatorio para identificar unívocamente a la cabina}
-         I2f(cabConex.estadoN)+ #9 + {se coloca primero el Estado de la conexión, porque
-             es el campo que siempre debe actualizarse, cuando hay conexión remota activada}
-         T2f(HoraPC) + #9 +  //Este campo no tiene significado si no hay conexión
-         B2f(PantBloq);  //Este campo no tiene significado si no hay conexión
-  if cabCuenta.estado <> EST_NORMAL then begin
-    // En el estado EST_NORMAL, no es necesario enviar los demás campos
-    Result += #9 +
-         I2f(cabCuenta.estadoN) + #9 +
-         T2f(cabCuenta.hor_ini) + #9 +
-         T2f(cabCuenta.tSolic) + #9 +
-         B2f(cabCuenta.tLibre) + #9 +
-         B2f(cabCuenta.horGra) + #9 +
+  Result := CodCadEstado(
+         Nombre, cabConex.estado, HoraPC, PantBloq,
+         cabCuenta.estado,
+         cabCuenta.hor_ini,
+         cabCuenta.tSolic,
+         cabCuenta.tLibre,
+         cabCuenta.horGra,
        { Estos campos son calculados, pero se devuelven como ayuda, para la implementación
          de otros puntos de venta (conectados a este servidor), de modo que no necesiten
          hacer nuevamente el cálculo (con posibilidad de obtener un resultado diferente) }
-         I2f(FTransc) + #9 +
-         N2f(FCosto);
-  end;
+         FTransc,
+         FCosto);
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -759,37 +862,19 @@ procedure TCibFacCabina.SetCadEstado(AValue: string);
 {Fija los campos de estado. Solo debería usarse cuando se trabaja la cabina sin Red,
  o al inicio para fijar las propiedades.}
 var
-  lin: String;
-  campos, lineas: TStringDynArray;
+  lin, sNombre: String;
+  lineas: TStringDynArray;
+  tmp: TCibEstadoConex;
 begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
-  //aquí aseguramos que no hay red
-  delete(lin, 1, 1);  //recorta identificador
-  campos := Explode(#9, lin);
+  DecodCadEstado(lin, sNombre,  //sNombre, se lee pero no actualiza nada
+    tmp,
+    HoraPC, PantBloq, cabCuenta.estado, cabCuenta.hor_ini,
+    cabCuenta.tSolic, cabCuenta.tLibre, cabCuenta.horGra, FTransc, FCosto);
   if SinRed then begin  //Cuando hay red, esta propiedad se actualiza sola
-    cabConex.estadoN  := f2I(campos[1]);
-  end;
-  HoraPC := f2T(campos[2]);
-  PantBloq := f2B(campos[3]);
-  if high(campos)>=4 then begin
-    //Hay información de campos adicionaleas
-    cabCuenta.estadoN := f2I(campos[4]);
-    cabCuenta.hor_ini := f2T(campos[5]);
-    cabCuenta.tSolic  := f2T(campos[6]);
-    cabCuenta.tLibre  := f2B(campos[7]);
-    cabCuenta.horGra  := f2B(campos[8]);
-    FTransc           := f2I(campos[9]);   //el tiempo transcurrido se lee directamente
-    FCosto            := f2N(campos[10]);   //el costo se lee directamente en el campo FCosto
-  end else begin
-    //No hay información adicional, se asumen valores por defecto
-    cabCuenta.estado := EST_NORMAL;
-    cabCuenta.hor_ini := trunc(now);  //para que no hay errores en el cálculo
-    cabCuenta.tSolic  := 0;
-    cabCuenta.tLibre  := false;
-    cabCuenta.horGra  := false;
-    FTransc           := 0;   //el tiempo transcurrido se lee directamente
-    FCosto            := 0;   //el costo se lee directamente en el campo FCosto
+      cabConex.estado := tmp;  //Solo en modo "SinRed" se lee este campo
+      //"cabConex.estado" debe ser realmente de solo lectura.
   end;
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
@@ -1524,7 +1609,7 @@ begin
     debugln('  Nomb:' + c.Nombre + ' SinRed:' + B2f(TCibFacCabina(c).SinRed));
   end;
 end;
-//operaciones con cabinas
+//Operaciones con cabinas
 function TCibGFacCabinas.EscribeLog(identif: char; mensaje : String): integer;
 {Escribe en la tabla histórica de este grupo.}
 var

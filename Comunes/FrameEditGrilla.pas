@@ -138,6 +138,7 @@ type
     procedure NumerarFilas;
     function GetFilaSelecc: integer;
     procedure SetFilaSelecc(AValue: integer);
+    procedure UpdateFromColData;
   public  //Campos generales
     gri          : TGrillaEdicFor;  //Objeto grilla editable
     AddRowEnd    : boolean;         //Se agrega una fila vacía con FinEncab()
@@ -189,8 +190,8 @@ type
     procedure GrillaAReg(f: integer; reg: TCibRegistro);
     procedure UpdateColData(UpdateTable: boolean = false);
     procedure WriteToTable;
-    function TableAsString: string;
-    procedure ReadFromString(str: string);
+    function GetString: string;
+    procedure SetString(str: string);
   public  //Inicialización
     constructor Create(AOwner: TComponent) ; override;
     destructor Destroy; override;
@@ -363,11 +364,11 @@ procedure TfraEditGrilla.ReadFromTable;
 Notar que se guardan datos de todas ls columnas en la columna "colData", en realidad
 de toda la tabla, en la grilla, a pesar de que solamente se puedan mostrar solo unas
 pocas columnas en la grilla.
-Esto es necesario para las opciones de edición, para que funciones aún en tablas sin
-clvaes primarias, a pesar de que no es muy óptimo en memoria (y CPU), pero como se aplica
+Esto es necesario para las opciones de edición, para que funcione aún en tablas sin
+claves primarias, a pesar de que no es muy óptimo en memoria (y CPU), pero como se aplica
 solo a tablas maestras, el tamaño de las tablas es reducido.}
 var
-  f, c, nCol: Integer;
+  c, nCol, f: Integer;
   n: LongInt;
   reg: TCibRegistro;
 begin
@@ -376,34 +377,20 @@ begin
   grilla.RowCount:=1;  //limpia datos
   n := Table.items.Count+1;
   grilla.RowCount:= n;
-  f := 1;
   grilla.Cells[colData.idx, 0] := Table.TableHeader;  //Guarda encabezado
+  f := 1;
   for reg in Table.items do begin
     grilla.Cells[colData.idx, f] := reg.valuesStr;
-    //Columna de numeración
-    grilla.Cells[colNumber.idx, f] := IntToStr(f);
-    //LLena las columnas adicionales de la fila
-    for c:=0 to gri.cols.Count-1 do begin
-      nCol := gri.cols[c].iEncab;   //Columna de donde se lee el dato
-      if nCol = -1 then continue;   //No está asociada a la tabla
-      //Escribe valor en la grilla
-      case gri.cols[c].tipo of
-      ugTipText  : gri.cols[c].ValStr[f]   := reg.values[nCol];
-      ugTipBol   : gri.cols[c].ValBool[f]  := f2B(reg.values[nCol]);
-      ugTipNum   : gri.cols[c].ValNum[f]   := f2N(reg.values[nCol]);
-      ugTipDatTim: gri.cols[c].ValDatTim[f]:= f2D(reg.values[nCol]);
-      else
-        //Faltan otros tipos
-        grilla.Cells[c, f] := reg.values[nCol];
-      end;
-    end;
+    grilla.Cells[colNumber.idx, f] := IntToStr(f);  //Columna de numeración
     f := f + 1;
   end;
+  UpdateFromColData;  //Completa las demás columnas
   grilla.EndUpdate();
 end;
 procedure TfraEditGrilla.GrillaAReg(f: integer; reg: TCibRegistro);
-{Convierte una fila de la grilla a un registro de tabla. El objeto "reg", ya debe
-estar creado.}
+{Convierte una fila de la grilla a un registro de tabla. Para ello se leen los valores
+de las columnas (actuales), y se toman los campos faltantes de la columna "colData".
+El objeto "reg", ya debe estar creado.}
 var
   c: Integer;
   strData: String;
@@ -418,25 +405,16 @@ begin
     //Convierte "colData" a "reg"
     reg.valuesStr := strData;  //separa campos
   end;
-  //Hasta aquí ya se tiene "reg" con sus columnas actualizadas
+  {Hasta aquí ya se tiene "reg" con las columnas actualizadas a partir de "colData",
+  pero falta actualizar con lso campos mostrados en la grilla.}
   for c:=0 to gri.cols.Count-1 do begin
     nCol := gri.cols[c].iEncab;   //Columna de donde se lee el dato
     if nCol = -1 then continue;   //No está asociada a la tabla
-    //reg.values[nCol] := grilla.Cells[c, f];  //actualiza esta columna
-    case gri.cols[c].tipo of
-    ugTipText  : reg.values[nCol] := gri.cols[c].ValStr[f];
-    ugTipBol   : reg.values[nCol] := B2f(gri.cols[c].ValBool[f]);
-    ugTipNum   : reg.values[nCol] := N2f(gri.cols[c].ValNum[f]);
-    ugTipDatTim: reg.values[nCol] := D2f(gri.cols[c].ValDatTim[f]);
-    else
-      //Faltan otros tipos
-      reg.values[nCol] := grilla.Cells[c, f];
-    end;
-
+    reg.values[nCol] := gri.cols[c].GetValue(f);
   end;
 end;
 procedure TfraEditGrilla.UpdateColData(UpdateTable: boolean = false);
-{Actualiza la columan colData, a partir de los valores editados en la grilla.
+{Actualiza la columna colData, a partir de los valores editados en la grilla.
 Este proceso se hace necesario para actualizar los cambios realizados, porque el
 proceso de actualización de tablas con TfraEditGrilla, implica que se sobreescribe el
 contenido completo de la tabla.
@@ -470,12 +448,39 @@ begin
     end;
   end;
 end;
+procedure TfraEditGrilla.UpdateFromColData;
+{Actualiza las columnas en la grilla, únicamente a partir de la columna "colData".}
+var
+  f, c: Integer;
+  nCol: LongInt;
+  reg: TCibRegistro;
+  strData: String;
+begin
+  reg := TCibRegistro.Create;
+  //Este proceso asume que la primera fila es la de los encabezados
+  for f:=1 to grilla.RowCount-1 do begin
+    strData := grilla.Cells[colData.idx, f];
+    if strData = '' then begin
+      //Esto puede pasar para cuando se agregan filas nuevas
+      //Se deja "reg" con sus columnas vacías
+    end else begin
+      //Convierte "colData" a "reg"
+      reg.valuesStr := strData;  //separa campos
+    end;
+    for c:=0 to gri.cols.Count-1 do begin
+      nCol := gri.cols[c].iEncab;   //Columna de donde se lee el dato
+      if nCol = -1 then continue;   //No está asociada a la tabla
+      gri.cols[c].SetValue(f, reg.values[nCol]);  //Escribe valor en la grilla
+    end;
+  end;
+  reg.Destroy;
+end;
 procedure TfraEditGrilla.WriteToTable;
 {Actualiza la tabla con el contenido de la grilla}
 begin
   UpdateColData(true);
 end;
-function TfraEditGrilla.TableAsString: string;
+function TfraEditGrilla.GetString: string;
 {Devuelve el contenido de la tabla modificada, como una cadena.}
 var
   lineas: TStringList;
@@ -496,7 +501,7 @@ begin
     lineas.Destroy;
   end;
 end;
-procedure TfraEditGrilla.ReadFromString(str: string);
+procedure TfraEditGrilla.SetString(str: string);
 //LLena los datos de la grilla a partir de una cadane
 var
   lineas: TStringList;
@@ -505,19 +510,24 @@ begin
   lineas:= TStringList.Create;
   lineas.Text := str;  //Divide en líneas
   if lineas.Count=0 then begin
-    MsgErr('No se encontarron datos');
+    MsgErr('No se encontaron datos');
     exit;
   end;
   if lineas[0] <>Table.TableHeader then begin
     MsgErr('Formato de columnas distinto');
     exit;
   end;
+  //Actualiza las siguientes líneas
+  grilla.BeginUpdate;
   grilla.RowCount := lineas.Count;
   for f := 1 to grilla.RowCount-1 do begin
     grilla.Cells[colData.idx, f] := lineas[f];
+    grilla.Cells[colNumber.idx, f] := IntToStr(f);  //Columna de numeración
   end;
-  MsgErr('Grilla actualizada.');
+  UpdateFromColData;  //Completa las demás columnas
+  grilla.EndUpdate();
   lineas.Destroy;
+  MsgBox('Grilla actualizada.');
 end;
 procedure TfraEditGrilla.EstadoAcciones(estado: boolean);
 begin

@@ -1,9 +1,9 @@
-{                                frameVisCplex
+{                                frameVista
 Frame, que implementa un editor/visor de objetos gráficos de trabajo de CiberPlex.
 La idea es encapsular en este Frame, el complicado motor de edición de objetos en pantalla.
 
                                               Por Tito Hinostroza  11/03/2014}
-unit frameVisCPlex;
+unit frameVista;
 {$mode objfpc}{$H+}
 interface
 uses
@@ -26,8 +26,8 @@ type
   end;
 
 
-  { TfraVisCPlex }
-  TfraVisCPlex = class(TFrame)
+  { TfraVista }
+  TfraVista = class(TFrame)
   published
     Image1: TImage;
     Image10: TImage;
@@ -180,7 +180,7 @@ begin
           if s <> NIL then s.MouseOver(Sender, Shift, X, Y);  //pasa el evento
       end;
 end;
-procedure TfraVisCPlex.SetModDiseno(AValue: boolean);
+procedure TfraVista.SetModDiseno(AValue: boolean);
 var
   og :TObjGraf;
 begin
@@ -190,7 +190,7 @@ begin
   end;
   FModDiseno:=AValue;
 end;
-function TfraVisCPlex.AgregOgFac(Fac: TCibFac): TogFac;
+function TfraVista.AgregOgFac(Fac: TCibFac): TogFac;
 //Agrega un objeto gráfica asociado a un objeto facturable, al editor.
 var
   ogCab: TogCabina;
@@ -248,7 +248,7 @@ begin
   end;
   end;
 end;
-function TfraVisCPlex.AgregarOgGrupo(GFac: TCibGFac): TogGFac;
+function TfraVista.AgregarOgGrupo(GFac: TCibGFac): TogGFac;
 {Agrega un objeto de tipo Grupo de Cabinas, al editor}
 var
   ogGClies: TogGClientes;
@@ -293,25 +293,25 @@ begin
   end;
   end;
 end;
-function TfraVisCPlex.gruposReqCadMoneda(valor: double): string;
+function TfraVista.gruposReqCadMoneda(valor: double): string;
 begin
   if OnReqCadMoneda = nil then exit('');
   Result := OnReqCadMoneda(valor);   //pasa el evento
 end;
-procedure TfraVisCPlex.gruposSolicEjecCom(comando: TCPTipCom; ParamX,
+procedure TfraVista.gruposSolicEjecCom(comando: TCPTipCom; ParamX,
   ParamY: word; cad: string);
 begin
   if OnSolicEjecCom<>nil then OnSolicEjecCom(comando, ParamX, ParamY, cad);
 end;
-function TfraVisCPlex.NumSelecionados: integer;   //atajo
+function TfraVista.NumSelecionados: integer;   //atajo
 begin
   Result := motEdi.seleccion.Count;
 end;
-function TfraVisCPlex.Seleccionado: TObjGraf;  //atajo
+function TfraVista.Seleccionado: TObjGraf;  //atajo
 begin
   Result := motEdi.Selected;
 end;
-function TfraVisCPlex.SeleccionarGru(NomGFac: string): boolean;
+function TfraVista.SeleccionarGru(NomGFac: string): boolean;
 var
   og :TObjGraf;
 begin
@@ -327,7 +327,7 @@ begin
     end;
   end;
 end;
-function TfraVisCPlex.SeleccionarFac(IdOgFac: string): boolean;
+function TfraVista.SeleccionarFac(IdOgFac: string): boolean;
 {Selecciona un objeto gráfico, dado su ID. Si no lo logra ubicar, devuelve FALSE.}
 var
   og :TObjGraf;
@@ -346,7 +346,7 @@ begin
   //No lo encontró
   exit(false);
 end;
-function TfraVisCPlex.FacSeleccionado: TogFac;
+function TfraVista.FacSeleccionado: TogFac;
 {Devuelve el ogFac seleccionado. Si no hay ninguna, devuelve NIL.}
 var
   og: TObjGraf;
@@ -360,7 +360,7 @@ begin
   if not (og is TogFac) then exit(nil);
   Result := TogFac(og);
 end;
-function TfraVisCPlex.GFacSeleccionado: TogGFac;
+function TfraVista.GFacSeleccionado: TogGFac;
 var
   og: TObjGraf;
 begin
@@ -374,7 +374,7 @@ begin
   Result := TogGFac(og);
 end;
 
-function TfraVisCPlex.CabSeleccionada: TogCabina;
+function TfraVista.CabSeleccionada: TogCabina;
 {Devuelve la cabina seleccionada. Si no hay ninguna, devuelve NIL.}
 var
   og: TObjGraf;
@@ -388,7 +388,7 @@ begin
   if not (og is TogCabina) then exit(nil);
   Result := TogCabina(og);
 end;
-function TfraVisCPlex.GCabinasSeleccionado: TogGCabinas;
+function TfraVista.GCabinasSeleccionado: TogGCabinas;
 var
   og: TObjGraf;
 begin
@@ -406,7 +406,7 @@ begin
     exit(nil);
   end;
 end;
-procedure TfraVisCPlex.ActualizarOgFacturables(grupo: TCibGFac);
+procedure TfraVista.ActualizarOgFacturables(grupo: TCibGFac);
 {Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
 que objetos deben existir}
   function AgregarSiNoHay(fac: TCibFac): TogFac;
@@ -443,20 +443,20 @@ begin
     end;
   end;
 end;
-function TfraVisCPlex.CoordPantallaDeFact(ogFac: TogFac): TPoint;
+function TfraVista.CoordPantallaDeFact(ogFac: TogFac): TPoint;
 {Devuelve las coordenadas de se pantalla del facturable.}
 begin
   Result.x:= motEdi.v2d.XPant(ogFac.x);
   Result.y:= motEdi.v2d.YPant(ogFac.y);
 end;
-function TfraVisCPlex.CoordPantallaDeFact2(ogFac: TogFac): TPoint;
+function TfraVista.CoordPantallaDeFact2(ogFac: TogFac): TPoint;
 {Devuelve las coordenadas de se pantalla de la parte inferior facturable.}
 begin
   Result.x:= motEdi.v2d.XPant(ogFac.x);
   Result.y:= motEdi.v2d.YPant(ogFac.y + ogFac.Height);
 end;
 
-procedure TfraVisCPlex.PaintBox1DragOver(Sender, Source: TObject; X,
+procedure TfraVista.PaintBox1DragOver(Sender, Source: TObject; X,
   Y: Integer; State: TDragState; var Accept: Boolean);
 var
   og: TObjGraf;
@@ -480,7 +480,7 @@ begin
   //No lo selecciona
   Accept := false;
 end;
-procedure TfraVisCPlex.PaintBox1DragDrop(Sender, Source: TObject; X, Y: Integer
+procedure TfraVista.PaintBox1DragDrop(Sender, Source: TObject; X, Y: Integer
   );
 var
   og: TObjGraf;
@@ -528,7 +528,7 @@ begin
     end;
   end;
 end;
-procedure TfraVisCPlex.ActualizarOgGrupos(items: TCibGFact_list);
+procedure TfraVista.ActualizarOgGrupos(items: TCibGFact_list);
 {Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
 habrá un grupo.}
   function ExisteObjGrafParaGFac(gfac: TCibGFac; out ogGFac: TogGFac): boolean;
@@ -565,7 +565,7 @@ begin
     end;
   end;
 end;
-procedure TfraVisCPlex.ActualizarPropiedades(cadProp: string);
+procedure TfraVista.ActualizarPropiedades(cadProp: string);
 {Recibe la cadena de propiedades del "TCibModelo" del servidor y actualiza
 su copia local.}
 var
@@ -590,7 +590,7 @@ begin
     ActualizarOgFacturables(gruFac);
   end;
   //Verifica objetos no usados (no actualizados), para eliminarlos
-  i:=0;  //Usamos WHILe, en lugar de FOR, porque vamos a eliminar elementos
+  i:=0;  //Usamos WHILE, en lugar de FOR, porque vamos a eliminar elementos
   while i<motEdi.objetos.Count do begin
     og := motEdi.objetos[i];
     if og.Data = 'x' then begin
@@ -602,25 +602,54 @@ debugln('>Eliminando: ' + og.Name);
   end;
   motEdi.Refresh;
 end;
-procedure TfraVisCPlex.ActualizarEstado(cadEstado: string);
+procedure TfraVista.ActualizarEstado(cadEstado: string);
 {Actualiza el estado de los objetos existentes. No se cambian las propiedades ni se
  crean o eliminan objetos. La cadena de estado tiene la forma:
  <0	Cabinas
- cCab1	0	1899:12:30:00:00:00
- cCab2	3	1899:12:30:00:00:00
+ .Cab1	0	1899:12:30:00:00:00
+ .Cab2	3	1899:12:30:00:00:00
  ...
  >
  <1      Locutor
  ...
  >
  }
+var
+  lest: TStringList;
+  res: Boolean;
+  cad, nombGrup: string;
+  tipo: TCibTipFact;
+  gf: TObjGraf;
 begin
   if cadEstado='' then exit;
   grupos.CadEstado := cadEstado;  //solo cambia las variables de estado de "grupos"
+
+  //--------- Refresco de objetos gráficos ----------
+  //Este código deberá reemplazar al anterior: grupos.CadEstado := cadEstado;
+  lest:= TStringList.Create;
+  lest.Text := cadEstado;  //carga texto
+  //Extrae los fragmentos correspondientes a cada Grupo facturable
+  while lest.Count>0 do begin
+    res := ExtraerBloqueEstado(lest, cad, nombGrup, tipo);
+    if not res then break;  //se mostró mensaje de error
+    gf := motedi.ObjPorNombre(nombGrup); //ItemPorNombre(nombGrup);
+    if gf = nil then begin
+      //Llegó el estado de un grupo que no existe.
+      debugln('Grupo no existente: ' + nombGrup);   //WARNING
+      break;
+    end;
+    {Aquí deberíamos actualizar el estado del objeto gráfico que representa al grupo,
+    y también el estado de cada objeto del grupo.}
+    //gf.CadEstado := cad;   //No importa de que tipo sea
+  end;
+  //carga el contenido del archivo de estado
+  lest.Destroy;
+
   //Los objetos gráficos "verán" los cambios, porque tienen referencias a sus objetos fuente
   motEdi.Refresh;
+DebugLn('---');
 end;
-procedure TfraVisCPlex.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
+procedure TfraVista.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string);
 {Se envía una respuesta al visor. Debe ser la respuesta a un comando.}
 begin
@@ -640,7 +669,7 @@ begin
     end;
   end;
 end;
-procedure TfraVisCPlex.AlinearSelecHor;
+procedure TfraVista.AlinearSelecHor;
 {Alinea la selección de modo que todas las coordenadas X centrales, de los objetos
 seleccionados, sean iguales.}
 var
@@ -655,7 +684,7 @@ begin
   if OnObjectsMoved<>nil then OnObjectsMoved;
 //  motedi.Refrescar;
 end;
-procedure TfraVisCPlex.AlinearSelecVer;
+procedure TfraVista.AlinearSelecVer;
 {Alinea la selección de modo que todas las coordenadas Y centrales, de los objetos
 seleccionados, sean iguales.}
 var
@@ -690,7 +719,7 @@ begin
     exit(0);
   end;
 end;
-procedure TfraVisCPlex.EspacirSelecHor;
+procedure TfraVista.EspacirSelecHor;
 var
   dx , xNue: Single;
   sel: TlistObjGraf;
@@ -708,7 +737,7 @@ begin
   if OnObjectsMoved<>nil then OnObjectsMoved;
 //  motedi.Refrescar;
 end;
-procedure TfraVisCPlex.EspacirSelecVer;
+procedure TfraVista.EspacirSelecVer;
 var
   dy , yNue: Single;
   sel: TlistObjGraf;
@@ -726,13 +755,13 @@ begin
   if OnObjectsMoved<>nil then OnObjectsMoved;
 //  motedi.Refrescar;
 end;
-procedure TfraVisCPlex.motEdi_ObjectsMoved;
+procedure TfraVista.motEdi_ObjectsMoved;
 //Se ha producido el movimiento de uno o más objetos
 begin
   if not FModDiseno then exit;   //se supone que no se pueden mover en este estado
   if OnObjectsMoved<>nil then OnObjectsMoved;
 end;
-procedure TfraVisCPlex.motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
+procedure TfraVista.motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
 {Se inicia el arrastre de un objeto gráfico facturable.}
 begin
   //Aquí se puede inciar el arrastre del objeto o su boleta
@@ -755,7 +784,7 @@ begin
     end;
   end;
 end;
-procedure TfraVisCPlex.motEdi_DblClick(Sender: TObject);
+procedure TfraVista.motEdi_DblClick(Sender: TObject);
 var
   ogFac: TogFac;
   ogGfac: TogGFac;
@@ -771,7 +800,7 @@ begin
     if OnDobleClickGFac<>nil then OnDobleClickGFac(ogGFac, Mouse.CursorPos.x, Mouse.CursorPos.y);
   end;
 end;
-procedure TfraVisCPlex.motEdi_ClickDer(Shift: TShiftState; x, y: integer);
+procedure TfraVista.motEdi_ClickDer(Shift: TShiftState; x, y: integer);
 var
   ogFac: TogFac;
   ogGfac: TogGFac;
@@ -787,12 +816,12 @@ begin
     if OnClickDerGFac<>nil then OnClickDerGFac(ogGFac, x, y);
   end;
 end;
-procedure TfraVisCPlex.motEdi_MouseUp(Sender: TObject; Button: TMouseButton;
+procedure TfraVista.motEdi_MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   if OnMouseUp<>nil then OnMouseUp(Sender, Button, Shift, X, Y);
 end;
-procedure TfraVisCPlex.KeyDown(Sender: TObject; var Key: Word;
+procedure TfraVista.KeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 {Rutina para procesar el evento KeyDown. No está automáticamente asociada a ningún,
 evento de teclado en el frame, así que debe hacerse desde afuera.}
@@ -804,7 +833,7 @@ begin
   end;
   motEdi.KeyDown(Sender, Key, Shift);
 end;
-constructor TfraVisCPlex.Create(AOwner: TComponent);
+constructor TfraVista.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   motEdi := TEditionMot2.Create(PaintBox1);
@@ -818,7 +847,7 @@ begin
   grupos.OnReqCadMoneda   := @gruposReqCadMoneda;
   grupos.OnSolicEjecCom   := @gruposSolicEjecCom;
 end;
-destructor TfraVisCPlex.Destroy;
+destructor TfraVista.Destroy;
 begin
   grupos.Destroy;
   decod.Destroy;
