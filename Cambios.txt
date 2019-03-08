@@ -1,3 +1,40 @@
+1.9
+===
+Se crea, a modo de prueba, el formulario FormVista y el frame frameVista, para intentar crear un
+nuevo frame Vista que sea más modular e independiente que el que se tiene en el Servidor.
+La idea es que el Servidor utilice esta Vista en un formulario separado. Actualmente, se mezcla 
+código de la Vista y el controlador en FormPrincipal.
+Se crean métodos estáticos: TCibFacCabina.CodCadEstado() y TCibFacCabina.DecodCadEstado(), para 
+codificar y decodificar para poder acceder a esta funcionalidad desde la vista sin necesidad de
+crear instancias de TCibFacCabina. Lo mismo se hace para los otros facturables.
+El objetivo es que la nueva vista, no cree una copia de la instancia del modelo, como se hace
+actualmente, sino que solamente copie los atributos en los objetos gráficos.
+
+Se aumenta el ancho del campo Descripción, en la ventana de Venta de productos.
+Se define que el campo "Precio de Costo" aparezca por defecto oculto, cuando el usuario no es
+administrador.
+
+1.8
+===
+--SERVER--
+Se actualizan algunas librerías de la aplicación, con las versiones más recientes.
+Se agregan opciones para Importar y exportar la tabla de productos, desde la ventana de Productos.
+Se agrega las opciones de edición de Productos al menú de la ventana de Productos.
+Se configura para que al agregar productos nuevos, se fijen con el campo "Activo" en "V" por defecto.
+Se configura para que la edición de las grillas se haga también al pulsar la tecla '-'.
+Se reordenan rutinas de FrameEditGrilla, para que tengan nombres más consistentes y se mueven
+las rutinas que verificaban los casos de "TugTipoCol" a UtilsGrilla para hacer el código más
+mantenible.
+
+--ADMIN--
+Se desactiva el intento de grabar la tabla de productos en el servidor, cuando no hay conexión.
+
+1.7.7
+=====
+Se compila con Lazarus 1.8
+Se actualiza el motor gráfico ogEditGraf a la versión 2.1
+
+
 1.7.6
 =====
 Se cambia el nombre de la clase TSocketCabina a TThreadSockCabina.

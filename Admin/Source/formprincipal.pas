@@ -90,6 +90,7 @@ type
     Panel1: TPanel;
     PopupFac: TPopupMenu;
     PopupMenu1: TPopupMenu;
+    SaveDialog1: TSaveDialog;
     Splitter1: TSplitter;
     StatusBar1: TStatusBar;
     Timer1: TTimer;
@@ -144,7 +145,7 @@ type
     procedure frmAdminProduc_Grabar;
     procedure frmAdminProvee_Grabar;
     procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
-    procedure frmIngStock_Grabar;
+    procedure frmIngStock_Grabar(Manual: boolean);
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
     procedure Plog(s: string);
@@ -266,41 +267,56 @@ var
   tipModif: Integer;
 begin
   //Graba localmente
-  tabPro.ActualizarTabNoStock(frmAdminProduc.fraGri.TableAsString);
+  tabPro.ActualizarTabNoStock(frmAdminProduc.fraGri.GetString);
   //Graba en servidor
+  if not ServCab.Conectado then exit;
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
   frmAdminProduc.Habilitar(false);
   //Se debe grabar en el servidor
   tipModif := MODTAB_NOSTCK;   //tipo de modificación
   ServCab.PonerComando(CVIS_ACTPROD, 0, tipModif, StringFromFile(arcProduc));
 end;
-procedure TForm1.frmIngStock_Grabar;
+procedure TForm1.frmIngStock_Grabar(Manual: boolean);
 var
-  TabIngSTock: String;
+  GetIngSTock, str, filName, getIngSTockInv: String;
   tipModif: Integer;
 begin
   //Graba localmente
-  TabIngSTock := frmIngStock.TabIngSTock;
-  tabPro.ActualizarTabIngStock(TabIngSTock);
+  GetIngSTock := frmIngStock.GetIngSTock;
+  getIngSTockInv := frmIngStock.GetIngStock(True);
+  tabPro.ActualizarTabIngStock(GetIngSTock);
   if tabPro.msjError <> '' then begin
     //Esto no debería pasar si se maneja bien la tabla
     MsgErr('Error actualizando tabla de productos.');
     MsgErr(tabPro.msjError);
   end;
   //Graba en el servidor
-  if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
-  frmIngStock.Habilitar(false);
-  tipModif := MODTAB_INGSTCK;   //tipo de modificación
-  ServCab.PonerComando(CVIS_ACTPROD, 0, tipModif, TabIngSTock);
+  if ServCab.Conectado then begin
+    if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
+    frmIngStock.Habilitar(false);
+    tipModif := MODTAB_INGSTCK;   //tipo de modificación
+    ServCab.PonerComando(CVIS_ACTPROD, 0, tipModif, GetIngSTock);
+  end else begin
+    if MsgYesNo('¿Generar archivo de tarnsferencia?') <> 1 then exit;
+    DateTimeToString(str, 'yyyy-mm-dd', now);
+    SaveDialog1.FileName := 'productos.' + Config.Local + '.' + str + '.ing';
+    if not SaveDialog1.Execute then exit;
+    filName := SaveDialog1.FileName;
+    if FileExists(filName) then begin
+      if MsgYesNo('Archivo existe. ¿Sobreescribir?') <> 1 then exit;
+    end;
+    StringToFile(getIngSTockInv, filName);
+  end;
 end;
 procedure TForm1.frmAdminProvee_Grabar;
 var
   tipModif: Integer;
 begin
   //Graba localmente
-  tabPrv.UpdateAll(frmAdminProvee.fraGri.TableAsString);
+  tabPrv.UpdateAll(frmAdminProvee.fraGri.GetString);
   frmAdminProvee.Modificado := false;
   //Graba en servidor
+  if not ServCab.Conectado then exit;
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
   frmAdminProvee.Habilitar(false);
   //Se debe grabar en el servidor
@@ -312,9 +328,10 @@ var
   tipModif: Integer;
 begin
   //Graba localmente
-  tabIns.UpdateAll(frmAdminInsum.fraGri.TableAsString);
+  tabIns.UpdateAll(frmAdminInsum.fraGri.GetString);
   frmAdminInsum.Modificado := false;
   //Graba en servidor
+  if not ServCab.Conectado then exit;
   if MsgYesNo('¿Grabar en Servidor?') <> 1 then exit;
   frmAdminInsum.Habilitar(false);
   //Se debe grabar en el servidor
@@ -437,7 +454,7 @@ begin
   frmAdminProvee.OnGrabado:=@frmAdminProvee_Grabar;
   frmAdminInsum.OnGrabado:=@frmAdminInsumGrabado;
   frmIngStock.OnGrabado := @frmIngStock_Grabar;
-  Caption := NOM_PROG + ' ' + VER_PROG;
+  Caption := NOM_PROG + ' ' + VER_PROG + ' Local: ' + Config.Local;
 end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin

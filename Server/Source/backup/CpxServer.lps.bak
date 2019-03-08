@@ -2,7 +2,7 @@
 <CONFIG>
   <ProjectSession>
     <PathDelim Value="\"/>
-    <Version Value="11"/>
+    <Version Value="10"/>
     <BuildModes Active="Debug"/>
     <Units Count="65">
       <Unit0>
@@ -19,9 +19,9 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="945"/>
-        <CursorPos X="5" Y="952"/>
-        <FoldState Value=" T4309 T5mF02 TLmL01151311]3 p0tQ0G]I]CT8G2{*0[A43nI0N4 pigjR0R[94fjU07A]9Xj80W218 pj0m607](]B4mE0B01[X4bja03B[95B07C]9YjD037 T6mN02U TMqd21041311171A1]j0se]J923]L T0nWR8B[w4icD[.4j0jbN1D]IZkKI4[{M6Ye7[I4XmIWAH THveIV38"/>
+        <TopLine Value="438"/>
+        <CursorPos X="28" Y="460"/>
+        <FoldState Value=" T8G2{*011 TLmL[853mK0e312 T6mN02]80nWR832B6"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -75,9 +75,9 @@
       <Unit5>
         <Filename Value="..\..\Comunes\CibFacturables.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="6"/>
-        <TopLine Value="736"/>
-        <CursorPos X="3" Y="746"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="174"/>
+        <CursorPos X="14" Y="191"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -156,6 +156,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="110"/>
         <CursorPos X="59" Y="166"/>
+        <FoldState Value=" T7BK{9 T8C2v3 TLna22 T3jN0311216 T6jT02]8MmN211 T0jcM442Ey"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -277,11 +278,10 @@
       <Unit21>
         <Filename Value="..\..\Comunes\Cabinas\CibCabinaBase.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="7"/>
-        <TopLine Value="310"/>
-        <CursorPos Y="328"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="82"/>
+        <CursorPos Y="101"/>
         <UsageCount Value="200"/>
-        <Loaded Value="True"/>
       </Unit21>
       <Unit22>
         <Filename Value="..\..\Comunes\Cabinas\FormExplorCab.pas"/>
@@ -323,9 +323,9 @@
       <Unit25>
         <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="5"/>
-        <TopLine Value="257"/>
-        <CursorPos X="27" Y="284"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="92"/>
+        <CursorPos X="21" Y="113"/>
         <ExtraEditorCount Value="2"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -658,20 +658,22 @@
         <ComponentName Value="frmIngStock"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="8"/>
-        <CursorPos X="21" Y="31"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="366"/>
+        <CursorPos X="15" Y="378"/>
         <UsageCount Value="201"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
       </Unit53>
       <Unit54>
         <Filename Value="FormVista.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmVisor"/>
-        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="3"/>
-        <CursorPos X="20" Y="26"/>
-        <UsageCount Value="138"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="11"/>
+        <CursorPos X="24" Y="29"/>
+        <UsageCount Value="132"/>
         <Loaded Value="True"/>
       </Unit54>
       <Unit55>
@@ -680,10 +682,9 @@
         <ComponentName Value="fraVista"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Frame"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="175"/>
-        <CursorPos X="40" Y="15"/>
-        <UsageCount Value="137"/>
+        <EditorIndex Value="5"/>
+        <CursorPos X="5" Y="14"/>
+        <UsageCount Value="131"/>
         <Loaded Value="True"/>
       </Unit55>
       <Unit56>
@@ -758,126 +759,125 @@
         <UsageCount Value="9"/>
       </Unit64>
     </Units>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="152" Column="53" TopLine="141"/>
+        <Filename Value="..\..\Comunes\frameVista.pas"/>
+        <Caret Line="159" Column="41" TopLine="150"/>
       </Position1>
       <Position2>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="13" Column="48"/>
+        <Filename Value="..\..\Comunes\frameVista.pas"/>
+        <Caret Line="174" Column="11" TopLine="162"/>
       </Position2>
       <Position3>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="14" Column="5" TopLine="12"/>
+        <Filename Value="..\..\Comunes\CibModelo.pas"/>
+        <Caret Line="372" Column="40" TopLine="358"/>
       </Position3>
       <Position4>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="951" Column="11" TopLine="923"/>
+        <Filename Value="..\..\Comunes\frameVista.pas"/>
+        <Caret Line="20" Column="35" TopLine="3"/>
       </Position4>
       <Position5>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="952" Column="11" TopLine="924"/>
+        <Filename Value="..\..\Comunes\CibModelo.pas"/>
+        <Caret Line="412" Column="39" TopLine="381"/>
       </Position5>
       <Position6>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="1078" Column="11" TopLine="1049"/>
+        <Filename Value="..\..\Comunes\CibModelo.pas"/>
+        <Caret Line="537" TopLine="506"/>
       </Position6>
       <Position7>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="952" Column="3" TopLine="935"/>
+        <Filename Value="..\..\Comunes\CibModelo.pas"/>
       </Position7>
       <Position8>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="1078" Column="11" TopLine="1049"/>
+        <Filename Value="..\..\Comunes\FormAdminProduc.pas"/>
+        <Caret Line="165" Column="6" TopLine="108"/>
       </Position8>
       <Position9>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="951" Column="6" TopLine="923"/>
+        <Filename Value="..\..\Comunes\FormAdminProduc.pas"/>
+        <Caret Line="166" Column="59" TopLine="114"/>
       </Position9>
       <Position10>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="166" Column="32" TopLine="150"/>
+        <Caret Line="1314" Column="42" TopLine="1298"/>
       </Position10>
       <Position11>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="724" Column="3" TopLine="530"/>
+        <Caret Line="1313" Column="6" TopLine="1298"/>
       </Position11>
       <Position12>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="187" Column="15" TopLine="14"/>
+        <Caret Line="7" Column="46"/>
       </Position12>
       <Position13>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="271" Column="13" TopLine="249"/>
+        <Caret Line="6" Column="46"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\Comunes\CibFacturables.pas"/>
-        <Caret Line="198" Column="15" TopLine="180"/>
+        <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="1314" Column="31" TopLine="1301"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\Comunes\Cabinas\CibCabinaBase.pas"/>
-        <Caret Line="101" TopLine="82"/>
+        <Filename Value="..\..\Comunes\FormConfig.pas"/>
+        <Caret Line="105" Column="12" TopLine="89"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
-        <Caret Line="113" Column="21" TopLine="92"/>
+        <Filename Value="..\..\Comunes\FormConfig.pas"/>
+        <Caret Line="126" Column="54" TopLine="122"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
-        <Caret Line="258" TopLine="241"/>
+        <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="1309" Column="28" TopLine="1287"/>
       </Position17>
       <Position18>
-        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
-        <Caret Line="1512" Column="24" TopLine="1494"/>
+        <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="1367" Column="6" TopLine="1352"/>
       </Position18>
       <Position19>
-        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
-        <Caret Line="1588" TopLine="1570"/>
+        <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="1370" Column="24" TopLine="1352"/>
       </Position19>
       <Position20>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="269" TopLine="249"/>
       </Position20>
       <Position21>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="718" Column="42" TopLine="272"/>
+        <Caret Line="7" Column="45"/>
       </Position21>
       <Position22>
         <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="195" Column="46" TopLine="171"/>
       </Position22>
       <Position23>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="951" TopLine="923"/>
+        <Caret Line="342" Column="23" TopLine="220"/>
       </Position23>
       <Position24>
-        <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="952" Column="11" TopLine="923"/>
+        <Filename Value="..\..\Comunes\FormIngStock.pas"/>
+        <Caret Line="188" Column="19" TopLine="146"/>
       </Position24>
       <Position25>
         <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="1314" Column="51" TopLine="1297"/>
       </Position25>
       <Position26>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="952" Column="11" TopLine="923"/>
       </Position26>
       <Position27>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="953" Column="11" TopLine="924"/>
+        <Caret Line="941" Column="27" TopLine="913"/>
       </Position27>
       <Position28>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="1079" Column="11" TopLine="944"/>
+        <Caret Line="942" Column="27" TopLine="914"/>
       </Position28>
       <Position29>
         <Filename Value="FormPrincipal.pas"/>
-        <Caret Line="953" Column="3" TopLine="945"/>
+        <Caret Line="945" Column="46" TopLine="915"/>
       </Position29>
+      <Position30>
+        <Filename Value="FormPrincipal.pas"/>
+        <Caret Line="181" Column="15" TopLine="16"/>
+      </Position30>
     </JumpHistory>
-    <RunParams>
-      <FormatVersion Value="2"/>
-      <Modes Count="0" ActiveMode="default"/>
-    </RunParams>
   </ProjectSession>
   <Debugging>
     <BreakPoints Count="1">

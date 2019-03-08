@@ -9,14 +9,14 @@ I039	COUNTER	SERVICIOS		Espirales(7,9,,14, 17 mm)		(25 unid.)	2		0	Cecygraph	200
 I053	COUNTER	SERVICIOS		Espiral 20mm		Paq. de 15	0		0	Cecygraph	2017:04:06:15:44:06		
 I040	COUNTER	SERVICIOS		Micas (Tarjeta, Brevete)			0		0	Cecygraph	2000:01:01:00:00:00	No se tiene el precio	
 I055	COUNTER	SERVICIOS		Mica A4		Paq. de 10	0.85		0	Cecygraph	2017:04:06:15:47:42	Hay gruesa y delgada. Se compra gruesa.	
-I041	COUNTER	SERVICIOS		Papel fotográfico			0		0	?	2000:01:01:00:00:00	No se tiene el precio	
-I042	COUNTER	SERVICIOS		Papel engomado			0		0	?	2000:01:01:00:00:00	No se tiene el precio	
+I041	COUNTER	SERVICIOS		Papel fotográfico	MILENIUM	Paq. de 20	0		0	?	2000:01:01:00:00:00		
+I042	COUNTER	SERVICIOS		Papel fotográfico engomado	MILENIUM	Paq. de 20	0		0	?	2000:01:01:00:00:00		
 I043	COUNTER	DESCARTABLE		Bolsa transparente de 9*14 - Celofán		Un ciento	3		0	Centro Lima	2000:01:01:00:00:00		
 I044	COUNTER	DESCARTABLE		Bolsa negra de basura (20*30)		Un ciento	5	Como bolsa de basura	0	Mercado Central	2000:01:01:00:00:00		
+I047	COUNTER	DESCARTABLE		Bolsa negra "piñata" (26*40)		Un ciento	10	Como bolsa de basura	0	Mercado Central	2000:01:01:00:00:00		
 I045	COUNTER	DESCARTABLE		Franela		Un ciento	5		0	GalerÃ­a Felicita - ZÃ³tano/ Frente al Mercado Central	2000:01:01:00:00:00		
 I046	COUNTER	EQUIPOS		Audífonos Halion T3	HALION	1 UNIDAD	15		0	Gamer Vision	2000:01:01:00:00:00		
-I047	COCINA	DESCARTABLE		Bolsa negra "piñata" (26*40)		Un ciento	10	Como bolsa de basura	0	Mercado Central	2000:01:01:00:00:00		
-I048	COCINA	DESCARTABLE		Bolsa transparente 8*12		paquete	0.7	Usado para porcionar insumos de cocina	0	Centro Lima	2000:01:01:00:00:00		
+#28	COUNTER	DESCARTABLE		Bolsa transparente 10*15		Un ciento	1	Para entregar las impresiones en A4 a los clientes	0	Un señor pasa siempre a vender	2018:04:07:13:50:50	
 I049	COCINA	DESCARTABLE		Bolsa blanca T-shirt 12*16		paq. de 80	2	Cocina - Para llevar	0	Centro Lima	2000:01:01:00:00:00		
 #27	COUNTER	SERVICIOS		Tapas de cartón p/espiralado		( 25 unid.)	0.16	Espiralado	0	Cecygraph	2017:07:22:18:08:56	Se en color negro,rojo,morado,verde	
 I051	COCINA	DESCARTABLE		Stickers verde y rojo			0	Para poner fechas de vencimiento	0	Centro Lima	2000:01:01:00:00:00		

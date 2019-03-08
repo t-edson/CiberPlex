@@ -1,18 +1,21 @@
 "ID_PROV",0	"CATEGORIA",0	"SUBCATEGORIA",0	"NOMEMPRESA",0	"PRODUCTOS",0	"CONTACTO",0	"TELEFONO",0	"ENVIO",0	"DIRECCION",0	"NOTAS",0	"ULTCOMPRA",2	"ESTADO",0
-#1	BIENES	GASEOSA	DIVALDI S.R.L.	Gaseosas	Sr. José Peña	3267265 - 998457347	Si	Av. Mariscal Nieto Nº 288- Urb El Pino	Simplemente se le llama para hacer pedido. Él lo trae.	2016:09:22:00:00:00	ACTIVO	
-#2	BIENES	GASEOSA	AJE (Comercializadora CANAN SAC)	Gaseosas		2510337, 2510357	Sí	Av. Los faisanes Mz l Lt 27- Chorrillos	Se le compra Agua Cielo, Cifrut, Sporade, FreeTea y Volt, en donde tiene mejores precios (algo de 5% menos)	2016:09:22:00:00:00	ACTIVO	
+01	BIENES	GASEOSA	DIVALDI S.R.L.	Gaseosas	Sr. José Peña	3267265 - 998457347	Si	Av. Mariscal Nieto Nº 288- Urb El Pino	Simplemente se le llama para hacer pedido. Él lo trae.	2016:09:22:00:00:00	ACTIVO	
+02	BIENES	GASEOSA	AJE (Comercializadora CANAN SAC)	Gaseosas		2510337, 2510357	Sí	Av. Los faisanes Mz l Lt 27- Chorrillos	Se le compra Agua Cielo, Cifrut, Sporade, FreeTea y Volt, en donde tiene mejores precios (algo de 5% menos)	2016:09:22:00:00:00	ACTIVO	
 #3	BIENES	SNACK-PIQUEO	PEPSICO (Snack América Latina SRL)	Piqueos		3519010 - 3519011	Sí	Av. Bolognesi 550 - Santa Anita	Pasan periódicamente a vender. Se les compra piqueos	2016:09:19:00:00:00	ACTIVO	
 #4	BIENES	SNACK-PIQUEO	KARINTO (MCA Partners EIRL)	Piqueos		966501283	Sí	José Julio Morales 210 - Urb Apolo		2017:02:27:00:00:00		
-#5	BIENES	SNACK-DULCE	NESTLE (Distribuid. Suizo Peruana SAC)	Chocolates, galletas Nestlé		2521471	Sí	Calle Ícacro Mz J Lt 19 - Urb Campiña - Chorrillos	Pasan periódicamente a vender. Se les compra Sublime, princesa, morocha, …	2016:09:07:00:00:00	ACTIVO	
+33	BIENES	SNACK-DULCE	NESTLE (Via ALimenta SAC)	Chocolates, galletas Nestlé	Omar Huamán	987347421	Sí		Pasan los JUEVES a vender. Se les compra Sublime, princesa, morocha, …	2018:05:10:00:00:00	ACTIVO	
 #6	BIENES	SNACK-DULCE	ARCOR (Dist. Horizontal Suma SAC)	Galletas, dulces		4312356  988565758	Sí	Jr Huaraz 2060 - Pueblo Libre	Pasan periódicamente a vender. Se les compra Fauna, Bon o Bon Grosso	2016:09:06:00:00:00	ACTIVO	
 #7	BIENES	SNACK-GALLETA	INVERSIONES GLOBAL ARAUJO EIRL	Golosinas, gaseosas cervezas		223-7514 Nextel 834-2048	No	Av. Aviación 2094 - Urb Santa Catalina - La Victoria	Se le compra galletas, pero también vende yogurt.	2016:08:31:00:00:00	ACTIVO	
 #8	BIENES	SNACK-GALLETA	INVERSIONES PAUL SAC	Galletas, abarrotes en general		4356699	No	Jr Inca Garcilazo de la Vega 215 - Int 1 - Urb Salamanca de Monterrico - Ate	Se le ha comprado galletas Charada. Orue, Integrales, Soda Pícaras, Margarita, Chomp, …	2000:01:01:00:00:00		
+44	BIENES	SNACK-GALLETA	DISTRIBUIDORA CHIMÚ	Galletas, Gomas y Caramelos	Alessandra Castañeda (994270879)	2428481	No	Jr. Carmen 266 - Surquillo - Lima	Pasan solo los viernes y entregan el sábado	2000:01:01:00:00:00	ACTIVO
+#47	BIENES	SNACK-GALLETA	WINTER (Goloplus)	Galletas, Chocolates, Refrescos	Santiago Burga	947153797	Sí		Pasan solo los miércoles	2000:01:01:00:00:00	ACTIVO
+#46	BIENES	SNACK-GALLETA	NADALCO	Galletas, chocolates, caramelos, máquina de afeitar, pilas	Jhonatan Sucre	941757003	No		Pasan los miércoles y entregan el jueves. Tienen productos variados desde Máuinas de afeitar hasta cepillos	2000:01:01:00:00:00	ACTIVO
 #9	BIENES	PASTELERÍA		Empanadas	Sr José Quevedo	985909195 - 4712597	Si		Se lleva las que no se vendieron.	2000:01:01:00:00:00		
 #10	BIENES	GAS	JAIME GAS	Balones de Gas		766-8924  99025-1172	Si		Atienden de lunes a domingo	2000:01:01:00:00:00		
 #11	BIENES	GAS	PLUS GAS	Balones de Gas		324-7174  303-9156	Si		Atienden de lunes a domingo	2000:01:01:00:00:00		
 #12	BIENES	DESCARTABLES	Comercial Torre Fuerte	Descartables al por mayor	ninguno	995616070 4320223	No	Jr Ayacuhco 761 - Int 1-2 / Lima	Tienen buenos precios en sorbetes y bolsas de 8*12	2000:01:01:00:00:00		
-#13	BIENES	TONER/TINTAS	AlexSystem	Toners, tintas	ninguno	981399377 - 981399176 - 3323625 - 3737268	No	Av Bolivia 148 Psje. "D" Tda 496 Galería Centro Lima - (Sótano)	Siempre se le compra el toner 78A. Es confiable y casi siempre el toner dura lo esperado (2000 hojas)	2017:03:28:00:00:00		
-#14	BIENES	TONER/TINTAS	Sistema Continuo	Tintas	Martha Ferro	955324130	No	Av. Bolivia 180 Stand 118 1er Piso Wilson Plaza	Proveedor nuevo. Tiene buen precio en tintas y vende tinta original para Epson.	2016:12:30:00:00:00		
+#13	BIENES	TONER/TINTAS	AlexSystem	Toners, tintas	ninguno	981399377 - 981399176 - 3323625 - 3737268	No	Av Bolivia 148 Psje. "D" Tda 496 Galería Centro Lima - (Sótano)	Se le compraba el toner 78A. Hasta que empezóa a dar muchos problemas. Casi siempre el toner dura lo esperado (2200 hojas)	2017:03:28:00:00:00		
+#14	BIENES	TONER/TINTAS	Sistema Continuo	Tintas	Martha Ferro	955324130	No	Av. Bolivia 180 Stand 118 1er Piso Wilson Plaza	Tiene buen precio en tintas y vende tinta original para Epson. Ahora también se le compra toner	2016:12:30:00:00:00		
 #15	BIENES	ENMICADOS,ESPIRALADOS	CECYGRAF	Espirales, Tapas, Micas, ect		4332616	No	Av. Garcilazo de la Vega 1282 - Tda 220 - Galería WILSON	Tiene buenos precios. El lugar es un poco peligroso. Ir de día.	2000:01:01:00:00:00		
 #16	BIENES	EQUIPOS	COMUNICEL	Bases Celulares, Linksys	Sr Daniel	"6522082989200033"	No	Av Angamos Este 2408 Of 303 Surquillo	www.comunicel.com.pe	2000:01:01:00:00:00		
 #17	BIENES	EQUIPOS	GAMER VISION EIRL	Equipos de cómputo		4271149, 986249416, 986250752	No	Jr Leticia Nro 948 Int 1 - Lima	Le compramos audífonos, porque tienen buen precio.	2000:01:01:00:00:00		
@@ -22,6 +25,7 @@
 #21	BIENES	LIBRERÍA	COMERCIAL MILSOT EIRL	Todo librería		4264189 996205397 995562780 981041148 RPM #630385	No	Jr Cuzco Nº 735 Int 108 - Lima	Tiene buenos precios, pero Vende al por mayor. Tiene bastante papelería.	2017:03:28:00:00:00		
 #22	SERVICIOS	IMPRESORAS/MONITORES	Electrónica Pajur	Reparación de Monitores	Eduardo Contreras	987607984	No	Jr Leticia 927 Int 4 - Lima (Por Paruro)	Parece un técnico confiable y honesto. Ya nos ha hecho dos reparaciones de monitores.	2000:01:01:00:00:00		
 #23	SERVICIOS	IMPRESORAS/MONITORES	Professional Solutions	Reparación de Impresoras	Leandro Alberto Taipe	996439166 7841027	No	Camaná 1180 - Of 202	Nos ha reparado las impresoras a tinta y laser B/N	2000:01:01:00:00:00		
+#45	SERVICIOS	IMPRESORAS/MONITORES	Jorben Solutions	Reparación de Impresoras		954121114	No	Jr. Camaná 1135 CC Centro Lima - Pje D Stad 492	Nos reparó la Láser B/N 1536 - el 30/11/2017	2000:01:01:00:00:00	
 #24	SERVICIOS	REFRIGERADORAS		Reparación de Refrigeradoras	Sr. Carlos Huamán	998506782			Reparó al refrigeradora de cocina el 15/7/2012	2000:01:01:00:00:00		
 #25	SERVICIOS	REFRIGERADORAS	Taller Salamanca	Reparación de Refrigeradoras domésticas		4355889 996571127				2000:01:01:00:00:00		
 #26	SERVICIOS	REFRIGERADORAS	Servicio Técnico Montañez	Reparación de Refrigeradoras		971733696 2263927			Queda en San Borja. Se le llamó una vez y no llegó	2000:01:01:00:00:00		

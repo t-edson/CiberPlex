@@ -15,8 +15,8 @@ uses
   FormRepIngresos, RegistrosVentas, FormAdminProduc,
   FormAgrupRep, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
   FormAdminProvee, FrameFiltArbol, CibBD, FrameEditGrilla, FormAdminInsum,
-  CibGrillas, FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras,
-  CibTabProductos, FormIngVentas, CibTabInsumos, FormValStock, FormIngStock;
+  FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras,
+  FormIngVentas, FormValStock, FormIngStock, FormVista;
 
 {$R *.res}
 
@@ -43,6 +43,7 @@ begin
   Application.CreateForm(TfrmIngVentas, frmIngVentas);
   Application.CreateForm(TfrmValStock, frmValStock);
   Application.CreateForm(TfrmIngStock, frmIngStock);
+  Application.CreateForm(TfrmVisor, frmVisor);
   Application.Run;
 end.
 

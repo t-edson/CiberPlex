@@ -1,0 +1,10 @@
+object frmVisor: TfrmVisor
+  Left = 306
+  Height = 591
+  Top = 126
+  Width = 866
+  Caption = 'frmVisor'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '1.8.0.6'
+end

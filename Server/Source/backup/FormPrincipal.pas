@@ -450,14 +450,13 @@ begin
   if Manual then begin
     {Solo si se graba manualmente se pregunta. De otra forma se asume que se está
     haciendo automáticamente y no se exportarán los cambios.}
-    if MsgYesNo('¿Generar archivo de transferencia?') <> 1 then exit;
+    if MsgYesNo('¿Generar archivo de tarnsferencia?') <> 1 then exit;
     DateTimeToString(str, 'yyyy-mm-dd', now);
     SaveDialog1.FileName := 'productos.' + Config.Local + '.' + str + '.ing';
     if not SaveDialog1.Execute then exit;
     filName := SaveDialog1.FileName;
     if FileExists(filName) then begin
       if MsgYesNo('Archivo existe. ¿Sobreescribir?') <> 1 then exit;
-      //¿Y si se cancela, se pierde la transferencia?
     end;
     StringToFile(getIngSTockInv, filName);
   end;
@@ -947,9 +946,8 @@ begin
   frmValStock.OnGrabado := @frmValStockGrabado;
 
   frmRepIngresos.OnReqCadMoneda:=@Config.CadMon;
-
-  //Pruebas con el nuevo Visor de Ciberplex
-  //frmVisor.Show;
+//  frmRepProducto.OnReqCadMoneda:=@Config.CadMon;
+  frmVisor.Show;
   frmVisor.ActualizarPropiedades(Modelo.CadPropiedades);
 end;
 procedure TfrmPrincipal.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -1313,7 +1311,7 @@ end;
 // Acciones del sistema
 procedure TfrmPrincipal.acSisAdmProdExecute(Sender: TObject);
 begin
-  frmAdminProduc.Exec(tabPro, FormatMon, perfil = PER_ADMIN);
+  frmAdminProduc.Exec(tabPro, FormatMon, user);
 end;
 procedure TfrmPrincipal.acSisAdmProveeExecute(Sender: TObject);
 begin
