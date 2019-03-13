@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ActnList,
   Menus, lclProc, LCLType, LCLIntf, ExtCtrls, ComCtrls, Buttons, MisUtils,
-  FormPant, FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos, CibTramas,
+  FormPant, FormLog, frameVisCPlex, ogDefObjGraf, ObjGraficos_borrar, CibTramas,
   FormBoleta, CibFacturables, CibServidorPC, FormInicio, Globales,
   FormSincronBD, FormExplorServ, FormReempProd, CibTabProductos,
   FormAdminProduc, FormAdminProvee, FormAdminInsum, CibBD, FormCalcul,
