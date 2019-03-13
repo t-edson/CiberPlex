@@ -8,7 +8,7 @@ unit frameVisCPlex;
 interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
-  GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
+  GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos_borrar,
   CibFacturables, CibGFacCabinas, CibGFacNiloM, CibModelo, CibTramas,
   CibGFacMesas, ogEditionMot, MisUtils;
 type
@@ -199,7 +199,7 @@ var
   ogMes: TogMesa;
 begin
   Result := nil;
-  case Fac.tipo of
+  case Fac.tipGFac of
   ctfClientes: begin
     ogCli := TogCliente.Create(motEdi.v2d, Fac);
     motEdi.AddGraphObject(ogCli, false);
@@ -257,7 +257,7 @@ var
   ogGMes: TogGMesas;
 begin
   Result := nil;   //valor por defecto
-  case GFac.tipo of
+  case GFac.tipGFac of
   ctfClientes: begin
     ogGClies := TogGClientes.Create(motEdi.v2d, TCibGFacCabinas(GFac));
     motEdi.AddGraphObject(ogGClies, false);

@@ -1,3 +1,27 @@
+2.2
+===
+Se agregan métodos de clase de tipo SetCadPropied*() y GetCadPropied*(), a todas las clases 
+GFAC. 
+Se crea una unidad adicional "ObjGraficos_borrar.pas" como una copia de la versión anterior y se 
+modifica "ObjGraficos.pas" para que deje de usar una instancia del modelo.
+
+En esta versión se ha avanzado considereblemente en crear una nueva vista más independiente y 
+que además evite que se creeen objetos "copia", y que ha generado complejidad en los objetos
+FAC y GFAC. 
+Se mantienen como prueba el formulario FormVista y el frame frameVista, pero ahora están ya 
+bastante avanzados y usan su propia versión de "ObjGraficos.pas" que incluye objetos gráficos
+que ya no crean instancias de los FAC y GFAC.
+Aún no se logra la implementación completa de la vista (falat la actualziación de estados)
+pero s ehan hecho importantes avances.
+
+
+2.1
+===
+Se cambia el contenedor del Modelo. Ahora ya no está en el formulario de configuración, sino
+en el formulario principal.
+Se elimina el campo TCibModelo.Listo.
+Se avanza en la creación de una nueva vista que no maneje "Objetos copia".
+
 2.0
 ===
 -- SERVER -- 

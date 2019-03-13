@@ -105,12 +105,12 @@ type
   FTransc: integer; FCosto: double): string;
     class procedure DecodCadEstado(str: String; out sNombre: String; out
       estadoConex: TCibEstadoConex; out HoraPC: TDateTime; out PantBloq: Boolean; out
-  estado: TcabEstadoCuenta; out hor_ini: TDateTime; out tSolic: TDateTime; out
+  estadoCta: TcabEstadoCuenta; out hor_ini: TDateTime; out tSolic: TDateTime; out
   tLibre, horGra: boolean; out FTransc: integer; out FCosto: double);
-    class function CodCadPropied(sNombre, IP, mac: string; sx, sy: double;
-      ConConexion: boolean; NombrePC, sComent: string): string;
-    class procedure DecodCadPropied(str: String; out sNombre, IP, mac: string; out
-      sx, sy: double; out ConConexion: boolean; out NombrePC, sComent: string);
+    class function CodCadPropied(_Nombre, _IP, _mac: string; _x, _y: Single;
+      _ConConexion: boolean; _NombrePC, _Coment: string): string;
+    class procedure DecodCadPropied(str: String; out _Nombre, _IP, _mac: string; out
+      _x, _y: Single; out _ConConexion: boolean; out _NombrePC, _Coment: string);
   private  //campos privados
     cabCuenta: TCabCuenta;    //campos de conteo de la cabina
     cabConex : TCabConexion;  //campos de conexión de la cabina
@@ -232,7 +232,11 @@ type
   control en un solo objeto, con la posibilidad de tener múltiples interfaces
   (pantallas) de la aplicación. }
   TCibGFacCabinas = class(TCibGFac)
-    procedure timer1Timer(Sender: TObject);
+    class function CodCadPropied(_Nombre, _CategVenta: string; _x, _y: Single;
+      strTarAlquiler, strTarif: string): string;
+    class procedure DecodCadPropied(lineas: TStringList; out _Nombre,
+      _CategVenta: string; out _x, _y: Single; out strGrupTar,
+  strTarif: string);
   private
     arcLog : TCibTablaHist;  //Tabla de registros para cabinas
     timer1 : TTimer;
@@ -240,6 +244,7 @@ type
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
     procedure mnAdminEquipos(Sender: TObject);
     procedure mnAdminTarifas(Sender: TObject);
+    procedure timer1Timer(Sender: TObject);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
     OnTramaLista   : TEvTramaLista; //indica que hay una trama lista esperando
@@ -248,7 +253,7 @@ type
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
-    GrupTarAlquiler: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
+    grupTar: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
     tarif: TCPTarifCabinas; //tarifas de cabina
     frmAdminTar: TfrmAdminTarCab;
     frmAdminCabs: TfrmAdminCabinas;
@@ -412,7 +417,7 @@ begin
   {Notar que los siguientes identifiacdores, son comandos generado por una PC remota
   (algún punto de venta de la red), no local. No es que sea la respuesta a un comando
    anterior.
-   Estos comandos podrían agruparse en un solo comando de tipo "Manejo de archivos", y
+   Estos comandos podrían agruparse en un solo comando de tipGFac "Manejo de archivos", y
    se podría manejar con un objeto especializado. Se mantiene así por compatibilidad.}
   C_PAN_COMPL : begin
     arc := ExtractFilePath(Application.ExeName) + '~00.tmp';
@@ -574,37 +579,37 @@ begin
   cabConex.mac := AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-class function TCibFacCabina.CodCadPropied(sNombre, IP, mac: string;
-  sx, sy: double; ConConexion: boolean; NombrePC, sComent: string): string;
+class function TCibFacCabina.CodCadPropied(_Nombre, _IP, _mac: string; _x,
+  _y: Single; _ConConexion: boolean; _NombrePC, _Coment: string): string;
 {Codifica la cadena de estado, a partir de las variables indicadas. Se pone fuera de
 TCibFacCabina para poder usarse sin crear instancias de TCibFacCabina}
 begin
-  Result := sNombre + #9 +
-            IP + #9 +
-            mac + #9 +
-            N2f(sx) + #9 +
-            N2f(sy) + #9 +
-            B2f(ConConexion) + #9 +
-            NombrePC + #9 +
-            sComent + #9 + #9 + #9;
+  Result := _Nombre + #9 +
+            _IP + #9 +
+            _mac + #9 +
+            N2f(_x) + #9 +
+            N2f(_y) + #9 +
+            B2f(_ConConexion) + #9 +
+            _NombrePC + #9 +
+            _Coment + #9 + #9 + #9;
 end;
-class procedure TCibFacCabina.DecodCadPropied(str: String;
-  out sNombre, IP, mac: string; out sx, sy: double;
-  out ConConexion: boolean; out NombrePC, sComent: string);
+class procedure TCibFacCabina.DecodCadPropied(str: String; out _Nombre, _IP,
+  _mac: string; out _x, _y: Single; out _ConConexion: boolean; out _NombrePC,
+  _Coment: string);
 {Decodifica la cadena de propiedades, en las variables indicadas. Se pone fuera de
 TCibFacCabina para poder usarse sin crear instancias de TCibFacCabina}
 var
   campos: TStringDynArray;
 begin
   campos := Explode(#9, str);
-  sNombre := campos[0];
-  IP := campos[1];
-  mac := campos[2];
-  sx := f2N(campos[3]);
-  sy := f2N(campos[4]);
-  ConConexion := f2B(campos[5]);  //si es TRUE (y SinRed=FALSE), inicia la conexión
-  NombrePC := campos[6];
-  sComent := campos[7];
+  _Nombre := campos[0];
+  _IP := campos[1];
+  _mac := campos[2];
+  _x := f2N(campos[3]);
+  _y := f2N(campos[4]);
+  _ConConexion := f2B(campos[5]);  //si es TRUE (y SinRed=FALSE), inicia la conexión
+  _NombrePC := campos[6];
+  _Coment := campos[7];
 end;
 function TCibFacCabina.GetCadPropied: string;
 {Las propiedades son los compos que definen la configuración de una cabina. Se fijan al
@@ -614,18 +619,18 @@ begin
 end;
 procedure TCibFacCabina.SetCadPropied(AValue: string);
 var
-  sComent, sNombrePC, sIP, sMac, sNombre: string;
-  sConConexion: boolean;
-  sy, sx: double;
+  _Coment, _NombrePC, _IP, _Mac, _Nombre: string;
+  _ConConexion: boolean;
+  _y, _x: Single;
 begin
-  DecodCadPropied(AValue, sNombre, sIP, sMac, sx, sy, sConConexion, sNombrePC, sComent);
-  Nombre := sNombre;
-  IP := sIP;
-  Mac := sMac;
-  x := sx; y := sy;
-  ConConexion := sConConexion;
-  NombrePC := sNombrePC;
-  Coment := sComent;
+  DecodCadPropied(AValue, _Nombre, _IP, _Mac, _x, _y, _ConConexion, _NombrePC, _Coment);
+  Nombre := _Nombre;
+  IP := _IP;
+  Mac := _Mac;
+  x := _x; y := _y;
+  ConConexion := _ConConexion;
+  NombrePC := _NombrePC;
+  Coment := _Coment;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFacCabina.SetNombrePC(AValue: string);
@@ -804,7 +809,7 @@ begin
 end;
 class procedure TCibFacCabina.DecodCadEstado(str: String; out sNombre: String;
   out estadoConex: TCibEstadoConex; out HoraPC: TDateTime; out
-  PantBloq: Boolean; out estado: TcabEstadoCuenta; out hor_ini: TDateTime; out
+  PantBloq: Boolean; out estadoCta: TcabEstadoCuenta; out hor_ini: TDateTime; out
   tSolic: TDateTime; out tLibre, horGra: boolean; out FTransc: integer; out
   FCosto: double);
 {Decodifica la cadena de estado, en las variables indicadas. Se pone fuera de
@@ -820,7 +825,7 @@ begin
   PantBloq := f2B(campos[3]);
   if high(campos)>=4 then begin
     //Hay información de campos adicionaleas
-    estado   := TcabEstadoCuenta(f2I(campos[4]));
+    estadoCta   := TcabEstadoCuenta(f2I(campos[4]));
     hor_ini  := f2T(campos[5]);
     tSolic   := f2T(campos[6]);
     tLibre   := f2B(campos[7]);
@@ -829,7 +834,7 @@ begin
     FCosto   := f2N(campos[10]);   //el costo se lee directamente en el campo FCosto
   end else begin
     //No hay información adicional, se asumen valores por defecto
-    estado   := EST_NORMAL;
+    estadoCta   := EST_NORMAL;
     hor_ini  := trunc(now);  //para que no hay errores en el cálculo
     tSolic   := 0;
     tLibre   := false;
@@ -1440,7 +1445,7 @@ end;
 constructor TCibFacCabina.Create(nombre0: string; ip0: string);
 begin
   inherited Create;
-  tipo := ctfCabinas;  //se identifica
+  tipGFac := ctfCabinas;  //se identifica
   FNombre := nombre0;
   //Crea objetos de cuenta y conexión
   cabCuenta:= TCabCuenta.Create;  //Estado de cabina
@@ -1527,16 +1532,50 @@ begin
     TCibFacCabina(cab).ConConexion:=true;
   end;
 end;
+class function TCibGFacCabinas.CodCadPropied(_Nombre, _CategVenta: string; _x,
+  _y: Single; strTarAlquiler, strTarif: string): string;
+begin
+  Result := _Nombre + #9 + _CategVenta + #9 + N2f(_x) + #9 + N2f(_y) + #9 + #9 + LineEnding +
+  //Información de las tarifas de alquiler
+            strTarAlquiler + LineEnding +
+            strTarif;
+end;
+class procedure TCibGFacCabinas.DecodCadPropied(lineas: TStringList; out
+  _Nombre, _CategVenta: string; out _x, _y: Single; out strGrupTar,
+  strTarif: string);
+var
+  a: TStringDynArray;
+begin
+  //La primera línea tiene información del grupo
+  a := Explode(#9, lineas[0]);
+  _Nombre:=a[0];
+  _CategVenta:=a[1];
+  _x := f2N(a[2]);
+  _y := f2N(a[3]);
+  lineas.Delete(0);  //elimima línea
+  //Busca líneas con información de Grupos de Tarifas de Alquiler
+  strGrupTar := '';
+  while lineas[0][1] = '+' do begin
+    //Acumula
+    strGrupTar := strGrupTar + lineas[0] + LineEnding;
+    lineas.Delete(0);  //elimima línea
+  end;
+  TrimEndLine(strGrupTar);
+  //Busca líneas con información de Tarifas de Alquiler
+  strTarif := '';
+  while (lineas.Count>0) and (lineas[0][1] = '*') do begin
+    //Acumula
+    strTarif := strTarif + lineas[0] + LineEnding;
+    lineas.Delete(0);  //elimima línea
+  end;
+  TrimEndLine(strTarif);
+end;
 function TCibGFacCabinas.GetCadPropied: string;
 var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
-            #9 ;
-  //Información de las tarifas de alquiler
-  Result := Result + LineEnding + GrupTarAlquiler.StrObj;
-  Result := Result + LineEnding + tarif.StrObj;
+  Result := CodCadPropied(Nombre, CategVenta, Fx, Fy, grupTar.StrObj, tarif.StrObj);
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + c.CadPropied ;
@@ -1546,37 +1585,16 @@ procedure TCibGFacCabinas.SetCadPropied(AValue: string);
 var
   lineas: TStringList;
   cab: TCibFacCabina;
-  lin: String;
-  a: TStringDynArray;
+  lin, strGrupTar, strTarif: String;
 begin
   if AValue = '' then exit;
   lineas := TStringList.Create;
   lineas.Text := AValue;
-  //La primera línea tiene información del grupo
-  a := Explode(#9, lineas[0]);
-  Nombre:=a[0];
-  CategVenta:=a[1];
-  Fx := f2N(a[2]);
-  Fy := f2N(a[3]);
-  lineas.Delete(0);  //elimima línea
-  //Busca líneas con información de Grupos de Tarifas de Alquiler
-  lin := '';
-  while lineas[0][1] = '+' do begin
-    //Acumula
-    lin := lin + lineas[0] + LineEnding;
-    lineas.Delete(0);  //elimima línea
-  end;
-  TrimEndLine(lin);
-  GrupTarAlquiler.StrObj:=lin;
-  //Busca líneas con información de Tarifas de Alquiler
-  lin := '';
-  while (lineas.Count>0) and (lineas[0][1] = '*') do begin
-    //Acumula
-    lin := lin + lineas[0] + LineEnding;
-    lineas.Delete(0);  //elimima línea
-  end;
-  TrimEndLine(lin);
-  tarif.StrObj:=lin;
+
+  DecodCadPropied(lineas, Nombre, CategVenta, Fx, Fy, strGrupTar, strTarif);
+  grupTar.StrObj := strGrupTar;
+  tarif.StrObj := strTarif;
+
   //Procesa líneas con información de las cabinas
   items.Clear;
   for lin in lineas do begin
@@ -1701,18 +1719,18 @@ begin
 //debugln('-Creando: '+ nombre0);
   frmTiempos:= TfrmFijTiempo.Create(nil);   //formulario para fijar tiempos
 //Se incluye un objeto TGrupoTarAlquiler para la tarificación
-  GrupTarAlquiler := TGrupoTarAlquiler.Create;
-  tarif := TCPTarifCabinas.Create(GrupTarAlquiler);
+  grupTar := TGrupoTarAlquiler.Create;
+  tarif := TCPTarifCabinas.Create(grupTar);
   timer1 := TTimer.Create(nil);
   timer1.Interval:=1000;
   timer1.OnTimer:=@timer1Timer;
   CategVenta := 'COUNTER';
   //Crea ventana de configuración de tarifas
   frmAdminTar:= TfrmAdminTarCab.Create(nil);
-  frmAdminTar.grpTarAlq := GrupTarAlquiler;
+  frmAdminTar.grpTarAlq := grupTar;
   frmAdminTar.tarCabinas := tarif;
   frmAdminTar.OnModificado:=@fac_CambiaPropied;  //para actualizar cambios
-  if GrupTarAlquiler.items.Count=0 then begin
+  if grupTar.items.Count=0 then begin
     //agrega una tarifa de alquiler por defecto
     frmAdminTar.IniciarPorDefecto;  { TODO : Ver si es necesario }
     frmAdminTar.BitAplicarClick(nil);
@@ -1728,7 +1746,7 @@ var
   c : TCibFac;
 begin
   arcLog.Destroy;
-//debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipo))+','+
+//debugln('-destruyendo: '+ Nombre + ','+IntToStr(Ord(tipGFac))+','+
 //                          CategVenta+','+IntTostr(items.Count));
   frmAdminCabs.Destroy;
   frmAdminTar.Destroy;
@@ -1749,7 +1767,7 @@ begin
   for c in items do begin
     TCibFacCabina(c).Desconectar;
   end;
-  GrupTarAlquiler.Destroy;
+  grupTar.Destroy;
   frmTiempos.Destroy;
   inherited Destroy;  {Aquí se hace items.Destroy, que puede demorar por los hilos}
 end;

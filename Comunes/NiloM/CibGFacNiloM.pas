@@ -72,10 +72,10 @@ type
       descon: boolean; out costo_tot: Double; out num_llam: integer; out
   sLlamActEstado: string);
     class function CodCadPropied(sNombre: string; num_can: char;
-      tpoLimitado: integer; ctoLimitado: double; sx, sy: double): string;
+      tpoLimitado: integer; ctoLimitado: double; sx, sy: Single): string;
     class procedure DecodCadPropied(str: String; out sNombre: string; out
       num_can: char; out tpoLimitado: integer; out ctoLimitado: double; out sx,
-  sy: double);
+  sy: Single);
   private
     procedure ActualizaLlamadaContestada;
     procedure ConectarLlamada;
@@ -124,6 +124,18 @@ type
 
   { TCibGFacNiloM }
   TCibGFacNiloM = class(TCibGFac)
+  public
+    class function CodCadPropied(_Nombre, _CategVenta: string; _x, _y: Single;
+      _PuertoN: string; _facCmoneda: Double; _IniLLamMan,
+      _IniLLamTemp: boolean; _PerLLamTemp: integer): string;
+    class procedure DecodCadPropied(lineas: TSTringList; out _Nombre,
+      _CategVenta: string; out _x, _y: Single; out _PuertoN: string; out
+      _facCmoneda: Double; out _IniLLamMan, _IniLLamTemp: boolean; out
+      _PerLLamTemp: integer);
+    class function CodCadEstado(_tipGFac: TCibTipGFact; _Nombre: string;
+      estadoCnx: TNilEstadoConex): string;
+    class procedure DecodCadEstado(lineas: TSTringList; out _Nombre: string;
+      estadoCnx: TNilEstadoConex);
   private
     nilConex : TNiloConexion;   {Objeto para la conexión al enrutador. A diferencia de
                                  TCPGrupoCabinas, aquí solo se maneja una conexión.}
@@ -407,13 +419,14 @@ function TCibFacLocutor.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
 var
-  llamActEstado: String;
+  llamActStr: String;
 begin
-  if llamAct=nil then
-    llamActEstado := ''
-  else
-    llamActEstado := llamAct.CadEstado;
-  Result := CodCadEstado(nombre, descolg, descon, costo_tot, num_llam, llamActEstado);
+  if llamAct=nil then begin
+    llamActStr := ''
+  end else begin
+    llamActStr := llamAct.CadEstado;
+  end;
+  Result := CodCadEstado(nombre, descolg, descon, costo_tot, num_llam, llamActStr);
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -423,24 +436,24 @@ procedure TCibFacLocutor.SetCadEstado(AValue: string);
 recibiendo la llamada actual. Por ello la lista de llamadas en el visor no es
 oonsistente con la lista de llamadas del modelo.}
 var
-  tmp, sLlamActEstado, lin: String;
+  tmp, LlamActStr, lin: String;
   lineas: TStringDynArray;
 begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
-  DecodCadEstado(lin, tmp, descolg, descon, costo_tot, num_llam, sLlamActEstado);
-  if sLlamActEstado = '' then begin  //No hay llamada actual
+  DecodCadEstado(lin, tmp, descolg, descon, costo_tot, num_llam, LlamActStr);
+  if LlamActStr = '' then begin  //No hay llamada actual
     llamAct := nil;
   end else begin  //Hay llamada actual
     if llamAct=nil then  //Si no hay llamada actual, la creamos, sino reusamos.
       llamAct := AgregarFila();
-    llamAct.CadEstado := sLlamActEstado;
+    llamAct.CadEstado := LlamActStr;
   end;
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
 end;
 class function TCibFacLocutor.CodCadPropied(sNombre: string; num_can: char;
-      tpoLimitado: integer; ctoLimitado: double; sx, sy: double): string;
+  tpoLimitado: integer; ctoLimitado: double; sx, sy: Single): string;
 begin
   Result := sNombre + #9 +
             num_can + #9 +
@@ -450,9 +463,9 @@ begin
             N2f(sy) + #9 +
             #9 + #9 + #9;;
 end;
-class procedure TCibFacLocutor.DecodCadPropied(str: String;
-      out sNombre: string; out num_can: char;
-      out tpoLimitado: integer; out ctoLimitado: double; out sx, sy: double);
+class procedure TCibFacLocutor.DecodCadPropied(str: String; out
+  sNombre: string; out num_can: char; out tpoLimitado: integer; out
+  ctoLimitado: double; out sx, sy: Single);
 var
   campos: TStringDynArray;
 begin
@@ -469,14 +482,8 @@ begin
   Result := CodCadPropied(Nombre, num_can, tpoLimitado, ctoLimitado, x, y);
 end;
 procedure TCibFacLocutor.SetCadPropied(AValue: string);
-var
-  sy, sx: double;
-  sNombre: string;
 begin
-  DecodCadPropied(AValue, sNombre, num_can, tpoLimitado, ctoLimitado, sx, sy);
-  Nombre := sNombre;
-  x := sx;
-  y := sy;
+  DecodCadPropied(AValue, FNombre, num_can, tpoLimitado, ctoLimitado, Fx, Fy);
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 procedure TCibFacLocutor.ProcesaDigitado(dig: String);
@@ -788,7 +795,7 @@ end;
 constructor TCibFacLocutor.Create;
 begin
   inherited Create;
-  tipo := ctfNiloM;   //se identifica
+  tipGFac := ctfNiloM;   //se identifica
   listLLamadas:= regLlamada_list.Create(true);
 end;
 destructor TCibFacLocutor.Destroy;
@@ -798,7 +805,7 @@ begin
 end;
 { TCibGFacNiloM }
 //Funcione para manejo del registro
-procedure TCibGFacNiloM.AbrirRegistro();
+procedure TCibGFacNiloM.AbrirRegistro;
 {Inicia al archivo de registro}
 var
   NombProg, NombLocal: string;
@@ -813,7 +820,7 @@ begin
   EscribeLog(NombProg);
   EscribeLog('Inicio CIBERPX --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
 end;
-procedure TCibGFacNiloM.CerrarRegistro();
+procedure TCibGFacNiloM.CerrarRegistro;
 begin
   if ModoCopia then exit;
   EscribeLog('Fin CIBERPX    --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
@@ -864,9 +871,11 @@ function TCibGFacNiloM.tarif_LogInf(mensaje: string): integer;
 //Se solicita registrar un mensaje informativo
 begin
   Result := OnLogInfo(mensaje);
-  OnSolicEjecCom(C_BD_HISTOR, 0,0,
-    'INSERT INTO EVENTOS VALUES(NULL, 1, ''2019-01-31'', ''yo'', ''Hola'');'
-  );
+  //"OnSolicEjecCom" estár reservado para peticiones de la instancia del modelo, en
+  //la vista. Debe haber un evento más apropiado para hacer esto.
+  //OnSolicEjecCom(C_BD_HISTOR, 0,0,
+  //  'INSERT INTO EVENTOS VALUES(NULL, 1, ''2019-01-31'', ''yo'', ''Hola'');'
+  //);
 end;
 //Funciones para escribir en los archivos de registros
 procedure TCibGFacNiloM.VolcarErrorLog;
@@ -928,14 +937,38 @@ begin
   if ModoCopia then exit;
   nilConex.puertoN:=AValue;
 end;
+class function TCibGFacNiloM.CodCadEstado(_tipGFac: TCibTipGFact;
+                 _Nombre: string; estadoCnx: TNilEstadoConex): string;
+{Codifica la cadena de estado, a partir de las variables indicadas. Se pone como
+método de clase para poder usarse sin crear instancias,}
+begin
+  Result := '<' + I2f(ord(_tipGFac)) + #9 + _Nombre + #9 +
+                    I2f(ord(estadoCnx)) + #9 + LineEnding;
+end;
+class procedure TCibGFacNiloM.DecodCadEstado(lineas: TSTringList;
+    out _Nombre: string; estadoCnx: TNilEstadoConex);
+{Decodifica la cadena de estado, a partir de las variables indicadas. Se pone como
+método de clase para poder usarse sin crear instancias,}
+var
+  a: TStringDynArray;
+begin
+//  //La primera línea tiene información del grupo
+//  a := Explode(#9, lineas[0]);
+//  _Nombre:=a[0];
+//  _CategVenta:=a[1];
+//  _x := f2N(a[2]);
+//  _y := f2N(a[3]);
+//  _PuertoN:=a[4];
+//
+//  lineas.Delete(0);  //elimima línea
+end;
 function TCibGFacNiloM.GetCadEstado: string;
 {Se sobreescribe esta propiedad para incluir campos adicionales}
 var
   c : TCibFac;
 begin
   //Delimitador inicial y propiedades de objeto.
-  Result := '<' + I2f(ord(tipo)) + #9 + Nombre + #9 +
-                  I2f(ord(estadoCnx)) + #9 + LineEnding;
+  Result := CodCadEstado(tipGFac, Nombre, estadoCnx);
   for c in items do begin
     Result += c.CadEstado + LineEnding;
   end;
@@ -949,28 +982,60 @@ var
   it: TCibFac;
   a: TStringDynArray;
 begin
-  decod.Inic(AValue, lin1);  //iniica la decodificación
+  decodEst.Inic(AValue, lin1);  //inicia la decodificación
   a := Explode(#9, lin1);     //separa campos
   if ModoCopia then begin
     //Solo cuando está en modo copia, se lee esta variable
     estadoCnx := TNilEstadoConex(f2I(a[2]));
   end;
-  while decod.Extraer(car, nomb, cad) do begin
+  while decodEst.Extraer(car, nomb, cad) do begin
     if cad = '' then continue;
     it := ItemPorNombre(nomb);
     if it<>nil then it.CadEstado := cad;
   end;
+end;
+class function TCibGFacNiloM.CodCadPropied(_Nombre, _CategVenta: string; _x,
+  _y: Single; _PuertoN: string; _facCmoneda: Double; _IniLLamMan,
+  _IniLLamTemp: boolean; _PerLLamTemp: integer): string;
+{Codifica la cadena de estado, a partir de las variables indicadas. Se pone como
+método de clase para poder usarse sin crear instancias,}
+begin
+  Result := _Nombre + #9 + _CategVenta + #9 + N2f(_x) + #9 + N2f(_y) + #9 +
+            _PuertoN + #9 + N2f(_facCmoneda) + #9 +
+            B2f(_IniLLamMan) + #9 +
+            B2f(_IniLLamTemp) + #9 +
+            I2f(_PerLLamTemp) + #9 + #9;
+end;
+class procedure TCibGFacNiloM.DecodCadPropied(lineas: TSTringList; out _Nombre,
+  _CategVenta: string; out _x, _y: Single; out _PuertoN: string; out
+  _facCmoneda: Double; out _IniLLamMan, _IniLLamTemp: boolean; out
+  _PerLLamTemp: integer);
+{Decodifica la cadena de estado, a partir de las variables indicadas. Se pone como
+método de clase para poder usarse sin crear instancias,}
+var
+  a: TStringDynArray;
+begin
+  //La primera línea tiene información del grupo
+  a := Explode(#9, lineas[0]);
+  _Nombre:=a[0];
+  _CategVenta:=a[1];
+  _x := f2N(a[2]);
+  _y := f2N(a[3]);
+  _PuertoN:=a[4];
+  _facCmoneda := f2N(a[5]);
+  _IniLLamMan := f2B(a[6]);
+  _IniLLamTemp:= f2B(a[7]);
+  _PerLLamTemp:= f2I(a[8]);
+
+  lineas.Delete(0);  //elimima línea
 end;
 function TCibGFacNiloM.GetCadPropied: string;
 var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
-            PuertoN + #9 + N2f(facCmoneda) + #9 +
-            B2f(IniLLamMan) + #9 +
-            B2f(IniLLamTemp) + #9 +
-            I2f(PerLLamTemp) + #9 + #9;
+  Result := CodCadPropied(Nombre, CategVenta, Fx, Fy, PuertoN, facCmoneda,
+                          IniLLamMan, IniLLamTemp, PerLLamTemp);
   //Información de las cabinas en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + c.CadPropied;
@@ -980,25 +1045,16 @@ procedure TCibGFacNiloM.SetCadPropied(AValue: string);
 var
   lineas: TStringList;
   loc: TCibFacLocutor;
-  lin: String;
-  a: TStringDynArray;
+  lin, _PuertoN: String;
 begin
   if AValue = '' then exit;
   lineas := TStringList.Create;
   lineas.Text := AValue;
-  //La primera línea tiene información del grupo
-  a := Explode(#9, lineas[0]);
-  Nombre:=a[0];
-  CategVenta:=a[1];
-  Fx := f2N(a[2]);
-  Fy := f2N(a[3]);
-  PuertoN:=a[4];
-  facCmoneda := f2N(a[5]);
-  IniLLamMan := f2B(a[6]);
-  IniLLamTemp:= f2B(a[7]);
-  PerLLamTemp:= f2I(a[8]);
 
-  lineas.Delete(0);  //elimima línea
+  DecodCadPropied(lineas, Nombre, CategVenta, Fx, Fy, _PuertoN,
+    facCmoneda, IniLLamMan, IniLLamTemp, PerLLamTemp);
+  PuertoN := _PuertoN;
+
   //Procesa líneas con información de las cabinas
   items.Clear;
   for lin in lineas do begin
@@ -1226,7 +1282,7 @@ begin
   arcLog    := TCibTablaHist.Create;  //crea su propio archivo de registro
   FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 debugln('-Creando: '+ nombre0);
-  tipo       := ctfNiloM;
+  tipGFac       := ctfNiloM;
   if not FModoCopia then begin
     timer1.OnTimer:=@timer1Timer;
     //Configura ventana de conexiones

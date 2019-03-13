@@ -14,7 +14,7 @@ uses
   CibUtils, FormPropGFac, dateutils, MisUtils;
 type
   //Tipos de objetos Grupos Facturables
-  TCibTipFact = (
+  TCibTipGFact = (
     ctfClientes= 2,   //Grupo de clientes
     ctfCabinas = 0,   //Grupo de Cabinas
     ctfNiloM   = 1,   //Grupo de locutorios de enrutador NILO-m
@@ -149,6 +149,7 @@ type
   //Evento para uso con tramas
   TEvTramaLista = procedure(idFacOrig: string; tram: TCPTrama) of object;
 
+type  //Definición de tipos FAC y GFAC
   TCibGFac = class;
   { TCibFac }
   { Define a la clase abstracta que sirve de base a objetos que pueden generar consumo
@@ -157,16 +158,16 @@ type
   protected
     FNombre: string;
     FComent: string;
-    Fx: double;
-    Fy: double;
+    Fx: Single;
+    Fy: Single;
     procedure SetNombre(AValue: string); virtual;
     procedure SetComent(AValue: string);
     function GetCadEstado: string;          virtual; abstract;
     procedure SetCadEstado(AValue: string); virtual; abstract;
     function GetCadPropied: string;         virtual; abstract;
     procedure SetCadPropied(AValue: string);virtual; abstract;
-    procedure Setx(AValue: double);
-    procedure Sety(AValue: double);
+    procedure Setx(AValue: Single);
+    procedure Sety(AValue: Single);
     procedure LeerEstadoBoleta(var lineas: TStringDynArray);
   public  //eventos generales
     OnCambiaEstado : procedure of object; //Cuando cambia alguna variable de estado
@@ -179,7 +180,7 @@ type
     OnSolicEjecCom : TEvSolicEjecCom;     //Cuando solicita ejecutar un comando
     OnRespComando  : TEvRespComando;      //Cuando se solicta responder a un comando.
   public
-    tipo    : TCibTipFact; //tipo de grupo facturable
+    tipGFac : TCibTipGFact; //tipo de grupo facturable
     Boleta  : TCibBoleta;  //se considera campo de estado, porque cambia frecuentemente
     MsjError: string;      //para mensajes de error
     Grupo   : TCibGFac;    //Referencia a su grupo.
@@ -189,8 +190,8 @@ type
     property CadPropied: string read GetCadPropied write SetCadPropied;
     function IdFac: string;  //Identificador del Facturable
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.
-    property x: double read Fx write Setx;   //coordenada X
-    property y: double read Fy write Sety;  //coordenada Y
+    property x: Single read Fx write Setx;   //coordenada X
+    property y: Single read Fy write Sety;  //coordenada Y
     procedure LimpiarBol;      //Limpia la boleta
     function RegVenta(usu: string): string; virtual;
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); virtual;
@@ -205,11 +206,11 @@ type
   TCibFac_list = specialize TFPGObjectList<TCibFac>;   //lista de ítems
 
   //Para requerir información de configuración general a la aplicación
-  TEvReqConfigGen = procedure(var NombProg, NombLocal: string; var ModDiseno: boolean) of object;
+  TEvReqConfigGen = procedure(out NombProg, NombLocal: string; out ModDiseno: boolean) of object;
   //Para requerir información de configuración general a la aplicación
-  TEvReqConfigUsu = procedure(var Usuario: string) of object;
+  TEvReqConfigUsu = procedure(out Usuario: string) of object;
   //Para requerir información de configuración de moneda a la aplicaicón
-  TEvReqConfigMon = procedure(var SimbMon: string; var numDec: integer; var IGV: Double) of object;
+  TEvReqConfigMon = procedure(out SimbMon: string; out numDec: integer; out IGV: Double) of object;
   //Requiere convertir a formato de moneda, usando el formato de la aplicación
   TevReqCadMoneda = function(valor: double): string of object;
   //Solicita buscar un objeto GFac
@@ -222,9 +223,9 @@ type
       pos1, pos2: Integer;
     public
       lineas: TStringList;
-      procedure Inic(const cad: string; var lin0: string);
+      procedure Inic(const cad: string; out lin0: string);
       function ExtraerNombre(const lin: string): string;
-      function Extraer(out car: char; var nombre, cadena: string): boolean;
+      function Extraer(out car: char; out nombre, cadena: string): boolean;
     public  //constructor y destructor
       constructor Create;
       destructor Destroy; override;
@@ -246,24 +247,24 @@ type
     function fac_LogVenta(ident: char; msje: string; dCosto: Double): integer;
     function fac_LogInfo(msj: string): integer;
   protected
-    Fx: double;
-    Fy: double;
+    Fx: Single;
+    Fy: Single;
     FModoCopia: boolean;
-    decod: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
+    decodEst: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
     frmProp: TfrmPropGFac;     //formulario de propiedades por defecto
     function GetCadPropied: string; virtual; abstract;
     procedure SetCadPropied(AValue: string); virtual; abstract;
     function GetCadEstado: string; virtual;
     procedure SetCadEstado(AValue: string); virtual;
-    procedure Setx(AValue: double);
-    procedure Sety(AValue: double);
+    procedure Setx(AValue: Single);
+    procedure Sety(AValue: Single);
     procedure AgregarItem(fac: TCibFac);
     procedure fac_CambiaPropied;
   public
-    Nombre : string;         //Nombre de grupo facturable
-    tipo   : TCibTipFact;    //Tipo de grupo facturable
+    Nombre  : string;         //Nombre de grupo facturable
+    tipGFac : TCibTipGFact;    //Tipo de grupo facturable
     CategVenta: string;      //Categoría de Venta para este grupo
-    items  : TCibFac_list;   //Lista de objetos facturables
+    items   : TCibFac_list;   //Lista de objetos facturables
     {El campo ModoCopia indica si se quiere trabajar sin conexión (como en un visor).
     Debería fijarse justo después de crear el objeto, para que los ítems a crear, se
     creen con la conexión configurada desde el inicio. No todos los objetos descendientes
@@ -274,9 +275,9 @@ type
     property CadEstado: string read GetCadEstado write SetCadEstado;  //cadena de estado
     property CadPropied: string read GetCadPropied write SetCadPropied;  //cadena de propiedades
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.
-    property x: double read Fx write Setx;   //coordenada X
-    property y: double read Fy write Sety;  //coordenada Y
-    procedure SetXY(x0, y0: double);
+    property x: Single read Fx write Setx;   //coordenada X
+    property y: Single read Fy write Sety;  //coordenada Y
+    procedure SetXY(x0, y0: Single);
     function ItemPorNombre(nom: string): TCibFac;  //Busca ítem por nombre
     function BuscaNombreItem(StrBase: string): string;
     procedure AccionesBoleta(tram: TCPTrama);  //Ejecuta acción en boleta
@@ -305,13 +306,15 @@ type
     OnRespComando  : TEvRespComando;    //Cuando se solicta responder a un comando.
     OnBuscarGFac   : TEvBuscarGFac;
   public  //Constructor y destructor
-    constructor Create(nombre0: string; tipo0: TCibTipFact);
+    constructor Create(nombre0: string; tipo0: TCibTipGFact);
     destructor Destroy; override;
   end;
   //Lista de grupos facturables
   TCibGFact_list = specialize TFPGObjectList<TCibGFac>;
 
+
 implementation
+
 //Funciones especiales de conversión
 function DD2f(d: TDateTime): String;
 begin
@@ -660,13 +663,13 @@ begin
   FComent := AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-procedure TCibFac.Setx(AValue: double);
+procedure TCibFac.Setx(AValue: Single);
 begin
   if Fx=AValue then exit;
   Fx:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-procedure TCibFac.Sety(AValue: double);
+procedure TCibFac.Sety(AValue: Single);
 begin
   if Fy=AValue then exit;
   Fy:=AValue;
@@ -820,7 +823,7 @@ var
   c : TCibFac;
 begin
   //Delimitador inicial y propiedades de objeto.
-  Result := '<' + I2f(ord(self.tipo)) + #9 + Nombre + LineEnding;
+  Result := '<' + I2f(ord(self.tipGFac)) + #9 + Nombre + LineEnding;
   for c in items do begin
     Result += c.CadEstado + LineEnding;
   end;
@@ -835,8 +838,8 @@ var
   car: char;
   it: TCibFac;
 begin
-  decod.Inic(AValue, lin1);
-  while decod.Extraer(car, nomb, cad) do begin
+  decodEst.Inic(AValue, lin1);
+  while decodEst.Extraer(car, nomb, cad) do begin
     if cad = '' then continue;
     it := ItemPorNombre(nomb);
     if it<>nil then it.CadEstado := cad;
@@ -859,19 +862,19 @@ begin
   fac.OnRespComando  := @fac_RespComando;
   items.Add(fac);
 end;
-procedure TCibGFac.Setx(AValue: double);
+procedure TCibGFac.Setx(AValue: Single);
 begin
   if Fx=AValue then exit;
   Fx:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-procedure TCibGFac.Sety(AValue: double);
+procedure TCibGFac.Sety(AValue: Single);
 begin
   if Fy=AValue then exit;
   Fy:=AValue;
   if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
-procedure TCibGFac.SetXY(x0,y0: double);
+procedure TCibGFac.SetXY(x0, y0: Single);
 begin
   if (Fx=x0) and (Fy=y0) then exit;
   Fx:=x0;
@@ -1032,7 +1035,7 @@ end;
 function TCibGFac.tipoStr: string;  //Tipo de facturable, como cadena
 begin
   try
-    writestr(Result, tipo);
+    writestr(Result, tipGFac);
   except
     Result := '<<Descon.>>'
   end;
@@ -1066,24 +1069,24 @@ begin
 end;
 
 ////Constructor y destructor
-constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipFact
+constructor TCibGFac.Create(nombre0: string; tipo0: TCibTipGFact
   );
 begin
   items  := TCibFac_list.Create(true);
   nombre := nombre0;
-  tipo   := tipo0;
-  decod  := TCPDecodCadEstado.Create;
+  tipGFac   := tipo0;
+  decodEst  := TCPDecodCadEstado.Create;
   frmProp:= TfrmPropGFac.Create(nil);   //Crea su formulario de propiedades.
 end;
 destructor TCibGFac.Destroy;
 begin
   frmProp.Destroy;
-  decod.Destroy;
+  decodEst.Destroy;
   items.Destroy;
   inherited Destroy;
 end;
 { TCPDecodCadEstado }
-procedure TCPDecodCadEstado.Inic(const cad: string; var lin0: string);
+procedure TCPDecodCadEstado.Inic(const cad: string; out lin0: string);
 {Inicia la exploración de la cadenas. Devuelve la primera línea de la cadena en
 "lin0".}
 begin
@@ -1110,7 +1113,7 @@ begin
     Result := copy(lin, 2, p-2);
   end;
 end;
-function TCPDecodCadEstado.Extraer(out car: char; var nombre, cadena: string): boolean;
+function TCPDecodCadEstado.Extraer(out car: char; out nombre, cadena: string): boolean;
 {Extrae una subcadena (de una o varias líneas) de la cadena de estado, que corresponden a
 los datos de un facturable. Si no encuentra más datos, devuelve FALSE.
 La cadena de estado, tiene la forma:

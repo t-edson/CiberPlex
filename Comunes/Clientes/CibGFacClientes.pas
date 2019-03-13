@@ -19,6 +19,12 @@ type
   { TCibFacCliente }
   {Define al objeto Cliente de Ciberplex}
   TCibFacCliente = class(TCibFac)
+  public //Métodos estáticos para codificar/decodificar cadenas
+    class function CodCadEstado(_Nombre: String): string;
+    class procedure DecodCadEstado(str: String; out _Nombre: String);
+    class function CodCadPropied(sNombre: string; sx, sy: Single): string;
+    class procedure DecodCadPropied(str: String; out _Nombre: string; out _x,
+      _y: Single);
   protected  //"Getter" and "Setter"
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -40,6 +46,11 @@ type
   { TCibGFacClientes }
   { Clase que define al conjunto de Clientes.}
   TCibGFacClientes = class(TCibGFac)
+  public
+    class function CodCadPropied(_Nombre, _CategVenta: string; _x, _y: Single
+      ): string;
+    class procedure DecodCadPropied(lineas: TStringList; out _Nombre,
+      _CategVenta: string; out _x, _y: Single);
   private
     proAccion : string;   {Nombre de objeto que ejecuta la acción. }
     procedure mnAgregObjCliente(Sender: TObject);
@@ -83,24 +94,48 @@ begin
 end;
 
 { TCibFacCliente }
+class function TCibFacCliente.CodCadEstado(_Nombre: String): string;
+begin
+  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
+         _Nombre + #9 +  {el nombre es obligatorio para identificar unívocamente}
+         #9;
+end;
+class procedure TCibFacCliente.DecodCadEstado(str: String; out _Nombre: String);
+var
+  campos: TStringDynArray;
+begin
+  delete(str, 1, 1);  //recorta identificador
+  campos := Explode(#9, str);
+  _Nombre := campos[0];
+end;
+class function TCibFacCliente.CodCadPropied(sNombre: string; sx, sy: Single
+  ): string;
+begin
+  Result := sNombre + #9 +
+            N2f(sx) + #9 +
+            N2f(sy) + #9 +
+            #9 + #9;
+end;
+class procedure TCibFacCliente.DecodCadPropied(str: String; out
+  _Nombre: string; out _x, _y: Single);
+var
+  campos: TStringDynArray;
+begin
+  campos := Explode(#9, str);
+  _Nombre := campos[0];
+  _x := f2N(campos[1]);
+  _y := f2N(campos[2]);
+end;
 function TCibFacCliente.GetCadPropied: string;
 {Las propiedades son los compos que definen la configuración de un cliente. Se
 fijan al inicio, y no es común cambiarlos luego.}
 begin
-  Result := Nombre + #9 +
-            N2f(x) + #9 +
-            N2f(y) + #9 +
-            #9 + #9;
+  Result := CodCadPropied(Nombre, x, y);
 end;
 procedure TCibFacCliente.SetCadPropied(AValue: string);
-var
-  campos: TStringDynArray;
 begin
-   campos := Explode(#9, Avalue);
-   Nombre := campos[0];
-   x := f2N(campos[1]);
-   y := f2N(campos[2]);
-   if OnCambiaPropied<>nil then OnCambiaPropied();
+  DecodCadPropied(AValue, FNombre, Fx, Fy);
+ if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 function TCibFacCliente.RegVenta(usu: string): string;
 {Devuelve la línea que debe escribirse en el registro de venta al registrarse
@@ -115,9 +150,7 @@ function TCibFacCliente.GetCadEstado: string;
 {Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
 los campos que deban ser actualizados}
 begin
-  Result := '.' + {Caracter identificador de facturable, se omite la coma por espacio.}
-         Nombre + #9 +  {el nombre es obligatorio para identificar unívocamente}
-         #9;
+  Result := CodCadEstado(Nombre);
   //Agrega información sobre los ítems de la boleta
   if boleta.ItemCount>0 then
     Result := Result + LineEnding + boleta.CadEstado;
@@ -125,14 +158,12 @@ end;
 procedure TCibFacCliente.SetCadEstado(AValue: string);
 {Fija los campos de estado.}
 var
-  lin: String;
+  lin, tmp: String;
   lineas: TStringDynArray;
 begin
   lineas := Explode(LineEnding, AValue);
   lin := lineas[0];  //primera línea´, debe haber al menos una
-  //aquí aseguramos que no hay red
-  delete(lin, 1, 1);  //recorta identificador
-//  campos := Explode(#9, lin);
+  DecodCadEstado(lin, tmp);
   //Agrega información de boletas
   LeerEstadoBoleta(lineas);
 end;
@@ -176,7 +207,7 @@ begin
   if ModDiseno then begin
     {Notar que la acción de "Eliminar" se define en el grupo, para que sea el grupo quien
     elimine al facturable, ya que no es factible que el facturable se elimine a sí mismo.
-    Otra opción es usar una bandera de tipo "por eliminar" y un Timer, que verifique esta
+    Otra opción es usar una bandera de tipGFac "por eliminar" y un Timer, que verifique esta
     bandera, y elimine a las que esteán marcadas.}
     TCibGFacClientes(grupo).proAccion := Nombre;   //nombre de objeto que solicita la acción
     AgregarAccion(nShortCut, '&Eliminar', @TCibGFacClientes(grupo).mnEliminar, icoElim);
@@ -186,7 +217,7 @@ end;
 constructor TCibFacCliente.Create(nombre0: string);
 begin
   inherited Create;
-  tipo := ctfClientes;  //se identifica
+  tipGFac := ctfClientes;  //se identifica
   FNombre := nombre0;
 end;
 destructor TCibFacCliente.Destroy;
@@ -216,13 +247,30 @@ begin
   end;
   Result := true;
 end;
+class function TCibGFacClientes.CodCadPropied(_Nombre, _CategVenta: string; _x,
+  _y: Single): string;
+begin
+  Result := _Nombre + #9 + _CategVenta + #9 + N2f(_x) + #9 + N2f(_y) + #9 + #9;
+end;
+class procedure TCibGFacClientes.DecodCadPropied(lineas: TStringList; out
+  _Nombre, _CategVenta: string; out _x, _y: Single);
+var
+  a: TStringDynArray;
+begin
+  //La primera línea tiene información del grupo
+  a := Explode(#9, lineas[0]);
+  _Nombre:=a[0];
+  _CategVenta:=a[1];
+  _x := f2N(a[2]);
+  _y := f2N(a[3]);
+  lineas.Delete(0);  //elimima línea
+end;
 function TCibGFacClientes.GetCadPropied: string;
 var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
-            #9 ;
+  Result := CodCadPropied(Nombre, CategVenta, Fx, Fy);
   //Información de los clientes en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + c.CadPropied ;
@@ -238,13 +286,7 @@ begin
   if AValue = '' then exit;
   lineas := TStringList.Create;
   lineas.Text := AValue;
-  //La primera línea tiene información del grupo
-  a := Explode(#9, lineas[0]);
-  Nombre:=a[0];
-  CategVenta:=a[1];
-  Fx := f2N(a[2]);
-  Fy := f2N(a[3]);
-  lineas.Delete(0);  //elimima línea
+  DecodCadPropied(lineas, Nombre, CategVenta, Fx, Fy);
   //Procesa líneas con información de los clientes
   items.Clear;
   for lin in lineas do begin
