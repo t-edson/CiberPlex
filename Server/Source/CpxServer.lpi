@@ -77,7 +77,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="57">
+    <Units Count="56">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -309,110 +309,103 @@
         <ResourceBaseClass Value="Form"/>
       </Unit39>
       <Unit40>
-        <Filename Value="..\..\..\_Librerias\UtilsGrilla 0.7\FrameFiltArbol.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="fraFiltArbol"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Frame"/>
-      </Unit40>
-      <Unit41>
         <Filename Value="..\..\Comunes\CibBD.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit41>
-      <Unit42>
+      </Unit40>
+      <Unit41>
         <Filename Value="..\..\Comunes\FrameEditGrilla.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fraEditGrilla"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Frame"/>
-      </Unit42>
-      <Unit43>
+      </Unit41>
+      <Unit42>
         <Filename Value="..\..\Comunes\FormAdminInsum.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmAdminInsum"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit43>
-      <Unit44>
+      </Unit42>
+      <Unit43>
         <Filename Value="..\..\Comunes\CibGrillas.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit44>
-      <Unit45>
+      </Unit43>
+      <Unit44>
         <Filename Value="..\..\Comunes\FormCambClave.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmCambClave"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit45>
-      <Unit46>
+      </Unit44>
+      <Unit45>
         <Filename Value="..\..\Comunes\FormRepProducto.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmRepProducto"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit46>
-      <Unit47>
+      </Unit45>
+      <Unit46>
         <Filename Value="..\..\Comunes\FormRepEventos.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmRepEventos"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit47>
-      <Unit48>
+      </Unit46>
+      <Unit47>
         <Filename Value="FormRegCompras.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmRegCompras"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit48>
-      <Unit49>
+      </Unit47>
+      <Unit48>
         <Filename Value="..\..\Comunes\CibTabProductos.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit49>
-      <Unit50>
+      </Unit48>
+      <Unit49>
         <Filename Value="..\..\Comunes\FormIngVentas.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmIngVentas"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit50>
-      <Unit51>
+      </Unit49>
+      <Unit50>
         <Filename Value="..\..\Comunes\CibTabInsumos.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit51>
-      <Unit52>
+      </Unit50>
+      <Unit51>
         <Filename Value="..\..\Comunes\FormValStock.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmValStock"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit52>
-      <Unit53>
+      </Unit51>
+      <Unit52>
         <Filename Value="..\..\Comunes\FormIngStock.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmIngStock"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit53>
-      <Unit54>
+      </Unit52>
+      <Unit53>
         <Filename Value="FormVista.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmVisor"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit54>
-      <Unit55>
+      </Unit53>
+      <Unit54>
         <Filename Value="..\..\Comunes\frameVista.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fraVista"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Frame"/>
-      </Unit55>
-      <Unit56>
+      </Unit54>
+      <Unit55>
         <Filename Value="ModuleBD.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="ModBD"/>
         <ResourceBaseClass Value="DataModule"/>
-      </Unit56>
+      </Unit55>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
