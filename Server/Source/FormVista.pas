@@ -11,8 +11,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    Visor: TfraVista;
   public
+    Visor: TfraVista;
     procedure ActualizarPropiedades(cadProp: string);
     procedure ActualizarEstado(cadEstado: string);
   end;

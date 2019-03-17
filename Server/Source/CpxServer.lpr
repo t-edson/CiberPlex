@@ -8,13 +8,9 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazcontrols, tachartlazaruspkg, FormPrincipal, FormConfig, FormBoleta,
-  FormInicio, CibGFacClientes, FormPropGFac, CibGFacNiloM, CibNiloMConex,
-  CibNiloMTarifRut, FormBuscTarif, FormNiloMConex, FormNiloMEnrutam,
-  FormNiloMProp, CibCabinaBase, CibCabinaTarifas, CibGFacCabinas,
-  FormAdminCabinas, FormAdminTarCab, FormExplorCab, FormFijTiempo,
-  FormRepIngresos, RegistrosVentas, FormAdminProduc,
+  FormInicio, FormRepIngresos, RegistrosVentas, FormAdminProduc,
   FormAgrupRep, FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos,
-  FormAdminProvee, FrameFiltArbol, CibBD, FrameEditGrilla, FormAdminInsum,
+  FormAdminProvee, FormAdminInsum,
   FormCambClave, FormRepProducto, FormRepEventos, FormRegCompras,
   FormIngVentas, FormValStock, FormIngStock, FormVista, ModuleBD;
 
