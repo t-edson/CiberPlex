@@ -30,10 +30,10 @@ type
   public //Métodos estáticos para codificar/decodificar cadenas
     class function CodCadEstado(sNombre: String): string;
     class procedure DecodCadEstado(str: String; out sNombre: String);
-    class function CodCadPropied(sNombre: string; sx, sy: double;
+    class function CodCadPropied(sNombre: string; sx, sy: Single;
       tipMesa: TCibMesaTip): string;
     class procedure DecodCadPropied(str: String; out sNombre: string; out sx,
-      sy: double; out tipMesa: TCibMesaTip);
+      sy: Single; out tipMesa: TCibMesaTip);
   private
     frmConfig: TfrmPropMesa;
     procedure mnConfigurar(Sender: TObject);
@@ -59,10 +59,19 @@ type
   { TCibGFacMesas }
   { Clase que define al conjunto de Clientes.}
   TCibGFacMesas = class(TCibGFac)
+  public
+    class function CodCadEstado(_Nombre: string): string;
+    class procedure DecodCadEstado(str: String; out _Nombre: string);
+    class function CodCadPropied(_Nombre, _CategVenta: string; _x, _y: Single
+      ): string;
+    class procedure DecodCadPropied(lineas: TStringList; out _Nombre,
+      _CategVenta: string; out _x, _y: Single);
   private
     proAccion : string;   {Nombre de objeto que ejecuta la acción. }
     procedure mnAgregObjMesa(Sender: TObject);
   protected //Getters and Setters
+    function GetCadEstado: string; override;
+    procedure SetCadEstado(AValue: string); override;
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
@@ -113,16 +122,16 @@ begin
 end;
 
 { TCibFacMesa }
-class function TCibFacMesa.CodCadPropied(sNombre: string; sx, sy: double;
-                tipMesa: TCibMesaTip): string;
+class function TCibFacMesa.CodCadPropied(sNombre: string; sx, sy: Single;
+  tipMesa: TCibMesaTip): string;
 begin
   Result := sNombre + #9 +
             N2f(sx) + #9 +
             N2f(sy) + #9 +
             I2f(ord(tipMesa)) + #9 + #9;
 end;
-class procedure TCibFacMesa.DecodCadPropied(str: String;
-            out sNombre: string; out sx, sy: double; out tipMesa: TCibMesaTip);
+class procedure TCibFacMesa.DecodCadPropied(str: String; out sNombre: string;
+  out sx, sy: Single; out tipMesa: TCibMesaTip);
 var
   campos: TStringDynArray;
 begin
@@ -132,6 +141,27 @@ begin
   sy := f2N(campos[2]);
   tipMesa := TCibMesaTip(f2I(campos[3]));
 end;
+function TCibFacMesa.GetCadEstado: string;
+{Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
+los campos que deban ser actualizados}
+begin
+  Result := CodCadEstado(Nombre);
+  //Agrega información sobre los ítems de la boleta
+  if boleta.ItemCount>0 then
+    Result := Result + LineEnding + boleta.CadEstado;
+end;
+procedure TCibFacMesa.SetCadEstado(AValue: string);
+{Fija los campos de estado.}
+var
+  lin, tmp: String;
+  lineas: TStringDynArray;
+begin
+  lineas := Explode(LineEnding, AValue);
+  lin := lineas[0];  //primera línea´, debe haber al menos una
+  DecodCadEstado(lin, tmp);
+  //Agrega información de boletas
+  LeerEstadoBoleta(Boleta, lineas);
+end;
 function TCibFacMesa.GetCadPropied: string;
 {Las propiedades son los compos que definen la configuración de un cliente. Se
 fijan al inicio, y no es común cambiarlos luego.}
@@ -140,12 +170,10 @@ begin
 end;
 procedure TCibFacMesa.SetCadPropied(AValue: string);
 var
-  sx, sy: double;
-  sNombre: string;
+  _Nombre: string;
 begin
-   DecodCadPropied(AValue, sNombre, sx, sy, tipMesa);
-   Nombre := sNombre;
-   x := sx; y := sy;
+   DecodCadPropied(AValue, _Nombre, Fx, Fy, tipMesa);
+   Nombre := _Nombre;
    if OnCambiaPropied<>nil then OnCambiaPropied();
 end;
 function TCibFacMesa.RegVenta(usu: string): string;
@@ -170,27 +198,6 @@ begin
   delete(str, 1, 1);  //recorta identificador
   campos := Explode(#9, str);
   sNombre := campos[0];
-end;
-function TCibFacMesa.GetCadEstado: string;
-{Los estados son campos que pueden variar periódicamente. La idea es incluir aquí, solo
-los campos que deban ser actualizados}
-begin
-  Result := CodCadEstado(Nombre);
-  //Agrega información sobre los ítems de la boleta
-  if boleta.ItemCount>0 then
-    Result := Result + LineEnding + boleta.CadEstado;
-end;
-procedure TCibFacMesa.SetCadEstado(AValue: string);
-{Fija los campos de estado.}
-var
-  lin, tmp: String;
-  lineas: TStringDynArray;
-begin
-  lineas := Explode(LineEnding, AValue);
-  lin := lineas[0];  //primera línea´, debe haber al menos una
-  DecodCadEstado(lin, tmp);
-  //Agrega información de boletas
-  LeerEstadoBoleta(lineas);
 end;
 //control del objeto
 procedure TCibFacMesa.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
@@ -233,7 +240,7 @@ begin
     AgregarAccion(nShortCut, '&Configurar', @mnConfigurar, icoConfig);
     {Notar que la acción de "Eliminar" se define en el grupo, para que sea el grupo quien
     elimine al facturable, ya que no es factible que el facturable se elimine a sí mismo.
-    Otra opción es usar una bandera de tipo "por eliminar" y un Timer, que verifique esta
+    Otra opción es usar una bandera de tipGFac "por eliminar" y un Timer, que verifique esta
     bandera, y elimine a las que esteán marcadas.}
     TCibGFacMesas(grupo).proAccion := Nombre;   //nombre de objeto que solicita la acción
     AgregarAccion(nShortCut, '&Eliminar', @TCibGFacMesas(grupo).mnEliminar, icoElim);
@@ -251,7 +258,7 @@ end;
 constructor TCibFacMesa.Create(nombre0: string);
 begin
   inherited Create;
-  tipo := ctfMesas;  //se identifica
+  tipGFac := ctfMesas;  //se identifica
   FNombre := nombre0;
   frmConfig := TfrmPropMesa.Create(nil);
   tipMesa := cmt1x1;
@@ -284,13 +291,85 @@ begin
   end;
   Result := true;
 end;
+class function TCibGFacMesas.CodCadPropied(_Nombre, _CategVenta: string; _x,
+  _y: Single): string;
+begin
+  Result := _Nombre + #9 + _CategVenta + #9 + N2f(_x) + #9 + N2f(_y) + #9 + #9;
+end;
+class procedure TCibGFacMesas.DecodCadPropied(lineas: TStringList; out _Nombre,
+  _CategVenta: string; out _x, _y: Single);
+var
+  a: TStringDynArray;
+begin
+  //La primera línea tiene información del grupo
+  a := Explode(#9, lineas[0]);
+  _Nombre:=a[0];
+  _CategVenta:=a[1];
+  _x := f2N(a[2]);
+  _y := f2N(a[3]);
+  lineas.Delete(0);  //elimima línea
+end;
+class function TCibGFacMesas.CodCadEstado(_Nombre: string): string;
+{Codifica la cadena de estado, a partir de las variables indicadas. Se pone como
+método de clase para poder usarse sin crear instancias,}
+begin
+  Result := _Nombre + #9 + #9 + LineEnding;
+end;
+class procedure TCibGFacMesas.DecodCadEstado(str: String; out _Nombre: string);
+{Decodifica la cadena de estado, a partir de las variables indicadas. Se pone como
+método de clase para poder usarse sin crear instancias,}
+var
+  a: TStringDynArray;
+begin
+  a := Explode(#9, str);     //separa campos
+  _Nombre := a[0];
+end;
+function TCibGFacMesas.GetCadEstado: string;
+{Devuelve la cadena de estado. Esta es una implementación general. Notar que no se
+guardan campos de estado del GFac, excepto el Tipo y Nombre, que son necesarios para la
+identificación. De requerir guardar campos adicionales del GFac, no se podría usar este
+código directamente.
+La cadena de estado tiene el siguiente formato:
+<1	NILO-m            <----- Línea inicial. Campos de estado del GFac
+.LOC1	F                 <----- Líneas siguiente. Estado de objeto facturables.
+.LOC2	F                 <----- Estado de objeto facturables (dos líneas).
+ [b]0	1003220344996..
+.LOC3	F
+.LOC4	F
+>                         <----- Línea final.
+}
+var
+  c : TCibFac;
+begin
+  //Delimitador inicial y propiedades de objeto.
+  Result := CodCadEstado(Nombre);
+  for c in items do begin
+    Result += c.CadEstado + LineEnding;
+  end;
+end;
+procedure TCibGFacMesas.SetCadEstado(AValue: string);
+{Hace el trabajo inverso de GetCadEstado(). De la misma forma, no lee campos de estado,
+adicionales. De hecho no lee ninguno, ya que los campos Tipo y Nombre, ya fueron usados
+para identificar a este GFac.}
+var
+  nomb, cad, lin1, _Nombre: string;
+  car: char;
+  it: TCibFac;
+begin
+  decodEst.Inic(AValue, lin1);
+  DecodCadEstado(lin1, _Nombre);
+  while decodEst.Extraer(car, nomb, cad) do begin
+    if cad = '' then continue;
+    it := ItemPorNombre(nomb);
+    if it<>nil then it.CadEstado := cad;
+  end;
+end;
 function TCibGFacMesas.GetCadPropied: string;
 var
   c : TCibFac;
 begin
   //Información del grupo en la primera línea
-  Result := Nombre + #9 + CategVenta + #9 + N2f(Fx) + #9 + N2f(Fy) + #9 +
-            #9 ;
+  Result := CodCadPropied(Nombre, CategVenta, Fx, Fy);
   //Información de los clientes en las demás líneas
   for c in items do begin
     Result := Result + LineEnding + c.CadPropied ;
@@ -301,18 +380,11 @@ var
   lineas: TStringList;
   cab: TCibFacMesa;
   lin: String;
-  a: TStringDynArray;
 begin
   if AValue = '' then exit;
   lineas := TStringList.Create;
   lineas.Text := AValue;
-  //La primera línea tiene información del grupo
-  a := Explode(#9, lineas[0]);
-  Nombre:=a[0];
-  CategVenta:=a[1];
-  Fx := f2N(a[2]);
-  Fy := f2N(a[3]);
-  lineas.Delete(0);  //elimima línea
+  DecodCadPropied(lineas, Nombre, CategVenta, Fx, Fy);
   //Procesa líneas con información de los clientes
   items.Clear;
   for lin in lineas do begin

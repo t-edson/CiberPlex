@@ -369,7 +369,6 @@ procedure TfrmValStock.acArcGrabarExecute(Sender: TObject);
 {Aplica los cambios a la tabla}
 var
   difMonto: double;
-  tmp: String;
 begin
   if MsgYesNo('¿Corregir Stock y registrar diferencias?') <> 1 then exit;
   //acArcValidarExecute(self);
@@ -381,7 +380,7 @@ begin
   //Lee de disco y se limpia la columna de incrementos
   fraGri.ReadFromTable;
 //  //Lee cadena de incrementos
-  tmp := TabValStock(difMonto);  //tambien actualiza etiqueta de "Faltantes"
+  {tmp := }TabValStock(difMonto);  //tambien actualiza etiqueta de "Faltantes"
 //  //Pone cero en la columna de incrementos como indicador de que se modificó
 //  lineas := TStringList.Create;
 //  lineas.Text := tmp;  //Usa los datos leídos antes de actualziar la tabla

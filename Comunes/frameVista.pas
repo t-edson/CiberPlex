@@ -9,8 +9,8 @@ interface
 uses
   Classes, SysUtils, fgl, FileUtil, Forms, Controls, ExtCtrls, Graphics,
   GraphType, lclType, dialogs, lclProc, ogDefObjGraf, ObjGraficos,
-  CibFacturables, CibGFacCabinas, CibGFacNiloM, CibModelo, CibTramas,
-  CibGFacMesas, ogEditionMot, MisUtils;
+  CibFacturables, CibGFacCabinas, CibGFacMesas,
+  CibModelo, CibTramas, ogEditionMot, MisUtils;
 type
   TEvMouseFac = procedure(ogFac: TogFac; X, Y: Integer) of object;
   TEvMouseGFac = procedure(ogGFac: TogGFac; X, Y: Integer) of object;
@@ -60,11 +60,13 @@ type
       State: TDragState; var Accept: Boolean);
   private
     FModDiseno: boolean;
-    decod: TCPDecodCadEstado;  //decodificador de cadenas de estado
-    arrastEsBol: boolean;  //indica si el objeto arrastrado es una boleta.
-    facArrastrado : TCibFac;  //Objeto facturable arrastrado
-    procedure ActualizarOgGrupos(items: TCibGFact_list);
-    function AgregarOgGrupo(GFac: TCibGFac): TogGFac;
+    decod     : TCPDecodCadEstado; //Decodificador de cadenas de estado
+    arrastEsBol: boolean;     //Indica si el objeto arrastrado es una boleta.
+    facArrastrado : TogFac;  //Objeto facturable arrastrado
+    decodEst  : TCPDecodCadEstado;
+    function AgregarOgGrupo(tipGFac: TCibTipGFact): TogGFac;
+    function BuscarOgFac(facNombre, gFacNombre: string): TogFac;
+    function BuscarOgGFac(nomGrup: string): TogGFac;
     function gruposReqCadMoneda(valor: double): string;
     procedure gruposSolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
       cad: string);
@@ -75,7 +77,7 @@ type
     procedure motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
     procedure motEdi_ObjectsMoved;
     procedure SetModDiseno(AValue: boolean);
-    procedure ActualizarOgFacturables(grupo: TCibGFac);
+    procedure ActualizarOgFacturables(lineas: TStringList; ogGFac: TOgGFac);
   public
     motEdi          : TEditionMot2;  //motor de edición
     OnObjectsMoved  : procedure of object;  //Los objetos se han movido
@@ -88,12 +90,10 @@ type
     OnDobleClick    : TNotifyEvent;     //Doble click en el visor
     OnDobleClickFac : TEvMouseFac;      //Doble click en un facturable del visor
     OnDobleClickGFac: TEvMouseGFac;      //Doble click en un grupo del visor
-    grupos: TCibModelo; {Esta lista de grupos facturables, será una copia
-                                    de la lista que existe en el servidor.}
     function CoordPantallaDeFact(ogFac: TogFac): TPoint;
     function CoordPantallaDeFact2(ogFac: TogFac): TPoint;
     property ModDiseno: boolean read FModDiseno write SetModDiseno;
-    function AgregOgFac(Fac: TCibFac): TogFac;
+    function AgregOgFac(tipFac: TCibTipGFact): TogFac;
     function NumSelecionados: integer;
     function Seleccionado: TObjGraf;
     function SeleccionarGru(NomGFac: string): boolean;
@@ -190,7 +190,7 @@ begin
   end;
   FModDiseno:=AValue;
 end;
-function TfraVista.AgregOgFac(Fac: TCibFac): TogFac;
+function TfraVista.AgregOgFac(tipFac: TCibTipGFact): TogFac;
 //Agrega un objeto gráfica asociado a un objeto facturable, al editor.
 var
   ogCab: TogCabina;
@@ -199,9 +199,9 @@ var
   ogMes: TogMesa;
 begin
   Result := nil;
-  case Fac.tipo of
+  case tipFac of
   ctfClientes: begin
-    ogCli := TogCliente.Create(motEdi.v2d, Fac);
+    ogCli := TogCliente.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogCli, false);
     ogCli.icono := Image14.Picture.Graphic;   //asigna imagen
     ogCli.SizeLocked := true;
@@ -209,7 +209,7 @@ begin
     Result := ogCli;
   end;
   ctfCabinas: begin
-    ogCab := TogCabina.Create(motEdi.v2d, Fac);
+    ogCab := TogCabina.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogCab, false);
     ogCab.icoPC    := Image5.Picture.Graphic;   //asigna imagen
     ogCab.icoPCdes := Image6.Picture.Graphic;   //asigna imagen
@@ -222,7 +222,7 @@ begin
     Result := ogCab;
   end;
   ctfNiloM: begin
-    ogNil := TogNiloM.Create(motEdi.v2d, Fac);
+    ogNil := TogNiloM.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogNil, false);
     ogNil.icoTelCol := Image9.Picture.Graphic;   //asigna imagen
     ogNil.icoTelDes := Image10.Picture.Graphic;
@@ -232,7 +232,7 @@ begin
     Result := ogNil;
   end;
   ctfMesas: begin
-    ogMes := TogMesa.Create(motEdi.v2d, Fac);
+    ogMes := TogMesa.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogMes, false);
     ogMes.icoMesaSim := Image17.Picture.Graphic;   //asigna imagen
     ogMes.icoMesaDob1:= Image18.Picture.Graphic;   //asigna imagen
@@ -248,8 +248,9 @@ begin
   end;
   end;
 end;
-function TfraVista.AgregarOgGrupo(GFac: TCibGFac): TogGFac;
-{Agrega un objeto de tipo Grupo de Cabinas, al editor}
+function TfraVista.AgregarOgGrupo(tipGFac: TCibTipGFact): TogGFac;
+{Agrega un objeto de tipo Grupo de Cabinas, al editor. Notar que parte de este código
+existe también en la función CrearGFACdeTipo() en la unidad CibModelo.}
 var
   ogGClies: TogGClientes;
   ogGCabs : TogGCabinas;
@@ -257,9 +258,9 @@ var
   ogGMes: TogGMesas;
 begin
   Result := nil;   //valor por defecto
-  case GFac.tipo of
+  case tipGFac of
   ctfClientes: begin
-    ogGClies := TogGClientes.Create(motEdi.v2d, TCibGFacCabinas(GFac));
+    ogGClies := TogGClientes.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogGClies, false);
     ogGClies.icono := Image13.Picture.Graphic;   //asigna imagen
     ogGClies.SizeLocked := true;
@@ -267,7 +268,7 @@ begin
     Result := ogGClies;
   end;
   ctfCabinas : begin  //Es grupo de cabinas TCibGFacCabinas
-    ogGCabs := TogGCabinas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
+    ogGCabs := TogGCabinas.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogGCabs, false);
     ogGCabs.icono := Image7.Picture.Graphic;   //asigna imagen
     ogGCabs.SizeLocked := true;
@@ -275,7 +276,7 @@ begin
     Result := ogGCabs;
   end;
   ctfNiloM: begin
-    ogGNiloM := TogGNiloM.Create(motEdi.v2d, TCibGFacNiloM(GFac));
+    ogGNiloM := TogGNiloM.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogGNiloM, false);
     ogGNiloM.icoConec := Image8.Picture.Graphic;   //asigna imagen
     ogGNiloM.icoDesc  := Image12.Picture.Graphic;
@@ -284,7 +285,7 @@ begin
     Result := ogGNiloM;
   end;
   ctfMesas: begin
-    ogGMes := TogGMesas.Create(motEdi.v2d, TCibGFacCabinas(GFac));
+    ogGMes := TogGMesas.Create(motEdi.v2d);
     motEdi.AddGraphObject(ogGMes, false);
     ogGMes.icono := Image16.Picture.Graphic;   //asigna imagen
     ogGMes.SizeLocked := true;
@@ -317,7 +318,7 @@ var
 begin
   for og in motEdi.objetos do begin
     if og is TogGFac then begin
-      if TogGFac(og).GFac.Nombre = NomGFac then begin
+      if TogGFac(og).Name = NomGFac then begin
         //Ubico el objeto
         motEdi.UnselectAll;
         og.Selec;  //selecciona
@@ -334,7 +335,7 @@ var
 begin
   for og in motEdi.objetos do begin
     if og is TogFac then begin
-      if TogFac(og).Fac.IdFac = IdOgFac then begin
+      if TogFac(og).IdFac = IdOgFac then begin
         //Ubico el objeto
         motEdi.UnselectAll;
         og.Selec;  //selecciona
@@ -406,41 +407,27 @@ begin
     exit(nil);
   end;
 end;
-procedure TfraVista.ActualizarOgFacturables(grupo: TCibGFac);
+procedure TfraVista.ActualizarOgFacturables(lineas: TStringList; ogGFac: TOgGFac);
 {Actualiza las propiedades de los objetos y a los objetos mismos, porque aquí se define
 que objetos deben existir}
-  function AgregarSiNoHay(fac: TCibFac): TogFac;
-  {Devuelve la referencia a un objeto gráfico facturable, del motor de edición, que tenga
-   el nombre del facturable indicado y que pertenezca al mismo grupo. Si no existe el
-   objeto, lo crea y devuelve la referencia. }
-  var
-    og: TObjGraf;
-    ogFac: TogFac;
-  begin
-//debugln('>Buscando:' + fac.Nombre);
-    for og in Motedi.objetos do if og.Tipo = OBJ_FACT then begin
-      ogFac := TogFac(og);  //restaura tipo
-      if (ogFac.NomGrupo = fac.Grupo.Nombre) and (ogFac.Name = fac.Nombre) then begin
-        //hay, devuelve la referencia
-        Result := ogFac;  //restaura tipo
-        Result.Fac := fac;   //actualiza la referencia
-        exit;
-      end;
-    end;
-    //no hay
-//debugln('>Agregando.');
-    Result := AgregOgFac(fac);  //crea cabina
-  end;
 var
   ogFac: TogFac;
-  fac : TCibFac;
+  lin, nombFac: string;
 begin
-  for fac in grupo.items do begin
-    ogFac := AgregarSiNoHay(fac);
-    if ogFac<>nil then begin
-      ogFac.Resize(ogFac.Width, ogFac.Height);
-      ogFac.Data:='';  //Para que no se elimine.
+  for lin in lineas do begin
+    if trim(lin) = '' then continue;
+    nombFac := copy(lin, 1, pos(#9, lin)-1);
+    ogFac := BuscarOgFac(nombFac, ogGFac.Name);
+    if ogFac = nil then begin
+      ogFac := AgregOgFac(ogGFac.tipGFac);  //Crea FAC del tipo indicado.
+      ogFac.tipGFac := ogGFac.tipGFac;  //Asigna tipo de grupo
+      ogFac.grupo := ogGFac;   //Guarda refrencia a su grupo
     end;
+    //Ya se tiene la referencia
+    ogFac.SetCadPropied(lin);
+    ogFac.ReLocate(ogFac.x, ogFac.y);  //Por si cambia su posición
+    //ogFac.Resize(ogFac.Width, ogFac.Height);
+    ogFac.Data:='';  //Para que no se elimine.
   end;
 end;
 function TfraVista.CoordPantallaDeFact(ogFac: TogFac): TPoint;
@@ -455,7 +442,6 @@ begin
   Result.x:= motEdi.v2d.XPant(ogFac.x);
   Result.y:= motEdi.v2d.YPant(ogFac.y + ogFac.Height);
 end;
-
 procedure TfraVista.PaintBox1DragOver(Sender, Source: TObject; X,
   Y: Integer; State: TDragState; var Accept: Boolean);
 var
@@ -486,11 +472,12 @@ var
   og: TObjGraf;
   ogFac: TogFac;
 begin
+  //A este punto llega solo si pasa el filtro de PaintBox1DragOver()
   for og in motEdi.objetos do begin
     if og.IsSelectedBy(X,Y) and (og is TogFac) then begin
       ogFac := TogFac(og);
       //Verifica si no se ha soltado en el mismo objeto
-      if facArrastrado.IdFac = ogFac.Fac.IdFac then begin
+      if facArrastrado.IdFac = ogFac.IdFac then begin
 //        MsgBox('Soltado sobre el mismo.');
         exit;
       end;
@@ -501,96 +488,116 @@ begin
           //Se ha soltado sobre una boleta
           if OnSolicEjecCom<>nil then begin
             if MsgYesNo('¿Trasladar boleta de cabina ' + facArrastrado.IdFac + ' a ' +
-                         ogFac.Fac.IdFac + '?') <> 1 then exit;
+                         ogFac.IdFac + '?') <> 1 then exit;
              //Solicita ejecutar el comando. No se indica el idVista, porque no se sabe
              //si esta vista es local o remota.
-             OnSolicEjecCom(CVIS_ACBOLET, ACCBOL_TRA, 0, facArrastrado.IdFac + #9 + ogFac.Fac.IdFac);
+             OnSolicEjecCom(CVIS_ACBOLET, ACCBOL_TRA, 0, facArrastrado.IdFac + #9 + ogFac.IdFac);
           end;
         end;
-      end else if facArrastrado.ClassType = TCibFacCabina then begin
+      end else if facArrastrado.tipGFac = ctfCabinas then begin
         //Se soltó un Facturable Cabina
         if (og is TogCabina) and  not TogFac(og).Boleta.LoSelec(X,Y) then begin
           if MsgYesNo('¿Trasladar cabina: ' + facArrastrado.IdFac + ' a ' +
-                       ogFac.Fac.IdFac + '?') <> 1 then exit;
+                       ogFac.IdFac + '?') <> 1 then exit;
           //Se traslada la cabina
-          OnSolicEjecCom(CFAC_CABIN, C_CABIN_TRASLA, 0, facArrastrado.IdFac + #9 + ogFac.Fac.IdFac);
+          OnSolicEjecCom(CFAC_CABIN, C_CABIN_TRASLA, 0, facArrastrado.IdFac + #9 + ogFac.IdFac);
         end;
-      end else if facArrastrado.ClassType = TCibFacMesa then begin
+      end else if facArrastrado.tipGFac = ctfMesas then begin
         //Se soltó un Facturable Mesa
         if (og is TogMesa) and  not TogFac(og).Boleta.LoSelec(X,Y) then begin
           if MsgYesNo('¿Trasladar mesa: ' + facArrastrado.IdFac + ' a ' +
-                       ogFac.Fac.IdFac + '?') <> 1 then exit;
+                       ogFac.IdFac + '?') <> 1 then exit;
           //Se traslada la mesa
-          OnSolicEjecCom(CFAC_MESA, C_MESA_TRASLA, 0, facArrastrado.IdFac + #9 + ogFac.Fac.IdFac);
+          OnSolicEjecCom(CFAC_MESA, C_MESA_TRASLA, 0, facArrastrado.IdFac + #9 + ogFac.IdFac);
         end;
       end;
       exit;
     end;
   end;
 end;
-procedure TfraVista.ActualizarOgGrupos(items: TCibGFact_list);
-{Actualiza la lista de grupos facturables de tipo TCibGFacCabinas. Normalmente solo
-habrá un grupo.}
-  function ExisteObjGrafParaGFac(gfac: TCibGFac; out ogGFac: TogGFac): boolean;
-  {Indica si en el visor existe un objeto gráfcio que represente al grupo
-  indicado. De ser así devuelve la referencia en "ogGFac".}
-  var
-    og: TObjGraf;
-  begin
-    for og in Motedi.objetos do if og.Tipo = OBJ_GRUP then begin
-      if TogGFac(og).Name = gfac.Nombre then begin
-        //Hay. Porque no debería haber grupos con el mismo nombre.
-        ogGFac := TogGFac(og);  //devuelve referencia
-        exit(true);
-      end;
-    end;
-    //No existe
-    exit(false)
-  end;
+function TfraVista.BuscarOgFac(facNombre, gFacNombre: string): TogFac;
+{Devuelve la referencia a un objeto gráfico facturable, del motor de edición, que tenga
+ el nombre del facturable indicado y que pertenezca al mismo grupo. Si no existe
+ devuelve NIL. }
 var
-  ogGFac: TogGFac;
-  GFac : TCibGFac;
+  og: TObjGraf;
+  ogFac: TogFac;
 begin
-  for GFac in items do begin
-    if ExisteObjGrafParaGFac(GFac, ogGFac) then begin
-      //Ya existe un og para este grupo.
-      ogGFac.GFac := gfac;   {Actualiza la referencia, ya que el gfac se ha
-                              creado nuevamente, en la copia del Visor}
-      ogGFac.Data:='';     //Para que no se elimine.
-    end else begin   //No hay
-      //No hay objeto gráfico que represente a este grupo. Debe ser nuevo.
-      ogGFac := AgregarOgGrupo(gfac);  //Crea grupo ogGFac
-      ogGFac.GFac := gfac;  //agrega la referencia
-      ogGFac.Data := '';  //Para que no se elimine (no es necesario).
+  for og in Motedi.objetos do if og.Tipo = OBJ_FACT then begin
+    ogFac := TogFac(og);  //restaura tipo
+    if (ogFac.grupo.Name = gFacNombre) and (ogFac.Name = facNombre) then begin
+      //hay, devuelve la referencia
+      Result := ogFac;  //restaura tipo
+      exit;
     end;
   end;
+  Result := nil;
+end;
+function TfraVista.BuscarOgGFac(nomGrup: string): TogGFac;
+{Busca un objeto gráfico Grupo facturable, del motor de edición, que tenga
+ el nombre del grupo indicado. Si no existe devuelve NIL. }
+var
+  og: TObjGraf;
+  ogGFac: TogGFac;
+begin
+  for og in Motedi.objetos do if og.Tipo = OBJ_GRUP then begin
+    ogGFac := TogGFac(og);  //restaura tipo
+    if ogGFac.Name = nomGrup then begin
+      //hay, devuelve la referencia
+      Result := ogGFac;  //restaura tipo
+      exit;
+    end;
+  end;
+  Result := nil;  //No encontró
 end;
 procedure TfraVista.ActualizarPropiedades(cadProp: string);
 {Recibe la cadena de propiedades del "TCibModelo" del servidor y actualiza
 su copia local.}
 var
-  og : TObjGraf;
-  gruFac: TCibGFac;
+  og: TObjGraf;
+  ogGfac: TogGFac;
   i: Integer;
+  lineas: TStringList;
+  linGru: TStringList;
+  nomGrup, propGru, Err: string;
+  tipGru: TCibTipGFact;
 begin
-  //Actualiza el contenido del TCibModelo local
-  grupos.items.Clear;  {Para empezar a crear los objetos en ModoCopia TRUE}
-  grupos.CadPropiedades := cadProp;  //copia propiedades de todos los grupos
-  {Crea o elimina objetos gráficos (que representan a objetos TCibGFac) de acuerdo al
-  contenido de "grupos".}
+  if trim(cadProp) = '' then exit;
+  lineas := TStringList.Create;
+  linGru := TStringList.Create;
+
+  lineas.Text:=cadProp;  //divide en líneas
+  lineas.Delete(0);   //Elimina primera línea ( No tiene información.)
   for og in motEdi.objetos do og.Data:='x';  //marca todos para eliminación
-  ActualizarOgGrupos(grupos.items);  //Actualiza los objetos TogGFac
-  {Crea o elimina objetos gráficos (que representan a objetos TCibFac) de acuerdo al
-  contenido de "grupos".
-  La opción más sencilla sería crear todos de nuevo de acuerdo al estado de "grupos",
-  pero se evita este método, para mejorar el rendimiento y para no realizar cambios
-  innecesarios en los objetos, que además serían una molestia para la interacción con
-  el usuario.}
-  for gruFac in grupos.items do begin
-    ActualizarOgFacturables(gruFac);
+  while ExtraerPropiedGFAC(lineas, tipGru, nomGrup, propGru, Err) do begin
+    ogGFac := BuscarOgGFac(nomGrup);
+    if ogGFac=nil then begin
+      //Es un objeto nuevo
+      ogGFac := AgregarOgGrupo(tipGru);  //Crea grupo ogGFac
+      ogGFac.OnReqCadMoneda := @gruposReqCadMoneda;
+    end;
+    ogGFac.Data := '';  //Para que no se elimine
+    //Ya se tiene el ogGFac accesible, actualizamos sus propiedades
+    linGru.Text := propGru;
+    ogGfac.SetCadPropied(linGru);
+    //Ya se tiene el ogGFac actualizado, ahora actualizamos sus ogFac
+    ActualizarOgFacturables(linGru, ogGfac);
   end;
+  linGru.Destroy;
+  lineas.Destroy;
   //Verifica objetos no usados (no actualizados), para eliminarlos
   i:=0;  //Usamos WHILE, en lugar de FOR, porque vamos a eliminar elementos
+  while i<motEdi.objetos.Count do begin
+    og := motEdi.objetos[i];
+    if (og.Tipo = OBJ_FACT) and (og.Data = 'x') then begin
+debugln('>Eliminando: ' + og.Name);
+      motEdi.DeleteGraphObject(og);
+    end else begin
+      Inc(i);
+    end;
+  end;
+  //Eliminamos los restantes
+  i:=0;
   while i<motEdi.objetos.Count do begin
     og := motEdi.objetos[i];
     if og.Data = 'x' then begin
@@ -615,39 +622,53 @@ procedure TfraVista.ActualizarEstado(cadEstado: string);
  >
  }
 var
-  lest: TStringList;
+  lineas, linGru: TStringList;
   res: Boolean;
-  cad, nombGrup: string;
-  tipo: TCibTipFact;
-  gf: TObjGraf;
+  estGrup, nomGrup, Err, nombFac, lin1, cad: string;
+  tipGru: TCibTipGFact;
+  ogGfac: TogGFac;
+  car: char;
+  ogFac: TogFac;
 begin
   if cadEstado='' then exit;
-  grupos.CadEstado := cadEstado;  //solo cambia las variables de estado de "grupos"
 
-  //--------- Refresco de objetos gráficos ----------
-  //Este código deberá reemplazar al anterior: grupos.CadEstado := cadEstado;
-  lest:= TStringList.Create;
-  lest.Text := cadEstado;  //carga texto
+  //-------- Refresca los facturables de los objetos gráficos -------
+  //grupos.CadEstado := cadEstado;  //solo cambia las variables de estado de "grupos"
+  lineas := TStringList.Create;
+  linGru := TStringList.Create;
+
+  lineas.Text := cadEstado;  //carga texto
   //Extrae los fragmentos correspondientes a cada Grupo facturable
-  while lest.Count>0 do begin
-    res := ExtraerBloqueEstado(lest, cad, nombGrup, tipo);
-    if not res then break;  //se mostró mensaje de error
-    gf := motedi.ObjPorNombre(nombGrup); //ItemPorNombre(nombGrup);
-    if gf = nil then begin
+  while lineas.Count>0 do begin
+    res := ExtraerEstadoGFAC(lineas, tipGru, nomGrup, estGrup, Err);
+    if not res then break;  //Se mostró mensaje de error
+    ogGFac := BuscarOgGFac(nomGrup);
+    if ogGfac = nil then begin
       //Llegó el estado de un grupo que no existe.
-      debugln('Grupo no existente: ' + nombGrup);   //WARNING
-      break;
+      debugln('Grupo no existente: ' + nomGrup);   //WARNING
+      continue;
     end;
-    {Aquí deberíamos actualizar el estado del objeto gráfico que representa al grupo,
-    y también el estado de cada objeto del grupo.}
-    //gf.CadEstado := cad;   //No importa de que tipo sea
+    //Ya se tiene al ogGfac accesible
+    decodEst.Inic(estGrup, lin1);
+    ogGfac.SetCadEstado(lin1);  //Actualiza ogGfac
+    //Actualiza los ogFac
+    while decodEst.Extraer(car, nombFac, cad) do begin
+      ogFac := BuscarOgFac(nombFac, ogGFac.Name);
+      if ogFac = nil then begin
+        debugln('Facturable no existente: ' + nomGrup);   //WARNING
+        continue;
+      end;
+      ogFac.SetCadEstado(cad);
+    end;
   end;
-  //carga el contenido del archivo de estado
-  lest.Destroy;
-
+  //Carga el contenido del archivo de estado.
+  lineas.Destroy;
+  linGru.Destroy;
+  if Err<>'' then begin
+    DebugLn('--'+Err);
+  end;
   //Los objetos gráficos "verán" los cambios, porque tienen referencias a sus objetos fuente
   motEdi.Refresh;
-DebugLn('---');
 end;
 procedure TfraVista.EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word;
   cad: string);
@@ -665,7 +686,7 @@ begin
     end;
   RFAC_CABIN: begin  //Es respuesta para una cabina
       //Envía a la vista
-      grupos.EjecRespuesta(comando, ParamX, ParamY, cad);
+      //grupos.EjecRespuesta(comando, ParamX, ParamY, cad);  Se supone que funcionaba cuando se manejaba una instancia de "grupos" aquí en el visor.
     end;
   end;
 end;
@@ -765,21 +786,21 @@ procedure TfraVista.motEdi_InicArrastreFac(ogFac: TogFac; X, Y: Integer);
 {Se inicia el arrastre de un objeto gráfico facturable.}
 begin
   //Aquí se puede inciar el arrastre del objeto o su boleta
-  if ogFac.Boleta.LoSelec(X,Y) and (ogFac.Fac.Boleta.ItemCount>0)  then begin
+  if ogFac.Boleta.LoSelec(X,Y) and (ogFac.facBoleta.ItemCount>0)  then begin
     //Selecciona una boleta y está visible
     arrastEsBol:= true;  //Indica que el objeto, a arrastrar, es una boleta.
-    facArrastrado := ogFac.Fac;   //
+    facArrastrado := ogFac;   //
     PaintBox1.BeginDrag(true);
   end else if ogFac.IsSelectedBy(X,Y) then begin
     //Selecciona al facturable
     if ogFac is TogCabina then begin  //Es cabina
       arrastEsBol:= false;  //Indica que el objeto, a arrastrar, es una boleta.
-      facArrastrado := ogFac.Fac;   //
+      facArrastrado := ogFac;   //
       PaintBox1.BeginDrag(true);
     end;
     if ogFac is TogMesa then begin  //Es mesa
       arrastEsBol:= false;  //Indica que el objeto, a arrastrar, es una boleta.
-      facArrastrado := ogFac.Fac;   //
+      facArrastrado := ogFac;   //
       PaintBox1.BeginDrag(true);
     end;
   end;
@@ -843,13 +864,12 @@ begin
   motEdi.OnDblClick       := @motEdi_DblClick;
   motEdi.OnMouseUp        := @motEdi_MouseUp;
   decod  := TCPDecodCadEstado.Create;
-  grupos := TCibModelo.Create('GrupVis', true);  //Crea en modo copia
-  grupos.OnReqCadMoneda   := @gruposReqCadMoneda;
-  grupos.OnSolicEjecCom   := @gruposSolicEjecCom;
+  //Crea decoder para decodificar la cadena de estado
+  decodEst  := TCPDecodCadEstado.Create;
 end;
 destructor TfraVista.Destroy;
 begin
-  grupos.Destroy;
+  decodEst.Destroy;
   decod.Destroy;
   motEdi.Destroy;
   inherited;

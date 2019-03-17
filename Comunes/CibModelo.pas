@@ -20,7 +20,7 @@ type
     function GetCadEstado: string;
     function GetCadPropiedades: string;
     procedure gfac_BDinsert(sqlText: string);
-    procedure gfac_ReqConfigUsu(var Usuario: string);
+    procedure gfac_ReqConfigUsu(out Usuario: string);
     procedure gfac_RespComando(idVista: string; comando: TCPTipCom; ParamX,
       ParamY: word; cad: string);
     procedure gfac_SolicEjecCom(comando: TCPTipCom; ParamX, ParamY: word;
@@ -34,8 +34,8 @@ type
     function gfac_LogInfo(msj: string): integer;
     procedure SetCadEstado(const AValue: string);
     procedure SetCadPropiedades(AValue: string);
-    procedure gfac_ReqConfigGen(var NombProg, NombLocal: string;
-      var ModDiseno: boolean);
+    procedure gfac_ReqConfigGen(out NombProg, NombLocal: string;
+      out ModDiseno: boolean);
     procedure GCab_ArchCambRemot(ruta, nombre: string);
   public  //Eventos.
     {Cuando este objeto forma parte del modelo, necesita comunicarse con la aplicación,
@@ -63,7 +63,7 @@ type
     nombre : string;          //Es un identificador del grupo. Es útil solo para depuración.
     items  : TCibGFact_list;  //lista de grupos facturables
     DeshabEven: boolean;      //deshabilita los eventos
-    listo  : boolean;         //Bandera que indica que el modelo está cargado y listo.
+    MsjError: string;
     property ModoCopia: boolean  {Indica si se quiere manejar al objeto sin conexión (como en un visor),
                                   debería hacerse antes de que se agreguen objetos a "items"}
              read FModoCopia;
@@ -82,13 +82,36 @@ type
     destructor Destroy; override;
   end;
 
-  function ExtraerBloqueEstado(lisEstado: TStringList;
-           out estado, nomGrup: string; out tipo: TCibTipFact): boolean;
+  function CrearGFACdeTipo(tipGFac: TCibTipGFact; ModoCopia: boolean): TCibGFac;
+  function ExtraerEstadoGFAC(lisEstado: TStringList; out tipGru: TCibTipGFact;
+                             out nomGru, estGru, Err: string): boolean;
+  function ExtraerPropiedGFAC(lisPropied: TStringList; out tipGru: TCibTipGFact;
+                             out nomGru, propGru, Err: string): boolean;
 
 implementation
 
-function ExtraerBloqueEstado(lisEstado: TStringList;
-  out estado, nomGrup: string; out tipo: TCibTipFact): boolean;
+function CrearGFACdeTipo(tipGFac: TCibTipGFact; ModoCopia: boolean): TCibGFac;
+{Crea un grupo facturable a partir de un identificador del tipo ed grupo.}
+begin
+  case tipGFac of
+  ctfClientes: begin
+    Result := TCibGFacClientes.Create('CliSinProp', ModoCopia);
+  end;
+  ctfCabinas: begin
+    Result := TCibGFacCabinas.Create('CabsSinProp', ModoCopia);  //crea la instancia
+  end;
+  ctfNiloM: begin
+    Result := TCibGFacNiloM.Create('NiloSinProp', ModoCopia);
+  end;
+  ctfMesas: begin
+    Result := TCibGFacMesas.Create('MesSinProp', ModoCopia);
+  end;
+  else
+    Result := nil;
+  end;
+end;
+function ExtraerEstadoGFAC(lisEstado: TStringList; out tipGru: TCibTipGFact;
+                              out nomGru, estGru, Err: string): boolean;
 {Extrae de la cadena de estado de la aplicación (guardada en lisEstado), el fragmento
 que corresponde al estado de un grupo facturable. El estado se devuelve en "estado"
 Normalmente lisEstado , tendrá la forma:
@@ -101,45 +124,99 @@ cCab2	3	1899:12:30:00:00:00
 ...
 >
 
-Las líneas extraidas, serán eliminadas de la lista. Si encuentra error, muestra el
-mensaje y devuelve FALSE.
+Las líneas extraidas, serán eliminadas de la lista.
+Si encuentra error, actualiza "Err" y devuelve FALSE.
 }
 var
-  a: TStringDynArray;
-  lin0: String;
+  lin, tmp: String;
+  nTip: LongInt;
 begin
-  estado := '';
+  Err := '';
+  estGru := '';
+  tmp := '';
   if lisEstado.Count=0 then begin
-    estado := '';
     exit(false);   //está vacía
   end;
-  lin0 := lisEstado[0];
-  if (lin0='') or (lin0[1]<>'<') then begin
-    MsgErr('Error en cadena de estado. Se esperaba "<".');
-    exit(false);   //Sale con error
-  end;
-  while (lisEstado.Count>0) and (lisEstado[0]<>'>') do begin
-    if estado='' then begin
-      //Es la primera línea a agregar. Aprovechamos para capturar tipo y nomGrup de grupo
-      a := Explode(#9, lisEstado[0]);
-      delete(a[0], 1, 1);  //quita "<"
-      tipo := TCibTipFact(f2I(a[0]));
-      nomGrup := a[1];
+  while (lisEstado.Count>0) do begin
+    lin := lisEstado[0];
+    if trim(lin) = '' then begin
+      //Se ignora
+    end else begin
+      if copy(lin,1,1) = '<' then begin  //Marca de inicio
+        nTip := StrToInt(copy(lin, 2, length(lin)));
+        tipGru := TCibTipGFact(nTip);
+        tmp:='';  //inicia acumulación
+      end else if lin = '>' then begin  //Marca de fin,
+        //Ya se tiene la cadena de propiedades para el nuevo grupo
+        estGru := tmp;
+        lisEstado.Delete(0);
+        exit(true);
+      end else begin
+        if tmp='' then begin
+          //Es la primera línea del bloque.
+          nomGru := copy(lin, 1, pos(#9, lin)-1);  //Aprovecha para tomar nombre
+          tmp := lin;  //Acumula
+        end else begin
+          tmp := tmp + LineEnding + lin;
+        end;
+      end;
     end;
-    estado := estado + lisEstado[0] + LineEnding;  //acumula
     lisEstado.Delete(0);  //elimina
   end;
-  if (lisEstado.Count=0) then begin
-    MsgErr('Error en cadena de estado. Se esperaba ">".');
-    estado := '';
-    exit(false);   //Sale con error
-  end else begin
-    //Lo esperado. Hay al menos una línea más.
-    estado := estado + '>';  //acumula
-    lisEstado.Delete(0);  //elimina la fila '>'
-    exit(true);    //Sale sin error
-  end;
+  Err :='No se encuentra bloque de estado.';
+  exit(false);  //No encontró bloque
 end;
+function ExtraerPropiedGFAC(lisPropied: TStringList; out tipGru: TCibTipGFact;
+                              out nomGru, propGru, Err: string): boolean;
+{Recibe la cadena de propiedades del modelo y extrae en fragmentos correspondientes al
+de un grupo. Algo como:
+[[1
+NILO-m	COUNTER	136	11	1	0.1	F	F	10
+LOCUTORIO 1	0	0	0	15	371
+LOCUTORIO 2	1	0	0	126	371
+LOCUTORIO 3	2	0	0	237	371
+LOCUTORIO 4	3	0	0	348	371
+]]
+Si no encuentra la propiedad para un grupo, devuelve false.
+Si encuentra error, actualiza "Err" y devuelve FALSE.
+}
+var
+  lin, tmp: string;
+  nTip: Integer;
+begin
+  Err := '';
+  propGru := '';
+  if lisPropied.Count=0 then begin
+    exit(false);  //No encontró bloque
+  end;
+  while lisPropied.Count>0 do begin
+    lin := lisPropied[0];
+    if trim(lin) = '' then begin
+      //Se ignora
+    end else begin
+      if copy(lin,1,2) = '[[' then begin  //Marca de inicio
+        nTip := StrToInt(copy(lin, 3, length(lin)));
+        tipGru := TCibTipGFact(nTip);
+        tmp:='';  //inicia acumulación
+      end else if lin = ']]' then begin  //Marca de fin,
+        //Ya se tiene la cadena de propiedades para el nuevo grupo
+        propGru := tmp;
+        lisPropied.Delete(0);
+        exit(true);
+      end else begin
+        if tmp='' then begin
+          //Es la primera línea del bloque
+          nomGru := copy(lin, 1, pos(#9, lin)-1);
+        end;
+        tmp := tmp + lin + LineEnding;
+      end;
+    end;
+    lisPropied.Delete(0);
+  end;
+  Err := 'No se encuentra bloque de propiedad.';
+  exit(false);  //No encontró bloque
+end;
+
 { TCibModelo }
 //Respuesta a eventos
 procedure TCibModelo.gfac_CambiaPropied;
@@ -183,7 +260,8 @@ begin
   if not DeshabEven and (OnBDinsert<>nil) then
     OnBDinsert(sqlText);
 end;
-procedure TCibModelo.gfac_ReqConfigGen(var NombProg, NombLocal: string; var ModDiseno: boolean);
+procedure TCibModelo.gfac_ReqConfigGen(out NombProg, NombLocal: string; out
+  ModDiseno: boolean);
 {Permite preguntar al modelo por parámetros de configuración general.
 Notar que este evento siempre funciona. Auqnue no haya sido inicializado "OnReqConfigGen".
 Una forma de saber se se ha incializado el evento es verificar el valor que devuelve, por
@@ -197,7 +275,7 @@ begin
     ModDiseno := false;
   end;
 end;
-procedure TCibModelo.gfac_ReqConfigUsu(var Usuario: string);
+procedure TCibModelo.gfac_ReqConfigUsu(out Usuario: string);
 begin
   if OnReqConfigUsu<>nil then begin
     OnReqConfigUsu(Usuario);
@@ -373,7 +451,7 @@ var
 begin
   tmp := '' + LineEnding;  //la primera línea contiene propiedades del grupo.
   for gf in items do begin
-    tmp := tmp + '[[' + IntToStr(ord(gf.tipo)) + LineEnding +
+    tmp := tmp + '[[' + IntToStr(ord(gf.tipGFac)) + LineEnding +
                  gf.CadPropied + LineEnding +
                  ']]' + LineEnding;
   end;
@@ -381,100 +459,65 @@ begin
 end;
 procedure TCibModelo.SetCadPropiedades(AValue: string);
 var
-  lin, tmp: string;
-  lineas: TStringList;
-  tipGru: LongInt;
-  grupCab: TCibGFacCabinas;
-  gruNiloM: TCibGFacNiloM;
-  grupCli: TCibGFacClientes;
-  grupMes: TCibGFacMesas;
+  cadProp, nomGrup, Err: string;
+  lineas  : TStringList;
+  gFac    : TCibGFac;
+  tipGru  : TCibTipGFact;
 begin
   if trim(AValue) = '' then exit;
   lineas := TStringList.Create;
   lineas.Text:=AValue;  //divide en líneas
 
   items.Clear;  //elimina todos para crearlos de nuevo
-  lin := lineas[0];  //toma primera línea
   lineas.Delete(0);   //elimina primera línea
-  for lin in lineas do begin
-    if copy(lin,1,2) = '[[' then begin  //Marca de inicio
-      tipGru := StrToInt(copy(lin, 3, length(lin)));
-      tmp:='';  //inicia acumulación
-    end else if lin = ']]' then begin  //Marca de fin,
-      //Ya se tiene la cadena de propiedades para el nuevo grupo
-      //Crea al grupo, en el mismo modo (ModoCopia), con que se ha creado esre objeto.
-      case TCibTipFact(tipGru) of
-      ctfClientes: begin
-        grupCli := TCibGFacClientes.Create('CliSinProp', ModoCopia);
-        grupCli.CadPropied:=tmp;
-        Agregar(grupCli);
-      end;
-      ctfCabinas: begin
-        grupCab := TCibGFacCabinas.Create('CabsSinProp', ModoCopia);  //crea la instancia
-        grupCab.CadPropied:=tmp;    //asigna propiedades
-        Agregar(grupCab);         //agrega a la lista
-      end;
-      ctfNiloM: begin
-        gruNiloM := TCibGFacNiloM.Create('NiloSinProp', ModoCopia);
-        gruNiloM.CadPropied:=tmp;
-        Agregar(gruNiloM);         //agrega a la lista
-      end;
-      ctfMesas: begin
-        grupMes := TCibGFacMesas.Create('MesSinProp', ModoCopia);
-        grupMes.CadPropied:=tmp;
-        Agregar(grupMes);
-      end;
-      end;
-    end else begin
-      tmp := tmp + lin + LineEnding;
-    end;
+  while ExtraerPropiedGFAC(lineas, tipGru, nomGrup, cadProp, Err) do begin
+    //Crea al grupo, en el mismo modo (ModoCopia), con que se ha creado esre objeto.
+    gFac := CrearGFACdeTipo(tipGru, ModoCopia);
+    gFac.CadPropied:=cadProp;
+    Agregar(gFac);
   end;
   lineas.Destroy;
 end;
 function TCibModelo.GetCadEstado: string;
 var
   gf : TCibGFac;
-  primero: Boolean;
+  tmp: String;
 begin
-  Result := '';
-  primero := true;  //bandera para evitar poner el salto final
-  {Simplemente junta las cadenas de estado de los grupos, sin delimitador porque tienen
-  el formato adecuado para poder separarlas.}
+  tmp:= '';
+  {Simplemente junta las cadenas de estado de los grupos.}
   for gf in items do begin
-    if primero then begin
-      Result := gf.CadEstado;
-      primero := false;
-    end else begin
-      Result := Result + LineEnding + gf.CadEstado;
-    end;
+    tmp := tmp + '<' + I2f(ord(gf.tipGFac)) + LineEnding +
+                 gf.CadEstado + '>' + LineEnding;
   end;
+  Result := tmp;
 end;
 procedure TCibModelo.SetCadEstado(const AValue: string);
 var
-  lest: TStringList;
-  res: Boolean;
-  cad, nombGrup: string;
-  tipo: TCibTipFact;
-  gf: TCibGFac;
+  lineas: TStringList;
+  estGrup, nomGrup, Err: string;
+  tipGru: TCibTipGFact;
+  gfac: TCibGFac;
 begin
 //debugln('---');
 //debugln(AValue);
-  lest:= TStringList.Create;
-  lest.Text := AValue;  //carga texto
+  lineas:= TStringList.Create;
+  lineas.Text := AValue;  //carga texto
   //Extrae los fragmentos correspondientes a cada Grupo facturable
-  while lest.Count>0 do begin
-    res := ExtraerBloqueEstado(lest, cad, nombGrup, tipo);
-    if not res then break;  //se mostró mensaje de error
-    gf := ItemPorNombre(nombGrup);
-    if gf = nil then begin
+  while ExtraerEstadoGFAC(lineas, tipGru, nomGrup, estGrup, Err) do begin
+    gfac := ItemPorNombre(nomGrup);
+    if gfac = nil then begin
       //Llegó el estado de un grupo que no existe.
-      debugln('Grupo no existente: ' + nombGrup);   //WARNING
+      debugln('Grupo no existente: ' + nomGrup);   //WARNING
       break;
     end;
-    gf.CadEstado := cad;   //No importa de que tipo sea
+    gfac.CadEstado := estGrup;   //No importa de que tipGru sea
   end;
-  //carga el cobtendio del archivo de estado
-  lest.Destroy;
+  //Carga el contenido del archivo de estado.
+  lineas.Destroy;
+  if Err<>'' then begin
+    debugln('==' + Err);
+    MsjError := Err;
+  end;
 end;
 function TCibModelo.NumGrupos: integer;
 begin
@@ -521,7 +564,7 @@ begin
   gfac.OnSolicEjecCom := @gfac_SolicEjecCom;
   //Eventos que se resuelven en el mismo modelo
   gfac.OnBuscarGFac   := @ItemPorNombre;
-  case gfac.tipo of
+  case gfac.tipGFac of
   ctfCabinas: begin
     //Eventos propios de las cabinas
     TCibGFacCabinas(gfac).OnTramaLista:=@EjecComando;

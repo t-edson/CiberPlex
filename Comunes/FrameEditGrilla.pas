@@ -368,7 +368,7 @@ Esto es necesario para las opciones de edición, para que funcione aún en tabla
 claves primarias, a pesar de que no es muy óptimo en memoria (y CPU), pero como se aplica
 solo a tablas maestras, el tamaño de las tablas es reducido.}
 var
-  c, nCol, f: Integer;
+  f: Integer;
   n: LongInt;
   reg: TCibRegistro;
 begin

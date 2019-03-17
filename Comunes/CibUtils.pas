@@ -37,7 +37,7 @@ begin
   Result.Picture.LoadFromFile(arcPNG);
 end;
 function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
-{Carga archivos PNG, de 16 y 32 pixeles, a un TImageList. Al nombre de lso archivos
+{Carga archivos PNG, de 16 y 32 pixeles, a un TImageList. Al nombre de los archivos
 se les añadirá el sufijo "_16.png" y "_32.png", para obteenr el nombre final.
 Devuelve el índice de la imagen cargada.}
 begin
@@ -159,7 +159,7 @@ begin
 end;
 function AgregarAccion(var ordShortCut: integer; etiq: string;
                        accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
-{Agrega una acción sobre el menú PopUp indicado. Debe llamarse desoués de llamar a
+{Agrega una acción sobre el menú PopUp indicado. Debe llamarse después de llamar a
 InicLlenadoAcciones. El ítem del menú se agrega, justo después del último ítem agregado.
 Si "ordShortCut"<>-1 , se usa su valor para crear un atajo del teclado al menú, y se va
 incrementando su valor. }

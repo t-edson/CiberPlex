@@ -1,13 +1,12 @@
 {                       Clase OG
 Define los objetos gráficos de la aplicación CiberPlex.                                                       }
-unit ObjGraficos;
+unit ObjGraficos_borrar;
 {$mode objfpc}{$H+}
 interface
 uses
-  Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl, Types,
-  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase, CibTramas,
-  CibGFacClientes, CibGFacCabinas, CibCabinaTarifas, CibGFacNiloM,
-  CibNiloMConex, CibFacturables, CibGFacMesas;
+  Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
+  MisUtils, ogMotGraf2d, ogDefObjGraf, CibCabinaBase, CibNiloMConex, CibTramas,
+  CibGFacClientes, CibGFacCabinas, CibGFacNiloM, CibFacturables, CibGFacMesas;
 const
   //Constantes de Colores
  COL_ROJO_CLARO = $8080FF;          //gris
@@ -72,23 +71,17 @@ const //Constantes a usar en el "TObjGraf.tipo", para categorizar a los objetos 
   OBJ_FACT = 1;
   OBJ_GRUP = 2;
 type
-TogGFac = class;
 {TogFac, es el objeto intermedio usado para modelar a todos los objetos facturables.}
 TogFac = class(TObjGraf)
 private
+  Ffac: TCibFac;   //Referencia a su facturable
+  procedure Setfac(AValue: TCibFac);
 public
-  tipGFac  : TCibTipGFact; //Tipo de Facturable (Se asigna al crearse)
-  facBoleta: TCibBoleta;  //Objeto boleta
-  Boleta   : TogBoleta;   //La boleta
-  grupo    : TogGFac;     //referencia al grupo
-  procedure ReLocate(newX, newY: Single; UpdatePCtrls: boolean=true); override;
+  NomGrupo   : string;  //nombre del grupo al que pertenece.
+  Boleta     : TogBoleta;   //La boleta
+  property Fac: TCibFac read Ffac write Setfac;   //contenedor de propiedades
+  function gru: TCibGFac;  //referencia al grupo
   procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override; //Hace público este método
-
-  function IdFac: string;
-  {SetCadPropied() es utilizado para leer las propiedades de un texto.}
-  procedure SetCadEstado(txt: string); virtual; abstract;
-  procedure SetCadPropied(txt: string); virtual; abstract;
-
   constructor Create(mGraf: TMotGraf); override ;
   destructor Destroy; override;
 end;
@@ -97,18 +90,11 @@ end;
 {TogFac, es el objeto intermedio usado para modelar a todos los objetos Grupos de
 facturables.}
 TogGFac = class(TObjGraf)
+protected
+  FGFac: TCibGFac;  //Referencia a su grupo de facturables
+  procedure SetGFac(AValue: TCibGFac); virtual;
 public
-  tipGFac: TCibTipGFact;   //Tipo de Grupo de Facturables
-  OnReqCadMoneda: TevReqCadMoneda;
-public
-  {SetCadPropied() es utilizado para leer de una StringList, la parte que corresponde a
-  las propiedades del ogGFac. Deja en el StringList, las líneas que corresponderían a
-  propiedades de los ogFac.}
-  procedure SetCadPropied(lineas: TSTringList); virtual; abstract;
-  {SetCadEstado() es utilizado para leer de una StringList, la parte que corresponde al
-  estado del ogGFac. Deja en el StringList, las líneas que corresponderían al
-  estado de los ogFac.}
-  procedure SetCadEstado(txt: string); virtual; abstract;
+  property GFac: TCibGFac read FGFac write SetGFac;   //referencia a su objeto grupo
   constructor Create(mGraf: TMotGraf); override;
   destructor Destroy; override;
 end;
@@ -120,14 +106,10 @@ private
 public
   icono      : TGraphic;    //PC con control
   procedure Draw; override;  //Dibuja el objeto gráfico
+  function cli: TCibFacCliente; inline;  //acceso a la cabina
   procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override;
-  procedure ReLocate(newX, newY: Single; UpdatePCtrls: boolean=true); override;
-public //Estado reflejo del FAC al que representa
-  procedure SetCadEstado(txt: string); override;
-public  //Propiedades reflejo del FAC al que representa
-  procedure SetCadPropied(str: string); override;
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
+  constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
 { TogCabina }
 {Objeto gráfico que representa a los elementos TCibFacCabina}
@@ -146,26 +128,12 @@ public
   function Contando: boolean;
   function Detenida: boolean;
   function EnManten: boolean;
+  function cab: TCibFacCabina; inline;  //acceso a la cabina
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override;
 private
   //BotDes   : TogButton;          //Refrencia global al botón de Desactivar
-public  //Estado reflejo del GFAC al que representa
-  estadoConex: TCibEstadoConex;
-  HoraPC, hor_ini, tSolic: TDateTime;
-  PantBloq, tLibre, horGra: Boolean;
-  estadoCta: TcabEstadoCuenta;
-  FTransc: integer;
-  FCosto: double;
-  function tSolicSeg: integer;
-  function Faltante: integer;
-  function TranscDat: TTime;
-public //Estado reflejo del FAC al que representa
-  procedure SetCadEstado(str: string); override;
-public  //Propiedades reflejo del FAC al que representa
-  IP, Mac, NombrePC, Coment: string;
-  ConConexion: boolean;
-  procedure SetCadPropied(str: string); override;
-public  //constructor y destructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
+public  //constructor y detsructor
+  constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
 { TogNiloM }
 {Objeto gráfico que representa a los elementos TCibFacLocutor}
@@ -178,25 +146,17 @@ public
   icoTelDes2  : TGraphic;    //Teléfono descolgado con llamada contestada
   procedure DibujarDatosLlam;
   procedure Draw; override;  //Dibuja el objeto gráfico
-public  //Estado reflejo del GFAC al que representa
-  llamAct  : TRegLlamada; //llamada en curso
-  descolg, descon: boolean;
-  costo_tot: Double;
-  num_llam: integer;
-  HayllamAct: Boolean;  {Bandera para indicar la existencia de llamada actual (Notar que
-                         aquí se trabaja un poco distinto a como se hace en TCibFacLocutor. )}
-  procedure SetCadEstado(str: string); override;
-public  //Propiedades reflejo del FAC al que representa
-  num_can: char;
-  tpoLimitado: integer;
-  ctoLimitado: double;
-  procedure SetCadPropied(str: string); override;
-public  //Constructor y destructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
-  destructor Destroy; override;
+  function loc: TCibFacLocutor; inline;  //acceso a la cabina
+protected
+  procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true);
+public  //Constructor y detsructor
+  constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
-{ TogMesa }
+{ TogCliente }
 {Objeto gráfico que representa a los elementos TCibFacMesa}
+
+{ TogMesa }
+
 TogMesa = class(TogFac)
 private
 public
@@ -210,14 +170,10 @@ public
   icoSilla4   : TGraphic;    //Silla
   procedure ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean=true); override;
   procedure Draw; override;  //Dibuja el objeto gráfico
+  function Mesa: TCibFacMesa; inline;  //acceso a la cabina
   procedure ReLocate(newX, newY: Single; UpdatePCtrls: boolean=true); override;
-public //Estado reflejo del FAC al que representa
-  procedure SetCadEstado(txt: string); override;
-public  //Propiedades reflejo del FAC al que representa
-  tipMesa: TCibMesaTip;
-  procedure SetCadPropied(str: string); override;
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
+  constructor Create(mGraf: TMotGraf; fac0: TCibFac); reintroduce;
 end;
 
 /////////////////// GRUPOS ////////////////////////
@@ -227,14 +183,9 @@ private
 public
   icono  : TGraphic;    //PC con control
   procedure Draw; override;  //Dibuja el objeto gráfico
-public  //Estados reflejo del GFAC al que representa
-  procedure SetCadEstado(txt: string); override;
-public  //Propiedades reflejo del GFAC al que representa
-  CategVenta: string;
-  procedure SetCadPropied(lineas: TSTringList); override;
 protected
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
+  constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
 end;
 { TogGCabinas }
 {Objeto gráfico que representa a los elementos TCibGFacCabinas}
@@ -243,18 +194,9 @@ private
 public
   icono  : TGraphic;    //PC con control
   procedure Draw; override;  //Dibuja el objeto gráfico
-public  //Estados reflejo del GFAC al que representa
-  procedure SetCadEstado(txt: string); override;
-public  //Propiedades reflejo del GFAC al que representa
-  CategVenta: string;
-  //También se guarda información de tarifas en el objeto
-  grupTar: TGrupoTarAlquiler;  //Grupo de tarifas de alquiler
-  tarif  : TCPTarifCabinas; //tarifas de cabina
-  procedure SetCadPropied(lineas: TSTringList); override;
 protected
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
-  destructor Destroy; override;
+  constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
 end;
 { TogGNiloM }
 {Objeto gráfico que representa a los elementos TCibGFacNiloM}
@@ -264,18 +206,9 @@ public
   icoConec: TGraphic;    //NiloM conectado
   icoDesc : TGraphic;    //NiloM desconectado
   procedure Draw; override;  //Dibuja el objeto gráfico
-public  //Estados reflejo del GFAC al que representa
-  estadoCnx: TNilEstadoConex;
-  procedure SetCadEstado(txt: string); override;
-public  //Propiedades reflejo del GFAC al que representa
-  CategVenta, PuertoN: string;
-  facCmoneda: Double;
-  IniLLamMan, IniLLamTemp: boolean;
-  PerLLamTemp: integer;
-  procedure SetCadPropied(lineas: TSTringList); override;
 protected
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
+  constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
 end;
 { TogGMesas }
 {Objeto gráfico que representa a los elementos TCibGFacMesas}
@@ -284,14 +217,9 @@ private
 public
   icono  : TGraphic;    //PC con control
   procedure Draw; override;  //Dibuja el objeto gráfico
-public  //Estados reflejo del GFAC al que representa
-  procedure SetCadEstado(txt: string); override;
-public  //Propiedades reflejo del GFAC al que representa
-  CategVenta: string;
-  procedure SetCadPropied(lineas: TSTringList); override;
 protected
 public  //constructor y detsructor
-  constructor Create(mGraf: TMotGraf); reintroduce;
+  constructor Create(mGraf: TMotGraf; gfac0: TCibGFac); reintroduce;
 end;
 
 implementation
@@ -376,37 +304,51 @@ begin
    filas.Add(f);
    ReConstGeom;      //reconstruye
 end;
-procedure TogFac.ReLocate(newX, newY: Single; UpdatePCtrls: boolean);
-begin
-  inherited ReLocate(newX, newY, UpdatePCtrls);
-  Boleta.Locate(x+5,y+110);
-end;
 { TogFac }
+procedure TogFac.Setfac(AValue: TCibFac);
+begin
+  Ffac:=AValue;             //Referencia al objeto
+  Boleta.bol := Avalue.Boleta;   //y también el de la boleta
+  //Al actualizar la referencia, se debte también actualizar las variables copia
+  Name := Ffac.Nombre;         //Referencia al objeto como cadena
+  NomGrupo := Ffac.Grupo.Nombre;  {Se guarda la referencia al NomGrupo como cadena, porque una
+                                cadena es una referencia segura, ya que la referencia
+                                Fcab, puede quedar apuntando a objetos liberados.}
+  Relocate(Ffac.x, Ffac.y);    //Se reubican, porque pueden cambiar la ubicación X,Y
+  {No necesita actualizar alguna otra propiedad porque, el acceso a las propiedades
+   adicionales, se hace a través de la referencia "Fac".}
+end;
+function TogFac.gru: TCibGFac;
+begin
+  Result := Ffac.Grupo;
+end;
 procedure TogFac.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 begin
   inherited;
-end;
-function TogFac.IdFac: string;
-{Genera el identificador, a partir del nombre y del grupo.}
-begin
-  Result := Grupo.Name + SEP_IDFAC + Name;
 end;
 constructor TogFac.Create(mGraf: TMotGraf);
 begin
   inherited Create(mGraf);
   tipo := OBJ_FACT;   //Usa el campo tipo, para identificar a los facturables
   Boleta := TogBoleta.Create(v2d, nil);  //crea boleta
-  facBoleta  := TCibBoleta.Create;
-  Boleta.bol := facBoleta;   //ACtualzia referencia
 end;
 destructor TogFac.Destroy;
 begin
-  facBoleta.Destroy;
   Boleta.Destroy;
   //if FFac<>nil then Ffac.Destroy;
   inherited Destroy;
 end;
+
 { TogGFac }
+procedure TogGFac.SetGFac(AValue: TCibGFac);
+begin
+  FGFac:=AValue;            //Referencia al objeto
+  //Se ha cambiado la referencia, actualizamos las propiedades que son copia
+  Name := GFac.Nombre;         //Referencia al objeto como cadena
+  ReLocate(GFac.x, GFac.y);    //Se reubican, porque pueden cambiar la ubicación X,Y
+  {No necesita actualizar alguna otra propiedad porque, el acceso a las propiedades
+   adicionales, se hace a través de la referencia "GFac".}
+end;
 constructor TogGFac.Create(mGraf: TMotGraf);
 begin
   inherited Create(mGraf);
@@ -414,6 +356,7 @@ begin
 end;
 destructor TogGFac.Destroy;
 begin
+  //if FGFac<>nil then FGFac.Destroy;
   inherited Destroy;
 end;
 
@@ -437,7 +380,7 @@ begin
   //dibuja ícono
   v2d.DrawImageN(icono, x, y);
   //muestra boleta
-  if facBoleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
+  if cli.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
 procedure TogCliente.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
@@ -446,64 +389,35 @@ procedure TogCliente.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 begin
   inherited;
   //ubica boleta
-  //Boleta.Locate(x-8,y+45);
-end;
-procedure TogCliente.ReLocate(newX, newY: Single; UpdatePCtrls: boolean);
-begin
-  inherited ReLocate(newX, newY, UpdatePCtrls);
-  //ubica boleta
   Boleta.Locate(x-8,y+45);
 end;
-
-procedure TogCliente.SetCadEstado(txt: string);
-var
-  lineas: TStringDynArray;
-  lin, _Nombre: String;
+function TogCliente.cli: TCibFacCliente;
+{Función de acceso por comodidad}
 begin
-  lineas := Explode(LineEnding, txt);
-  lin := lineas[0];  //primera línea´, debe haber al menos una
-  TCibFacCliente.DecodCadEstado(lin, _Nombre);
-  //Agrega información de boletas
-  LeerEstadoBoleta(facBoleta, lineas);
-end;
-procedure TogCliente.SetCadPropied(str: string);
-begin
-  TCibFacCliente.DecodCadPropied(str, Name, Fx, Fy);
+  Result := TCibFacCliente(Fac);
 end;
 //constructor y detsructor
-constructor TogCliente.Create(mGraf: TMotGraf);
+constructor TogCliente.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
   boleta.Width:=67;
   pcTOP_CEN.visible:=false;  //oculta punto de control
   Name := 'Cliente';
   Self.Locate(100,100);
+  Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
+                crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
   Resize(50, 65);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogCabina }
-function TogCabina.tSolicSeg: integer;
-begin
-  Result := round(tSolic*86400)
-end;
-function TogCabina.Faltante: integer;
-//Tiempo faltante en segundos
-begin
-  Result := tSolicSeg - FTransc;
-  if Result<0 then Result := 0;
-end;
-function TogCabina.TranscDat: TTime;
-begin
-  Result := FTransc / SecsPerDay;
-end;
 procedure TogCabina.DibujarTiempo;
 var
   tmp: string;
 begin
-  //dibuja cuadro de estadoCta
+  //dibuja cuadro de estado
   v2d.SetText(clBlack, 10,'',false);
-  if tLibre then begin
+  if cab.tLibre then begin
     v2d.SetBrush(COL_VERD_CLARO);   //siempre verde
-  end else if estadoCta = EST_PAUSAD then begin
+  end else if cab.EstadoCta = EST_PAUSAD then begin
     //Esta pausado. Parpadea en amarillo
     if trunc(now*86400) mod 2 = 0 then begin
       v2d.SetBrush(COL_AMAR_OSCUR);
@@ -512,13 +426,13 @@ begin
     end;
   end else begin
      //Hay tiempo, verificar si falta poco
-     if Faltante <= 0 then begin
+     if cab.Faltante <= 0 then begin
        //Genera parpadeo
-       if FTransc mod 2 = 0 then
+       if cab.TranscSeg mod 2 = 0 then
          v2d.SetBrush(COL_ROJO_CLARO)
        else
          v2d.SetBrush(COL_AMAR_CLARO);
-     end else if Faltante < 5*60 then begin
+     end else if cab.Faltante < 5*60 then begin
        v2d.SetBrush(COL_AMAR_CLARO);
      end else begin
        v2d.SetBrush(COL_VERD_CLARO);
@@ -527,22 +441,22 @@ begin
   v2d.RectangR(x, y, x+60, y+36);
   //muestra tiempo transcurrido
 //  DateTimeToString(tmp, 'hh:mm:ss', now-Fac.hor_ini);  //convierte
-  DateTimeToString(tmp, 'hh:mm:ss', TranscDat);  //convierte
+  DateTimeToString(tmp, 'hh:mm:ss', cab.TranscDat);  //convierte
   v2d.Texto(x+4,y+1,tmp);
   //muestra tiempo total
-  if tLibre then   //pidió tiempo libre
+  if cab.tLibre then   //pidió tiempo libre
     v2d.SetText(clBlue, 10,'',true);
   //Genera Tiempo solicitado en texto descriptivo.
-  if tLibre then begin  //pidió tiempo libre
+  if cab.tLibre then begin  //pidió tiempo libre
     tmp := '<libre>'
-  end else if Abs(tSolic - 1/24) < 0.0001 then
+  end else if Abs(cab.tSolic - 1/24) < 0.0001 then
     tmp := '1 hora'
-  else if Abs(tSolic - 1/48) < 0.0001 then
+  else if Abs(cab.tSolic - 1/48) < 0.0001 then
     tmp := '1/2 hora'
-  else if Abs(tSolic - 1/96) < 0.0001 then
+  else if Abs(cab.tSolic - 1/96) < 0.0001 then
     tmp := '1/4 hora'
   else   //no es tiempo conocido
-    DateTimeToString(tmp, 'hh:mm:ss', tSolic);  //convierte
+    DateTimeToString(tmp, 'hh:mm:ss', cab.tSolic);  //convierte
   //escribe tiempo
   v2d.Texto(x+4,y+17,tmp);
 end;
@@ -563,8 +477,8 @@ begin
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, Name);
   //Dibuja íconos de PC y de conexión
-  if ConConexion then begin
-    if EstadoConex = cecConectado then begin
+  if cab.ConConexion then begin
+    if cab.EstadoConex = cecConectado then begin
       v2d.DrawImageN(icoRedAct, x+38, y+30);
       v2d.DrawImageN(icoPC, x+12, y+20);
     end else begin
@@ -574,25 +488,25 @@ begin
   end else begin
     v2d.DrawImageN(icoPCdes, x+12, y+20);
   end;
-  if estadoCta in [EST_CONTAN, EST_PAUSAD] then begin
+  if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
      //muestra ícono de persona
      if icoUSU<>NIL then v2d.DrawImageN(icoUSU, x, y+35);
      DibujarTiempo;
   end;
   //Dibuja íconos de Comentario
-  if Coment<>'' then begin
+  if cab.Coment<>'' then begin
      if icoComent<>NIL then v2d.DrawImageN(icoComent, x+50, y+50);
   end;
   //Muestra consumo
   v2d.SetPen(psSolid, 1, clBlack);
   v2d.SetBrush(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
-  if estadoCta in [EST_CONTAN, EST_PAUSAD] then begin
+  if cab.EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
     //solo muestra tiempo, en conteo
-    s := grupo.OnReqCadMoneda(FCosto);  //convierte a moneda
+    s := cab.Grupo.OnReqCadMoneda(cab.Costo);  //convierte a moneda
     v2d.SetText(clBlue, 11,'',false);
     v2d.TextoR(x+2, y+88, width-4, 22, s);
-    if horGra then begin  //hora gratis
+    if cab.horGra then begin  //hora gratis
        v2d.SetText(clRed, 10, '', true);
        v2d.Texto(x+25, y+40, 'GRATIS');
     end;
@@ -601,8 +515,8 @@ begin
     //BotDes.estado:= false;
   end;
   //muestra boleta
-  if facBoleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
-  if estadoCta = EST_MANTEN then begin
+  if cab.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
+  if cab.EstadoCta = EST_MANTEN then begin
     //dibuja aspa roja
     v2d.SetPen(psSolid, 3, clred);
     v2d.Line(x,y,x2,y+90);
@@ -610,34 +524,32 @@ begin
   end;
   inherited;
 end;
-procedure TogCabina.SetCadEstado(str: string);
-var
-  _Nombre, lin: String;
-  lineas: TStringDynArray;
+procedure TogCabina.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
+//Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
+//cambiar las dimensiones.
 begin
-  lineas := Explode(LineEnding, str);
-  lin := lineas[0];  //primera línea´, debe haber al menos una
-  TCibFacCabina.DecodCadEstado(lin, _Nombre, estadoConex, HoraPC, PantBloq,
-    estadoCta, hor_ini, tSolic, tLibre, horGra, FTransc, FCosto);
-  //Agrega información de boletas
-  LeerEstadoBoleta(facBoleta, lineas);
-end;
-procedure TogCabina.SetCadPropied(str: string);
-begin
-  TCibFacCabina.DecodCadPropied(str, Name, IP, Mac, Fx, Fy, ConConexion, NombrePC, Coment);
-//  ReLocate(Fx, Fy);   //para actualizar.
+  inherited;
+//  x2 := x + width;
+//  Buttons[0].Ubicar(x2 - 24, y + 1);
+  //ubica boleta
+  Boleta.Locate(x+5,y+110);
 end;
 function TogCabina.Contando: boolean;
 begin
-  Result := estadoCta in [EST_CONTAN, EST_PAUSAD];
+  Result := cab.EstadoCta in [EST_CONTAN, EST_PAUSAD];
 end;
 function TogCabina.Detenida: boolean;
 begin
-  Result := estadoCta = EST_NORMAL;
+  Result := cab.EstadoCta = EST_NORMAL;
 end;
 function TogCabina.EnManten: boolean;
 begin
-  Result := estadoCta = EST_MANTEN;
+  Result := cab.EstadoCta = EST_MANTEN;
+end;
+function TogCabina.cab: TCibFacCabina; inline;
+{Función de acceso por comodidad}
+begin
+  Result := TCibFacCabina(Fac);
 end;
 procedure TogCabina.ProcDesac(estado0: Boolean);
 begin
@@ -645,13 +557,15 @@ begin
 //   BotDes.estado := estado0;      //Cambia estado0 por si no estaba sincronizado
 end;
 //constructor y detsructor
-constructor TogCabina.Create(mGraf: TMotGraf);
+constructor TogCabina.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
   //BotDes := AddButton(24, 24, BOT_REPROD, @ProcDesac);
   pcTOP_CEN.visible:=false;  //oculta punto de control
   Name := 'Cabina';
   Self.Locate(100,100);
+  Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
+                crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
   Resize(85, 130);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
   ProcDesac(False);   //Desactivado := False
 end;
@@ -665,26 +579,26 @@ procedure TogNiloM.DibujarDatosLlam;
     v2d.RectangR(x-3, y-2, x+97, y+50);
     v2d.Texto(x+1,y   , 'Esperando');
     v2d.Texto(x+1,y+16, 'marcación...');
-    if num_llam= 1 then v2d.Texto(x+1,y+32, '<1 llamada.>')
-    else v2d.Texto(x+1,y+32, '<'+ IntToStr(num_llam) +' llamadas>');
+    if loc.num_llam= 1 then v2d.Texto(x+1,y+32, '<1 llamada.>')
+    else v2d.Texto(x+1,y+32, '<'+ IntToStr(loc.num_llam) +' llamadas>');
 //    DateTimeToString(tmp, 'hh:mm:ss', 0);  //convierte
 //    v2d.Texto(x+1,y+16,tmp);
   end;
 begin
   //dibuja cuadro de estado
-  if descolg then begin    //Está descolgado
-    if HayllamAct then begin  //Hay llamadas, Al menos la actual.
-      if llamAct.CONTEST then v2d.SetText(clRed, 10,'',false)
+  if loc.descolg then begin    //Está descolgado
+    if loc.llamAct <> nil then begin  //Hay llamadas, Al menos la actual.
+      if loc.llamAct.CONTEST then v2d.SetText(clRed, 10,'',false)
       else v2d.SetText(clBlack, 10,'',false);
       v2d.SetBrush(TColor($D0D0D0));
       v2d.RectangR(x-3, y-2, x+97, y+50);
       //muestra tiempo transcurrido
-      v2d.Texto(x+1,y   , llamAct.digitado);
-      v2d.Texto(x+1,y+16, llamAct.tarDesrip);
-      if llamAct.CONTEST then begin
-        v2d.Texto(x+1,y+32, llamAct.duracStr + ' ' + Grupo.OnReqCadMoneda(llamAct.COST_NTER))
+      v2d.Texto(x+1,y   , loc.llamAct.digitado);
+      v2d.Texto(x+1,y+16, loc.llamAct.tarDesrip);
+      if loc.llamAct.CONTEST then begin
+        v2d.Texto(x+1,y+32, loc.llamAct.duracStr + ' ' + loc.Grupo.OnReqCadMoneda(loc.llamAct.COST_NTER))
       end else begin
-        v2d.Texto(x+1,y+32, 'Cto.Paso=' + llamAct.tarCtoPaso);
+        v2d.Texto(x+1,y+32, 'Cto.Paso=' + loc.llamAct.tarCtoPaso);
       end;
 
     end else begin  //Hay llamadas
@@ -705,20 +619,20 @@ begin
   //y2 := y + height;
   //Dibuja fondo rectangular
   v2d.SetPen(psSolid, 1, COL_GRIS);
-  if descon then v2d.SetBrush(COL_GRIS_CLARO)
+  if loc.descon then v2d.SetBrush(COL_GRIS_CLARO)
   else v2d.SetBrush(TColor($BCF5A9));
   v2d.RectangR(x, y, x2, y + height);
   //Dibuja visor
   v2d.SetBrush(clBlack);
   v2d.RectangR(x+16, y+10, x2-16, y + 40);
-  if descon then v2d.SetBrush(COL_GRIS_CLARO)
+  if loc.descon then v2d.SetBrush(COL_GRIS_CLARO)
   else v2d.SetBrush(clBlue);
   v2d.RectangR(x+22, y+16, x2-22, y + 30);
 
   v2d.SetText(clBlack, 11,'', true);
   v2d.Texto(X + 2, Y -20, name);  //Nombre de objeto
   //dibuja ícono de teléfono
-  if descolg then begin
+  if loc.descolg then begin
     v2d.DrawImageN(icoTelDes, x+28, y+52);
   end else begin
      v2d.DrawImageN(icoTelCol, x+28, y+52);
@@ -729,55 +643,40 @@ begin
   v2d.SetPen(psSolid, 1, clBlack);
   v2d.SetBrush(TColor($D5D5D5));
   v2d.RectangR(x, y+88, x2, y+110);
-  s := Grupo.OnReqCadMoneda(costo_tot);  //costo en formato de moneda
+  s := loc.Grupo.OnReqCadMoneda(loc.costo_tot);  //costo en formato de moneda
   v2d.SetText(clBlue, 11,'',false);
   v2d.TextoR(x+2, y+88, width-4, 22, s);
   //muestra boleta
-  if facBoleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
+  if loc.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
-procedure TogNiloM.SetCadEstado(str: string);
-var
-  tmp, LlamActEstado, lin: string;
-  lineas: TStringDynArray;
+procedure TogNiloM.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
+//Reubica elementos, del objeto. Se le debe llamar cuando se cambia la posición del objeto, sin
+//cambiar las dimensiones.
 begin
-  lineas := Explode(LineEnding, str);
-  lin := lineas[0];  //primera línea´, debe haber al menos una
-  TCibFacLocutor.DecodCadEstado(lin, tmp, descolg, descon, costo_tot, num_llam,
-                                LlamActEstado);
-  if LlamActEstado <> '' then begin
-    HayllamAct := true;
-    llamAct.CadEstado := LlamActEstado;
-  end else begin
-    HayllamAct := false;
-  end;
-  //Agrega información de boletas
-  LeerEstadoBoleta(facBoleta, lineas);
+  inherited;
+  //ubica boleta
+  Boleta.Locate(x+5,y+110);
 end;
-procedure TogNiloM.SetCadPropied(str: string);
+function TogNiloM.loc: TCibFacLocutor;
 begin
-  TCibFacLocutor.DecodCadPropied(str, Name, num_can, tpoLimitado, ctoLimitado, Fx, Fy);
+  Result := TCibFacLocutor(Fac);
 end;
 procedure TogNiloM.ProcDesac(estado0: Boolean);
 begin
 //   Desactivado := estado0;
 end;
 //constructor y detsructor
-constructor TogNiloM.Create(mGraf: TMotGraf);
+constructor TogNiloM.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
-  llamAct  := TRegLlamada.Create;
   pcTOP_CEN.visible:=false;  //oculta punto de control
   Name := 'Locutorio';
   Self.Locate(100,100);
+  Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
+                crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
   Resize(94, 130);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
-destructor TogNiloM.Destroy;
-begin
-  llamAct.Destroy;
-  inherited Destroy;
-end;
-
 { TogMesa }
 procedure TogMesa.Draw;
 begin
@@ -797,7 +696,7 @@ begin
   v2d.DrawImageN(icoSilla1, x , y + 38);
   v2d.DrawImageN(icoSilla2, x + 37, y);
   //dibuja ícono de mesa
-  case tipMesa of
+  case Mesa.tipMesa of
   cmt1x1: begin
       v2d.DrawImageN(icoSilla3, x + 70, y + 38);
       v2d.DrawImageN(icoSilla4, x + 37, y + 70);
@@ -828,7 +727,7 @@ begin
   end;
   end;
   //muestra boleta
-  if facBoleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
+  if Mesa.Boleta.ItemCount>0 then Boleta.Dibujar;  //dibuja boleta
   inherited;
 end;
 procedure TogMesa.ReLocate(newX, newY: Single; UpdatePCtrls: boolean);
@@ -839,24 +738,14 @@ begin
   //ubica boleta
   Boleta.Locate(x + width/2 - 40, y + height - 20);
 end;
-procedure TogMesa.SetCadEstado(txt: string);
-var
-  lineas: TStringDynArray;
-  lin, _Nombre: String;
+function TogMesa.Mesa: TCibFacMesa;
+{Función de acceso por comodidad}
 begin
-  lineas := Explode(LineEnding, txt);
-  lin := lineas[0];  //primera línea´, debe haber al menos una
-  TCibFacCliente.DecodCadEstado(lin, _Nombre);
-  //Agrega información de boletas
-  LeerEstadoBoleta(facBoleta, lineas);
-end;
-procedure TogMesa.SetCadPropied(str: string);
-begin
-  TCibFacMesa.DecodCadPropied(str, Name, Fx, Fy, tipMesa);
+  Result := TCibFacMesa(Fac);
 end;
 procedure TogMesa.ReSize(newWidth, newHeight: Single; UpdatePCtrls: boolean);
 begin
-  case tipMesa of
+  case Mesa.tipMesa of
   cmt1x1: begin
       newWidth := 105;
       newHeight := 110;
@@ -877,13 +766,15 @@ begin
   inherited Resize(newWidth, newHeight);
 end;
 //constructor y detsructor
-constructor TogMesa.Create(mGraf: TMotGraf);
+constructor TogMesa.Create(mGraf: TMotGraf; fac0: TCibFac);
 begin
   inherited Create(mGraf);
   boleta.Width:=80;
   pcTOP_CEN.visible:=false;  //oculta punto de control
   Name := 'Cliente';
   Locate(100,100);
+  Fac := fac0;  {Actualiza referencia, a través de la propiedad. Se debe hacer después de
+                crear controles adicionales, como botones, porque aquí se llama a ReubicElemen.}
   Resize(105, 110);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 //////////////////////////////////////////////////////////////////////
@@ -901,22 +792,13 @@ begin
   v2d.Texto(x + 33, y+3, Name);
   inherited;
 end;
-procedure TogGClientes.SetCadEstado(txt: string);
-begin
-  //No hay estado para este grupo.
-end;
-procedure TogGClientes.SetCadPropied(lineas: TSTringList);
-begin
-  TCibGFacClientes.DecodCadPropied(lineas, Name, CategVenta, Fx, Fy);
-  ReLocate(x, y);  //Porque ha habido cambios en X,Y
-end;
-constructor TogGClientes.Create(mGraf: TMotGraf);
+constructor TogGClientes.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  tipGFac := ctfClientes;
   pcTOP_CEN.visible:=false;  //oculta punto de control
-  Locate(100,100);
+  Self.Locate(100,100);
   Name := 'Grupo Clientes';
+  GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
   Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogGCabinas }
@@ -931,44 +813,22 @@ begin
   v2d.Texto(x + 33, y+3, Name);
   inherited;
 end;
-procedure TogGCabinas.SetCadEstado(txt: string);
-begin
-  //No hay estado para este grupo.
-end;
-procedure TogGCabinas.SetCadPropied(lineas: TSTringList);
-var
-  strGrupTar, strTarif: string;
-begin
-  TCibGFacCabinas.DecodCadPropied(lineas, Name, CategVenta, Fx, Fy, strGrupTar, strTarif);
-  grupTar.StrObj := strGrupTar;
-  tarif.StrObj := strTarif;
-  ReLocate(x, y);  //Porque ha habido cambios en X,Y
-end;
-constructor TogGCabinas.Create(mGraf: TMotGraf);
+constructor TogGCabinas.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  tipGFac := ctfCabinas;
-  grupTar:= TGrupoTarAlquiler.Create;  //Grupo de tarifas de alquiler
-  tarif  := TCPTarifCabinas.Create(grupTar); //tarifas de cabina
-
   pcTOP_CEN.visible:=false;  //oculta punto de control
-  Locate(100,100);
+  Self.Locate(100,100);
   Name := 'Grupo Cabinas';
+  GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
   Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
-end;
-destructor TogGCabinas.Destroy;
-begin
-  grupTar.Destroy;
-  tarif.Destroy;
-  inherited Destroy;
 end;
 { TogGNiloM }
 procedure TogGNiloM.Draw;
 begin
   //--------------Dibuja encabezado
   v2d.SetPen(psSolid, 1, COL_GRIS);
-  //Dibuja íconos
-  if estadoCnx = necConectado then begin  //**** Aún no se ve estados
+  //dibuja íconos
+  if TCibGFacNiloM(GFac).estadoCnx = necConectado then begin
     v2d.DrawImageN(icoConec, x, y-2);
   end else begin
     v2d.DrawImageN(icoDesc, x, y-2);
@@ -978,24 +838,13 @@ begin
   v2d.Texto(x + 33, y+3, Name);
   inherited Draw;
 end;
-procedure TogGNiloM.SetCadEstado(txt: string);
-var _Nombre: string;
-begin
-  TCibGFacNiloM.DecodCadEstado(txt, _Nombre, estadoCnx);
-end;
-procedure TogGNiloM.SetCadPropied(lineas: TSTringList);
-begin
-  TCibGFacNiloM.DecodCadPropied(lineas, Name, CategVenta, Fx, Fy, PuertoN,
-    facCmoneda, IniLLamMan, IniLLamTemp, PerLLamTemp);
-  ReLocate(x, y);  //Porque ha habido cambios en X,Y
-end;
-constructor TogGNiloM.Create(mGraf: TMotGraf);
+constructor TogGNiloM.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  tipGFac := ctfNiloM;
   pcTOP_CEN.visible:=false;  //oculta punto de control
   Self.Locate(100,100);
   Name := 'Grupo NiloM';
+  GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
   Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 { TogGMesas }
@@ -1010,22 +859,13 @@ begin
   v2d.Texto(x + 33, y+3, Name);
   inherited;
 end;
-procedure TogGMesas.SetCadEstado(txt: string);
-begin
-  //No hay estado para este grupo.
-end;
-procedure TogGMesas.SetCadPropied(lineas: TSTringList);
-begin
-  TCibGFacMesas.DecodCadPropied(lineas, Name, CategVenta, Fx, Fy);
-  ReLocate(x, y);  //Porque ha habido cambios en X,Y
-end;
-constructor TogGMesas.Create(mGraf: TMotGraf);
+constructor TogGMesas.Create(mGraf: TMotGraf; gfac0: TCibGFac);
 begin
   inherited Create(mGraf);
-  tipGFac := ctfMesas;
   pcTOP_CEN.visible:=false;  //oculta punto de control
   Self.Locate(100,100);
   Name := 'Grupo Clientes';
+  GFac := gfac0;   //guarda referencia y actualiza propiedades que son copia
   Resize(100, 29);     //Se debe llamar después de crear los puntos de control para poder ubicarlos
 end;
 

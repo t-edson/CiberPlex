@@ -152,6 +152,7 @@ var
   tmp: String;
 begin
   If entrada <> CanalEnt Then Exit;    //no corresponde
+  tmp := '';
 //    txtBolsaPre.Text = bolsa
   For i := 1 To Length(bolsa) do begin
       tmp := tmp + DecodPref(ord(bolsa[i]));

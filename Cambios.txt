@@ -1,3 +1,45 @@
+2.3
+===
+Se modifica el formato del archivo de estado de la aplicación, para que se uniformice con la 
+cadena de propiedades y porque se vio que la estructura de la cadena de propiedades está mejor
+diseñada.
+Se cambiaron diversos nombres en parámetros y varaibles, para hacerlos más consistentes con 
+su uso en otras partes del código fuente.
+Se convierte el método tCibGFac.SetCadEstado() en abstracto y se implemnta en todos los GFAC.
+
+Como se ha cambiado el formato del archivo de estado, es recomendable hacer la migración cuando
+el sistema seencuentre en el estado normal, sin boletas.
+
+En esta versión se ha avanzado considerablemnete la implementación del nuevo visor que no crea
+copia del modelo. Aún falta la implementación del control por menús y ratón, pero el nuevo 
+visor, ya puede leer las propiedades y el estado del modelo. Finalmente se deberá eliminar la 
+vista frameVisCPlex y la unidad ObjGraficos_borrar, para pasar a usar la nueva vista. También
+se podrá eliminar el modo "COpia" de todos los FAC y GFAC.
+
+2.2
+===
+Se agregan métodos de clase de tipo SetCadPropied*() y GetCadPropied*(), a todas las clases 
+GFAC. 
+Se crea una unidad adicional "ObjGraficos_borrar.pas" como una copia de la versión anterior y se 
+modifica "ObjGraficos.pas" para que deje de usar una instancia del modelo.
+
+En esta versión se ha avanzado considereblemente en crear una nueva vista más independiente y 
+que además evite que se creeen objetos "copia", y que ha generado complejidad en los objetos
+FAC y GFAC. 
+Se mantienen como prueba el formulario FormVista y el frame frameVista, pero ahora están ya 
+bastante avanzados y usan su propia versión de "ObjGraficos.pas" que incluye objetos gráficos
+que ya no crean instancias de los FAC y GFAC.
+Aún no se logra la implementación completa de la vista (falat la actualziación de estados)
+pero s ehan hecho importantes avances.
+
+
+2.1
+===
+Se cambia el contenedor del Modelo. Ahora ya no está en el formulario de configuración, sino
+en el formulario principal.
+Se elimina el campo TCibModelo.Listo.
+Se avanza en la creación de una nueva vista que no maneje "Objetos copia".
+
 2.0
 ===
 -- SERVER -- 

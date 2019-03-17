@@ -7,8 +7,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Buttons, StdCtrls, ComCtrls, ExtCtrls,
-  Spin, MiConfigBasic, MiConfigXML, frameCfgUsuarios, Globales, MisUtils,
-  CibModelo;
+  Spin, MiConfigBasic, MiConfigXML, frameCfgUsuarios, Globales, MisUtils;
 
 type
   TStyleToolbar = (stb_SmallIcon, stb_BigIcon);
@@ -59,8 +58,6 @@ type
   private
     xmlFile: TMiConfigXML;
     version: String;
-    procedure asocGFFileToProperty;
-    procedure asocGFPropertyToFile;
     procedure cfgFilePropertiesChanges;
   public
     msjError: string;    //para los mensajes de error
@@ -83,13 +80,12 @@ type
     modDiseno: Boolean;
     StyleToolbar: TStyleToolbar;
     ////// propiedad de grupos
-    grupos: TCibModelo;  //objeto principal
-    GrpsFact: string;   //cadena "espejo" para las propiedades
+    ModeloStr: string;   //Cadena para guardar el modelo
     ////// propiedades usuarios
     listaUsu: TStringList;
 
     procedure escribirArchivoIni;
-    procedure Iniciar(nombXML: string=''; ModoCopia: boolean=false);
+    procedure Iniciar(nombXML: string = '');
     procedure Mostrar;
   public //Funciones de moneda
     function ReqCadMon(valor: double): string;
@@ -101,7 +97,6 @@ var
   //Funciones de acceso rápido
   function CadMoneda(valor: double): string; inline;
   function LeeMoneda(txt: string): double;
-  function Modelo: TCibModelo;
   function FormatMon: string;   //formato de moneda
 
 implementation
@@ -115,10 +110,6 @@ function LeeMoneda(txt: string): double;
 begin
   Result := Config.LeeMon(txt);
 end;
-function Modelo: TCibModelo;
-begin
-  Result := Config.grupos;
-end;
 function FormatMon: string;
 {Devuelve el formato que se debe aplicar a un valor para mostrarlo como moneda usando
 la función Format().}
@@ -131,7 +122,6 @@ begin
 end;
 procedure TConfig.FormDestroy(Sender: TObject);
 begin
-  if grupos<>nil then grupos.Destroy;
   FreeAndNil(xmlFile);
   listaUsu.Destroy;
 end;
@@ -159,23 +149,13 @@ procedure TConfig.edSimbMonChange(Sender: TObject);
 begin
   spnNumDecChange(self);     //Refresca muestra
 end;
-procedure TConfig.Iniciar(nombXML: string = ''; ModoCopia: boolean = false);
+procedure TConfig.Iniciar(nombXML: string = '');
 {Inicia el formulario de configuración. Debe llamarse antes de usar el formulario y
-después de haber cargado todos los frames.
-"ModoCopia", permite trabajar con este formulario, cin crear una instancia del modelo.
-Esto es útil, si se quiere usar este formualrio como un simple contenedor de las
-propiedades del archivo de configuración.}
+después de haber cargado todos los frames.}
 var
-  asocGF: TParElem;
   asocUs: TParElem;
   nom: string;
 begin
-  if grupos<>nil then exit;   //protección
-  if ModoCopia then begin
-    //En modo copia, no se crea al Modelo
-  end else begin
-    grupos := TCibModelo.Create('GrupServ');
-  end;
   //Define nombre de XML
   if nombXML='' then
     nom := ChangeFileExt(Application.ExeName,'.xml')
@@ -205,13 +185,7 @@ begin
   xmlFile.Asoc_Enum('StateStatusbar', @StyleToolbar, SizeOf(TStyleToolbar),
                     RadioGroup1, 1);
   //propiedades de grupos
-  asocGF := xmlFile.Asoc_Str('GrpsFact', @GrpsFact, '');  //crea asociación sin variable
-  if ModoCopia then begin
-    //En modo copia no se manejan grupos
-  end else begin
-    asocGF.OnPropertyToFile:=@asocGFPropertyToFile;  //usamos sus eventos
-    asocGF.OnFileToProperty:=@asocGFFileToProperty;
-  end;
+  xmlFile.Asoc_Str('GrpsFact', @ModeloStr, '');  //crea asociación sin variable
   //propiedades de usuario
   asocUs := xmlFile.Asoc_StrList('usuarios', @FraUsuarios1.listaUsu);
   asocUs.OnFileToProperty := @FraUsuarios1.FiletoProperty;
@@ -232,14 +206,6 @@ end;
 procedure TConfig.cfgFilePropertiesChanges;
 begin
   if OnPropertiesChanges<>nil then OnPropertiesChanges;
-end;
-procedure TConfig.asocGFPropertyToFile;
-begin
-  GrpsFact := grupos.CadPropiedades;    //actualiza antes de guardar
-end;
-procedure TConfig.asocGFFileToProperty;
-begin
-  grupos.CadPropiedades := GrpsFact;   //actualiza después de leer
 end;
 
 procedure TConfig.Mostrar;
