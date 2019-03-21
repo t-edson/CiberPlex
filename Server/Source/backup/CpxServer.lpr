@@ -12,8 +12,7 @@ uses
   FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos, FormAdminProvee,
   FormAdminInsum, FormCambClave, FormRepProducto, FormRepEventos,
   FormRegCompras, FormIngVentas, FormValStock, FormIngStock, FormVista,
-  ModuleBD, FormGRUCabinas, FormFijTiempo, FormGRUNiloM, FormGRUMesas,
-  FormGRUClientes;
+  ModuleBD, FormGRUCabinas, FormGRUNiloM, FormGRUMesas, FormGRUClientes;
 
 {$R *.res}
 

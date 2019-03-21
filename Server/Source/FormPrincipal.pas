@@ -10,7 +10,7 @@ uses
   CibTramas, CibFacturables, CibTabProvee, CibTabProductos, CibTabInsumos,
   FormAdminProvee, CibBD, FormAdminInsum, FormCambClave, FormRepProducto,
   FormRepEventos, FormValStock, FormIngStock, CibModelo, UniqueInstance,
-  CibGFacMesas, CibGFacClientes, CibGFacCabinas, CibGFacNiloM, FormVista,
+  FormGRUMesas, FormGRUClientes, FormGRUCabinas, FormGRUNiloM, FormVista,
   ModuleBD;
 type
   { TfrmPrincipal }
@@ -181,6 +181,8 @@ type
     procedure frmAdminInsum_Grabar;
     procedure frmAdminProvee_Grabar;
     procedure frmIngStock_Grabar(Manual: boolean);
+    procedure Visor2_SolicEjecCom(comando: TCPTipCom; ParamX,
+      ParamY: word; cad: string);
     procedure Modelo_BDinsert(sqlText: string);
     procedure frmValStockGrabado;
     procedure IniciarSesion(usuIni: string='');
@@ -199,13 +201,11 @@ type
     procedure LLenarToolBar(PopUp: TPopupMenu);
     procedure Modelo_RespComando(idVista: string; comando: TCPTipCom;
       ParamX, ParamY: word; cad: string);
-    procedure frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
+    procedure frmBoleta_AgregarItem(idFac: string; coment: string);
     procedure VerificarCargaProveedores(ActulizRemota: boolean);
-    procedure Visor_MouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure Visor2_AgrVentaProducto(idFac: string);
     procedure Visor_ClickDerGFac(ogGFac: TogGFac; X, Y: Integer);
     procedure Visor_DobleClickFac(ogFac: TogFac; X, Y: Integer);
-    procedure Visor_DobleClickGFac(ogGFac: TogGFac; X, Y: Integer);
     function Modelo_LogIngre(ident: char; msje: string; dCosto: Double
       ): integer;
     function Modelo_LogError(msj: string): integer;
@@ -213,13 +213,13 @@ type
     procedure Modelo_ActualizStock(const codPro: string;
       const Ctdad: double);
     procedure Modelo_ReqConfigGen(out NombProg, NombLocal: string; out ModDiseno: boolean);
-    procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
-    procedure frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol, coment: string);
-    procedure frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol, coment: string);
-    procedure frmBoleta_ComentarItem(CibFac: TCibFac; idItemtBol, coment: string);
-    procedure frmBoleta_RecuperarItem(CibFac: TCibFac; idItemtBol, coment: string);
-    procedure frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol, coment: string);
-    procedure frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol, coment: string);
+    procedure frmBoleta_GrabarBoleta(idFac: string; coment: string);
+    procedure frmBoletaGrabarItem(idFac: string; idItemtBol, coment: string);
+    procedure frmBoleta_DividirItem(idFac: string; idItemtBol, coment: string);
+    procedure frmBoleta_ComentarItem(idFac: string; idItemtBol, coment: string);
+    procedure frmBoleta_RecuperarItem(idFac: string; idItemtBol, coment: string);
+    procedure frmBoleta_DesecharItem(idFac: string; idItemtBol, coment: string);
+    procedure frmBoleta_DevolverItem(idFac: string; idItemtBol, coment: string);
     procedure frmIngVentas_AgregarVenta(CibFac: TCibFac; itBol: string);
     function Modelo_LogInfo(msj: string): integer;
     procedure Modelo_EstadoArchivo;
@@ -465,6 +465,13 @@ begin
     StringToFile(getIngSTockInv, filName);
   end;
 end;
+procedure TfrmPrincipal.Visor2_SolicEjecCom(comando: TCPTipCom; ParamX,
+  ParamY: word; cad: string);
+{Conecta al visor con el Modelo, en el sentido del control.}
+begin
+  PonerComando(comando, ParamX, ParamY, cad);
+end;
+
 procedure TfrmPrincipal.frmValStockGrabado;
 {Se pide grabar las validaciones del stock}
 var
@@ -518,8 +525,10 @@ procedure TfrmPrincipal.Modelo_CambiaPropied;
 {Se produjo un cambio en alguna de las propiedades de alguna de las cabinas.}
 begin
   debugln('** Cambio de propiedades: ');
+  Config.ModeloStr := Modelo.CadPropiedades;    //Actualiza Modelo
   Config.escribirArchivoIni;  //guarda cambios
   Visor.ActualizarPropiedades(Modelo.CadPropiedades);
+  frmVisor.Visor.ActualizarPropiedades(Modelo.CadPropiedades);
 end;
 function TfrmPrincipal.Modelo_LogInfo(msj: string): integer;
 begin
@@ -748,10 +757,6 @@ begin
     TCibFacCabina(ogFac.Fac).mnVerExplorad(self);
   end;
 end;
-procedure TfrmPrincipal.Visor_DobleClickGFac(ogGFac: TogGFac; X, Y: Integer);
-begin
-
-end;
 procedure TfrmPrincipal.Visor_ObjectsMoved;
 {Se ha producido el movimiento de objetos en el editor. Se actualiza en el modelo.}
 var
@@ -761,7 +766,7 @@ var
 begin
   //Se supone que se han movido los objetos seleccionados
   Modelo.DeshabEven:=true;   //para evitar interferencia
-  for og in Visor.motEdi.seleccion do begin
+  for og in Visor.motEdi.seleccion do begin  //*** DEbe cambairse al otro visor cuando se haga la migración
     if og.Tipo = OBJ_GRUP then begin
       //Es un grupo. Ubica el obejto
       Gfac := Modelo.ItemPorNombre(og.Name);
@@ -780,26 +785,12 @@ begin
   Modelo.DeshabEven:=false;   //restaura estado
   Modelo.OnCambiaPropied;
 end;
-procedure TfrmPrincipal.Visor_MouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TfrmPrincipal.Visor2_AgrVentaProducto(idFac: string);
+var
+  fac: TCibFac;
 begin
-{  if Button = mbLeft then begin
-    //Se soltó el botón izquierdo. Se puede haber producido alguna selección
-    if Visor.Seleccionado=nil then exit;
-    //Hay seleccionado
-    og := Visor.Seleccionado;
-    if og is TogFac then begin   //Es un facturable.
-      //Llena "PopUp", con acciones
-      ConfigurarPopUpFac(TogFac(og), PopupMenu1);
-      LLenarToolBar(PopupMenu1);
-    end else if og is TogGFac then begin
-      //Llena "PopUp", con acciones
-      ConfigurarPopUpGFac(TogGFac(og), PopupMenu1);
-      LLenarToolBar(PopupMenu1);
-    end;
-  end;
-  //Agrega elementos generales de la aplicación
-}
+  fac := Modelo.BuscarPorID(idFac);
+  frmIngVentas.Exec(fac);
 end;
 procedure TfrmPrincipal.NiloM_RegMsjError(NomObj: string; msj: string);
 begin
@@ -849,14 +840,15 @@ begin
   Visor.Parent := self;
   Visor.Align := alClient;
   tic := 0;   //inicia contador
-  //Carga íconos de Modelo facturables
-  CibGFacClientes.CargarIconos(ImageList16, ImageList32);
-  CibGFacNiloM.CargarIconos(ImageList16, ImageList32);
-  CibGFacCabinas.CargarIconos(ImageList16, ImageList32);
-  CibGFacMesas.CargarIconos(ImageList16, ImageList32);
 end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
 begin
+  //Carga íconos de Modelo facturables
+  FormGRUClientes.CargarIconos(ImageList16, ImageList32);
+  FormGRUNiloM.CargarIconos(ImageList16, ImageList32);
+  FormGRUCabinas.CargarIconos(ImageList16, ImageList32);
+  FormGRUMesas.CargarIconos(ImageList16, ImageList32);
+  //Carga configuración
   Config.Iniciar('config.xml');  {Lee configuración, incluyendo datos del modelo,
                                   de modo que se crean los GFAC y FAC también. }
   Config.OnPropertiesChanges:=@ConfigfcVistaUpdateChanges;
@@ -899,11 +891,9 @@ begin
   Visor.OnClickDerFac   := @Visor_ClickDerFac;
   Visor.OnClickDerGFac  := @Visor_ClickDerGFac;
   Visor.OnDobleClickFac := @Visor_DobleClickFac;
-  Visor.OnDobleClickGFac:= @Visor_DobleClickGFac;
   Visor.OnObjectsMoved  := @Visor_ObjectsMoved;
   Visor.OnSolicEjecCom  := @PonerComando;  //Necesario para procesar las acciones de movimiento de boletas
   Visor.OnReqCadMoneda  := @Config.ReqCadMon;   //Para que pueda mostrar monedas
-  Visor.OnMouseUp       := @Visor_MouseUp;
   //Crea los objetos gráficos del visor de acuerdo al archivo INI.
   Visor.ActualizarPropiedades(Modelo.CadPropiedades);
   {Actualzar Vista. Se debe hacer después de agregar los objetos, porque dependiendo
@@ -978,6 +968,9 @@ begin
 
   //Pruebas con el nuevo Visor de Ciberplex
   frmVisor.Visor.OnReqCadMoneda := @Config.ReqCadMon;
+  frmVisor.Visor.OnAgrVentaProd := @Visor2_AgrVentaProducto;
+  frmVisor.Visor.OnSolicEjecCom := @Visor2_SolicEjecCom;
+  frmVisor.Visor.OnObjectsMoved := @Visor_ObjectsMoved;
   frmVisor.Show;
   frmVisor.ActualizarPropiedades(Modelo.CadPropiedades);
 end;
@@ -1114,6 +1107,7 @@ begin
   panLLam.Visible := Config.verPanLlam;
   panBolet.Visible:= Config.verPanBol;
   Visor.ModDiseno := Config.modDiseno;
+  frmVisor.Visor.ModDiseno := Config.modDiseno;
   case Config.StyleToolbar of
   stb_SmallIcon: begin
     ToolBar1.ButtonHeight:=22;
@@ -1138,64 +1132,73 @@ begin
   txt := CibFac.IdFac + #9 + itBol;
   PonerComando(CVIS_ACBOLET, ACCITM_AGR, 0, txt);  //envía con tamaño en Y
 end;
-procedure TfrmPrincipal.frmBoleta_AgregarItem(CibFac: TCibFac; coment: string);
+
+procedure TfrmPrincipal.frmBoleta_AgregarItem(idFac: string; coment: string);
+var
+  CibFac: TCibFac;
 begin
+  CibFac := modelo.BuscarPorID(idFac);
+  if CibFac = nil then exit;
   frmIngVentas.Exec(CibFac);
 end;
-procedure TfrmPrincipal.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+procedure TfrmPrincipal.frmBoleta_GrabarBoleta(idFac: string; coment: string);
 {Graba el contenido de una boleta}
+var
+  CibFac: TCibFac;
 begin
+  CibFac := modelo.BuscarPorID(idFac);
+  if CibFac = nil then exit;
   if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
   PonerComando(CVIS_ACBOLET, ACCBOL_GRA, 0, CibFac.IdFac);
 end;
-procedure TfrmPrincipal.frmBoleta_DevolverItem(CibFac: TCibFac; idItemtBol,
+procedure TfrmPrincipal.frmBoleta_DevolverItem(idFac: string; idItemtBol,
   coment: string);
 {Evento que solicita eliminar un ítem de la boleta}
 var
   txt: string;
 begin
-  txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
+  txt := IdFac + #9 + idItemtBol + #9 + coment;
   PonerComando(CVIS_ACBOLET, ACCITM_DEV, 0, txt);  //envía con tamaño en Y
 end;
-procedure TfrmPrincipal.frmBoleta_DesecharItem(CibFac: TCibFac; idItemtBol,
+procedure TfrmPrincipal.frmBoleta_DesecharItem(idFac: string; idItemtBol,
   coment: string);
 {Evento que solicita desechar un ítem de una boleta}
 var
   txt: string;
 begin
-  txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
+  txt := IdFac + #9 + idItemtBol + #9 + coment;
   PonerComando(CVIS_ACBOLET, ACCITM_DES, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoleta_RecuperarItem(CibFac: TCibFac; idItemtBol,
+procedure TfrmPrincipal.frmBoleta_RecuperarItem(idFac: string; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
+  txt := IdFac + #9 + idItemtBol + #9 + coment;
   PonerComando(CVIS_ACBOLET, ACCITM_REC, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoleta_ComentarItem(CibFac: TCibFac; idItemtBol,
+procedure TfrmPrincipal.frmBoleta_ComentarItem(idFac: string; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;
+  txt := IdFac + #9 + idItemtBol + #9 + coment;
   PonerComando(CVIS_ACBOLET, ACCITM_COM, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoleta_DividirItem(CibFac: TCibFac; idItemtBol,
+procedure TfrmPrincipal.frmBoleta_DividirItem(idFac: string; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;  //aquí coment contiene un número
+  txt := IdFac + #9 + idItemtBol + #9 + coment;  //aquí coment contiene un número
   PonerComando(CVIS_ACBOLET, ACCITM_DIV, 0, txt);
 end;
-procedure TfrmPrincipal.frmBoletaGrabarItem(CibFac: TCibFac; idItemtBol,
+procedure TfrmPrincipal.frmBoletaGrabarItem(idFac: string; idItemtBol,
   coment: string);
 var
   txt: String;
 begin
-  txt := CibFac.IdFac + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
+  txt := IdFac + #9 + idItemtBol + #9 + coment;  //junta nombre de objeto con cadena de estado
   PonerComando(CVIS_ACBOLET, ACCITM_GRA, 0, txt);
 end;
 //////////////// Acciones //////////////////////
@@ -1294,7 +1297,7 @@ var
 begin
   ogFac := Visor.FacSeleccionado;
   if ogFac = nil then exit;
-  frmBoleta_GrabarBoleta(ogFac.Fac,'');
+  frmBoleta_GrabarBoleta(ogFac.Fac.IdFac,'');
 end;
 procedure TfrmPrincipal.acFacAgrVenExecute(Sender: TObject);
 var
@@ -1310,7 +1313,7 @@ var
 begin
   ogFac := Visor.FacSeleccionado;
   if ogFac = nil then exit;
-  frmBoleta.Exec(ogFac.Fac);
+  frmBoleta.Exec(ogFac.Fac.IdFac, ogFac.Fac.Boleta, 'BOLETA DE: ' + ogFac.Fac.Nombre);
 end;
 procedure TfrmPrincipal.acFacMovBolExecute(Sender: TObject);
 var
