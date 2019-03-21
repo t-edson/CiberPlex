@@ -1,3 +1,24 @@
+2.4
+===
+Se cambian las unidades de tipo CibGFac* por formularios de tipo FormGRU*, para permitir a los
+grupos de facturables, incluir también recursos de tipo íconos y menú.
+Se eliminan la unidades de nombre CibGFac*, porque ya no son necesarias.
+Se dejan de usar íconos en disco y se cargan directamente en los formularios FormGRU*, así
+se separa mejor los íconos de cada Grupo facturable.
+Se eliminan las carpetas de íconos para cada grupo facturable. Ahora ya no es necesaria la 
+carpeta /iconos para ejecutar el programa.
+Se implementan las acciones de ventas en la nueva vista.
+Se modifica el formulario de boleta, para que no trabaje con referencias a TCibGFac sino que
+maneje solo el Id del facturable, de modo que se pueda usar también en la vista.
+Se habilita el uso del formulario de boletas en la vista.
+Se hace un intento de mover las acciones de configuración de menú a los formularios de GFAC.
+
+En esta versión se ha avanzado aún más la implementación del nuevo visor que no crea
+copia del modelo. Aún falta la implementación de más acciones, pero el nuevo visor, es funcional. 
+Finalmente se deberá eliminar la vista frameVisCPlex y la unidad ObjGraficos_borrar, para pasar 
+a usar la nueva vista. También se podrá eliminar el modo "COpia" de todos los FAC y GFAC.
+
+
 2.3
 ===
 Se modifica el formato del archivo de estado de la aplicación, para que se uniformice con la 
