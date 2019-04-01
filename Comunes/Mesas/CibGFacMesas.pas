@@ -7,10 +7,10 @@ interface
 uses
   Classes, SysUtils, types, dateutils, fgl, LCLProc, ExtCtrls, Forms, Menus,
   Dialogs, Controls, Graphics, MisUtils, CibTramas, CibFacturables,
-  CibUtils, FormPropMesa
-  ;
+  CibUtils;
 const //Acciones sobre los clientes
-  ACCCLI_ELIM = 1;
+  ACCMES_ELIM = 1;
+  ACCMES_AGRE = 2;
   C_MESA_TRASLA = 05;  //Solicita trasladar cabina
 
 type
@@ -34,9 +34,6 @@ type
       tipMesa: TCibMesaTip): string;
     class procedure DecodCadPropied(str: String; out sNombre: string; out sx,
       sy: Single; out tipMesa: TCibMesaTip);
-  private
-    frmConfig: TfrmPropMesa;
-    procedure mnConfigurar(Sender: TObject);
   protected  //"Getter" and "Setter"
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -49,8 +46,6 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
     procedure EjecAccion(idVista: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu; ordShortCut: integer); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create(nombre0: string);
     destructor Destroy; override;
@@ -68,7 +63,6 @@ type
       _CategVenta: string; out _x, _y: Single);
   private
     proAccion : string;   {Nombre de objeto que ejecuta la acción. }
-    procedure mnAgregObjMesa(Sender: TObject);
   protected //Getters and Setters
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
@@ -77,21 +71,17 @@ type
   public
     //Existencia de sillas
     si1a, si2a, si3a, si4a: boolean;
-    procedure mnEliminar(Sender: TObject);
     function Agregar(nombre0: string): TCibFacMesa;
     function Eliminar(nombre0: string): boolean;
-    function CliPorNombre(nom: string): TCibFacMesa;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
+    function MesaPorNombre(nom: string): TCibFacMesa;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
   public  //Campos para manejo de acciones
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
   end;
 
-  procedure CargarIconos(imagList16, imagList32: TImageList);
 
 var
   imgMesaSimple: TImage;
@@ -101,25 +91,6 @@ var
   rutImag: string;
 
 implementation
-const
-  RUT_ICONOS = '..\Iconos\Mesas';
-var
-  icoMesa: integer;   //índice de imagen
-  icoConfig: integer;
-  icoProp: integer;
-  icoElim: integer;
-
-procedure CargarIconos(imagList16, imagList32: TImageList);
-{Carga los íconos que necesita esta unida }
-var
-  rutImag: String;
-begin
-  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
-  icoMesa:= CargaPNG(imagList16, imagList32, rutImag, 'table');
-  icoConfig:= CargaPNG(imagList16, imagList32, rutImag, 'config');
-  icoProp  := CargaPNG(imagList16, imagList32, rutImag, 'properties');
-  icoElim  := CargaPNG(imagList16, imagList32, rutImag, 'delete');
-end;
 
 { TCibFacMesa }
 class function TCibFacMesa.CodCadPropied(sNombre: string; sx, sy: Single;
@@ -215,44 +186,10 @@ Se ejecuta siempre en el Modelo.}
 begin
 //  case tram.posX of  //Se usa el parámetro para ver la acción
 //  //Comandos locales
-//  C_CABIN_INICTA: begin   //Se pide iniciar la cuenta de una PC
+//  ACCMES_ELIM: begin   //Se pide iniciar la cuenta de una PC
 //      InicConteo(traDat);
 //    end;
 //  end;
-end;
-procedure TCibFacMesa.MenuAccionesVista(MenuPopup: TPopupMenu;
-  ordShortCut: integer);
-{Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejcuten
-desde aquí.}
-begin
-  InicLlenadoAcciones(MenuPopup);
-end;
-procedure TCibFacMesa.MenuAccionesModelo(MenuPopup: TPopupMenu);
-var
-  NombProg, NombLocal: string;
-  ModDiseno: boolean;
-  nShortCut: Integer;
-begin
-  grupo.OnReqConfigGen(NombProg, NombLocal, ModDiseno);
-  InicLlenadoAcciones(MenuPopup);
-  if ModDiseno then begin
-    nShortCut := -1;
-    AgregarAccion(nShortCut, '&Configurar', @mnConfigurar, icoConfig);
-    {Notar que la acción de "Eliminar" se define en el grupo, para que sea el grupo quien
-    elimine al facturable, ya que no es factible que el facturable se elimine a sí mismo.
-    Otra opción es usar una bandera de tipGFac "por eliminar" y un Timer, que verifique esta
-    bandera, y elimine a las que esteán marcadas.}
-    TCibGFacMesas(grupo).proAccion := Nombre;   //nombre de objeto que solicita la acción
-    AgregarAccion(nShortCut, '&Eliminar', @TCibGFacMesas(grupo).mnEliminar, icoElim);
-  end;
-end;
-procedure TCibFacMesa.mnConfigurar(Sender: TObject);
-{Muestra el formulario para ver los mensajes de red.}
-begin
-  if frmConfig.Exec(self) = mrOK then begin
-    //Para que actualice a la vista
-    if OnCambiaPropied<>nil then OnCambiaPropied();
-  end;
 end;
 //Constructor y destructor
 constructor TCibFacMesa.Create(nombre0: string);
@@ -260,12 +197,10 @@ begin
   inherited Create;
   tipGFac := ctfMesas;  //se identifica
   FNombre := nombre0;
-  frmConfig := TfrmPropMesa.Create(nil);
   tipMesa := cmt1x1;
 end;
 destructor TCibFacMesa.Destroy;
 begin
-  frmConfig.Destroy;
   inherited Destroy;
 end;
 { TCibGFacMesas }
@@ -279,11 +214,11 @@ begin
   Result := cab;
 end;
 function TCibGFacMesas.Eliminar(nombre0: string): boolean;
-{Elimina un cliente, dado el nombre. Si no tiene éxito devuelve FALSE}
+{Elimina una mesa, dado el nombre. Si no tiene éxito devuelve FALSE}
 var
   cab: TCibFacMesa;
 begin
-  cab := CliPorNombre(nombre0);
+  cab := MesaPorNombre(nombre0);
   if cab = nil then exit(false);
   items.Remove(cab);  //puede tomar tiempo, por la destrucción del hilo
   if OnCambiaPropied<>nil then begin
@@ -394,8 +329,8 @@ begin
   end;
   lineas.Destroy;
 end;
-function TCibGFacMesas.CliPorNombre(nom: string): TCibFacMesa;
-{Devuelve la referencia a un cliente, ubicándola por su nombre. Si no la enuentra
+function TCibGFacMesas.MesaPorNombre(nom: string): TCibFacMesa;
+{Devuelve la referencia a una mesa, ubicándola por su nombre. Si no la enuentra
  devuelve NIL.}
 var
   c : TCibFac;
@@ -427,52 +362,37 @@ var
   traDat, nom: String;
   facDest: TCibFac;
   Err: boolean;
-begin
-debugln('Acción solicitada a GFacClientes:' + tram.TipTraNom);
-  traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
-                           deteriorar el rendimiento. Habría que verificar.}
-  ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
-  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
-  facDest := ItemPorNombre(nom);
-  if facDest=nil then exit;
-  //Pasa el comando, incluyendo el origen, por si lo necesita
-  facDest.EjecAccion(idFacOrig, tram, traDat);
-end;
-procedure TCibGFacMesas.MenuAccionesVista(MenuPopup: TPopupMenu);
-begin
-  InicLlenadoAcciones(MenuPopup);
-  //No hay acciones, aún, para el Grupo Clientes
-end;
-procedure TCibGFacMesas.MenuAccionesModelo(MenuPopup: TPopupMenu);
-var
-  NombProg, NombLocal: string;
-  ModDiseno: boolean;
-  nShortCut: Integer;
-begin
-  nShortCut := -1;
-  OnReqConfigGen(NombProg, NombLocal, ModDiseno);
-  InicLlenadoAcciones(MenuPopup);
-  if ModDiseno then begin
-    AgregarAccion(nShortCut, '&Agregar Mesa', @mnAgregObjMesa, icoMesa);
-  end;
-  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoProp);
-end;
-procedure TCibGFacMesas.mnAgregObjMesa(Sender: TObject);
-var
-  nom: String;
   facMesa: TCibFacMesa;
 begin
-  nom := BuscaNombreItem('Mesa');
-  facMesa := Agregar(nom);
-  facMesa.x := x + items.Count*20;
-  facMesa.y := y + 20 + items.Count*10;
-end;
-procedure TCibGFacMesas.mnEliminar(Sender: TObject);
-//Elimina al facturable. Notra que este método es asignado por el facturable, no por
-//el grupo, porque un facturable no puede eliminarse a sí mismo.
-begin
-//  MsgBox('Eliminando ' + proAccion);
-  Eliminar(proAccion);  //Se ahce aquí mismo, poruqe esta acción se ejecuta en elmodelo.
+debugln('Acción solicitada a GFacMesas:' + tram.TipTraNom);
+  if tram.tipTra = CFAC_GMESAS then begin
+    //Es una acción dirigida a este grupo
+    case tram.posX of  //Se usa el parámetro para ver la acción
+    //Comandos locales. No llegan directamente hasta la PC remota
+    ACCMES_AGRE: begin   //Agregar una mesa
+        nom := BuscaNombreItem('Mesa');
+        facMesa := Agregar(nom);
+        facMesa.x := x + items.Count*20;
+        facMesa.y := y + 20 + items.Count*10;
+      end;
+    ACCMES_ELIM: begin
+        traDat := tram.traDat;
+        ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+        nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
+        Eliminar(nom);
+      end;
+    end;
+  end else begin
+    //Es una acción para un facturable
+    traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
+                             deteriorar el rendimiento. Habría que verificar.}
+    ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
+    facDest := ItemPorNombre(nom);
+    if facDest=nil then exit;
+    //Pasa el comando, incluyendo el origen, por si lo necesita
+    facDest.EjecAccion(idFacOrig, tram, traDat);
+  end;
 end;
 //constructor y destructor
 constructor TCibGFacMesas.Create(nombre0: string; ModoCopia0: boolean);
@@ -489,22 +409,6 @@ destructor TCibGFacMesas.Destroy;
 begin
   inherited Destroy;  {Aquí se hace items.Destroy, que puede demorar por los hilos}
 end;
-initialization
-  {Crea y carga las imágenes que se van a usar en este grupo
-   Como una opción, para prevenir errores de archivo, se puede crear un frame estático,
-   con imágenes ya caragadas por defecto y que se pueda definir, como una opción, si se
-   usa la opción pro defecto o se cara dinámicamente las imágenes.}
-  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
-  imgMesaSimple := CreaYCargaImagen(rutImag + 'mesaSimple.png');
-  imgMesaDoble1 := CreaYCargaImagen(rutImag + 'mesaDoble1.png');
-  imgMesaDoble2 := CreaYCargaImagen(rutImag + 'mesaDoble2.png');
-  imgMesaDoble3 := CreaYCargaImagen(rutImag + 'mesaDoble3.png');
-
-finalization
-  imgMesaSimple.Destroy;
-  imgMesaDoble1.Destroy;
-  imgMesaDoble2.Destroy;
-  imgMesaDoble3.Destroy;
 
 end.
 

@@ -37,15 +37,15 @@ type
     procedure cmdLimClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShow(Sender: TObject);
-    procedure Mostrar(fac0: TCibFac);
-    procedure MostrarIni(fac0: TCibFac);
+    procedure Mostrar(cuenta0: TCabCuenta; nombre: String);
+    procedure MostrarIni(cuenta0: TCabCuenta; nombre: String);
     procedure txtHHKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure txtMMKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure txtSSKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
-    fac: TCibFac;      //referencia a objeto
-    //tpoInic: integer;    //variable de tiempo limitado inicial
-    tpoLimi: integer;      //variable de tiempo limitado
+    cuenta: TCabCuenta;   //referencia a objeto
+    //tpoInic: integer;   //variable de tiempo limitado inicial
+    tpoLimi: integer;     //variable de tiempo limitado
     procedure RefrescarTextos;
   public
     //variables de cuenta
@@ -65,12 +65,12 @@ implementation
 uses CibGFacCabinas;   //Declarada aquí para evitar referecnia circular
 
 { TfrmFijTiempo }
-procedure TfrmFijTiempo.Mostrar(fac0: TCibFac);
+procedure TfrmFijTiempo.Mostrar(cuenta0: TCabCuenta; nombre: String);
 //Muestra el formulario con información de la cabina indicada
 begin
-  fac := fac0;  //guarda referencia
-  Caption := 'MODIFICAR TIEMPO: ' + fac.nombre;
-  tpoLimi:= TCibFacCabina(fac).tSolicSeg;  //tiempo solicitado en segundos
+  cuenta := cuenta0;  //guarda referencia
+  Caption := 'MODIFICAR TIEMPO: ' + nombre;
+  tpoLimi:= cuenta.tSolicSeg;  //tiempo solicitado en segundos
 
   //  cmbHorIni.Text := Format(fac.hor_ini, "yyyy/mm/dd hh:nn:ss");
 
@@ -82,19 +82,19 @@ begin
         RefrescarTextos;
     End;
     txtHH.SelectAll;
-    chkHorGra.Checked := TCibFacCabina(fac).horgra;
-    chkLibre.Checked := TCibFacCabina(fac).tlibre;
-    chkManten.Checked := (TCibFacCabina(fac).EstadoCta = EST_MANTEN);
+    chkHorGra.Checked := cuenta.horgra;
+    chkLibre.Checked := cuenta.tlibre;
+    chkManten.Checked := (cuenta.estado = EST_MANTEN);
 
     cancelo := True;  //para salir sin acción cuando se cierra la ventana con "X"
 //    Show;  //se muestra
     ShowModal;
 end;
-procedure TfrmFijTiempo.MostrarIni(fac0: TCibFac);
+procedure TfrmFijTiempo.MostrarIni(cuenta0: TCabCuenta; nombre: String);
 //Muestra el formulario para fijar el inicio de la cuenta
 begin
-  fac := fac0;  //guarda referencia
-  Caption := 'FIJAR TIEMPO: ' + fac.nombre;
+  cuenta := cuenta0;  //guarda referencia
+  Caption := 'FIJAR TIEMPO: ' + nombre;
   tpoLimi:= 0;
   //  cmbHorIni.Text := Format(fac.hor_ini, "yyyy/mm/dd hh:nn:ss");
     txtHH.Text := '00';
@@ -296,7 +296,7 @@ End;
 function TfrmFijTiempo.CadActivacion: string;
 {Devuelve una cadena con información sobre la activación de la cabina}
 begin
-  Result := TCibFacCabina(fac).CodCadConteo(tSolic, tLibre, horGra );
+  Result := CodCadConteo(tSolic, tLibre, horGra );
 end;
 
 

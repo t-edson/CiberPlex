@@ -11,7 +11,7 @@ uses
   ;
 const //Acciones sobre los clientes
   ACCCLI_ELIM = 1;
-
+  ACCCLI_AGRE = 2;
 type
   TCibFacCliente = class;
   TCibGFacClientes = class;
@@ -36,8 +36,6 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
     procedure EjecAccion(idVista: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu; nShortCut: integer); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
     constructor Create(nombre0: string);
     destructor Destroy; override;
@@ -55,47 +53,25 @@ type
     proAccion : string;   {Nombre de objeto que ejecuta la acción. }
     class function CodCadEstado(_Nombre: string): string;
     class procedure DecodCadEstado(str: String; out _Nombre: string);
-    procedure mnAgregObjCliente(Sender: TObject);
   protected //Getters and Setters
     function GetCadEstado: string; override;
     procedure SetCadEstado(AValue: string); override;
     function GetCadPropied: string; override;
     procedure SetCadPropied(AValue: string); override;
   public
-    procedure mnEliminar(Sender: TObject);
     function Agregar(nombre0: string): TCibFacCliente;
     function Eliminar(nombre0: string): boolean;
     function CliPorNombre(nom: string): TCibFacCliente;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
   public  //Campos para manejo de acciones
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
   end;
 
-  procedure CargarIconos(imagList16, imagList32: TImageList);
 
 implementation
-const
-  RUT_ICONOS = '..\Iconos\Clientes';
-var
-  icoClient: integer;   //índice de imagen
-  icoElim: integer;
-  icoProp: integer;
-
-procedure CargarIconos(imagList16, imagList32: TImageList);
-{Carga los íconos que necesita esta unida }
-var
-  rutImag: String;
-begin
-  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
-  icoClient := CargaPNG(imagList16, imagList32, rutImag, 'client1');
-  icoElim   := CargaPNG(imagList16, imagList32, rutImag, 'delete');
-  icoProp   := CargaPNG(imagList16, imagList32, rutImag, 'properties');
-end;
 
 { TCibFacCliente }
 class function TCibFacCliente.CodCadEstado(_Nombre: String): string;
@@ -192,31 +168,6 @@ begin
 //    end;
 //  end;
 end;
-procedure TCibFacCliente.MenuAccionesVista(MenuPopup: TPopupMenu;
-  nShortCut: integer);
-{Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejcuten
-desde aquí.}
-begin
-  InicLlenadoAcciones(MenuPopup);
-end;
-procedure TCibFacCliente.MenuAccionesModelo(MenuPopup: TPopupMenu);
-var
-  NombProg, NombLocal: string;
-  ModDiseno: boolean;
-  nShortCut: Integer;
-begin
-  nShortCut := -1;
-  grupo.OnReqConfigGen(NombProg, NombLocal, ModDiseno);
-  InicLlenadoAcciones(MenuPopup);
-  if ModDiseno then begin
-    {Notar que la acción de "Eliminar" se define en el grupo, para que sea el grupo quien
-    elimine al facturable, ya que no es factible que el facturable se elimine a sí mismo.
-    Otra opción es usar una bandera de tipGFac "por eliminar" y un Timer, que verifique esta
-    bandera, y elimine a las que esteán marcadas.}
-    TCibGFacClientes(grupo).proAccion := Nombre;   //nombre de objeto que solicita la acción
-    AgregarAccion(nShortCut, '&Eliminar', @TCibGFacClientes(grupo).mnEliminar, icoElim);
-  end;
-end;
 //Constructor y destructor
 constructor TCibFacCliente.Create(nombre0: string);
 begin
@@ -302,7 +253,6 @@ var
   cad, nomb, lin1, _Nombre: string;
   car: char;
   it: TCibFac;
-  a: TStringDynArray;
 begin
   decodEst.Inic(AValue, lin1);  //inicia la decodificación
   DecodCadEstado(lin1, _Nombre);
@@ -376,52 +326,37 @@ var
   traDat, nom: String;
   facDest: TCibFac;
   Err: boolean;
+  facCli: TCibFacCliente;
 begin
 debugln('Acción solicitada a GFacClientes:' + tram.TipTraNom);
-  traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
-                           deteriorar el rendimiento. Habría que verificar.}
-  ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
-  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
-  facDest := ItemPorNombre(nom);
-  if facDest=nil then exit;
-  //Pasa el comando, incluyendo el origen, por si lo necesita
-  facDest.EjecAccion(idFacOrig, tram, traDat);
-end;
-procedure TCibGFacClientes.MenuAccionesVista(MenuPopup: TPopupMenu);
-begin
-  InicLlenadoAcciones(MenuPopup);
-  //No hay acciones, aún, para el Grupo Clientes
-end;
-procedure TCibGFacClientes.MenuAccionesModelo(MenuPopup: TPopupMenu);
-var
-  NombProg, NombLocal: string;
-  ModDiseno: boolean;
-  nShortCut: Integer;
-begin
-  nShortCut := -1;
-  OnReqConfigGen(NombProg, NombLocal, ModDiseno);
-  InicLlenadoAcciones(MenuPopup);
-  if ModDiseno then begin
-    AgregarAccion(nShortCut, '&Agregar Objeto Cliente', @mnAgregObjCliente, icoClient);
+  if tram.tipTra = CFAC_GCLIEN then begin
+    //Es una acción dirigida a este grupo
+    case tram.posX of  //Se usa el parámetro para ver la acción
+    //Comandos locales. No llegan directamente hasta la PC remota
+    ACCCLI_AGRE: begin   //Agregar una mesa
+        nom := BuscaNombreItem('Cliente');
+        facCli := Agregar(nom);
+        facCli.x := x + items.Count*20;
+        facCli.y := y + 20 + items.Count*10;
+      end;
+    ACCCLI_ELIM: begin
+        traDat := tram.traDat;
+        ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+        nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
+        Eliminar(nom);
+      end;
+    end;
+  end else begin
+    //Es una acción para un facturable
+    traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
+                             deteriorar el rendimiento. Habría que verificar.}
+    ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
+    facDest := ItemPorNombre(nom);
+    if facDest=nil then exit;
+    //Pasa el comando, incluyendo el origen, por si lo necesita
+    facDest.EjecAccion(idFacOrig, tram, traDat);
   end;
-  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoProp);
-end;
-procedure TCibGFacClientes.mnAgregObjCliente(Sender: TObject);
-var
-  nom: String;
-  facClien: TCibFacCliente;
-begin
-  nom := BuscaNombreItem('Cliente');
-  facClien := Agregar(nom);
-  facClien.x := x + items.Count*20;
-  facClien.y := y + 20 + items.Count*10;
-end;
-procedure TCibGFacClientes.mnEliminar(Sender: TObject);
-//Elimina al facturable. Notra que este método es asignado por el facturable, no por
-//el grupo, porque un facturable no puede eliminarse a sí mismo.
-begin
-//  MsgBox('Eliminando ' + proAccion);
-  Eliminar(proAccion);  //Se ahce aquí mismo, poruqe esta acción se ejecuta en elmodelo.
 end;
 //constructor y destructor
 constructor TCibGFacClientes.Create(nombre0: string; ModoCopia0: boolean);

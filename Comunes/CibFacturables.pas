@@ -214,6 +214,8 @@ type  //Definición de tipos FAC y GFAC
   TevReqCadMoneda = function(valor: double): string of object;
   //Solicita buscar un objeto GFac
   TEvBuscarGFac = function(nomGFac: string): TCibGFac of object;
+  //Solicita ejecutar alguna acción con un facturable
+  TEvAccionFact = procedure(idFac: string) of object;
 
   { TCPDecodCadEstado }
   {Objeto sencillo que permite decodificar una cadena de estado de un grupo facturable. }
@@ -1055,7 +1057,7 @@ begin
   lineas.Text := cad;
   pos1 := 0;  //posición inicial alta
   pos2 := -1;
-  if lineas.Count<2 then begin
+  if lineas.Count<1 then begin
     MsgErr('Error en formato de cadena de estado: ' + cad);
     exit;
   end;

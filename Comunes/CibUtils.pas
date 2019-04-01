@@ -18,7 +18,9 @@ uses
   function AgregarAccion(var ordShortCut: integer; etiq: string;
                          accion: TNotifyEvent; id_icon: integer = -1): TMenuItem;
   function CreaYCargaImagen(arcPNG: string): TImage;
-  function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
+  //function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
+  function CargaPNG(imgLst16src, imgLst32src: TImageList; idx: integer;  //Origen
+                    imgLst16trg, imgLst32trg: TImageList): integer;      //Destino
   function ListarArchivos(): String;
   function ListarArchivosD(): string;
   Function CambiaDir(direct: string): Boolean;
@@ -36,14 +38,33 @@ begin
   if not FileExists(arcPNG) then exit;
   Result.Picture.LoadFromFile(arcPNG);
 end;
-function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
-{Carga archivos PNG, de 16 y 32 pixeles, a un TImageList. Al nombre de los archivos
-se les añadirá el sufijo "_16.png" y "_32.png", para obteenr el nombre final.
+//function CargaPNG(imagList16, imagList32: TImageList; rut, nombPNG: string): integer;
+//{Carga archivos PNG, de 16 y 32 pixeles, a un TImageList. Al nombre de los archivos
+//se les añadirá el sufijo "_16.png" y "_32.png", para obteenr el nombre final.
+//Devuelve el índice de la imagen cargada.}
+//begin
+//  if nombPNG = '' then exit(-1);   //protección
+//  Result := LoadPNGToImageList(imagList16, rut + nombPNG + '_16.png');
+//  Result := LoadPNGToImageList(imagList32, rut + nombPNG + '_32.png');
+//end;
+function CargaPNG(imgLst16src, imgLst32src: TImageList; idx: integer;  //Origen
+                  imgLst16trg, imgLst32trg: TImageList): integer;      //Destino
+{Carga archivos PNG, de 16 y 32 pixeles, desde un TImageList a otro TImageList.
 Devuelve el índice de la imagen cargada.}
+var
+  pngbmp: TPortableNetworkGraphic;
 begin
-  if nombPNG = '' then exit(-1);   //protección
-  Result := LoadPNGToImageList(imagList16, rut + nombPNG + '_16.png');
-  Result := LoadPNGToImageList(imagList32, rut + nombPNG + '_32.png');
+  if idx = -1 then exit(-1);  //Caso sin íconos.
+
+  pngbmp:=TPortableNetworkGraphic.Create;
+
+  imgLst16src.GetBitmap(idx, pngbmp);
+  Result:= imgLst16trg.Add(pngbmp, nil);   //Devuelve número de imágenes
+
+  imgLst32src.GetBitmap(idx, pngbmp);
+  Result:= imgLst32trg.Add(pngbmp, nil);  //Devuelve número de imágenes
+
+  pngbmp.Destroy;
 end;
 procedure PantallaAArchivo(arch: String);
 //Captura el contenido de la pantalla, y lo guarda en el archivo indicado

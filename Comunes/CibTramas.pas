@@ -139,7 +139,15 @@ type //=========== Tipo de comandos en la comunicación con las PC cliente. ====
     RFAC_CABIN = $F1,  //Respuesta de una cabina (Incluye sub-somandos en ParamX)
     CFAC_NILOM = $F2,  //Acciones sobre un NILO-m (Incluye sub-somandos en ParamX)
     CFAC_CLIEN = $F3,  //Acciones sobre un cliente
-    CFAC_MESA  = $F4   //Acciones sobre una mesa
+    CFAC_MESA  = $F4,   //Acciones sobre una mesa
+
+    CFAC_GCABIN = $F8,  //Comando para grupo de Cabinas
+    CFAC_GNILOM = $F9,  //Comando para grupo Nilo-M
+    CFAC_GMESAS = $FA,  //Comando para grupo de mesas
+    CFAC_GCLIEN = $FB,  //Comando para grupo de clientes
+
+    CFAC_G_ELIM = $FC,  //Se solicita eliminar grupo
+    CFAC_G_PROP = $FD   //Se solicita fijar propiedades de grupo
   );
 
 type

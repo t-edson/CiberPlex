@@ -7,7 +7,7 @@ object frmPropGFac: TfrmPropGFac
   Caption = 'Propiedades de Grupo Facturable'
   ClientHeight = 240
   ClientWidth = 343
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '2.0.0.4'
   object Label5: TLabel
     Left = 8
     Height = 15
@@ -65,7 +65,6 @@ object frmPropGFac: TfrmPropGFac
     Top = 120
     Width = 74
     Alignment = taRightJustify
-    Increment = 1
     MaxValue = 1000
     MinValue = -500
     TabOrder = 3
@@ -86,7 +85,6 @@ object frmPropGFac: TfrmPropGFac
     Top = 120
     Width = 72
     Alignment = taRightJustify
-    Increment = 1
     MaxValue = 1000
     MinValue = -500
     TabOrder = 4
@@ -122,6 +120,7 @@ object frmPropGFac: TfrmPropGFac
     DefaultCaption = True
     Kind = bkCancel
     ModalResult = 2
+    OnClick = BitBtn1Click
     TabOrder = 6
   end
 end

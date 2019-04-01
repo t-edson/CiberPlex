@@ -1,14 +1,14 @@
 object frmBoleta: TfrmBoleta
-  Left = 317
+  Left = 838
   Height = 292
-  Top = 285
+  Top = 280
   Width = 401
   Caption = 'Boleta'
   ClientHeight = 292
   ClientWidth = 401
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '2.0.0.4'
   object Panel1: TPanel
     Left = 0
     Height = 76

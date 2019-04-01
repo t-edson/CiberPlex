@@ -329,7 +329,7 @@ procedure TCibModelo.EjecComando(idVista: string; tram: TCPTrama);
  Es llamada de las siguientes formas:
  1. Como respuesta al evento OnTramaLista de un Grupo de Cabinas (tramaLocal=FALSE).
     En este caso, las tramas pueden indicar respuesta a un comando enviado a una cabina
-    o solicitudes de acciones sobre el modelo, como es el caso cuando la cabian remota es
+    o solicitudes de acciones sobre el modelo, como es el caso cuando la cabina remota es
     también un punto de Venta (CiberPlex-Visor).
  2. Como método para ejecutar acciones locales sobre el modelo de objetos (Fac, GFac).
     Estas llamadas, se ejecutarán desde esta misma aplicación (Visor local o la misma
@@ -349,6 +349,7 @@ var
   Err: boolean;
   GFac: TCibGFac;
   Res: string;
+  a: TStringDynArray;
 begin
   case tram.tipTra of
   CVIS_SOLPROP: begin  //Se solicita el archivo INI (No está bien definido)
@@ -398,8 +399,8 @@ begin
       if not DeshabEven and (OnGuardarEstado<>nil) then OnGuardarEstado;
   end;
   //Acciones sobre objetos facturables
-  CFAC_CLIEN, CFAC_CABIN, CFAC_NILOM: begin   //Acciones sobre una cabina
-      //Identifica a la cabina sobre la que aplica
+  CFAC_CABIN, CFAC_NILOM, CFAC_MESA, CFAC_CLIEN: begin   //Acciones sobre una cabina
+      //Identifica AL FACTURABLE sobre la que aplica
       Grupo := VerHasta(tram.traDat, SEP_IDFAC, Err);  //El grupo viene en el primer campo
       GFac := ItemPorNombre(Grupo);
       if GFac=nil then exit;
@@ -411,6 +412,29 @@ begin
       evento que genera cambios. Verificar si  eso es cierto, sobre todo en el caso de la
       desconexión automática, o algún otro evento similar que requiera guardar el estado.}
     end;
+  CFAC_GCABIN, CFAC_GNILOM, CFAC_GMESAS, CFAC_GCLIEN: begin
+    //Comando sobre grupos
+    a := Explode(#9, tram.traDat);
+    Grupo := a[0];
+    GFac := ItemPorNombre(Grupo);
+    if GFac=nil then exit;
+    //Solicita al grupo ejecutar acción.
+    Gfac.EjecAccion(idVista, tram);
+  end;
+  CFAC_G_ELIM: begin
+    //Comando para eliminar grupo
+    a := Explode(#9, tram.traDat);
+    Grupo := a[0];
+    GFac := ItemPorNombre(Grupo);
+    if GFac=nil then exit;
+    Eliminar(Gfac);
+  end;
+  CFAC_G_PROP: begin
+    Grupo := ExtraerHasta(tram.traDat, #9, Err);  //El grupo viene en el primer campo
+    GFac := ItemPorNombre(Grupo);
+    if GFac=nil then exit;
+    Gfac.CadPropied := tram.traDat;
+  end;
   C_BD_HISTOR: begin
     //Se pide una acción sobre la base de datos histórica.
     //Estas bases de datos son más que nada para agregar registros.

@@ -15,8 +15,8 @@ uses
   ExtCtrls, Buttons, Grids, StdCtrls, ActnList, Menus, LCLProc, UtilsGrilla,
   MisUtils, CibFacturables;
 type
-  TevAccionItemBol = procedure(CibFac: TCibFac; idItemtBol, coment: string) of object;
-  TevAccionBoleta = procedure(CibFac: TCibFac; coment: string) of object;
+  TevAccionItemBol = procedure(idFac: string; idItemtBol, coment: string) of object;
+  TevAccionBoleta = procedure(idFac: string; coment: string) of object;
   { TfrmBoleta }
   TfrmBoleta = class(TForm)
     acItemAgregar: TAction;
@@ -54,7 +54,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    CibFac: TCibFac;    //referencia al facturable
+    idFac: string;      //Id del facturable
+    Boleta: TCibBoleta;  //Referencia a la boleta
     gri: TUtilGrillaFil;
     function HayCambios(bol: TCibBoleta): boolean;
     function ItemSeleccionado: TCibItemBoleta;
@@ -74,7 +75,7 @@ type
     //Este evento se usa para acceder a información de moneda
     OnReqCadMoneda : TevReqCadMoneda;  //Se requiere convertir a formato de moneda
     procedure ActualizarDatos;
-    procedure Exec(CibFac0: TCibFac);
+    procedure Exec(idFac0: string; Boleta0: TCibBoleta; Caption0: string);
   end;
 
 var
@@ -88,7 +89,7 @@ function TfrmBoleta.ItemSeleccionado: TCibItemBoleta;
 {Devuelve el ítem seleccionado en la grilla.}
 begin
   if grilla.Row<1 then exit(nil);
-  Result := CibFac.Boleta.items[grilla.Row-1];  //funciona porque se llena en orden
+  Result := Boleta.items[grilla.Row-1];  //funciona porque se llena en orden
   //cod := grilla.Cells[1, grilla.Row];  //lee código de producto
 end;
 function TfrmBoleta.LlenarFila(f: integer; it: TCibItemBoleta; Cambiar: boolean = true): boolean;
@@ -130,7 +131,7 @@ begin
     exit(true);  //diferente cantidad de filas
   f := 1;
 //  grilla.RowCount:=CibFac.Boleta.Fitems.Count+1;  //no modificará nada si no hay cambios
-  for itBol in CibFac.Boleta.items do begin
+  for itBol in Boleta.items do begin
     if LlenarFila(f, itBol, false) then
       exit(True);  //Hay diferencias
     f := f + 1;
@@ -144,15 +145,15 @@ var
   f: Integer;
 begin
   if OnReqCadMoneda=nil then exit;  //se necesita acceder a este evebto
-  if not HayCambios(CibFac.Boleta) then exit;
+  if not HayCambios(Boleta) then exit;
   debugln('Actualizando Boleta.');
   grilla.BeginUpdate;
   f := 1;
-  grilla.RowCount:=CibFac.Boleta.items.Count+1;  //no modificará nada si no hay cambios
+  grilla.RowCount:=Boleta.items.Count+1;  //no modificará nada si no hay cambios
   gri.FijColorFondoGrilla(clWhite);  //pinta de blanco a todas las celdas
   gri.FijColorTextoGrilla(clBlack);  //texto en colro negro pro defecto
   gri.FijAtribTextoGrilla(false, false, false);
-  for itBol in CibFac.Boleta.items do begin
+  for itBol in Boleta.items do begin
     LlenarFila(f, itBol);
     if itBol.fragmen>0 then begin
       gri.FijColorTexto(f, clGreen);
@@ -164,12 +165,13 @@ begin
     f := f + 1;
   end;
   grilla.EndUpdate();
-  txtTotal.Text := OnReqCadMoneda(CibFac.Boleta.TotPag);
+  txtTotal.Text := OnReqCadMoneda(Boleta.TotPag);
 end;
-procedure TfrmBoleta.Exec(CibFac0: TCibFac);
+procedure TfrmBoleta.Exec(idFac0: string; Boleta0: TCibBoleta; Caption0: string);
 begin
-  CibFac := CibFac0;  //OJO que este es el facturable de la interfaz gráfica, que es de solo lectura
-  Caption := 'BOLETA DE: ' + CibFac.Nombre;
+  idFac := idFac0;
+  Boleta := Boleta0;  //OJO que este es el facturable de la interfaz gráfica, que es de solo lectura
+  Caption := Caption0;
   ActualizarDatos;
   self.Show;
 end;
@@ -223,12 +225,12 @@ end;
 ///////////////////// Acciones
 procedure TfrmBoleta.acBolGrabarExecute(Sender: TObject);
 begin
-  if OnGrabarBoleta<>nil then OnGrabarBoleta(CibFac, '');
+  if OnGrabarBoleta<>nil then OnGrabarBoleta(IdFac, '');
 end;
 //Acciones de ítems
 procedure TfrmBoleta.acItemAgregarExecute(Sender: TObject);  //Agrega venta
 begin
-  if OnAgregarItem<>nil then OnAgregarItem(CibFac, '');
+  if OnAgregarItem<>nil then OnAgregarItem(IdFac, '');
 //  frmIngVentas.Exec(CibFac);
 end;
 procedure TfrmBoleta.acItemDevolvExecute(Sender: TObject);  //Devolver ítem
@@ -247,7 +249,7 @@ begin
     exit;
   end;
   //Genera el evento que debe enviar el comando de devolución de ítem
-  if OnDevolverItem<>nil then OnDevolverItem(CibFac, cod, comen);
+  if OnDevolverItem<>nil then OnDevolverItem(IdFac, cod, comen);
 end;
 procedure TfrmBoleta.acItemDesechExecute(Sender: TObject);  //Desechar Ítem
 var
@@ -265,7 +267,7 @@ begin
     exit;
   end;
   //Genera el evento que debe enviar el comando de devolución de ítem
-  if OnDesecharItem<>nil then OnDesecharItem(CibFac, cod, comen);
+  if OnDesecharItem<>nil then OnDesecharItem(IdFac, cod, comen);
 end;
 procedure TfrmBoleta.acItemRecupExecute(Sender: TObject);  //Recuperar ítem desechado
 var
@@ -279,7 +281,7 @@ begin
     exit;
   end;
   //Genera el evento que debe enviar el comando de devolución de ítem
-  if OnRecuperarItem<>nil then OnRecuperarItem(CibFac, cod, '');
+  if OnRecuperarItem<>nil then OnRecuperarItem(IdFac, cod, '');
 end;
 procedure TfrmBoleta.acItemComentExecute(Sender: TObject);  //Comentar ítem
 var
@@ -293,7 +295,7 @@ begin
     exit;
   end;
   //Genera el evento que debe enviar el comando de devolución de ítem
-  if OnComentarItem<>nil then OnComentarItem(CibFac, cod, comen);
+  if OnComentarItem<>nil then OnComentarItem(IdFac, cod, comen);
 end;
 procedure TfrmBoleta.acItemDividirExecute(Sender: TObject);  //Dividir ítem
 var
@@ -322,7 +324,7 @@ begin
       exit;
     end else begin
       //Genera el evento que debe enviar el comando de separación
-      if OnDividirItem<>nil then OnDividirItem(CibFac, cod, comen);  //envía monto como cadena
+      if OnDividirItem<>nil then OnDividirItem(IdFac, cod, comen);  //envía monto como cadena
     end;
   end;
 end;
@@ -335,7 +337,7 @@ begin
   if not LeerItemSeleccionado(itTmp, cod, estado) then exit;
   if MsgYesNo('¿Grabar ítem seleccionado?')<>1 then exit;
   //Genera el evento que debe grabar el ítem.
-  if OnGrabarItem<>nil then OnGrabarItem(CibFac, cod, '');
+  if OnGrabarItem<>nil then OnGrabarItem(IdFac, cod, '');
 end;
 
 

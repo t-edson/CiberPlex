@@ -18,6 +18,11 @@ const
 const //Acciones
   ACCLOC_CONEC = 1;
   ACCLOC_DESCO = 2;
+
+  //Comandos para el grupo NILO-M
+  C_GNIL_CONEXI = 15;  //Solicita abrir ventana de conexiones
+  C_GNIL_BUSTAR = 16;  //Solicita abrir ventana para buscar tarifas
+
 type
   //Define la instancia de llamada para la ventana frmCabina
 
@@ -152,9 +157,6 @@ type
     procedure CerrarRegistro;
     procedure frmNilomProp_CambiaProp;
     procedure ErrorLog(mensaje: string);
-    procedure mnBuscarTarif(Sender: TObject);
-    procedure mnPropiedades(Sender: TObject);
-    procedure mnVerConexiones(Sender: TObject);
     procedure timer1Timer(Sender: TObject);
   private //Funciones para escribir en los archivos de registros
     procedure VolcarErrorLog;
@@ -216,8 +218,6 @@ type
       ): TCibFacLocutor;
   public  //Campos para manejo de acciones
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //constructor y destructor
     constructor Create(nombre0: string; ModoCopia0: boolean);
     destructor Destroy; override;
@@ -227,28 +227,9 @@ var
   grabando_nilo   : Boolean;  //Bandera para indicar que se está grabando
   cancelar_envio  : Boolean;  //Bandera para cancelar el envío de un archivo CNL
 
-  procedure CargarIconos(imagList16, imagList32: TImageList);
-
 implementation
 const
-  RUT_ICONOS = '..\Iconos\NiloM';
   MAX_ERROR_LOG_LLAM = 200; //Máximo número de errores permitidos en una llamada
-
-var
-  icoConexi: integer;   //índice de imagen
-  icoBusTar: integer;   //índice de imagen
-  icoPropie: integer;   //índice de imagen
-
-procedure CargarIconos(imagList16, imagList32: TImageList);
-{Carga los íconos que necesita esta unida }
-var
-  rutImag: RawByteString;
-begin
-  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
-  icoConexi := CargaPNG(imagList16, imagList32, rutImag, 'terminal');
-  icoBusTar := CargaPNG(imagList16, imagList32, rutImag, 'search');
-  icoPropie := CargaPNG(imagList16, imagList32, rutImag, 'properties');
-end;
 
 { TRegLlamada }
 procedure TRegLlamada.SetDigitado(AValue: string);
@@ -1226,42 +1207,27 @@ var
   facDest: TCibFac;
   Err: boolean;
 begin
-  traDat := tram.traDat;  //crea copia para modificar
-  ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
-  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
-  facDest := ItemPorNombre(nom);
-  if facDest=nil then exit;
-  facDest.EjecAccion(idFacOrig, tram, '');
-  {¿No és este código similar para todos los facturables?. AL menos para comandos
-   destinados a los facturables y no a los grupos.}
-end;
-procedure TCibGFacNiloM.MenuAccionesVista(MenuPopup: TPopupMenu);
-{Configura las acciones para ejecutarse en la vista}
-begin
-  InicLlenadoAcciones(MenuPopup);
-  //No hay acciones, aún, para el Grupo NiloM
-end;
-procedure TCibGFacNiloM.MenuAccionesModelo(MenuPopup: TPopupMenu);
-var
-  nShortCut: Integer;
-begin
-  InicLlenadoAcciones(MenuPopup);
-  nShortCut := -1;
-  AgregarAccion(nShortCut, 'Cone&xiones' , @mnVerConexiones, icoConexi);
-  AgregarAccion(nShortCut, 'B&uscar Tarifas', @mnBuscarTarif, icoBusTar);
-  AgregarAccion(nShortCut, '&Propiedades' , @mnPropiedades, icoPropie);
-end;
-procedure TCibGFacNiloM.mnVerConexiones(Sender: TObject);
-begin
-  frmNilomConex.Show;
-end;
-procedure TCibGFacNiloM.mnPropiedades(Sender: TObject);
-begin
-  frmNilomProp.Exec(self);
-end;
-procedure TCibGFacNiloM.mnBuscarTarif(Sender: TObject);
-begin
-  frmBusTar.Exec(self);
+  if tram.tipTra = CFAC_GNILOM then begin
+      //Es una acción dirigida a este grupo
+      case tram.posX of  //Se usa el parámetro para ver la acción
+      C_GNIL_CONEXI: begin
+        frmNilomConex.Show;
+      end;
+      C_GNIL_BUSTAR: begin
+        frmBusTar.Exec(self);
+      end;
+      end;
+  end else begin
+      //Es una acción dirigida a un Facturables
+      traDat := tram.traDat;  //crea copia para modificar
+      ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+      nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto
+      facDest := ItemPorNombre(nom);
+      if facDest=nil then exit;
+      facDest.EjecAccion(idFacOrig, tram, '');
+      {¿No és este código similar para todos los facturables?. AL menos para comandos
+       destinados a los facturables y no a los grupos.}
+  end;
 end;
 //Constructor y destructor
 constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);

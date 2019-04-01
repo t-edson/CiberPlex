@@ -22,7 +22,7 @@ unit CibCabinaBase;
 {$mode objfpc}{$H+}
 interface
 uses
-  Classes, SysUtils, LCLProc, MisUtils, blcksock, CibTramas, synamisc;
+  Classes, SysUtils, Types, LCLProc, MisUtils, blcksock, CibTramas, synamisc;
 type
   //Estado de conteo de las cabinas.
   TcabEstadoCuenta = (
@@ -36,7 +36,10 @@ type
   {Agrupa a las propiedades que definen el estado de cuenta de la cabina}
   TCabCuenta = class
   private
+    FCadConteo: string;
+    function GetCadConteo: string;
     function GetEstadoN: integer;
+    procedure SetCadConteo(AValue: string);
     procedure SetEstadoN(AValue: integer);
   public
     estado      : TcabEstadoCuenta;  //estado de la cabina
@@ -49,6 +52,7 @@ type
     function estadoStr: string;  //estado en texto
     function tSolicSeg: integer; //tiempo solicitado en segundos
     procedure Limpiar;
+    property CadConteo: string read GetCadConteo write SetCadConteo;
   public
     constructor Create;
   end;
@@ -118,16 +122,37 @@ type
     destructor Destroy; override;
   end;
 
+  function CodCadConteo(const tSolic0: TDateTime; const tLibre0, horGra0: boolean): string;
+  procedure DecodCadConteo(const cadConteo: string;
+                         out tSolic0: TDateTime; out tLibre0, horGra0: boolean);
 
 implementation
 const
   MAX_LIN_MSJ_CNX = 10;  //Cantidad máxima de líneas que se guardarán de los msjes de conexión.
+
+  function CodCadConteo(const tSolic0: TDateTime; const tLibre0, horGra0: boolean): string;
+  {Codifica los campos usuales, para iniciar o modificar el conteo de la cabina.}
+  begin
+    Result := D2f(tSolic0)+ #9 +
+              B2f(tLibre0)+ #9 +
+              B2f(horGra0);
+  end;
+  procedure DecodCadConteo(const cadConteo: string;
+                           out tSolic0: TDateTime; out tLibre0, horGra0: boolean);
+  var
+    campos: TStringDynArray;
+  begin
+    campos := Explode(#9, cadConteo);
+    tSolic0 := f2D(campos[0]);
+    tLibre0 := f2B(campos[1]);
+    horGra0 := f2B(campos[2]);
+  end;
+
 { TCabCuenta }
 function TCabCuenta.tSolicSeg: integer;
 begin
   Result := round(tSolic*86400)
 end;
-
 procedure TCabCuenta.Limpiar;
 begin
  estado := EST_NORMAL;
@@ -135,10 +160,19 @@ begin
  horgra := False;
  tlibre := False;
 end;
-
 function TCabCuenta.GetEstadoN: integer;
 begin
   Result := Ord(estado);
+end;
+function TCabCuenta.GetCadConteo: string;
+begin
+ Result := CodCadConteo(tSolic, tLibre, horGra);
+end;
+procedure TCabCuenta.SetCadConteo(AValue: string);
+var
+  campos: TStringDynArray;
+begin
+  DecodCadConteo(AValue, tSolic, tLibre, horGra);
 end;
 procedure TCabCuenta.SetEstadoN(AValue: integer);
 begin

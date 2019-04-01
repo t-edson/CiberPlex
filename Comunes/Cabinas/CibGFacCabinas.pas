@@ -28,6 +28,10 @@ const //Acciones sobre las PC
   C_CABIN_QUIPAU = 08;  //Quita a una cabina, el estado de pausa
   C_CABIN_EDICOM = 09;  //Edita un comentario
   C_CABIN_SACMAN = 10;  //Solicita sacar de mantenimiento a una PC
+  C_CABIN_MSJRED = 11;  //Solicita abrir ventana de mensajes de Red
+  //Comandos para Grupo de cabinas
+  C_GCAB_ACTTAR = 15;  //Solicita actualizar tarifas de un Grupo de Cabinas
+  C_GCAB_ADMEQU = 16;  //Solicita abrir ventana para administrar equipos
 
   /////// Comandos que se ejecutan remótamente ////////
   //Se ha tratado de respetar el nombre de los comandos del NILOTER-m
@@ -201,10 +205,6 @@ type
     procedure SincBloqueo;       //sicroniza el bloqueo de la pantalla
     procedure TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word; cad: string=
       '');
-    function CodCadConteo(const tSolic0: TDateTime; const tLibre0, horGra0: boolean
-      ): string;
-    procedure DecodCadConteo(const cadConteo: string; out tSolic0: TDateTime; out
-      tLibre0, horGra0: boolean);
     procedure InicConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
     procedure InicConteo(cadConteo: string);
     procedure ModifConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
@@ -281,13 +281,9 @@ type
     destructor Destroy; override;
   end;
 
-  procedure CargarIconos(imagList16, imagList32: TImageList);
   function VarCampoNombreCP(const cad: string): string;
 
 implementation
-const
-  RUT_ICONOS = '..\Iconos\Cabinas';
-
 var
   icoModifCuenta: integer;
   icoDetenCuenta: integer;
@@ -299,30 +295,7 @@ var
   icoVerMsjesRed: integer;
   icoAdminTarifas: integer;
   icoAdminEquipos: integer;
-  icoProp: integer;
-
-procedure CargarIconos(imagList16, imagList32: TImageList);
-{Carga los íconos que necesita esta unida }
-var
-  rutImag: RawByteString;
-begin
-  rutImag := ExtractFilePath(Application.ExeName) + RUT_ICONOS + DirectorySeparator;
-  //Iconos del facturable
-  //icoInicCuenta  := CargaPNG(imagList16, imagList32, rutImag, 'xclock');
-  icoModifCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clockEdit');
-  icoDetenCuenta := CargaPNG(imagList16, imagList32, rutImag, 'clock_stop');
-  icoPonerManten := CargaPNG(imagList16, imagList32, rutImag, 'PcMant');
-  icoAgregComent := CargaPNG(imagList16, imagList32, rutImag, 'note');
-  icoPausarCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
-  icoReinicCuent := CargaPNG(imagList16, imagList32, rutImag, 'player_pause');
-  icoVerExplorad := CargaPNG(imagList16, imagList32, rutImag, 'folderSearch');
-  //icoFijTiempoIni:= CargaPNG(imagList16, imagList32, rutImag, '');
-  icoVerMsjesRed := CargaPNG(imagList16, imagList32, rutImag, 'terminal');
-  //Íconos del grupo
-  icoAdminTarifas := CargaPNG(imagList16, imagList32, rutImag, 'PcDollar');
-  icoAdminEquipos := CargaPNG(imagList16, imagList32, rutImag, 'cabinas');
-  icoProp   := CargaPNG(imagList16, imagList32, rutImag, 'properties');
-end;
+  icoPropiedades: integer;
 
 function VarCampoNombreCP(const cad: string): string;
 {Devuelve el campo nombre de una lista de campos separados por tabulaciones.}
@@ -353,6 +326,7 @@ begin
     cad := copy(cad, p+1, length(cad));  //recorta nombre
   end;
 end;
+
 { TCibFacCabina }
 procedure TCibFacCabina.cabCambiaEstadoConex(nuevoEstado: TCibEstadoConex);
 {Evento de cambio de estado de la conexión}
@@ -985,24 +959,6 @@ procedure TCibFacCabina.TCP_envComando(comando: TCPTipCom; ParamX, ParamY: word;
 begin
   cabConex.TCP_envComando(comando, ParamX, ParamY, cad);    //desbloquea, si hay conexión
 end;
-function TCibFacCabina.CodCadConteo(const tSolic0: TDateTime;
-                                     const tLibre0, horGra0: boolean): string;
-{Codifica los campos usuales, para iniciar o modificar el conteo de la cabina.}
-begin
-  Result := D2f(tSolic0)+ #9 +
-            B2f(tLibre0)+ #9 +
-            B2f(horGra0);
-end;
-procedure TCibFacCabina.DecodCadConteo(const cadConteo: string; out
-  tSolic0: TDateTime; out tLibre0, horGra0: boolean);
-var
-  campos: TStringDynArray;
-begin
-  campos := Explode(#9, cadConteo);
-  tSolic0 := f2D(campos[0]);
-  tLibre0 := f2B(campos[1]);
-  horGra0 := f2B(campos[2]);
-end;
 procedure TCibFacCabina.InicConteo(tSolic0: TDateTime; tLibre0, horGra0: boolean);
 begin
   if Contando then
@@ -1220,6 +1176,9 @@ begin
   C_CABIN_EDICOM: begin
     Coment := traDat;
   end;
+  C_CABIN_MSJRED: begin
+    frmVisMsj.Exec(self.Nombre);
+  end;
   //Comandos remotos
   C_CABIN_BLOQ_PC: begin
     TCP_envComando(C_BLOQ_PC, 0, 0);
@@ -1283,7 +1242,6 @@ desde aquí.}
 begin
   InicLlenadoAcciones(MenuPopup);
   //Se ha visto que  la acción "Iniciar Cuenta" se puede reemplazar con "Modificar Tiempo".
-  //AgregarAccion(nShortCut, '&Iniciar Cuenta'        , @mnInicCuenta , icoInicCuenta );
   if EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
     AgregarAccion(nShortCut, '&Modificar Tiempo'      , @mnModifCuenta, icoModifCuenta);
   end else begin
@@ -1320,8 +1278,6 @@ begin
   AgregarAccion(nShortCut, 'Ver Mensajes de &Red' , @mnVerMsjesRed, icoVerMsjesRed);
 end;
 procedure TCibFacCabina.mnInicCuenta(Sender: TObject);
-var
-  frmTiempos: TfrmFijTiempo;
 begin
   if EstadoCta = EST_MANTEN then begin
     if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
@@ -1329,25 +1285,19 @@ begin
     msgExc('No se puede iniciar una cuenta en esta cabina.');
     exit;
   end;
-  //Usa el formulario del padre. También podría crearse uno por cada cabina, pero sería más pesaoo.
-  frmTiempos := TCibGFacCabinas(grupo).frmTiempos;
-  frmTiempos.MostrarIni(self);  //modal
-  if frmTiempos.cancelo then exit;  //canceló
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_INICTA, 0, IdFac + #9 + frmTiempos.CadActivacion);
+  frmFijTiempo.MostrarIni(cabCuenta, nombre);  //modal
+  if frmFijTiempo.cancelo then exit;  //canceló
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_INICTA, 0, IdFac + #9 + frmFijTiempo.CadActivacion);
 end;
 procedure TCibFacCabina.mnModifCuenta(Sender: TObject);
-var
-  frmTiempos: TfrmFijTiempo;
 begin
   if Detenida then begin
     mnInicCuenta(self);  //está detenida, inicia la cuenta
   end else if Contando then begin
-    //Usa el formulario del padre. También podría crearse uno por cada cabina, pero sería más pesaoo.
-    frmTiempos := TCibGFacCabinas(grupo).frmTiempos;
     //Está en medio de una cuenta
-    frmTiempos.Mostrar(self);  //modal
-    if frmTiempos.cancelo then exit;  //canceló
-    OnSolicEjecCom(CFAC_CABIN, C_CABIN_MODCTA, 0, IdFac + #9 + frmTiempos.CadActivacion);
+    frmFijTiempo.Mostrar(cabCuenta, nombre);  //modal
+    if frmFijTiempo.cancelo then exit;  //canceló
+    OnSolicEjecCom(CFAC_CABIN, C_CABIN_MODCTA, 0, IdFac + #9 + frmFijTiempo.CadActivacion);
   end;
 end;
 procedure TCibFacCabina.mnDetenCuenta(Sender: TObject);
@@ -1730,19 +1680,59 @@ procedure TCibGFacCabinas.EjecAccion(idFacOrig: string; tram: TCPTrama);
 {Ejecuta la acción sibre este grupo. Si la acción es para uno de sus facturables, le
 pasa la trama, para su ejecución.}
 var
-  traDat, nom: String;
+  traDat, nom, strGrupTar, strTarif: String;
   facDest: TCibFac;
   Err: boolean;
+  lineas: TStringList;
 begin
 debugln('Acción solicitada a GFacCabinas:' + tram.TipTraNom);
-  traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
-                           deteriorar el rendimiento. Habría que verificar.}
-  ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
-  nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
-  facDest := ItemPorNombre(nom);
-  if facDest=nil then exit;
-  //Pasa el comando, incluyendo el origen, por si lo necesita
-  facDest.EjecAccion(idFacOrig, tram, traDat);
+  if tram.tipTra = CFAC_GCABIN then begin
+    //Es una acción dirigida a este grupo
+    case tram.posX of  //Se usa el parámetro para ver la acción
+    //Comandos locales. No llegan directamente hasta la PC remota
+    C_GCAB_ACTTAR: begin   //Actualizar las tarifas del grupo
+        //Extrae la cadena de tarifas y grupos de tarifas
+        traDat := tram.traDat;
+        ExtraerHasta(traDat, #9, Err);  //Extrae nombre de grupo
+        //Prepara extración
+        lineas := TStringList.Create;
+        lineas.Text :=traDat;
+        //Extrae texto de las líneas
+        strGrupTar := '';
+        while lineas[0][1] = '+' do begin
+          //Acumula
+          strGrupTar := strGrupTar + lineas[0] + LineEnding;
+          lineas.Delete(0);  //elimima línea
+        end;
+        TrimEndLine(strGrupTar);
+        strTarif := '';
+        while (lineas.Count>0) and (lineas[0][1] = '*') do begin
+          //Acumula
+          strTarif := strTarif + lineas[0] + LineEnding;
+          lineas.Delete(0);  //elimima línea
+        end;
+        TrimEndLine(strTarif);
+        //Actualiza objetos
+        grupTar.StrObj := strGrupTar;
+        tarif.StrObj := strTarif;
+        //Termina
+        lineas.Destroy;
+      end;
+    C_GCAB_ADMEQU: begin
+      frmAdminCabs.Show;
+    end;
+    end;
+  end else begin
+    //Es una acción dirigida a un Facturables
+    traDat := tram.traDat;  {Crea copia para modificar. En tramas grandes, modificar puede
+                             deteriorar el rendimiento. Habría que verificar.}
+    ExtraerHasta(traDat, SEP_IDFAC, Err);  //Extrae nombre de grupo
+    nom := ExtraerHasta(traDat, #9, Err);  //Extrae nombre de objeto.
+    facDest := ItemPorNombre(nom);
+    if facDest=nil then exit;
+    //Pasa el comando, incluyendo el origen, por si lo necesita
+    facDest.EjecAccion(idFacOrig, tram, traDat);
+  end;
 end;
 procedure TCibGFacCabinas.MenuAccionesVista(MenuPopup: TPopupMenu);
 begin
@@ -1757,7 +1747,7 @@ begin
   nShortCut := -1;
   AgregarAccion(nShortCut, 'Administrador de &Tarifas', @mnAdminTarifas, icoAdminTarifas);
   AgregarAccion(nShortCut, 'Administrador de &Equipos', @mnAdminEquipos, icoAdminEquipos);
-  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoProp);
+  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoPropiedades);
 end;
 procedure TCibGFacCabinas.mnAdminTarifas(Sender: TObject);
 begin
@@ -1773,7 +1763,6 @@ begin
   inherited Create(nombre0, ctfCabinas);
   FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 //debugln('-Creando: '+ nombre0);
-  frmTiempos:= TfrmFijTiempo.Create(nil);   //formulario para fijar tiempos
 //Se incluye un objeto TGrupoTarAlquiler para la tarificación
   grupTar := TGrupoTarAlquiler.Create;
   tarif := TCPTarifCabinas.Create(grupTar);
@@ -1824,7 +1813,6 @@ begin
     TCibFacCabina(c).Desconectar;
   end;
   grupTar.Destroy;
-  frmTiempos.Destroy;
   inherited Destroy;  {Aquí se hace items.Destroy, que puede demorar por los hilos}
 end;
 

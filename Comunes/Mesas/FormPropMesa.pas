@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, Buttons, MisUtils, CibFacturables;
+  ExtCtrls, Buttons, MisUtils, CibFacturables, FormOgMesas;
 
 type
 
@@ -38,7 +38,6 @@ type
     procedure optMesaClick(Sender: TObject);
   private
     fac: TCibFac;
-    rutIconos: string;
     procedure RefrescarSillas;
   public
     function Exec(fac0: TCibFac): TModalResult;
@@ -55,23 +54,22 @@ procedure TfrmPropMesa.optMesaClick(Sender: TObject);
 begin
   case optMesa.ItemIndex of
   0: begin  //Mesa 1 X 1
-//    imgMesa.Picture.LoadFromFile(rutIconos + 'mesaSimple.png');
-    imgMesa.Picture.Bitmap.Assign(CibGFacMesas.imgMesaSimple.Picture.Bitmap);
+    imgMesa.Picture.Bitmap.Assign(frmOgMesas.imgMesaSimple.Picture.Bitmap);
     imgMesa.Width := imgMesa.Picture.Width;
     imgMesa.Height:= imgMesa.Picture.Height;
   end;
   1: begin
-    imgMesa.Picture.Bitmap.Assign(CibGFacMesas.imgMesaDoble1.Picture.Bitmap);
+    imgMesa.Picture.Bitmap.Assign(frmOgMesas.imgMesaDoble1.Picture.Bitmap);
     imgMesa.Width := imgMesa.Picture.Width;
     imgMesa.Height:= imgMesa.Picture.Height;
   end;
   2: begin
-    imgMesa.Picture.Bitmap.Assign(CibGFacMesas.imgMesaDoble2.Picture.Bitmap);
+    imgMesa.Picture.Bitmap.Assign(frmOgMesas.imgMesaDoble2.Picture.Bitmap);
     imgMesa.Width := imgMesa.Picture.Width;
     imgMesa.Height:= imgMesa.Picture.Height;
   end;
   3: begin
-    imgMesa.Picture.Bitmap.Assign(CibGFacMesas.imgMesaDoble3.Picture.Bitmap);
+    imgMesa.Picture.Bitmap.Assign(frmOgMesas.imgMesaDoble3.Picture.Bitmap);
     imgMesa.Width := imgMesa.Picture.Width;
     imgMesa.Height:= imgMesa.Picture.Height;
   end;
@@ -135,7 +133,6 @@ var
   facMesa: TCibFacMesa;
 begin
   fac := fac0;
-  rutIconos := CibGFacMesas.rutImag;
   facMesa := TCibFacMesa(fac);
   case facMesa.tipMesa of
   cmt1x1: optMesa.ItemIndex:=0;
