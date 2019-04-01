@@ -1,3 +1,24 @@
+2.5
+===
+Se eliminan los formularios de tipo  FormGRU* y se restauran las unidades CibGFac*.
+Se crean formularios de tipo FormOg*, para incluirla definición de los objetos gráficos
+derivados de ogFac y ogGFac.
+Se habilita la opción de creación dinámica de los menús contextuales con íconos en el 
+nuevo visor.
+Se habilitan las opciones perdidas del menú contextual para algunos grupos.
+Se habilitan todas las opciones del visor antiguo en el nuevo visor (para facturables y grupos),
+excepto los cambios con la ventana de propiedades de grupos, y el formulario de configuración de
+mesas.
+
+Cuando se habilite en nuevo visor, se deben eliminar:
+- La vista frameVisCPlex 
+- la unidad ObjGraficos_borrar.
+- El modo "COpia" de todos los facturables, grupos y modelo.
+- Los métodos de tipo MenuAccionesVista(), MenuAccionesModelo()
+- El manejo del frmAdminTar en CibGFacCabinas.
+- Los métodos que responden a las boletas, en el formulario principal: frmBoleta_*
+- Los métodos de configuración de menús. en el formulario principal: ConfigurarPopUp*
+
 2.4
 ===
 Se cambian las unidades de tipo CibGFac* por formularios de tipo FormGRU*, para permitir a los
