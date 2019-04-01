@@ -144,7 +144,7 @@ type
     procedure frmAdminInsumGrabado;
     procedure frmAdminProduc_Grabar;
     procedure frmAdminProvee_Grabar;
-    procedure frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+    procedure frmBoleta_GrabarBoleta(idFac: string; coment: string);
     procedure frmIngStock_Grabar(Manual: boolean);
     procedure PedirEstadoPCs;
     procedure PedirPantalla;
@@ -338,10 +338,10 @@ begin
   tipModif := MODTAB_TOTAL;   //tipo de modificación
   ServCab.PonerComando(CVIS_ACTINSU, 0, tipModif, StringFromFile(arcInsumo));
 end;
-procedure TForm1.frmBoleta_GrabarBoleta(CibFac: TCibFac; coment: string);
+procedure TForm1.frmBoleta_GrabarBoleta(idFac: string; coment: string);
 begin
-  if MsgYesNo('Grabar Boleta de: ' + CibFac.Nombre + '?')<>1 then exit;
-  ServCab.PonerComando(CVIS_ACBOLET, ACCBOL_GRA, 0, CibFac.IdFac);
+  if MsgYesNo('Grabar Boleta de: ' + IdFac + '?')<>1 then exit;
+  ServCab.PonerComando(CVIS_ACBOLET, ACCBOL_GRA, 0, IdFac);
 end;
 procedure TForm1.PedirPantalla;
 //Pide el archivo de configuración del servidor
@@ -611,7 +611,7 @@ var
 begin
   ogFac := Visor.FacSeleccionado;
   if ogFac = nil then exit;
-  frmBoleta_GrabarBoleta(ogFac.Fac,'');
+  frmBoleta_GrabarBoleta(ogFac.Fac.IdFac, '');
 end;
 procedure TForm1.acFacVerBolExecute(Sender: TObject);
 var
@@ -619,7 +619,7 @@ var
 begin
   ogFac := Visor.FacSeleccionado;
   if ogFac = nil then exit;
-  frmBoleta.Exec(ogFac.Fac);
+  frmBoleta.Exec(ogFac.Fac.IdFac, ogFac.Fac.Boleta, 'Boleta de '+ogFac.Fac.IdFac);
 end;
 //Herramientas
 procedure TForm1.acHerCamNomProExecute(Sender: TObject);
