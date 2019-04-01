@@ -5,12 +5,13 @@ uses
   Classes, SysUtils, Types, Forms, Controls, ExtCtrls, LCLProc, ActnList, Menus,
   ComCtrls, Dialogs, StdCtrls, LCLType, FileUtil, MisUtils, ogDefObjGraf,
   FormIngVentas, FormConfig, frameCfgUsuarios, Globales, frameVisCPlex,
-  ObjGraficos_borrar, FormBoleta, FormRepIngresos, FormAdminProduc, FormAcercaDe,
-  FormCalcul, FormContDinero, FormSelecObjetos, FormRegCompras, FormInicio,
-  CibTramas, CibFacturables, CibTabProvee, CibTabProductos, CibTabInsumos,
-  FormAdminProvee, CibBD, FormAdminInsum, FormCambClave, FormRepProducto,
-  FormRepEventos, FormValStock, FormIngStock, CibModelo, UniqueInstance,
-  FormGRUMesas, FormGRUClientes, FormGRUCabinas, FormGRUNiloM, FormVista,
+  ObjGraficos_borrar, FormBoleta, FormRepIngresos, FormAdminProduc,
+  FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos, FormRegCompras,
+  FormInicio, CibTramas, CibFacturables, CibTabProvee, CibTabProductos,
+  CibTabInsumos, FormAdminProvee, CibBD, FormAdminInsum, FormCambClave,
+  FormRepProducto, FormRepEventos, FormValStock, FormIngStock, CibModelo,
+  UniqueInstance,
+  CibGFacMesas, CibGFacClientes, CibGFacCabinas, CibGFacNiloM, FormVista,
   ModuleBD;
 type
   { TfrmPrincipal }
@@ -766,9 +767,9 @@ var
 begin
   //Se supone que se han movido los objetos seleccionados
   Modelo.DeshabEven:=true;   //para evitar interferencia
-  for og in Visor.motEdi.seleccion do begin  //*** DEbe cambairse al otro visor cuando se haga la migración
+  for og in Visor.motEdi.seleccion do begin  //*** Debe cambairse al otro visor cuando se haga la migración
     if og.Tipo = OBJ_GRUP then begin
-      //Es un grupo. Ubica el obejto
+      //Es un grupo. Ubica el objeto
       Gfac := Modelo.ItemPorNombre(og.Name);
       if Gfac=nil then exit;
       Gfac.x := og.x;
@@ -844,10 +845,11 @@ end;
 procedure TfrmPrincipal.FormShow(Sender: TObject);
 begin
   //Carga íconos de Modelo facturables
-  FormGRUClientes.CargarIconos(ImageList16, ImageList32);
-  FormGRUNiloM.CargarIconos(ImageList16, ImageList32);
-  FormGRUCabinas.CargarIconos(ImageList16, ImageList32);
-  FormGRUMesas.CargarIconos(ImageList16, ImageList32);
+  frmVisor.Visor.CargarIconos;
+  //FormOgClientes.CargarIconos(ImageList16, ImageList32);
+  //FormOgNiloM.CargarIconos(ImageList16, ImageList32);
+  //FormOgCabinas.CargarIconos(ImageList16, ImageList32);
+  //FormOgMesas.CargarIconos(ImageList16, ImageList32);
   //Carga configuración
   Config.Iniciar('config.xml');  {Lee configuración, incluyendo datos del modelo,
                                   de modo que se crean los GFAC y FAC también. }

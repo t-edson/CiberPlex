@@ -12,8 +12,9 @@ uses
   FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos, FormAdminProvee,
   FormAdminInsum, FormCambClave, FormRepProducto, FormRepEventos,
   FormRegCompras, FormIngVentas, FormValStock, FormIngStock, FormVista,
-  ModuleBD, FormGRUCabinas, FormFijTiempo, FormGRUNiloM, FormGRUMesas,
-  FormGRUClientes;
+  ModuleBD, FormFijTiempo, FormAdminTarCab, CibGFacMesas, FormPropMesa,
+  FormOgCabinas, FormOgClientes, FormOgMesas, FormOgNiloM,
+  FormPropGFac;
 
 {$R *.res}
 
@@ -42,11 +43,14 @@ begin
   Application.CreateForm(TfrmIngStock, frmIngStock);
   Application.CreateForm(TfrmVisor, frmVisor);
   Application.CreateForm(TModBD, ModBD);
-  Application.CreateForm(TfrmGRUCabinas, frmGRUCabinas);
-  Application.CreateForm(TfrmGRUNiloM, frmGRUNiloM);
-  Application.CreateForm(TfrmGRUMesas, frmGRUMesas);
-  Application.CreateForm(TfrmGRUClientes, frmGRUClientes);
   Application.CreateForm(TfrmFijTiempo, frmFijTiempo);
+  Application.CreateForm(TfrmOgCabinas, frmOgCabinas);
+  Application.CreateForm(TfrmOgNiloM, frmOgNiloM);
+  Application.CreateForm(TfrmOgMesas, frmOgMesas);
+  Application.CreateForm(TfrmOgClientes, frmOgClientes);
+  Application.CreateForm(TfrmPropGFac, frmPropGFac);
+  Application.CreateForm(TfrmPropMesa, frmPropMesa);
+  Application.CreateForm(TfrmAdminTarCab, frmAdminTarCab);
   Application.Run;
 end.
 

@@ -76,7 +76,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="56">
+    <Units Count="60">
       <Unit0>
         <Filename Value="CpxServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -390,33 +390,49 @@
         <ResourceBaseClass Value="DataModule"/>
       </Unit51>
       <Unit52>
-        <Filename Value="..\..\Comunes\Cabinas\FormGRUCabinas.pas"/>
+        <Filename Value="..\..\Comunes\Cabinas\CibGFacCabinas.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmGRUCabinas"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit52>
       <Unit53>
-        <Filename Value="..\..\Comunes\NiloM\FormGRUNiloM.pas"/>
+        <Filename Value="..\..\Comunes\NiloM\CibGFacNiloM.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmGRUNiloM"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit53>
       <Unit54>
-        <Filename Value="..\..\Comunes\Mesas\FormGRUMesas.pas"/>
+        <Filename Value="..\..\Comunes\Clientes\CibGFacClientes.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmGRUMesas"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit54>
       <Unit55>
-        <Filename Value="..\..\Comunes\Clientes\FormGRUClientes.pas"/>
+        <Filename Value="..\..\Comunes\Mesas\CibGFacMesas.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmGRUClientes"/>
+      </Unit55>
+      <Unit56>
+        <Filename Value="..\..\Comunes\FormOgCabinas.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmOgCabinas"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit55>
+      </Unit56>
+      <Unit57>
+        <Filename Value="..\..\Comunes\FormOgNiloM.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmOgNiloM"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit57>
+      <Unit58>
+        <Filename Value="..\..\Comunes\FormOgMesas.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmOgMesas"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit58>
+      <Unit59>
+        <Filename Value="..\..\Comunes\FormOgClientes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmOgClientes"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit59>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
