@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, Buttons, MisUtils, DateUtils, LCLType,
-  CibCabinaBase, CibFacturables;
+  CibCabinaBase;
 
 type
   { TfrmFijTiempo }
@@ -62,7 +62,6 @@ var
 
 implementation
 {$R *.lfm}
-uses CibGFacCabinas;   //Declarada aquí para evitar referecnia circular
 
 { TfrmFijTiempo }
 procedure TfrmFijTiempo.Mostrar(cuenta0: TCabCuenta; nombre: String);

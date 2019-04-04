@@ -4,7 +4,7 @@ unit ObjGraficos;
 {$mode objfpc}{$H+}
 interface
 uses
-  Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl, Types,
+  Controls, Classes, SysUtils, Graphics, GraphType, LCLIntf, fgl,
   MisUtils, ogMotGraf2d, ogDefObjGraf, CibFacturables;
 const
   //Constantes de Colores

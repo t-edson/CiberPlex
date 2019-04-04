@@ -219,7 +219,7 @@ type
   public  //Campos para manejo de acciones
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
   public  //constructor y destructor
-    constructor Create(nombre0: string; ModoCopia0: boolean);
+    constructor Create(nombre0: string);
     destructor Destroy; override;
   end;
 
@@ -792,7 +792,6 @@ var
   NombProg, NombLocal: string;
   ModDiseno: boolean;
 begin
-  if ModoCopia then exit;
   OnReqConfigGen(NombProg, NombLocal, ModDiseno);
   //Abre archivo de rgeistro para este enrutador
   arcLog.AbrirPLog(rutDatos, NombLocal, Nombre);
@@ -803,7 +802,6 @@ begin
 end;
 procedure TCibGFacNiloM.CerrarRegistro;
 begin
-  if ModoCopia then exit;
   EscribeLog('Fin CIBERPX    --- ' + FormatDateTime('yyyy/mm/dd hh:nn:ss', now));
   EscribeLog('');
 end;
@@ -910,12 +908,10 @@ begin
 end;
 function TCibGFacNiloM.GetPuertoN: string;
 begin
-  if ModoCopia then exit('');
   Result := nilConex.puertoN;
 end;
 procedure TCibGFacNiloM.SetPuertoN(AValue: string);
 begin
-  if ModoCopia then exit;
   nilConex.puertoN:=AValue;
 end;
 class function TCibGFacNiloM.CodCadEstado(_Nombre: string; estadoCnx: TNilEstadoConex): string;
@@ -956,9 +952,7 @@ var
 begin
   decodEst.Inic(AValue, lin1);  //inicia la decodificación
   DecodCadEstado(lin1, _Nombre, _estadoCnx);
-  if ModoCopia then begin  //Solo cuando está en modo copia, se lee esta variable
-    estadoCnx := _estadoCnx;
-  end;
+  //estadoCnx := _estadoCnx; //El estado no se lee
   while decodEst.Extraer(car, nomb, cad) do begin
     if cad = '' then continue;
     it := ItemPorNombre(nomb);
@@ -1114,7 +1108,6 @@ end;
 procedure TCibGFacNiloM.Conectar;
 {Inicia la conexión}
 begin
-  if ModoCopia then exit;
   AbrirRegistro;
   if MsjError<>'' then begin
     //No poder escribir en el registro es un error grave. Se debe terminar el programa.
@@ -1126,13 +1119,11 @@ begin
 end;
 procedure TCibGFacNiloM.Desconectar;
 begin
-  if ModoCopia then exit;
   nilConex.Desconectar;
   CerrarRegistro;
 end;
 procedure TCibGFacNiloM.EnvComando(com: string; IncluirSalto: boolean);
 begin
-  if ModoCopia then exit;
   nilConex.EnvComando(com, IncluirSalto);
   { TODO : Tal vez se debería incluir algún medio para determinar
   si se produce error con el envío }
@@ -1230,38 +1221,35 @@ begin
   end;
 end;
 //Constructor y destructor
-constructor TCibGFacNiloM.Create(nombre0: string; ModoCopia0: boolean);
+constructor TCibGFacNiloM.Create(nombre0: string);
 begin
   inherited Create(nombre0, ctfNiloM);
   timer1 := TTimer.Create(nil);
   timer1.Interval:=1000;
   arcLog    := TCibTablaHist.Create;  //crea su propio archivo de registro
-  FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 debugln('-Creando: '+ nombre0);
   tipGFac       := ctfNiloM;
-  if not FModoCopia then begin
-    timer1.OnTimer:=@timer1Timer;
-    //Configura ventana de conexiones
-    frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
-    frmNilomConex.padre := self;  //referencia a la clase
-    OnTermWrite:=@frmNilomConex.TermWrite;
-    OnTermWriteLn:=@frmNilomConex.TermWriteLn;
-    OnRegMensaje :=@frmNilomConex.RegMensaje;
-    //Configura ventaba de propiedades
-    frmNilomProp:= TfrmNiloMProp.Create(nil);
-    frmNilomProp.onCambiaProp:=@frmNilomProp_CambiaProp;
-    frmNilomProp.gfac := self;  {Este formulario requiere que se asigne esta referecncia,
-                                 desde el principio, porque necesita procesar las tarifas
-                                 y rutas, tempranamente.}
-    //COnfigura la conexión serial
-    nilConex    := TNiloConexion.Create;
-    nilConex.OnCambiaEstado:= @nilConex_CambiaEstado;
-    nilConex.OnProcesarCad := @nilConex_ProcesarCad;
-    nilConex.OnProcesarLin := @nilConex_ProcesarLin;
-    nilConex.OnRegMensaje  := @nilConex_RegMensaje;
-    nilConex.OnTermWrite   := @nilConex_TermWrite;
-    nilConex.OnTermWriteLn := @nilConex_TermWriteLn;
-  end;
+  timer1.OnTimer:=@timer1Timer;
+  //Configura ventana de conexiones
+  frmNilomConex:= TfrmNiloMConex.Create(nil);   //crea vent. de conexiones de forma dinámica
+  frmNilomConex.padre := self;  //referencia a la clase
+  OnTermWrite:=@frmNilomConex.TermWrite;
+  OnTermWriteLn:=@frmNilomConex.TermWriteLn;
+  OnRegMensaje :=@frmNilomConex.RegMensaje;
+  //Configura ventaba de propiedades
+  frmNilomProp:= TfrmNiloMProp.Create(nil);
+  frmNilomProp.onCambiaProp:=@frmNilomProp_CambiaProp;
+  frmNilomProp.gfac := self;  {Este formulario requiere que se asigne esta referecncia,
+                               desde el principio, porque necesita procesar las tarifas
+                               y rutas, tempranamente.}
+  //COnfigura la conexión serial
+  nilConex    := TNiloConexion.Create;
+  nilConex.OnCambiaEstado:= @nilConex_CambiaEstado;
+  nilConex.OnProcesarCad := @nilConex_ProcesarCad;
+  nilConex.OnProcesarLin := @nilConex_ProcesarLin;
+  nilConex.OnRegMensaje  := @nilConex_RegMensaje;
+  nilConex.OnTermWrite   := @nilConex_TermWrite;
+  nilConex.OnTermWriteLn := @nilConex_TermWriteLn;
   //Configuración de tarifas y rutas
   tarif         := TNiloMTabTar.Create;    //crea tarifas
   tarif.OnLogErr:=@tarif_LogErr;
@@ -1295,11 +1283,9 @@ begin
   mens_error.Destroy;
   rutas.Destroy;
   tarif.Destroy;
-  if not FModoCopia then begin
-    nilConex.Destroy;
-    frmNilomProp.Destroy;
-    frmNilomConex.Destroy;
-  end;
+  nilConex.Destroy;
+  frmNilomProp.Destroy;
+  frmNilomConex.Destroy;
   arcLog.Destroy;
   timer1.OnTimer:=nil;
   timer1.Destroy;

@@ -36,7 +36,6 @@ type
   {Agrupa a las propiedades que definen el estado de cuenta de la cabina}
   TCabCuenta = class
   private
-    FCadConteo: string;
     function GetCadConteo: string;
     function GetEstadoN: integer;
     procedure SetCadConteo(AValue: string);
@@ -169,8 +168,6 @@ begin
  Result := CodCadConteo(tSolic, tLibre, horGra);
 end;
 procedure TCabCuenta.SetCadConteo(AValue: string);
-var
-  campos: TStringDynArray;
 begin
   DecodCadConteo(AValue, tSolic, tLibre, horGra);
 end;

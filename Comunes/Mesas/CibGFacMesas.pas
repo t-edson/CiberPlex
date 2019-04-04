@@ -78,7 +78,7 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
   public  //Constructor y destructor
-    constructor Create(nombre0: string; ModoCopia0: boolean);
+    constructor Create(nombre0: string);
     destructor Destroy; override;
   end;
 
@@ -395,10 +395,9 @@ debugln('Acción solicitada a GFacMesas:' + tram.TipTraNom);
   end;
 end;
 //constructor y destructor
-constructor TCibGFacMesas.Create(nombre0: string; ModoCopia0: boolean);
+constructor TCibGFacMesas.Create(nombre0: string);
 begin
   inherited Create(nombre0, ctfMesas);
-  FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
   CategVenta := 'COUNTER';
   si1a := true;
   si2a := true;

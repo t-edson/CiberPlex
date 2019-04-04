@@ -251,6 +251,7 @@ procedure TfrmOgCabinas.mnVerExplorad(Sender: TObject);
 begin
   //frmExpArc.rutArchivos := rutArchivos;  //Actualiza ruta de archivos de descarga
   //frmExpArc.Exec(self);
+  OnSolicEjecCom(CFAC_CABIN, C_CABIN_EXPLOR, 0, ogFacCab.IdFac);
 end;
 procedure TfrmOgCabinas.mnEncenderPC(Sender: TObject);
 {Fija el tiempo inicial de una cabina.}

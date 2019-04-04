@@ -250,7 +250,6 @@ type  //Definición de tipos FAC y GFAC
   protected
     Fx: Single;
     Fy: Single;
-    FModoCopia: boolean;
     decodEst: TCPDecodCadEstado;  //Para decodificar las cadenas de estado
     frmProp: TfrmPropGFac;     //formulario de propiedades por defecto
     function GetCadEstado: string; virtual; abstract;
@@ -266,13 +265,6 @@ type  //Definición de tipos FAC y GFAC
     tipGFac : TCibTipGFact;    //Tipo de grupo facturable
     CategVenta: string;      //Categoría de Venta para este grupo
     items   : TCibFac_list;   //Lista de objetos facturables
-    {El campo ModoCopia indica si se quiere trabajar sin conexión (como en un visor).
-    Debería fijarse justo después de crear el objeto, para que los ítems a crear, se
-    creen con la conexión configurada desde el inicio. No todos los objetos descendientes
-    de TCibGFac, tienen que usar este campo. Solo les será útil a los que
-    manejan conexión. Crear objetos facturables sin conexión es útil para los objetos
-    creados en el visor, ya que estos, solo deben funcionar como objetos-copia.}
-    property ModoCopia: boolean read FModoCopia;
     property CadEstado: string read GetCadEstado write SetCadEstado;  //cadena de estado
     property CadPropied: string read GetCadPropied write SetCadPropied;  //cadena de propiedades
     //Posición en pantalla. Se usan cuando se representa al facturable como un objeto gráfico.

@@ -1,5 +1,5 @@
 object frmOgNiloM: TfrmOgNiloM
-  Left = 289
+  Left = 321
   Height = 240
   Top = 185
   Width = 320

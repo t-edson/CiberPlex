@@ -97,8 +97,8 @@ type
     OnReqCadMoneda  : TevReqCadMoneda; //Se requiere convertir a formato de moneda
     //OnMouseUp: TMouseEvent;          //se usa el que está definido en el frame
     OnClickDer      : TEvMouse;        //Click derecho en el visor
-    OnClickDerFac   : TEvMouseFac;     //Click derecho en un facturable del visor
-    OnClickDerGFac  : TEvMouseGFac;    //Click derecho en un grupo del visor
+    //OnClickDerFac   : TEvMouseFac;     //Click derecho en un facturable del visor
+    //OnClickDerGFac  : TEvMouseGFac;    //Click derecho en un grupo del visor
     OnDobleClick    : TNotifyEvent;    //Doble click en el visor
     OnDobleClickFac : TEvMouseFac;     //Doble click en un facturable del visor
     OnDobleClickGFac: TEvMouseGFac;    //Doble click en un grupo del visor
@@ -106,6 +106,7 @@ type
     //OnMostrarBoleta : TEvAccionFact; //Solicita mostrar la boleta de un facturable.
   public
     motEdi          : TEditionMot2;  //motor de edición
+    procedure MenuContextual;
     function CoordPantallaDeFact(ogFac: TogFac): TPoint;
     function CoordPantallaDeFact2(ogFac: TogFac): TPoint;
     property ModDiseno: boolean read FModDiseno write SetModDiseno;
@@ -935,21 +936,24 @@ begin
   end;
 end;
 procedure TfraVista.motEdi_ClickDer(Shift: TShiftState; x, y: integer);
+begin
+  if OnClickDer<>nil then OnClickDer(Shift, x, y);
+  MenuContextual;
+end;
+procedure TfraVista.MenuContextual;
+{Ejecuta la acción de mostrar el menú contextual en la vista.}
 var
   ogFac: TogFac;
   ogGfac: TogGFac;
 begin
-  if OnClickDer<>nil then OnClickDer(Shift, x, y);
   if Seleccionado = nil then exit;
   if FacSeleccionado <> nil then begin //Se ha seleccionado un facturable.
     ogFac := FacSeleccionado;  //Obtiene facturable
-    if OnClickDerFac<>nil then OnClickDerFac(ogFac, x, y);  //Genera evento
     ConfigurarPopUpFac(ogFac, PopupMenu1); //Configura menú
     PopupMenu1.PopUp;          //Abré Popup
   end;
   if GFacSeleccionado <> nil then begin
     ogGfac := GFacSeleccionado;
-    if OnClickDerGFac<>nil then OnClickDerGFac(ogGFac, x, y);
     ConfigurarPopUpGru(ogGFac, PopupMenu1); //Configura menú
     PopupMenu1.PopUp;          //Abré Popup
   end;

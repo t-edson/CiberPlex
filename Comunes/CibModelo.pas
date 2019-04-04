@@ -16,7 +16,6 @@ type
    toda la aplicación, así que trabaja como un SINGLETON.}
   TCibModelo = class
   private
-    FModoCopia: boolean;
     function GetCadEstado: string;
     function GetCadPropiedades: string;
     procedure gfac_BDinsert(sqlText: string);
@@ -64,9 +63,6 @@ type
     items  : TCibGFact_list;  //lista de grupos facturables
     DeshabEven: boolean;      //deshabilita los eventos
     MsjError: string;
-    property ModoCopia: boolean  {Indica si se quiere manejar al objeto sin conexión (como en un visor),
-                                  debería hacerse antes de que se agreguen objetos a "items"}
-             read FModoCopia;
     property CadPropiedades: string read GetCadPropiedades write SetCadPropiedades;
     property CadEstado: string read GetCadEstado write SetCadEstado;
     function NumGrupos: integer;
@@ -78,11 +74,11 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
     procedure EjecComando(idVista: string; tram: TCPTrama);
   public  //constructor y destructor
-    constructor Create(nombre0: string; ModoCopia0: boolean=false);
+    constructor Create(nombre0: string);
     destructor Destroy; override;
   end;
 
-  function CrearGFACdeTipo(tipGFac: TCibTipGFact; ModoCopia: boolean): TCibGFac;
+  function CrearGFACdeTipo(tipGFac: TCibTipGFact): TCibGFac;
   function ExtraerEstadoGFAC(lisEstado: TStringList; out tipGru: TCibTipGFact;
                              out nomGru, estGru, Err: string): boolean;
   function ExtraerPropiedGFAC(lisPropied: TStringList; out tipGru: TCibTipGFact;
@@ -90,21 +86,21 @@ type
 
 implementation
 
-function CrearGFACdeTipo(tipGFac: TCibTipGFact; ModoCopia: boolean): TCibGFac;
+function CrearGFACdeTipo(tipGFac: TCibTipGFact): TCibGFac;
 {Crea un grupo facturable a partir de un identificador del tipo ed grupo.}
 begin
   case tipGFac of
   ctfClientes: begin
-    Result := TCibGFacClientes.Create('CliSinProp', ModoCopia);
+    Result := TCibGFacClientes.Create('CliSinProp');
   end;
   ctfCabinas: begin
-    Result := TCibGFacCabinas.Create('CabsSinProp', ModoCopia);  //crea la instancia
+    Result := TCibGFacCabinas.Create('CabsSinProp');  //crea la instancia
   end;
   ctfNiloM: begin
-    Result := TCibGFacNiloM.Create('NiloSinProp', ModoCopia);
+    Result := TCibGFacNiloM.Create('NiloSinProp');
   end;
   ctfMesas: begin
-    Result := TCibGFacMesas.Create('MesSinProp', ModoCopia);
+    Result := TCibGFacMesas.Create('MesSinProp');
   end;
   else
     Result := nil;
@@ -495,8 +491,8 @@ begin
   items.Clear;  //elimina todos para crearlos de nuevo
   lineas.Delete(0);   //elimina primera línea
   while ExtraerPropiedGFAC(lineas, tipGru, nomGrup, cadProp, Err) do begin
-    //Crea al grupo, en el mismo modo (ModoCopia), con que se ha creado esre objeto.
-    gFac := CrearGFACdeTipo(tipGru, ModoCopia);
+    //Crea al grupo.
+    gFac := CrearGFACdeTipo(tipGru);
     gFac.CadPropied:=cadProp;
     Agregar(gFac);
   end;
@@ -562,7 +558,7 @@ begin
   nomGFac := campos[0];
   nomFac := campos[1];
   //Identifica al grupo.
-  gfac := ItemPorNombre(nomGFac);   //asume que "cab.Grupo" es el objeto copia, no el del modelo
+  gfac := ItemPorNombre(nomGFac);
   if gfac = nil then
     exit(nil);
   Result := gfac.ItemPorNombre(nomFac);
@@ -599,10 +595,7 @@ begin
     lugar, ya que lo que se desea, es que los archivos de configuración se carguen solo
     una vez, sea que el NILO-m se agrege por el  menú principal o se carge del archivo
     de configuración.}
-    if not TCibGFacNiloM(gfac).ModoCopia then begin
-      //En modo copia, no se cargan las configuraciones
-      TCibGFacNiloM(gfac).LeerArchivosConfig;   //si genera error, muestra su mensaje
-    end;
+    TCibGFacNiloM(gfac).LeerArchivosConfig;   //si genera error, muestra su mensaje
   end;
   end;
   //Agrega
@@ -615,10 +608,9 @@ begin
   if not DeshabEven and (OnCambiaPropied<>nil) then OnCambiaPropied;
 end;
 //constructor y destructor
-constructor TCibModelo.Create(nombre0: string; ModoCopia0: boolean = false);
+constructor TCibModelo.Create(nombre0: string);
 begin
   nombre := nombre0;
-  FModoCopia:=ModoCopia0;   //Define el modo de trabajo
   items := TCibGFact_list.Create(true);
 end;
 destructor TCibModelo.Destroy;

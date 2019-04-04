@@ -15,7 +15,7 @@ uses
   Classes, SysUtils, types, dateutils, math, fgl, LCLProc, ExtCtrls, Forms,
   Menus, Dialogs, Controls, MisUtils, CibTramas, CibFacturables, CibCabinaBase,
   CibCabinaTarifas, FormVisorMsjRed, CibUtils, CibBD, Globales, FormAdminTarCab,
-  FormAdminCabinas, FormFijTiempo, FormExplorCab;
+  FormAdminCabinas, FormExplorCab;
 const //Acciones sobre las PC
   /////// Comandos que se ejecutan en el modelo y no requieren conexión. ////////
   C_CABIN_INICTA = 01;  //Solicita iniciar la cuenta de una PC
@@ -29,6 +29,7 @@ const //Acciones sobre las PC
   C_CABIN_EDICOM = 09;  //Edita un comentario
   C_CABIN_SACMAN = 10;  //Solicita sacar de mantenimiento a una PC
   C_CABIN_MSJRED = 11;  //Solicita abrir ventana de mensajes de Red
+  C_CABIN_EXPLOR = 12;  //Solicita abrir Explorador de archivos.
   //Comandos para Grupo de cabinas
   C_GCAB_ACTTAR = 15;  //Solicita actualizar tarifas de un Grupo de Cabinas
   C_GCAB_ADMEQU = 16;  //Solicita abrir ventana para administrar equipos
@@ -122,8 +123,6 @@ type
     PausadS: integer;   {tiempo pausado en segundos (Contador de
                          tiempo que la cabina se encuentra en pausa)}
     tic    : integer;   //contador para temporización
-    SinRed : boolean;   {Para usar al objeto, solamente como contenedor, sin conexión
-                         por Socket.}
     //VaRiables temporales
     ResponderA: string;   //Id de vista, a dónde se debe responder el mensaje
     DatPaqRecib: Boolean; //Bandera para saber cuándo llegan paquetes parciales de la PC remota
@@ -131,17 +130,6 @@ type
     arcSal    : string;   //Variable para procesar el comando C_FIJ_ARSAL
     RutaActual: string;   //Ruta de trabajo actual de la cabina
     procedure LimpiarCabina;
-    procedure mnEditComent(Sender: TObject);
-    procedure mnDetenCuenta(Sender: TObject);
-    procedure mnEncenderPC(Sender: TObject);
-    procedure mnFijTiempoIni(Sender: TObject);
-    procedure mnInicCuenta(Sender: TObject);
-    procedure mnModifCuenta(Sender: TObject);
-    procedure mnPausarCuent(Sender: TObject);
-    procedure mnPonerManten(Sender: TObject);
-    procedure mnSacarManten(Sender: TObject);
-    procedure mnReinicCuent(Sender: TObject);
-    procedure mnVerMsjesRed(Sender: TObject);
     function VerCorteAutomatico: boolean;
     procedure cabCambiaEstadoConex(nuevoEstado: TCibEstadoConex);
   protected  //"Getter" and "Setter"
@@ -170,7 +158,6 @@ type
     function tarif: TCPTarifCabinas;  {Referencia a la Tarifa }
     function RegVenta(usu: string): string; override; //línea para registro de venta
     procedure Contar1seg;      //usado para temporización
-    procedure mnVerExplorad(Sender: TObject);
   public  //campos de estado
     HoraPC : TDateTime;  //Fecha-hora que tiene la PC cliente, localmente.
     PantBloq: Boolean;   //Indica si la PC cliente tiene la pantalla bloqueada
@@ -216,11 +203,8 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string);
       override;
     procedure EjecAccion(idVista: string; tram: TCPTrama; traDat: string); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu; nShortCut: integer); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Inicialización
     constructor Create(nombre0: string; ip0: string);
-    constructor CreateSinRed;  //Crea objeto sin red
     destructor Destroy; override;
   end;
 
@@ -242,10 +226,7 @@ type
   private
     arcLog : TCibTablaHist;  //Tabla de registros para cabinas
     timer1 : TTimer;
-    frmTiempos: TfrmFijTiempo;  //Formulario para fijar tiempos
     procedure cab_TramaLista(idFacOrig: string; tram: TCPTrama);
-    procedure mnAdminEquipos(Sender: TObject);
-    procedure mnAdminTarifas(Sender: TObject);
     procedure timer1Timer(Sender: TObject);
   public  //Eventos.
     {EjecAccion que se pueden disparar automáticamente. Sin intervención del usuario}
@@ -266,7 +247,6 @@ type
     procedure Conectar;
     function CabPorNombre(nom: string): TCibFacCabina;  { TODO : ¿Será necesario, si ya existe ItemPorNombre en el ancestro? }
     function Toleran: TDateTime;   //acceso a la tolerancia
-    procedure MuestraConexionCabina;
   public  //Operaciones con cabinas
     function EscribeLog(identif: char; mensaje: String): integer;
     procedure TCP_envComando(nom: string; comando: TCPTipCom; ParamX, ParamY: word;
@@ -274,28 +254,14 @@ type
   public  //Campos para manejo de acciones
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
-    procedure MenuAccionesVista(MenuPopup: TPopupMenu); override;
-    procedure MenuAccionesModelo(MenuPopup: TPopupMenu); override;
   public  //Inicialización
-    constructor Create(nombre0: string; ModoCopia0: boolean);
+    constructor Create(nombre0: string);
     destructor Destroy; override;
   end;
 
   function VarCampoNombreCP(const cad: string): string;
 
 implementation
-var
-  icoModifCuenta: integer;
-  icoDetenCuenta: integer;
-  icoPonerManten: integer;
-  icoAgregComent: integer;
-  icoPausarCuent: integer;
-  icoReinicCuent: integer;
-  icoVerExplorad: integer;
-  icoVerMsjesRed: integer;
-  icoAdminTarifas: integer;
-  icoAdminEquipos: integer;
-  icoPropiedades: integer;
 
 function VarCampoNombreCP(const cad: string): string;
 {Devuelve el campo nombre de una lista de campos separados por tabulaciones.}
@@ -855,10 +821,7 @@ begin
     tmp,
     HoraPC, PantBloq, cabCuenta.estado, cabCuenta.hor_ini,
     cabCuenta.tSolic, cabCuenta.tLibre, cabCuenta.horGra, FTransc, FCosto);
-  if SinRed then begin  //Cuando hay red, esta propiedad se actualiza sola
-      cabConex.estado := tmp;  //Solo en modo "SinRed" se lee este campo
-      //"cabConex.estado" debe ser realmente de solo lectura.
-  end;
+    //cabConex.estado := tmp;  //"cabConex.estado" debe ser realmente de solo lectura.
   //Agrega información de boletas
   LeerEstadoBoleta(Boleta, lineas);
 end;
@@ -882,11 +845,6 @@ end;
 // Campos de conexión
 procedure TCibFacCabina.SetConConexion(AValue: boolean);
 begin
-  if SinRed then begin
-    //Solo como contenedor. No se debe llamar a cabConex.Conectar o a cabConex.Desconectar
-    FConConexion := AValue;
-    exit;
-  end;
   if FConConexion=AValue then exit;
   if AValue=true then begin  // Se pide iniciar la conexión
     cabConex.Conectar; //Si la conexión ya estaba iniciada, se ignorará
@@ -915,7 +873,6 @@ begin
 end;
 procedure TCibFacCabina.Desconectar;
 begin
-  if SinRed then exit;
   cabConex.Desconectar;  // Puede tardar en detener el proceso
 end;
 //control de la cabina
@@ -1179,6 +1136,10 @@ begin
   C_CABIN_MSJRED: begin
     frmVisMsj.Exec(self.Nombre);
   end;
+  C_CABIN_EXPLOR: begin
+    frmExpArc.rutArchivos :=  rutArchivos;
+    frmExpArc.Exec(self);
+  end;
   //Comandos remotos
   C_CABIN_BLOQ_PC: begin
     TCP_envComando(C_BLOQ_PC, 0, 0);
@@ -1235,158 +1196,6 @@ begin
     end;
   end;
 end;
-procedure TCibFacCabina.MenuAccionesVista(MenuPopup: TPopupMenu;
-  nShortCut: integer);
-{Configura las acciones del modelo. Lo ideal sería que todas las acciones se ejecuten
-desde aquí.}
-begin
-  InicLlenadoAcciones(MenuPopup);
-  //Se ha visto que  la acción "Iniciar Cuenta" se puede reemplazar con "Modificar Tiempo".
-  if EstadoCta in [EST_CONTAN, EST_PAUSAD] then begin
-    AgregarAccion(nShortCut, '&Modificar Tiempo'      , @mnModifCuenta, icoModifCuenta);
-  end else begin
-    AgregarAccion(nShortCut, '&Iniciar Cuenta'      , @mnModifCuenta, icoModifCuenta);
-  end;
-  AgregarAccion(nShortCut, '&Detener Cuenta'        , @mnDetenCuenta, icoDetenCuenta);
-  AgregarAccion(nShortCut, '&Ver Explorador'       , @mnVerExplorad, icoVerExplorad);
-  AgregarAccion(nShortCut, 'Editar &Comentario'    , @mnEditComent, icoAgregComent);
-  if cabCuenta.estado = EST_MANTEN then begin
-    AgregarAccion(nShortCut, 'Sacar de &Mantenimiento', @mnSacarManten, icoPonerManten);
-  end else begin
-    AgregarAccion(nShortCut, 'Poner en &Mantenimiento', @mnPonerManten, icoPonerManten);
-  end;
-  if cabCuenta.estado = EST_CONTAN then begin
-    AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent);
-  end else if cabCuenta.estado = EST_PAUSAD then begin
-    AgregarAccion(nShortCut, 'Reiniciar Cuenta'      , @mnReinicCuent, icoReinicCuent);
-  end else begin
-    //Agrega siempre un ítem, aunque sea desactivado, para no perder la secuencia de
-    //acciones (Que siempre haya la misma cantidad).
-    AgregarAccion(nShortCut, 'Pausar Cuenta'         , @mnPausarCuent, icoPausarCuent).Enabled:=false;
-  end;
-  AgregarAccion(nShortCut, '&Encender PC.'           , @mnEncenderPC, -1);
-  AgregarAccion(nShortCut, '&Fijar Tiempo Inic.'     , @mnFijTiempoIni, -1);
-//  AgregarAccion(nShortCut, 'Propiedades' , @mnVerMsjesRed, -1););
-end;
-procedure TCibFacCabina.MenuAccionesModelo(MenuPopup: TPopupMenu);
-{Configura acciones que solo correran en el Modelo}
-var
-  nShortCut: integer;
-begin
-  InicLlenadoAcciones(MenuPopup);
-  nShortCut := -1;
-  AgregarAccion(nShortCut, 'Ver Mensajes de &Red' , @mnVerMsjesRed, icoVerMsjesRed);
-end;
-procedure TCibFacCabina.mnInicCuenta(Sender: TObject);
-begin
-  if EstadoCta = EST_MANTEN then begin
-    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
-  end else if not Detenida then begin
-    msgExc('No se puede iniciar una cuenta en esta cabina.');
-    exit;
-  end;
-  frmFijTiempo.MostrarIni(cabCuenta, nombre);  //modal
-  if frmFijTiempo.cancelo then exit;  //canceló
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_INICTA, 0, IdFac + #9 + frmFijTiempo.CadActivacion);
-end;
-procedure TCibFacCabina.mnModifCuenta(Sender: TObject);
-begin
-  if Detenida then begin
-    mnInicCuenta(self);  //está detenida, inicia la cuenta
-  end else if Contando then begin
-    //Está en medio de una cuenta
-    frmFijTiempo.Mostrar(cabCuenta, nombre);  //modal
-    if frmFijTiempo.cancelo then exit;  //canceló
-    OnSolicEjecCom(CFAC_CABIN, C_CABIN_MODCTA, 0, IdFac + #9 + frmFijTiempo.CadActivacion);
-  end;
-end;
-procedure TCibFacCabina.mnDetenCuenta(Sender: TObject);
-begin
-  if MsgYesNo('¿Desconectar Computadora: ' + nombre + '?') <> 1 then exit;
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_DETCTA, 0, IdFac);
-end;
-procedure TCibFacCabina.mnPonerManten(Sender: TObject);
-begin
-  if not Detenida then begin
-    MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
-    exit;
-  end;
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONMAN, 0, IdFac);
-end;
-procedure TCibFacCabina.mnSacarManten(Sender: TObject);
-begin
-  //if not Detenida then begin
-  //  MsgExc('No se puede poner a mantenimiento una cabina con cuenta.');
-  //  exit;
-  //end;
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_SACMAN, 0, IdFac);
-end;
-procedure TCibFacCabina.mnEditComent(Sender: TObject);
-var
-  tmp: String;
-begin
-  tmp := InputBox('','Ingrese Comentario: ', Coment);
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_EDICOM, 0, IdFac + #9 + tmp);
-end;
-procedure TCibFacCabina.mnPausarCuent(Sender: TObject);
-begin
-  if cabCuenta.estado <> EST_CONTAN then begin
-    MsgExc('No se puede pausar una cabina en este estado.');
-    exit;
-  end;
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_PONPAU, 0, IdFac);
-end;
-procedure TCibFacCabina.mnReinicCuent(Sender: TObject);
-begin
-  if cabCuenta.estado <> EST_PAUSAD then begin
-    MsgExc('La cabina no está en pausa.');
-    exit;
-  end;
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_QUIPAU, 0, IdFac);
-end;
-procedure TCibFacCabina.mnVerExplorad(Sender: TObject);
-{Muestra el explorador de archivos}
-begin
-  frmExpArc.rutArchivos := rutArchivos;  //Actualiza ruta de archivos de descarga
-  frmExpArc.Exec(self);
-end;
-procedure TCibFacCabina.mnVerMsjesRed(Sender: TObject);
-{Muestra el formulario para ver los mensajes de red.}
-begin
-  frmVisMsj.Exec(Nombre);
-end;
-procedure TCibFacCabina.mnEncenderPC(Sender: TObject);
-{Fija el tiempo inicial de una cabina.}
-begin
-  if EstadoCta = EST_MANTEN then begin
-    if MsgYesNo('Cabina en mantenimiento. ¿Encender?') <> 1 then exit;
-  end;
-  MsgBox('Encendiendo');
-  //Fija minutos
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_ENCEPC, 0, IdFac);
-end;
-procedure TCibFacCabina.mnFijTiempoIni(Sender: TObject);
-{Fija el tiempo inicial de una cabina.}
-var
-  nnStr: String;
-  nn: Longint;
-begin
-  if EstadoCta = EST_MANTEN then begin
-    if MsgYesNo('¿Sacar cabina de mantenimiento?') <> 1 then exit;
-//  end else if not Detenida then begin
-//    msgExc('No se puede iniciar una cuenta en esta cabina.');
-//    exit;
-  end;
-  //Lee número de minutos
-  nnStr := InputBox('', 'Número de minutos:', '');
-  if nnStr='' then exit;
-  if not TryStrToInt(nnStr, nn) then begin
-    MsgExc('Error en número');
-    exit;
-  end;
-  //Fija minutos
-  OnSolicEjecCom(CFAC_CABIN, C_CABIN_FIJCTA, nn, IdFac);
-end;
 procedure TCibFacCabina.LimpiarCabina;
 //Pone la cabina limpia sin tiempos ni cuentas
 begin
@@ -1406,16 +1215,9 @@ begin
   cabConex.OnRegMensaje:=@cabConexRegMensaje;
   cabCuenta.estado := EST_NORMAL;  //inicia en este estado
   ConConexion := false;
-  SinRed := false;
   //Crea formulario explorador de archivos y visor de mensajes
   frmExpArc := TfrmExplorCab.Create(nil);
   frmVisMsj := TfrmVisorMsjRed.Create(nil);
-end;
-constructor TCibFacCabina.CreateSinRed;
-{Crea al objeto para usarlo solo como contenedor de propiedades.}
-begin
-  Create('','');
-  SinRed := true;
 end;
 destructor TCibFacCabina.Destroy;
 begin
@@ -1432,7 +1234,6 @@ Se ejecuta cada segundo.}
 var
   cab : TCibFac;
 begin
-  if self.ModoCopia then exit;  //no se debe contar en este modo
   for cab in items do begin
     TCibFacCabina(cab).Contar1seg;
   end;
@@ -1503,14 +1304,7 @@ function TCibGFacCabinas.Agregar(nombre0: string; ip0: string): TCibFacCabina;
 var
   cab: TCibFacCabina;
 begin
-  if ModoCopia then begin  //Si estamos en modo copia
-    //creamos la cabina sin conexión
-    cab := TCibFacCabina.CreateSinRed;
-    cab.Nombre := nombre0;
-    cab.IP := ip0;
-  end else begin  //Se crean normalmente
-    cab := TCibFacCabina.Create(nombre0, ip0);
-  end;
+  cab := TCibFacCabina.Create(nombre0, ip0);
   cab.OnTramaLista :=@cab_TramaLista;
   AgregarItem(cab);   //aquí se configuran algunos  eventos
   if OnCambiaPropied<>nil then OnCambiaPropied();
@@ -1625,14 +1419,6 @@ function TCibGFacCabinas.Toleran: TDateTime;
 begin
   Result := tarif.toler;
 end;
-procedure TCibGFacCabinas.MuestraConexionCabina;  //para depuración
-var
-  c : TCibFac;
-begin
-  for c in items do begin
-    debugln('  Nomb:' + c.Nombre + ' SinRed:' + B2f(TCibFacCabina(c).SinRed));
-  end;
-end;
 //Operaciones con cabinas
 function TCibGFacCabinas.EscribeLog(identif: char; mensaje : String): integer;
 {Escribe en la tabla histórica de este grupo.}
@@ -1640,7 +1426,6 @@ var
   NombProg, NombLocal: string;
   ModDiseno: boolean;
 begin
-  if ModoCopia then exit;  //En modo copia, no genera registro
   if arclog.arclog = '' then begin
     //No se ha abierto aún, el registro
     if OnReqConfigGen<>nil then  //Pide información global
@@ -1734,34 +1519,10 @@ debugln('Acción solicitada a GFacCabinas:' + tram.TipTraNom);
     facDest.EjecAccion(idFacOrig, tram, traDat);
   end;
 end;
-procedure TCibGFacCabinas.MenuAccionesVista(MenuPopup: TPopupMenu);
-begin
-  InicLlenadoAcciones(MenuPopup);
-  //No hay acciones, aún, para el Grupo Cabinas
-end;
-procedure TCibGFacCabinas.MenuAccionesModelo(MenuPopup: TPopupMenu);
-var
-  nShortCut: Integer;
-begin
-  InicLlenadoAcciones(MenuPopup);
-  nShortCut := -1;
-  AgregarAccion(nShortCut, 'Administrador de &Tarifas', @mnAdminTarifas, icoAdminTarifas);
-  AgregarAccion(nShortCut, 'Administrador de &Equipos', @mnAdminEquipos, icoAdminEquipos);
-  AgregarAccion(nShortCut, '&Propiedades', @mnPropiedades, icoPropiedades);
-end;
-procedure TCibGFacCabinas.mnAdminTarifas(Sender: TObject);
-begin
-  frmAdminTar.Show;
-end;
-procedure TCibGFacCabinas.mnAdminEquipos(Sender: TObject);
-begin
-  frmAdminCabs.Show;
-end;
 //constructor y destructor
-constructor TCibGFacCabinas.Create(nombre0: string; ModoCopia0: boolean);
+constructor TCibGFacCabinas.Create(nombre0: string);
 begin
   inherited Create(nombre0, ctfCabinas);
-  FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
 //debugln('-Creando: '+ nombre0);
 //Se incluye un objeto TGrupoTarAlquiler para la tarificación
   grupTar := TGrupoTarAlquiler.Create;
@@ -1776,7 +1537,7 @@ begin
   frmAdminTar.tarCabinas := tarif;
   frmAdminTar.OnModificado:=@fac_CambiaPropied;  //para actualizar cambios
   if grupTar.items.Count=0 then begin
-    //agrega una tarifa de alquiler por defecto
+    //Agrega una tarifa de alquiler por defecto
     frmAdminTar.IniciarPorDefecto;  { TODO : Ver si es necesario }
     frmAdminTar.BitAplicarClick(nil);
   end;

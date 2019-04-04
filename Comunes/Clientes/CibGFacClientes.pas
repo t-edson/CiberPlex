@@ -50,7 +50,6 @@ type
     class procedure DecodCadPropied(lineas: TStringList; out _Nombre,
       _CategVenta: string; out _x, _y: Single);
   private
-    proAccion : string;   {Nombre de objeto que ejecuta la acción. }
     class function CodCadEstado(_Nombre: string): string;
     class procedure DecodCadEstado(str: String; out _Nombre: string);
   protected //Getters and Setters
@@ -66,7 +65,7 @@ type
     procedure EjecRespuesta(comando: TCPTipCom; ParamX, ParamY: word; cad: string); override;
     procedure EjecAccion(idFacOrig: string; tram: TCPTrama); override;
   public  //Constructor y destructor
-    constructor Create(nombre0: string; ModoCopia0: boolean);
+    constructor Create(nombre0: string);
     destructor Destroy; override;
   end;
 
@@ -278,7 +277,6 @@ var
   lineas: TStringList;
   cab: TCibFacCliente;
   lin: String;
-  a: TStringDynArray;
 begin
   if AValue = '' then exit;
   lineas := TStringList.Create;
@@ -359,10 +357,9 @@ debugln('Acción solicitada a GFacClientes:' + tram.TipTraNom);
   end;
 end;
 //constructor y destructor
-constructor TCibGFacClientes.Create(nombre0: string; ModoCopia0: boolean);
+constructor TCibGFacClientes.Create(nombre0: string);
 begin
   inherited Create(nombre0, ctfClientes);
-  FModoCopia := ModoCopia0;    //Asigna al inicio para saber el modo de trabajo
   CategVenta := 'COUNTER';
 end;
 destructor TCibGFacClientes.Destroy;

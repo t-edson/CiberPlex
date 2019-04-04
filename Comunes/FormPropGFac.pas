@@ -39,7 +39,7 @@ var
   frmPropGFac: TfrmPropGFac;
 
 implementation
-uses CibFacturables, ObjGraficos;
+uses ObjGraficos;
 {$R *.lfm}
 
 procedure TfrmPropGFac.BitBtn2Click(Sender: TObject);
