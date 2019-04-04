@@ -11,7 +11,7 @@ uses
   FormInicio, FormRepIngresos, RegistrosVentas, FormAdminProduc, FormAgrupRep,
   FormAcercaDe, FormCalcul, FormContDinero, FormSelecObjetos, FormAdminProvee,
   FormAdminInsum, FormCambClave, FormRepProducto, FormRepEventos,
-  FormRegCompras, FormIngVentas, FormValStock, FormIngStock, FormVista,
+  FormRegCompras, FormIngVentas, FormValStock, FormIngStock,
   ModuleBD, FormFijTiempo, FormAdminTarCab, CibGFacMesas, FormPropMesa,
   FormOgCabinas, FormOgClientes, FormOgMesas, FormOgNiloM,
   FormPropGFac;
@@ -41,7 +41,6 @@ begin
   Application.CreateForm(TfrmIngVentas, frmIngVentas);
   Application.CreateForm(TfrmValStock, frmValStock);
   Application.CreateForm(TfrmIngStock, frmIngStock);
-  Application.CreateForm(TfrmVisor, frmVisor);
   Application.CreateForm(TModBD, ModBD);
   Application.CreateForm(TfrmFijTiempo, frmFijTiempo);
   Application.CreateForm(TfrmOgCabinas, frmOgCabinas);

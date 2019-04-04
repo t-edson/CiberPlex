@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ComCtrls,
-  Buttons, StdCtrls, LCLType, LCLProc, CibModelo, CibFacturables, frameVisCPlex;
+  Buttons, StdCtrls, LCLType, LCLProc, CibModelo, CibFacturables, frameVista;
 
 type
 
@@ -24,14 +24,14 @@ type
     procedure FormShow(Sender: TObject);
   private
     modelo: TCibModelo;
-    visor: TfraVisCPlex;
+    visor: TfraVista;
     nodRaiz: TTreeNode;
     function BuscarNodGrupoPorIndice(nodPadre: TTreeNode; indice: integer
       ): TTreeNode;
     function TomarNumero(var cad: string; out num: integer): boolean;
     procedure Seleccionar(var cadSel: string);
   public
-    function Exec(modelo0: TCibModelo; Visor0: TfraVisCPlex; TxtIni: string
+    function Exec(modelo0: TCibModelo; Visor0: TfraVista; TxtIni: string
       ): integer;
   end;
 
@@ -171,7 +171,8 @@ begin
     Self.Close;
   end;
 end;
-function TfrmSelecObjetos.Exec(modelo0: TCibModelo; Visor0: TfraVisCPlex; TxtIni: string): integer;
+function TfrmSelecObjetos.Exec(modelo0: TCibModelo; Visor0: TfraVista;
+  TxtIni: string): integer;
 {Muestra el formulario de selección.}
 var
   gr : TCibGFac;

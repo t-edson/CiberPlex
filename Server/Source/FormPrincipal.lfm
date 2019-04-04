@@ -29,7 +29,8 @@ object frmPrincipal: TfrmPrincipal
     object ToolButton1: TToolButton
       Left = 1
       Top = 2
-      Action = acFacAgrVen
+      Caption = 'Agregar Venta...'
+      ImageIndex = 34
     end
     object ToolButton3: TToolButton
       Left = 1
@@ -43,8 +44,10 @@ object frmPrincipal: TfrmPrincipal
     end
     object ToolButton5: TToolButton
       Left = 1
+      Hint = 'Mostrar la boleta'
       Top = 24
-      Action = acFacVerBol
+      Caption = 'Ver Boleta...'
+      ImageIndex = 10
     end
     object ToolButton6: TToolButton
       Left = 1
@@ -199,32 +202,6 @@ object frmPrincipal: TfrmPrincipal
       Hint = 'Sale de la aplicación.'
       ImageIndex = 4
       OnExecute = acArcSalirExecute
-    end
-    object acFacAgrVen: TAction
-      Category = 'Fac'
-      Caption = 'Agregar Venta...'
-      ImageIndex = 34
-      OnExecute = acFacAgrVenExecute
-    end
-    object acFacVerBol: TAction
-      Category = 'Fac'
-      Caption = 'Ver Boleta...'
-      Hint = 'Mostrar la boleta'
-      ImageIndex = 10
-      OnExecute = acFacVerBolExecute
-    end
-    object acFacGraBol: TAction
-      Category = 'Fac'
-      Caption = 'Grabar Boleta'
-      Hint = 'Graba la boleta'
-      ImageIndex = 11
-      OnExecute = acFacGraBolExecute
-    end
-    object acFacMovBol: TAction
-      Category = 'Fac'
-      Caption = 'Trasladar Boleta...'
-      ImageIndex = 16
-      OnExecute = acFacMovBolExecute
     end
     object acAyuCalcul: TAction
       Category = 'Ayu'
